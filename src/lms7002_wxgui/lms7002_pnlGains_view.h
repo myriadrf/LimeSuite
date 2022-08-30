@@ -15,7 +15,7 @@ class lms7002_pnlGains_view : public ILMS7002MTab
     lms7002_pnlGains_view(wxWindow *parent, wxWindowID id = wxID_ANY,
                           const wxPoint &pos = wxDefaultPosition,
                           const wxSize &size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    virtual void Initialize(lime::SDRDevice *pControl) override;
+    virtual void Initialize(ILMS7002MTab::ControllerType *pControl) override;
     virtual void UpdateGUI() override;
     void OnAGCStateChange(wxCommandEvent& event);
 protected:

@@ -10,18 +10,50 @@
 using namespace std;
 using namespace lime;
 
-FX3::FX3(void *usbContext) : isConnected(false), contexts(nullptr)
+static int activeUSBconnections = 0;
+static std::thread gUSBProcessingThread;
+
+#ifdef __unix__
+void FX3::handle_libusb_events()
+{
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    while(activeUSBconnections > 0)
+    {
+        int r = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
+        if(r != 0)
+            lime::error("error libusb_handle_events %s", libusb_strerror(libusb_error(r)));
+    }
+}
+#endif // __UNIX__
+
+FX3::FX3(void *usbContext) : contexts(nullptr), isConnected(false)
 {
     isConnected = false;
 #ifdef __unix__
     dev_handle = nullptr;
     ctx = (libusb_context *)usbContext;
+
+    if(activeUSBconnections == 0)
+    {
+        ++activeUSBconnections;
+        gUSBProcessingThread = std::thread(&FX3::handle_libusb_events, this);
+    }
+    else
+        ++activeUSBconnections;
 #endif
 }
 
 FX3::~FX3()
 {
     Disconnect();
+    --activeUSBconnections;
+    if(activeUSBconnections == 0)
+    {
+        if(gUSBProcessingThread.joinable())
+            gUSBProcessingThread.join();
+    }
 }
 
 bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
@@ -132,9 +164,11 @@ int32_t FX3::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32
     assert(data);
 
 #ifdef __unix__
-    int actual = 0;
-    libusb_bulk_transfer(dev_handle, endPointAddr, data, length, &actual, timeout_ms);
-    len = actual;
+    int actualTransferred = 0;
+    int status = libusb_bulk_transfer(dev_handle, endPointAddr, data, length, &actualTransferred, timeout_ms);
+    len = actualTransferred;
+    if (status != 0)
+        printf("FX3::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n", endPointAddr, libusb_error_name(status), actualTransferred, length);
 #endif
     return len;
 }
@@ -187,6 +221,7 @@ static void process_libusbtransfer(libusb_transfer *trans)
         break;
     case LIBUSB_TRANSFER_NO_DEVICE:
         lime::error("USB transfer no device");
+        context->done.store(true);
         break;
     }
     lck.unlock();
@@ -213,7 +248,7 @@ int FX3::BeginDataXfer(const uint8_t *buffer, uint32_t length, uint8_t endPointA
         }
     }
     if (!contextFound) {
-        printf("No contexts left for reading data");
+        printf("No contexts left for reading data\n");
         return -1;
     }
     contexts[i].used = true;

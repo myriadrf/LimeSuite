@@ -10,13 +10,13 @@ class wxPanel;
 class wxWindow;
 
 namespace lime{
-class SDRDevice;
+class LMS7002M;
 }
 
 namespace LMS7002_WXGUI
 {
 
-void UpdateControlsByMap(wxPanel *panel, lime::SDRDevice *lmsControl,
+void UpdateControlsByMap(wxPanel *panel, lime::LMS7002M *lmsControl,
                          const std::map<wxWindow *, LMS7Parameter> &wndId2param, uint8_t channel);
 
 typedef std::pair<int, int> indexValuePair;

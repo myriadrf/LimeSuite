@@ -41,6 +41,48 @@ extern std::vector<const LMS7Parameter*> LMS7parameterList;
 const uint16_t LMS7002M::readOnlyRegisters[] =      { 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F };
 const uint16_t LMS7002M::readOnlyRegistersMasks[] = { 0x0000, 0x0FFF, 0x007F, 0x0000, 0x0000, 0x0000, 0x0000, 0x003F, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
 
+// Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope
+class ChannelScope
+{
+public:
+    // convenient constructor when using explicit MAC value
+    ChannelScope(LMS7002M* chip, LMS7002M::Channel mac, bool useCache = false)
+    : mChip(chip), mNeedsRestore(false)
+    {
+        mStoredValue = chip->GetActiveChannel(!useCache);
+        if (mStoredValue == mac)
+            return;
+
+        chip->SetActiveChannel(mac);
+        mNeedsRestore = true;
+    }
+
+    // convenient constructor when using channel index starting from 0
+    ChannelScope(LMS7002M* chip, uint8_t index, bool useCache = false)
+    : mChip(chip), mNeedsRestore(false)
+    {
+        assert(index < 2);
+        mStoredValue = chip->GetActiveChannel(!useCache);
+        auto expectedChannel = index > 0 ? LMS7002M::ChB : LMS7002M::ChA;
+        if (mStoredValue == expectedChannel)
+            return;
+
+        mChip->SetActiveChannel(expectedChannel);
+        mNeedsRestore = true;
+    }
+
+    ~ChannelScope()
+    {
+        if(mNeedsRestore)
+            mChip->SetActiveChannel(mStoredValue);
+    }
+
+private:
+    LMS7002M* mChip;
+    LMS7002M::Channel mStoredValue;
+    bool mNeedsRestore;
+};
+
 /** @brief Simple logging function to print status messages
     @param text message to print
     @param type message type for filtering specific information
@@ -225,11 +267,14 @@ size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
     }
 }
 
-int LMS7002M::EnableChannel(const bool isTx, const uint8_t channel, const bool enable)
+int LMS7002M::EnableChannel(Dir dir, const uint8_t channel, const bool enable)
 {
-    Channel ch = this->GetActiveChannel();
+    ChannelScope scope(this, channel);
+
+    const Channel ch = this->GetActiveChannel();
     this->SetActiveChannel(channel > 0 ? ChB : ChA);
 
+    const bool isTx = dir == Tx;
     //--- LML ---
     if (ch == ChA)
     {
@@ -459,7 +504,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "FCW%02i", i);
-                        SetNCOFrequency(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                        SetNCOFrequency(Rx, i, parser.get(varname, 0.0));
                     }
                 }
                 else
@@ -467,7 +512,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "PHO%02i", i);
-                        SetNCOPhaseOffset(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                        SetNCOPhaseOffset(Rx, i, parser.get(varname, 0.0));
                     }
                 }
             }
@@ -480,7 +525,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "FCW%02i", i);
-                        SetNCOFrequency(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                        SetNCOFrequency(Tx, i, parser.get(varname, 0.0));
                     }
                 }
                 else
@@ -488,7 +533,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "PHO%02i", i);
-                        SetNCOPhaseOffset(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                        SetNCOPhaseOffset(Tx, i, parser.get(varname, 0.0));
                     }
                 }
             }
@@ -526,7 +571,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "FCW%02i", i);
-                        SetNCOFrequency(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                        SetNCOFrequency(Rx, i, parser.get(varname, 0.0));
                     }
                 }
                 else
@@ -534,7 +579,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "PHO%02i", i);
-                        SetNCOPhaseOffset(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                        SetNCOPhaseOffset(Rx, i, parser.get(varname, 0.0));
                     }
                 }
             }
@@ -547,7 +592,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "FCW%02i", i);
-                        SetNCOFrequency(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                        SetNCOFrequency(Tx, i, parser.get(varname, 0.0));
                     }
                 }
                 else
@@ -555,7 +600,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "PHO%02i", i);
-                        SetNCOPhaseOffset(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                        SetNCOPhaseOffset(Tx, i, parser.get(varname, 0.0));
                     }
                 }
             }
@@ -684,8 +729,11 @@ int LMS7002M::LoadConfig(const char* filename)
 int LMS7002M::ResetLogicregisters()
 {
     auto x0020_value = SPI_read(0x0020); //reset logic registers
-    SPI_write(0x0020, x0020_value & 0x55FF);
-    return SPI_write(0x0020, x0020_value | 0xFF00);
+    const uint16_t addr[] = {0x0020, 0x0020};
+    const uint16_t values[] = {x0020_value & 0x553F, x0020_value | 0xFFC0};
+    //const uint16_t values[] = {x0020_value & 0x55FF, x0020_value | 0xFF00};
+    // LRST_TX_B, LRST_TX_A, LRST_RX_B, LRST_RX_A
+    return SPI_write_batch(addr, values, 2);
 }
 
 /** @brief Reads all registers from chip and saves to file
@@ -1068,6 +1116,29 @@ float_type LMS7002M::GetReferenceClk_SX(bool tx)
     return _cachedRefClockRate;
 }
 
+int LMS7002M::SetNCOFrequencies(bool tx, float_type* freq_Hz, uint8_t count, float_type phaseOffset)
+{
+    for (unsigned i = 0; i < 16 && i < count; i++)
+    {
+        if (SetNCOFrequency(tx, i, freq_Hz[i]))
+            return -1;
+    }
+    return SetNCOPhaseOffsetForMode0(tx, phaseOffset);
+}
+
+std::vector<float_type> LMS7002M::GetNCOFrequencies(bool tx, float_type* phaseOffset)
+{
+    std::vector<float_type> ncos;
+    for(int i=0; i<16; ++i)
+        ncos.push_back(GetNCOFrequency(tx, i, !useCache));
+    if (phaseOffset != nullptr)
+    {
+        uint16_t value = SPI_read(tx ? 0x0241 : 0x0441);
+        *phaseOffset = 360.0 * value / 65536.0;
+    }
+    return ncos;
+}
+
 /**	@return Current CLKGEN frequency in Hz
     Returned frequency depends on reference clock used for Receiver
 */
@@ -1101,6 +1172,8 @@ float_type LMS7002M::GetReferenceClk_TSP(bool tx)
 */
 int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies, CGEN_details* output)
 {
+    if(freq_Hz > CGEN_MAX_FREQ)
+        throw std::logic_error("requested CGEN frequency too high");
     float_type dFvco;
     float_type dFrac;
 
@@ -1118,9 +1191,9 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         {
             this->SetActiveChannel((ch == 0)?ChA:ChB);
             for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
-                rxNCO[ch].push_back(GetNCOFrequency(LMS7002M::Rx, i, false));
+                rxNCO[ch].push_back(GetNCOFrequency(Rx, i, false));
             for (int i = 0; i < 16 && txModeNCO == 0; ++i)
-                txNCO[ch].push_back(GetNCOFrequency(LMS7002M::Tx, i, false));
+                txNCO[ch].push_back(GetNCOFrequency(Tx, i, false));
         }
     }
     //VCO frequency selection according to F_CLKH
@@ -1150,7 +1223,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     {
         output->frequency = freq_Hz;
         output->frequencyVCO = dFvco;
-        output->referenceClock = GetReferenceClk_SX(LMS7002M::Rx);
+        output->referenceClock = GetReferenceClk_SX(Rx);
         output->INT = gINT;
         output->FRAC = gFRAC;
         output->div_outch_cgen = iHdiv;
@@ -1162,9 +1235,9 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     {
         this->SetActiveChannel((ch == 0)?ChA:ChB);
         for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
-            SetNCOFrequency(LMS7002M::Rx, i, rxNCO[ch][i]);
+            SetNCOFrequency(Rx, i, rxNCO[ch][i]);
         for (int i = 0; i < 16 && txModeNCO == 0; ++i)
-            SetNCOFrequency(LMS7002M::Tx, i, txNCO[ch][i]);
+            SetNCOFrequency(Tx, i, txNCO[ch][i]);
     }
     this->SetActiveChannel(chBck);
 #ifndef NDEBUG
@@ -1553,8 +1626,9 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
     Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
 
-    lime::debug("SetFrequencySX%s, INT %d, FRAC %d, DIV_LOCH %d, EN_DIV2_DIVPROG %d",
+    lime::info("SetFrequencySX%s, (%.3f MHz)INT %d, FRAC %d, DIV_LOCH %d, EN_DIV2_DIVPROG %d",
                 tx ? "T" : "R",
+                freq_Hz/1e6,
                 integerPart,
                 fractionalPart,
                 (int16_t)div_loch,
@@ -1701,7 +1775,7 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
     for(int i=0; i<2; ++i)
     {
         Modify_SPI_Reg_bits(LMS7param(MAC), i+1);
-        SetNCOFrequency(LMS7002M::Rx, 15, 0);
+        SetNCOFrequency(Rx, 15, 0);
     }
     if(needCancelation)
     {
@@ -1732,8 +1806,8 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
             Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
             Modify_SPI_Reg_bits(LMS7param(SEL_RX), 15);
             Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
-            SetNCOFrequency(LMS7002M::Rx, 14, 0);
-            SetNCOFrequency(LMS7002M::Rx, 15, abs(actualFreq-userFreq));
+            SetNCOFrequency(Rx, 14, 0);
+            SetNCOFrequency(Rx, 15, abs(actualFreq-userFreq));
         }
     }
 
@@ -1825,6 +1899,28 @@ int LMS7002M::SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_deg)
 	uint16_t pho = (uint16_t)(65536*(angle_deg / 360));
     SPI_write(addr+index, pho);
     return 0;
+}
+
+int LMS7002M::SetNCOPhases(bool tx, float_type *angles_deg, uint8_t count, float_type frequencyOffset)
+{
+    if (SetNCOFrequency(tx, 0, frequencyOffset) != 0)
+        return -1;
+
+    if (angles_deg != nullptr)
+    {
+        for (unsigned i = 0; i < 16; i++)
+            if (SetNCOPhaseOffset(tx, i, angles_deg[i]) != 0)
+                return -1;
+        if (Modify_SPI_Reg_bits(tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0) != 0)
+            return -1;
+    }
+    return 0;
+}
+
+std::vector<float_type> LMS7002M::GetNCOPhases(bool tx, float_type* frequencyOffset)
+{
+    std::vector<float_type> angles_deg;
+    return angles_deg;
 }
 
 /** @brief Returns chosen NCO's phase offset angle in radians
@@ -2562,12 +2658,12 @@ float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
     if (tx)
     {
         ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP),true);
-        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Tx);
+        interface_Hz = GetReferenceClk_TSP(lime::Tx);
     }
     else
     {
         ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP),true);
-        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);
+        interface_Hz = GetReferenceClk_TSP(lime::Rx);
     }
     SetActiveChannel(chBck);
     if (ratio != 7)
@@ -2837,7 +2933,7 @@ double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
 {
     switch (clk_id) {
     case ClockID::CLK_REFERENCE:
-        return GetReferenceClk_SX(lime::LMS7002M::Rx);
+        return GetReferenceClk_SX(lime::Rx);
     case ClockID::CLK_SXR:
         return GetFrequencySX(false);
     case ClockID::CLK_SXT:
@@ -2875,4 +2971,29 @@ void LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
     default:
         throw std::logic_error("LMS7002M::SetClockFreq Unknown clock id");
     }
+}
+
+double LMS7002M::GetSampleRate(bool tx, double *rf_rate_Hz)
+{
+    double interface_Hz;
+    int ratio;
+
+    if (tx)
+    {
+        ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        interface_Hz = GetReferenceClk_TSP(true);
+    }
+    else
+    {
+        ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        interface_Hz = GetReferenceClk_TSP(false);
+    }
+
+    if (rf_rate_Hz)
+        *rf_rate_Hz = interface_Hz;
+
+    if (ratio != 7)
+        interface_Hz /= 2*pow(2.0, ratio);
+
+    return interface_Hz;
 }

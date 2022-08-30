@@ -25,8 +25,7 @@ public:
   int StartStreaming();
   int StopStreaming();
   int ResetTimestamp();
-  virtual int UploadWFM(const void *const *samples, uint8_t chCount, size_t sample_count,
-                        SDRDevice::StreamConfig::DataFormat format, int epIndex);
+  //virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, lime::SDRDevice::StreamConfig::StreamDataFormat format, int epIndex);
 
   struct FPGA_PLL_clock
   {
@@ -60,6 +59,7 @@ public:
     int ReadLMS7002MSPI(const uint32_t *addr, uint32_t *values, uint32_t length);
 
   protected:
+    int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title = nullptr);
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
     lime::IComms *connection;
@@ -68,7 +68,7 @@ public:
 
   private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
-    int SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val);
+    int SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t &reg23val);
     bool useCache;
     std::map<uint16_t, uint16_t> regsCache;
 };

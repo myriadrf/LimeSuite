@@ -3,7 +3,7 @@
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING INTERNAL FORCE)
-project("LimeSuite")
+project("LimeSuite2")
 
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
 option(ENABLE_NEW_GAIN_BEHAVIOUR "Enable new gain functionality" OFF)
@@ -213,14 +213,14 @@ endif()
 ## lime suite build
 ########################################################################
 add_subdirectory(src)
-add_subdirectory(mcu_program)
-add_subdirectory(LimeUtil)
-add_subdirectory(QuickTest)
+#add_subdirectory(mcu_program)
+#add_subdirectory(LimeUtil)
+#add_subdirectory(QuickTest)
 
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver
 ########################################################################
-add_subdirectory(SoapyLMS7)
+#add_subdirectory(SoapyLMS7)
 
 ########################################################################
 ## udev rules for linux usb
@@ -280,7 +280,7 @@ add_subdirectory(Desktop)
 ########################################################################
 ## Octave plugin integration
 ########################################################################
-add_subdirectory(octave)
+#add_subdirectory(octave)
 
 #########################################################################
 # summary

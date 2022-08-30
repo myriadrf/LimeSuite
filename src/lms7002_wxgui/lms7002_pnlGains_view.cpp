@@ -218,7 +218,7 @@ lms7002_pnlGains_view::lms7002_pnlGains_view(wxWindow *parent, wxWindowID id, co
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlGains_view::Initialize(SDRDevice *pControl)
+void lms7002_pnlGains_view::Initialize(ILMS7002MTab::ControllerType *pControl)
 {
     ILMS7002MTab::Initialize(pControl);
 

@@ -109,6 +109,7 @@ public:
 #ifdef __unix__
     libusb_device_handle* dev_handle; //a device handle
     libusb_context* ctx; //a libusb session
+    void handle_libusb_events();
 #endif
 };
 

@@ -37,15 +37,15 @@ set(LIMESDR_LIBRARIES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_LIMESDR "Enable LimeSDR support" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
-add_feature_info(BoardLimeSDR ENABLE_LIMESDR "LimeSDR board support")
-if (NOT ENABLE_LIMESDR)
+cmake_dependent_option(ENABLE_LIMESDR_USB "Enable LimeSDR support" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
+add_feature_info(BoardLimeSDR ENABLE_LIMESDR_USB "LimeSDR board support")
+if (NOT ENABLE_LIMESDR_USB)
     return()
 endif()
 
 ########################################################################
 ## Add to library
 ########################################################################
-target_include_directories(LimeSuite PUBLIC ${USB_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
-target_sources(LimeSuite PRIVATE ${LIMESDR_SOURCES})
-target_link_libraries(LimeSuite ${LIMESDR_LIBRARIES})
+target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${USB_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
+target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${LIMESDR_SOURCES})
+target_link_libraries(${MAIN_LIBRARY_NAME} ${LIMESDR_LIBRARIES})

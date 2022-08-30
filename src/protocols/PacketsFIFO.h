@@ -45,8 +45,9 @@ template <class T> class PacketsFIFO // Single producer, single consumer FIFO
 
     void push(T *node)
     {
-        std::lock_guard<std::mutex> lck(mLock);
+        std::unique_lock<std::mutex> lck(mLock);
         queue.push(node);
+        lck.unlock();
         hasItems.notify_one();
     }
 
@@ -55,7 +56,7 @@ template <class T> class PacketsFIFO // Single producer, single consumer FIFO
         std::unique_lock<std::mutex> lck(mLock);
         T *node;
         if (queue.empty()) {
-            if (hasItems.wait_for(lck, std::chrono::milliseconds(200)) == std::cv_status::timeout)
+            if (hasItems.wait_for(lck, std::chrono::milliseconds(1)) == std::cv_status::timeout)
                 return nullptr;
         }
         node = queue.front();
@@ -68,7 +69,8 @@ template <class T> class PacketsFIFO // Single producer, single consumer FIFO
     {
         std::lock_guard<std::mutex> lck(mLockAllocation);
         std::lock_guard<std::mutex> lck2(mLock);
-        return float(queue.size()) / nodes.size();
+        //return float(queue.size()) / nodes.size();
+        return float(queue.size());
     }
 
   protected:

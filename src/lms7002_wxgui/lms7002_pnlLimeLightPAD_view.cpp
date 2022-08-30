@@ -1390,7 +1390,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view(wxWindow *parent, wxW
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlLimeLightPAD_view::Initialize(SDRDevice *pControl)
+void lms7002_pnlLimeLightPAD_view::Initialize(LMS7002M *pControl)
 {
     ILMS7002MTab::Initialize(pControl);
 

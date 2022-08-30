@@ -24,7 +24,7 @@ public:
      * \param hint an optional connection handle with some fields filled-in
      * \return a list of handles which can be used to make a connection
      */
-    static std::vector<DeviceHandle> findDevices(const DeviceHandle &hint = DeviceHandle());
+    static std::vector<DeviceHandle> enumerate(const DeviceHandle &hint = DeviceHandle());
 
     /*!
      * Create a connection from an identifying handle.

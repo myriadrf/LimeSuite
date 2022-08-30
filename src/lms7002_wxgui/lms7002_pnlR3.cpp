@@ -8,6 +8,7 @@
 #include <thread>
 #include "mcu_programs.h"
 #include "device_constants.h"
+#include "LMS7002M.h"
 
 #include <vector>
 using namespace lime;
@@ -359,7 +360,7 @@ lms7002_pnlR3_view::~lms7002_pnlR3_view()
 {
 }
 
-void lms7002_pnlR3_view::Initialize(SDRDevice *pControl)
+void lms7002_pnlR3_view::Initialize(ILMS7002MTab::ControllerType *pControl)
 {
     ILMS7002MTab::Initialize(pControl);
     if (pControl == nullptr)
@@ -372,7 +373,7 @@ void lms7002_pnlR3_view::UpdateGUI()
 {
     if (!lmsControl)
         return;
-    LMS_Synchronize(lmsControl, false);
+    lmsControl->DownloadAll();
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum, mChannel);
 
     wxCommandEvent evt;
@@ -381,10 +382,10 @@ void lms7002_pnlR3_view::UpdateGUI()
     {
         uint16_t value = 0;
         auto parameter = wndId2Enum[cmbDCControlsRx[i]];
-        LMS_WriteLMSReg(lmsControl, parameter.address, 0);
-        LMS_WriteLMSReg(lmsControl, parameter.address, 0x4000);
+        lmsControl->SPI_write(parameter.address, 0);
+        lmsControl->SPI_write(parameter.address, 0x4000);
         value = ReadParam(wndId2Enum[cmbDCControlsRx[i]]);
-        LMS_WriteLMSReg(lmsControl, parameter.address, value & ~0xC000);
+        lmsControl->SPI_write(parameter.address, value & ~0xC000);
         int absval = (value & 0x3F);
         if(value&0x40)
             absval *= -1;
@@ -394,10 +395,10 @@ void lms7002_pnlR3_view::UpdateGUI()
     {
         uint16_t value = 0;
         auto parameter = wndId2Enum[cmbDCControlsTx[i]];
-        LMS_WriteLMSReg(lmsControl, parameter.address, 0);
-        LMS_WriteLMSReg(lmsControl, parameter.address, 0x4000);
+        lmsControl->SPI_write(parameter.address, 0);
+        lmsControl->SPI_write(parameter.address, 0x4000);
         value = ReadParam(wndId2Enum[cmbDCControlsTx[i]]);
-        LMS_WriteLMSReg(lmsControl, parameter.address, value & ~0xC000);
+        lmsControl->SPI_write(parameter.address, value & ~0xC000);
         int absval = (value & 0x3FF);
         if(value&0x400)
             absval *= -1;
@@ -410,7 +411,7 @@ void lms7002_pnlR3_view::UpdateGUI()
 void lms7002_pnlR3_view::MCU_RunProcedure(uint8_t id)
 {
     uint16_t temp;
-    LMS_ReadLMSReg(lmsControl, 0x0002, &temp);
+    temp = lmsControl->SPI_read(0x0002);
 
     const uint16_t x0002reg = temp & 0xFF;
     const uint16_t interupt6 = 0x0008;
@@ -422,7 +423,7 @@ void lms7002_pnlR3_view::MCU_RunProcedure(uint8_t id)
         (uint16_t)(x0002reg | interupt6),
         (uint16_t)(x0002reg & ~interupt6)};
     for(int i=0; i<5; ++i)
-        LMS_WriteLMSReg(lmsControl, addrs[i], values[i]);
+        lmsControl->SPI_write(addrs[i], values[i]);
 }
 
 uint8_t lms7002_pnlR3_view::MCU_WaitForStatus(uint16_t timeout_ms)
@@ -435,14 +436,14 @@ uint8_t lms7002_pnlR3_view::MCU_WaitForStatus(uint16_t timeout_ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     do {
         //value = SPI_read(0x0001) & 0xFF;
-        LMS_ReadLMSReg(lmsControl, 0x0001, &value);
+        value = lmsControl->SPI_read(0x0001);
         value &= 0xFF;
         if (value != 0xFF) //working
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         t2 = std::chrono::high_resolution_clock::now();
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
-    LMS_WriteLMSReg(lmsControl, 0x0006, 0);
+    lmsControl->SPI_write(0x0006, 0);
     //SPI_write(0x0006, 0); //return SPI control to PC
     return value & 0x7F;
 }
@@ -462,44 +463,44 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
 
-    if(parameter.address == 0x0640 || parameter.address == 0x0641)
-    {
-        MCU_RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
-        if(MCU_WaitForStatus(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-            LMS_Program(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), lime::program_mode::mcuRAM, nullptr);
+    // if(parameter.address == 0x0640 || parameter.address == 0x0641)
+    // {
+    //     MCU_RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+    //     if(MCU_WaitForStatus(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+    //         LMS_Program(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), lime::program_mode::mcuRAM, nullptr);
 
-        //run mcu write
-        LMS_WriteLMSReg(lmsControl, 0x002D, parameter.address);
-        uint16_t wrVal = 0;
+    //     //run mcu write
+    //     lmsControl->SPI_write(0x002D, parameter.address);
+    //     uint16_t wrVal = 0;
 
-        //read reg
-        MCU_RunProcedure(8);
-        uint16_t rdVal = 0;
-        MCU_WaitForStatus(100);
-        LMS_ReadLMSReg(lmsControl, 0x040B, &rdVal);
+    //     //read reg
+    //     MCU_RunProcedure(8);
+    //     uint16_t rdVal = 0;
+    //     MCU_WaitForStatus(100);
+    //     rdVal = lmsControl->SPI_read(0x040B);
 
-        uint16_t mask = (~0u) << (parameter.msb-parameter.lsb+1);
-        mask = ~mask;
-        mask <<= parameter.lsb;
-        rdVal &= ~mask;
-        wrVal = rdVal | (event.GetInt() << parameter.lsb);
+    //     uint16_t mask = (~0u) << (parameter.msb-parameter.lsb+1);
+    //     mask = ~mask;
+    //     mask <<= parameter.lsb;
+    //     rdVal &= ~mask;
+    //     wrVal = rdVal | (event.GetInt() << parameter.lsb);
 
-        LMS_WriteLMSReg(lmsControl, 0x020C, wrVal);
-        MCU_RunProcedure(7);
-        MCU_WaitForStatus(100);
+    //     lmsControl->SPI_write(0x020C, wrVal);
+    //     MCU_RunProcedure(7);
+    //     MCU_WaitForStatus(100);
 
-        //check if correct
-        MCU_RunProcedure(8);
+    //     //check if correct
+    //     MCU_RunProcedure(8);
 
-        MCU_WaitForStatus(100);
-        LMS_ReadLMSReg(lmsControl, 0x040B, &rdVal);
-        if(rdVal != wrVal)
-        {
-            printf("Reg 0x%04X value mismatch, written 0x%04X, got 0x%04X\n",
-                   parameter.address, wrVal, rdVal);
-        }
-    }
-    else
+    //     MCU_WaitForStatus(100);
+    //     rdVal = lmsControl->SPI_read(0x040B);
+    //     if(rdVal != wrVal)
+    //     {
+    //         printf("Reg 0x%04X value mismatch, written 0x%04X, got 0x%04X\n",
+    //                parameter.address, wrVal, rdVal);
+    //     }
+    // }
+    // else
         WriteParam(parameter, event.GetInt());
 }
 
@@ -536,7 +537,7 @@ void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
     {
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
         uint16_t regVal = 0;
-        LMS_ReadLMSReg(lmsControl, parameter.address, &regVal);
+        regVal = lmsControl->SPI_read(parameter.address);
         regVal &= 0xF800;
         int dcVal = event.GetInt();
         if(dcVal < 0)
@@ -545,9 +546,9 @@ void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
             regVal |= 0x0400;
         }
         regVal |= (abs(dcVal+0x400) & 0x3FF);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal | 0x8000);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
+        lmsControl->SPI_write(parameter.address, regVal);
+        lmsControl->SPI_write(parameter.address, regVal | 0x8000);
+        lmsControl->SPI_write(parameter.address, regVal);
         return;
     }
     catch (std::exception & e)
@@ -566,7 +567,7 @@ void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
     {
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
         uint16_t regVal = 0;
-        LMS_ReadLMSReg(lmsControl, parameter.address, &regVal);
+        regVal = lmsControl->SPI_read(parameter.address);
         regVal &= 0xFF80;
         int dcVal = event.GetInt();
         if(dcVal < 0)
@@ -575,9 +576,9 @@ void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
             regVal |= 0x0040;
         }
         regVal |= (abs(dcVal+0x40) & 0x3F);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal & ~0x8000);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal | 0x8000);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
+        lmsControl->SPI_write(parameter.address, regVal & ~0x8000);
+        lmsControl->SPI_write(parameter.address, regVal | 0x8000);
+        lmsControl->SPI_write(parameter.address, regVal);
         return;
     }
     catch (std::exception & e)
@@ -606,11 +607,11 @@ void lms7002_pnlR3_view::UpdateGUISlow()
     vector<uint16_t> rez;
     for(auto i : addrs)
     {
-        LMS_WriteLMSReg(lmsControl, 0x002D, i);
+        lmsControl->SPI_write(0x002D, i);
         uint16_t value = 0;
         MCU_RunProcedure(8);
         MCU_WaitForStatus(100);
-        LMS_ReadLMSReg(lmsControl, 0x040B, &value);
+        value = lmsControl->SPI_read(0x040B);
         rez.push_back(value);
     }
     rssidc_cmpstatus->SetLabel(wxString::Format("%i", (rez[0]>>15) ));

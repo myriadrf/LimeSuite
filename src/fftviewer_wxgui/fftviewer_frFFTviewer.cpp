@@ -26,7 +26,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 
     lmsIndex = 0;
     cmbStreamType->Clear();
-    const int num_ch = lmsControl->GetNumChannels();
+    const int num_ch = lmsControl->GetDescriptor().rfSOC.size() * 2;
     if (num_ch>2)
     {
         cmbStreamType->Append(_T("LMS1 SISO"));
@@ -222,13 +222,14 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
     SDRDevice::StreamStats stats;
     lmsControl->StreamStatus(0, stats);
 
-    float RxFilled = 100 * (float)stats.rxFIFO_filled;
-    gaugeRxBuffer->SetValue((int)RxFilled);
-    lblRxDataRate->SetLabel(printDataRate(stats.rxDataRate_Bps));
+    // TODO:
+    // float RxFilled = 100 * (float)stats.rxFIFO_filled;
+    // gaugeRxBuffer->SetValue((int)RxFilled);
+    // lblRxDataRate->SetLabel(printDataRate(stats.rxDataRate_Bps));
 
-    float TxFilled = 100 * (float)stats.txFIFO_filled;
-    gaugeTxBuffer->SetValue((int)TxFilled);
-    lblTxDataRate->SetLabel(printDataRate(stats.txDataRate_Bps));
+    // float TxFilled = 100 * (float)stats.txFIFO_filled;
+    // gaugeTxBuffer->SetValue((int)TxFilled);
+    // lblTxDataRate->SetLabel(printDataRate(stats.txDataRate_Bps));
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
@@ -368,59 +369,72 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             samplesCaptured[ch] = 0;
         }
 
-    if (LMS_GetNumChannels(pthis->lmsControl, false)>2)
-        ch_offset += 2*pthis->lmsIndex;
-
-    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::FMT_INT16
-                                                  : SDRDevice::StreamConfig::FMT_INT12;
+    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::I16
+                                                  : SDRDevice::StreamConfig::I12;
 
     SDRDevice::StreamConfig config;
     config.rxCount = channelsCount;
     if (runTx)
         config.txCount = channelsCount;
     config.format = fmt;
+    config.linkFormat = fmt;
     for(int i=0; i<channelsCount; ++i)
     {
-        config.rxChannels[i] = i + ch_offset;
+        config.rxChannels[i] = i;
         if(runTx)
-            config.txChannels[i] = i + ch_offset;
+            config.txChannels[i] = i;
     }
 
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
 
-    pthis->lmsControl->StreamStart(config);
+    const uint8_t chipIndex = 1;
 
-    uint16_t regVal = 0;
-    if (LMS_ReadFPGAReg(pthis->lmsControl, 0x0008, &regVal) == 0)
+    try
     {
-        wxCommandEvent* e = new wxCommandEvent(wxEVT_COMMAND_CHOICE_SELECTED);
-        e->SetInt((regVal&2) ? 0 : 1);
-        wxQueueEvent(pthis->cmbFmt, e);
+
+    pthis->lmsControl->StreamSetup(config, chipIndex);
+    pthis->lmsControl->StreamStart(chipIndex);
+
+    }
+    catch (std::logic_error &e) {
+        printf("%s\n", e.what());
+    }
+    catch (std::runtime_error &e) {
+        printf("%s\n", e.what());
     }
 
+    uint16_t regVal = 0;
+    // TODO:
+    // if (LMS_ReadFPGAReg(pthis->lmsControl, 0x0008, &regVal) == 0)
+    // {
+    //     wxCommandEvent* e = new wxCommandEvent(wxEVT_COMMAND_CHOICE_SELECTED);
+    //     e->SetInt((regVal&2) ? 0 : 1);
+    //     wxQueueEvent(pthis->cmbFmt, e);
+    // }
+
     pthis->mStreamRunning.store(true);
-    SDRDevice::StreamMeta meta;
-    meta.useTimestamp = syncTx;
-    meta.flushPartialPacket = false;
+    SDRDevice::StreamMeta txMeta;
+    txMeta.useTimestamp = syncTx;
+    txMeta.flushPartialPacket = false;
     int fftCounter = 0;
+
+    SDRDevice::StreamMeta rxMeta;
 
     while (pthis->stopProcessing.load() == false)
     {
         do
         {
             uint32_t samplesPopped[cMaxChCount];
-            uint64_t ts[cMaxChCount];
 
             int i = 0;
-            samplesPopped[i] = pthis->lmsControl->StreamRx(i, (void **)buffers, fftSize, nullptr);
-            ts[i] = meta.timestamp + fifoSize / 4;
+            samplesPopped[i] = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
+            int64_t rxTS = rxMeta.timestamp + fifoSize / 4;
 
-            // for(int i=0; runTx && i<channelsCount; ++i)
             if (runTx) {
-                meta.timestamp = ts[i];
-                pthis->lmsControl->StreamTx(i, (const void **)buffers, fftSize, &meta);
+                txMeta.timestamp = rxTS + 1020*64;
+                pthis->lmsControl->StreamTx(chipIndex, (const void **)buffers, fftSize, &txMeta);
             }
 
             if(pthis->captureSamples.load())
@@ -554,7 +568,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
     pthis->mStreamRunning.store(false);
-    pthis->lmsControl->StreamStop();
+    pthis->lmsControl->StreamStop(chipIndex);
 
     for (int i = 0; i < channelsCount; ++i)
         delete [] buffers[i];
@@ -575,8 +589,8 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 
 void fftviewer_frFFTviewer::SetNyquistFrequency()
 {
-    double freqHz;
-    LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbStreamType->GetSelection()/2*2,&freqHz,nullptr);
+    double freqHz = 20e6;
+    // TODO: LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbStreamType->GetSelection()/2*2,&freqHz,nullptr);
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
     mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
 }

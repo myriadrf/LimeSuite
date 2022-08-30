@@ -5,6 +5,7 @@
 #include "lms7suiteEvents.h"
 #include "SDRDevice.h"
 #include "lms7suiteAppFrame.h"
+#include "LMS7002M.h"
 
 using namespace lime;
 
@@ -397,7 +398,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view(wxWindow *parent, wxWindowID id, const 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlTBB_view::Initialize(SDRDevice *pControl)
+void lms7002_pnlTBB_view::Initialize(LMS7002M *pControl)
 {
     ILMS7002MTab::Initialize(pControl);
     if (pControl == nullptr)
@@ -450,13 +451,12 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
 {
     double input1;
     txtFilterFrequency->GetValue().ToDouble(&input1);
-
-    int status = LMS_SetLPFBW(lmsControl, LMS_CH_TX, mChannel, input1 * 1e6);
-    if (status != 0) {
-        wxMessageBox(wxString(_("Tx calibration failed")));
-        return;
-    }
-    LMS_Synchronize(lmsControl,false);
+    // TOOD: int status = lmsControl->SetLPF(true, mChannel, true, input1 * 1e6);
+    // if (status != 0) {
+    //     wxMessageBox(wxString(_("Tx calibration failed")));
+    //     return;
+    // }
+    // LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }
 

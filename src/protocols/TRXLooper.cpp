@@ -6,6 +6,7 @@
 #include <complex>
 #include "LMSBoards.h"
 #include "threadHelper.h"
+#include "Profiler.h"
 
 #include "TRXLooper.h"
 #include "SDRDevice.h"
@@ -23,6 +24,12 @@ TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     terminateTx.store(false, std::memory_order_relaxed);
     rxDataRate_Bps.store(0, std::memory_order_relaxed);
     txDataRate_Bps.store(0, std::memory_order_relaxed);
+}
+
+void TRXLooper::AssignFIFO(PacketsFIFO<FPGA_DataPacket> *rx, PacketsFIFO<FPGA_DataPacket> *tx)
+{
+    rxFIFO = rx;
+    txFIFO = tx;
 }
 
 TRXLooper::~TRXLooper()
@@ -47,17 +54,7 @@ int TRXLooper::GetStreamSize(bool tx)
 
 uint64_t TRXLooper::GetHardwareTimestamp(void)
 {
-    if (!(rxThread.joinable() || txThread.joinable())) {
-        //stop streaming just in case the board has not been configured
-        fpga->WriteRegister(0xFFFF, 1 << chipId);
-        fpga->StopStreaming();
-        fpga->ResetTimestamp();
-        mTimestampOffset = 0;
-        return 0;
-    }
-    else {
-        return rxLastTimestamp.load(std::memory_order_relaxed) + mTimestampOffset;
-    }
+    return rxLastTimestamp.load(std::memory_order_relaxed) + mTimestampOffset;
 }
 
 void TRXLooper::SetHardwareTimestamp(const uint64_t now)
@@ -442,136 +439,20 @@ int TRXLooper::UpdateThreads(bool stopAll)
     return 0;
 }
 */
-void TRXLooper::TransmitPacketsLoop()
-{ /*
-    //at this point FPGA has to be already configured to output samples
-    const uint8_t maxChannelCount = 2;
-    const uint8_t chCount = streamSize;
-    const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
-    const int epIndex = chipId;
-    const uint8_t buffersCount = dataPort->GetBuffersCount();
-    const uint8_t packetsToBatch = dataPort->CheckStreamSize(txBatchSize);
-    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
 
-    const int maxSamplesBatch = (packed ? samples12InPkt:samples16InPkt)/chCount;
-    std::vector<int> handles(buffersCount, 0);
-    std::vector<bool> bufferUsed(buffersCount, 0);
-    std::vector<uint32_t> bytesToSend(buffersCount, 0);
-    std::vector<char> buffers;
-    buffers.resize(buffersCount*bufferSize, 0);
-    std::vector<SamplesPacket> packets;
-    for (int i = 0; i<maxChannelCount; ++i)
-        packets.emplace_back(maxSamplesBatch);
-
-    uint64_t totalBytesSent = 0;
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto t2 = t1;
-    bool end_burst = false;
-    uint8_t bi = 0; //buffer index
-    while (terminateTx.load(std::memory_order_relaxed) != true)
-    {
-        if (bufferUsed[bi])
-        {
-            if (dataPort->WaitForSending(handles[bi], 1000) == true)
-            {
-                unsigned bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
-                totalBytesSent += bytesSent;
-                bufferUsed[bi] = false;
-            }
-            else
-            {
-                txDataRate_Bps.store(totalBytesSent, std::memory_order_relaxed);
-                totalBytesSent = 0;
-                continue;
-            }
-        }
-        bytesToSend[bi] = 0;
-        FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
-        int i=0;
-        do {
-            bool has_samples = false;
-            int payloadSize = sizeof(FPGA_DataPacket::data);
-            for(int ch=0; ch<maxChannelCount; ++ch)
-            {
-                if (!mTxStreams[ch].used)
-                    continue;
-                const int ind = chCount == maxChannelCount ? ch : 0;
-                if (mTxStreams[ch].mActive==false)
-                {
-                    memset(packets[ind].samples,0,maxSamplesBatch*sizeof(complex16_t));
-                    continue;
-                }
-                mTxStreams[ch].fifo->pop_packet(packets[ind]);
-                int samplesPopped = packets[ind].last;
-                if (samplesPopped != maxSamplesBatch)
-                {
-                    if (!(packets[ind].flags & RingFIFO::END_BURST))
-                        continue;
-                    payloadSize = samplesPopped * sizeof(FPGA_DataPacket::data) / maxSamplesBatch;
-                    int q = packed ? 48 : 16;
-                    payloadSize = (1 + (payloadSize - 1) / q) * q;
-                    memset(&packets[ind].samples[samplesPopped], 0, (maxSamplesBatch - samplesPopped)*sizeof(complex16_t));
-                }
-                has_samples = true;
-            }
-
-            if (!has_samples)
-                break;
-
-            end_burst = (packets[0].flags & RingFIFO::END_BURST);
-            pkt[i].counter = packets[0].timestamp;
-            pkt[i].reserved[0] = 0;
-            //by default ignore timestamps
-            const int ignoreTimestamp = !(packets[0].flags & RingFIFO::SYNC_TIMESTAMP);
-            pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
-            pkt[i].reserved[1] = payloadSize & 0xFF;
-            pkt[i].reserved[2] = (payloadSize >> 8) & 0xFF;
-            std::vector<complex16_t*> src(chCount);
-            for(uint8_t c=0; c<chCount; ++c)
-                src[c] = (packets[c].samples);
-            uint8_t* const dataStart = (uint8_t*)pkt[i].data;
-            FPGA::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
-            bytesToSend[bi] += 16+payloadSize;
-        }while(++i<packetsToBatch && end_burst == false);
-
-        if(terminateTx.load(std::memory_order_relaxed) == true) //early termination
-            break;
-
-        if (i)
-        {
-            handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
-            txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1, std::memory_order_relaxed); //timestamp of the last sample that was sent to HW
-            bufferUsed[bi] = true;
-            bi = (bi + 1) & (buffersCount-1);
-        }
-
-        t2 = std::chrono::high_resolution_clock::now();
-        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        if (timePeriod >= 1000)
-        {
-            //total number of bytes sent per second
-            float dataRate = 1000.0*totalBytesSent / timePeriod;
-            txDataRate_Bps.store(dataRate, std::memory_order_relaxed);
-            totalBytesSent = 0;
-            t1 = t2;
-#ifndef NDEBUG
-            lime::log(LOG_LEVEL_DEBUG, "Tx: %.3f MB/s\n", dataRate / 1000000.0);
-#endif
-        }
-    }
-
-    // Wait for all the queued requests to be cancelled
-    dataPort->AbortSending(epIndex);
-    txDataRate_Bps.store(0, std::memory_order_relaxed);*/
+const lime::SDRDevice::StreamConfig& TRXLooper::GetConfig() const
+{
+    return mConfig;
 }
 
-void TRXLooper::Start(const SDRDevice::StreamConfig &cfg)
+void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
 {
     if (rxThread.joinable() || txThread.joinable())
         throw std::logic_error("Samples streaming already running");
 
     bool needTx = cfg.txCount > 0;
     bool needRx = true; // always need Rx to know current timestamps, cfg.rxCount > 0;
+    bool needMIMO = cfg.rxCount > 1 || cfg.txCount > 1; // TODO: what if using only B channel, does it need MIMO configuration?
     uint8_t channelEnables = 0;
 
     for (int i = 0; i < cfg.rxCount; ++i) {
@@ -584,24 +465,30 @@ void TRXLooper::Start(const SDRDevice::StreamConfig &cfg)
         if (cfg.txChannels[i] > 1)
             throw std::logic_error("Invalid Tx channel, only [0,1] channels supported");
         else
-            channelEnables |= (1 << cfg.txChannels[i]);
+            channelEnables |= (1 << cfg.txChannels[i]);// << 8;
     }
+    if ( (cfg.linkFormat != SDRDevice::StreamConfig::I12) && (cfg.linkFormat != SDRDevice::StreamConfig::I16))
+        throw std::logic_error("Unsupported stream link format");
+    mConfig = cfg;
 
     //configure FPGA on first start, or disable FPGA when not streaming
     if (!needTx && !needRx)
         return;
 
-    // TODO: fpga->WriteRegister(0xFFFF, 1 << chipId);
-    // if (cfg.alignPhase)
-    //     AlignRxRF(true);
-    //enable FPGA streaming
     assert(fpga);
+    fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
-    fpga->ResetTimestamp();
     rxLastTimestamp.store(0, std::memory_order_relaxed);
-    //Clear device stream buffers
-    // TODO: dataPort->ResetStreamBuffers();
 
+    // const uint16_t MIMO_EN = needMIMO << 8;
+    // const uint16_t TRIQ_PULSE = lms->Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE)) << 7; // 0-OFF, 1-ON
+    // const uint16_t DDR_EN = lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)) << 6; // 0-SDR, 1-DDR
+    // const uint16_t MODE = 0 << 5; // 0-TRXIQ, 1-JESD207 (not impelemented)
+    // const uint16_t smpl_width =
+    //     cfg.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 2 : 0;
+
+    // printf("TRIQ:%i, DDR_EN:%i, MIMO_EN:%i\n", TRIQ_PULSE, DDR_EN, MIMO_EN);
+    // const uint16_t reg8 = MIMO_EN | TRIQ_PULSE | DDR_EN | MODE | smpl_width;
     uint16_t mode = 0x0100;
     if (lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)))
         mode = 0x0040;
@@ -609,21 +496,27 @@ void TRXLooper::Start(const SDRDevice::StreamConfig &cfg)
         mode = 0x0180;
 
     const uint16_t smpl_width =
-        cfg.linkFormat == SDRDevice::StreamConfig::DataFormat::FMT_INT12 ? 2 : 0;
+        cfg.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 2 : 0;
     fpga->WriteRegister(0x0008, mode | smpl_width);
     fpga->WriteRegister(0x0007, channelEnables);
+    fpga->ResetTimestamp();
+}
 
-    // What this do?
-    uint32_t reg9 = fpga->ReadRegister(0x0009);
-    const uint32_t addr[] = {0x0009, 0x0009};
-    const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
-    fpga->StartStreaming();
-    fpga->WriteRegisters(addr, data, 2);
-    if (!cfg.alignPhase)
-        lms->ResetLogicregisters();
+void TRXLooper::Start()
+{
+    if (rxThread.joinable() || txThread.joinable())
+        throw std::logic_error("Samples streaming already running");
+
+    assert(fpga);
+    fpga->WriteRegister(0xFFFF, 1 << chipId);
+    fpga->StopStreaming();
+    fpga->WriteRegister(0xD, 0); //stop WFM
+    fpga->ResetTimestamp();
 
     //FPGA should be configured and activated, start needed threads
-    mConfig = cfg;
+    bool needTx = mConfig.txCount > 0;
+    bool needRx = true; //cfg.rxCount > 0; // always need Rx to know current timestamps;
+
     if (needRx) {
         terminateRx.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
@@ -631,13 +524,18 @@ void TRXLooper::Start(const SDRDevice::StreamConfig &cfg)
         SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &rxThread);
     }
     if (needTx) {
-        fpga->WriteRegister(0xFFFF, 1 << chipId);
-        fpga->WriteRegister(0xD, 0); //stop WFM
         terminateTx.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
         SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &txThread);
     }
+
+    // if (cfg.alignPhase)
+    //     TODO: AlignRxRF(true);
+    //enable FPGA streaming
+    fpga->StartStreaming();
+    // if (!mConfig.alignPhase)
+    //     lms->ResetLogicregisters();
 }
 
 void TRXLooper::Stop()
@@ -648,6 +546,7 @@ void TRXLooper::Stop()
         rxThread.join();
     if (txThread.joinable())
         txThread.join();
+    fpga->StopStreaming();
 }
 
 } // namespace lime

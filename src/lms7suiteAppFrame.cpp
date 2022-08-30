@@ -17,7 +17,7 @@
 #include "fftviewer_frFFTviewer.h"
 #include "ADF4002_wxgui.h"
 #include "Si5351C_wxgui.h"
-#include "LMS_Programing_wxgui.h"
+//#include "LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
 #include "FPGAcontrols_wxgui.h"
 #include "SPI_wxgui.h"
@@ -62,7 +62,7 @@ static void EnumerateDevicesToChoice(wxChoice *choise)
     choise->Clear();
     try {
         std::vector<lime::DeviceHandle> handles;
-        handles = lime::DeviceRegistry::findDevices();
+        handles = lime::DeviceRegistry::enumerate();
 
         for (size_t i = 0; i < handles.size(); i++)
             choise->Append(handles[i].serialize().c_str());
@@ -190,7 +190,7 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
         iter.second->Destroy();
     //Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     if (lmsControl)
-        LMS_Close(lmsControl);
+        DeviceRegistry::freeDevice(lmsControl);
 }
 
 void LMS7SuiteAppFrame::OnClose( wxCloseEvent& event )
@@ -230,10 +230,10 @@ void LMS7SuiteAppFrame::OnDeviceConnect(wxCommandEvent &event)
         lmsControl = lime::DeviceRegistry::makeDevice(handle);
         {
             //bind callback for spi data logging
-            const SDRDevice::DeviceInfo &info = lmsControl->GetDeviceInfo();
+            const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
             //conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
             wxString controlDev = _("Device: ");
-            controlDev.Append(info.deviceName);
+            controlDev.Append(info.name);
             double refClk = lmsControl->GetClockFreq(LMS_CLOCK_REF,
                                                      0); // use reference clock of the 0th channel
             controlDev.Append(wxString::Format(

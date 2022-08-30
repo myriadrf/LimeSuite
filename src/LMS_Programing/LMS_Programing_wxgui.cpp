@@ -97,10 +97,10 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
     wxString wildcards;
     wxString deviceSelection = cmbDevice->GetStringSelection();
-    auto info = LMS_GetDeviceInfo(lmsControl);
+    const auto info = lmsControl->GetDescriptor();
     if (info)
     {
-        if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
+        if (strstr(info->name, lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
         {
             if (deviceSelection.find("FPGA") != wxString::npos)
                 wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";

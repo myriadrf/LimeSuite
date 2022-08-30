@@ -2,8 +2,7 @@
 
 #include "lms7002_gui_utilities.h"
 
-#include "SDRDevice.h"
-#include "LimeSuite.h"
+#include "LMS7002M.h"
 
 using namespace lime;
 
@@ -13,7 +12,7 @@ ILMS7002MTab::ILMS7002MTab(wxWindow *parent, wxWindowID id, const wxPoint &pos, 
 {
 }
 
-void ILMS7002MTab::Initialize(lime::SDRDevice *pControl)
+void ILMS7002MTab::Initialize(ControllerType *pControl)
 {
     lmsControl = pControl;
 }
@@ -37,7 +36,7 @@ void ILMS7002MTab::ParameterChangeHandler(wxCommandEvent &event)
                   << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->WriteParam(parameter, event.GetInt(), mChannel);
+    WriteParam(parameter, event.GetInt());
 }
 
 void ILMS7002MTab::SpinParameterChangeHandler(wxSpinEvent &event)
@@ -56,10 +55,27 @@ void ILMS7002MTab::SetChannel(uint8_t channel)
 
 void ILMS7002MTab::WriteParam(const LMS7Parameter &param, uint16_t val)
 {
-    lmsControl->WriteParam(param, val, mChannel);
+    lmsControl->SetActiveChannel(mChannel == 0 ? LMS7002M::ChA : LMS7002M::ChB);
+    lmsControl->Modify_SPI_Reg_bits(param, val);
 }
 
 int ILMS7002MTab::ReadParam(const LMS7Parameter &param)
 {
-    return lmsControl->ReadParam(param, mChannel);
+    lmsControl->SetActiveChannel(mChannel == 0 ? LMS7002M::ChA : LMS7002M::ChB);
+    return lmsControl->Get_SPI_Reg_bits(param);
+}
+
+int ILMS7002MTab::LMS_ReadLMSReg(ControllerType* lms, uint16_t address, uint16_t* value)
+{
+    *value = lms->SPI_read(address);
+    return 0;
+}
+int ILMS7002MTab::LMS_WriteLMSReg(ControllerType* lms, uint16_t address, uint16_t value)
+{
+    return lms->SPI_write(address, value);
+}
+
+int ILMS7002MTab::LMS_ReadParam(ControllerType *lmsControl, const LMS7Parameter &param, uint16_t* value)
+{
+    *value = ReadParam(param);
 }

@@ -754,12 +754,12 @@ void Streamer::TransmitPacketsLoop()
 
             end_burst = (packets[0].flags & RingFIFO::END_BURST);
             pkt[i].counter = packets[0].timestamp;
-            pkt[i].reserved[0] = 0;
+            pkt[i].header0 = 0;
             //by default ignore timestamps
             const int ignoreTimestamp = !(packets[0].flags & RingFIFO::SYNC_TIMESTAMP);
-            pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
-            pkt[i].reserved[1] = payloadSize & 0xFF;
-            pkt[i].reserved[2] = (payloadSize >> 8) & 0xFF;
+            pkt[i].header0 |= ((int)ignoreTimestamp << 4); //ignore timestamp
+            pkt[i].payloadSizeLSB = payloadSize & 0xFF;
+            pkt[i].payloadSizeMSB = (payloadSize >> 8) & 0xFF;
             std::vector<complex16_t*> src(chCount);
             for(uint8_t c=0; c<chCount; ++c)
                 src[c] = (packets[c].samples);
@@ -832,6 +832,7 @@ void Streamer::ReceivePacketsLoop()
 
     int resetFlagsDelay = 0;
     uint64_t prevTs = 0;
+    uint64_t totalSamplesReceived = 0;
     while (terminateRx.load(std::memory_order_relaxed) == false)
     {
         int32_t bytesReceived = 0;
@@ -852,7 +853,7 @@ void Streamer::ReceivePacketsLoop()
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
         {
             const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
-            const uint8_t byte0 = pkt[pktIndex].reserved[0];
+            const uint8_t byte0 = pkt[pktIndex].header0;
             if ((byte0 & (1 << 3)) != 0)
             {
                 if(resetFlagsDelay > 0)
@@ -881,6 +882,7 @@ void Streamer::ReceivePacketsLoop()
             for(uint8_t c=0; c<chCount; ++c)
                 dest[c] = (chFrames[c].samples);
             int samplesCount = FPGA::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
+            totalSamplesReceived += samplesCount;
 
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
@@ -904,7 +906,9 @@ void Streamer::ReceivePacketsLoop()
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
 #ifndef NDEBUG
-            lime::log(LOG_LEVEL_DEBUG, "Rx: %.3f MB/s\n", dataRate / 1000000.0);
+            double FS = totalSamplesReceived/1e6;
+            lime::log(LOG_LEVEL_DEBUG, "Rx: %.3f MB/s, FS %f\n", dataRate / 1000000.0, FS);
+            totalSamplesReceived = 0;
 #endif
             totalBytesReceived = 0;
             rxDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);

@@ -1027,7 +1027,8 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
     dlg->SetTextValidator(wxFILTER_NUMERIC);
     const bool isTx = mIsSXT;
     double freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+
+    freq = lmsControl->GetReferenceClk_SX(isTx);
     dlg->SetValue(wxString::Format(_("%f"), freq/1e6));
     if (dlg->ShowModal() == wxID_OK)
     {
@@ -1036,8 +1037,8 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
         {
             double currentFreq_MHz;
             txtFrequency->GetValue().ToDouble(&currentFreq_MHz);
-            LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,refClkMHz * 1e6);
-            int status = LMS_SetClockFreq(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,currentFreq_MHz * 1e6);
+            freq = lmsControl->SetReferenceClk_SX(isTx, refClkMHz * 1e6);
+            int status = lmsControl->SetFrequencySX(isTx, currentFreq_MHz * 1e6);
             if (status != 0)
                 wxMessageBox(_("Set SX frequency failed"));
             UpdateGUI();
@@ -1053,17 +1054,16 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     const bool isTx = mIsSXT;
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
-    LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,RefClkMHz * 1e6);
+    lmsControl->SetReferenceClk_SX(isTx, RefClkMHz * 1e6);
 
     double BWMHz;
     txtRefSpurBW->GetValue().ToDouble(&BWMHz);
     int status;
 
-    LMS7002M *lmsChip = static_cast<LMS7002M *>(lmsControl->GetInternalChip(0));
     if(chkEnableRefSpurCancelation->IsChecked())
-        status = lmsChip->SetFrequencySXWithSpurCancelation(isTx, freqMHz * 1e6, BWMHz * 1e6);
+        status = lmsControl->SetFrequencySXWithSpurCancelation(isTx, freqMHz * 1e6, BWMHz * 1e6);
     else
-        status = lmsChip->SetFrequencySX(isTx, freqMHz * 1e6);
+        status = lmsControl->SetFrequencySX(isTx, freqMHz * 1e6);
 
     if (status != 0)
         wxMessageBox(_("Set SX frequency failed"));
@@ -1087,7 +1087,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
 void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);
-    int status = LMS_SetClockFreq(lmsControl, mIsSXT ? LMS_CLOCK_SXT : LMS_CLOCK_SXR, -1); //Tune
+    int status = lmsControl->TuneVCO(mIsSXT ? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
     if (status != 0)
         wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();
@@ -1100,23 +1100,23 @@ void lms7002_pnlSX_view::UpdateGUI()
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum, mChannel);
     const bool isTx = mIsSXT;
     double freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    freq = lmsControl->GetReferenceClk_SX(isTx);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    LMS_GetClockFreq(lmsControl,isTx ? LMS_CLOCK_SXT: LMS_CLOCK_SXR,&freq);
+    freq = lmsControl->GetFrequencySX(isTx);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    if(chkEnableRefSpurCancelation->IsChecked())
-    {
-        uint16_t downconvert = 0;
-        downconvert = ReadParam(LMS7param(CMIX_SC_RXTSP));
-        double* freqNCO = new double[16];
-        double PHO;
-        LMS_GetNCOFrequency(lmsControl, false, 0, freqNCO, &PHO);
-        if(downconvert)
-            freq += freqNCO[15];
-        else
-            freq -= freqNCO[15];
-        delete[] freqNCO;
-    }
+    // TODO: if(chkEnableRefSpurCancelation->IsChecked())
+    // {
+    //     uint16_t downconvert = 0;
+    //     downconvert = ReadParam(LMS7param(CMIX_SC_RXTSP));
+    //     double* freqNCO = new double[16];
+    //     double PHO;
+    //     LMS_GetNCOFrequency(lmsControl, false, 0, freqNCO, &PHO);
+    //     if(downconvert)
+    //         freq += freqNCO[15];
+    //     else
+    //         freq -= freqNCO[15];
+    //     delete[] freqNCO;
+    // }
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
     uint16_t div;
     div = ReadParam(LMS7param(DIV_LOCH));

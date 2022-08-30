@@ -666,15 +666,17 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view(wxWindow *parent, wxWindowID id, 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlCLKGEN_view::Initialize(SDRDevice *pControl)
+void lms7002_pnlCLKGEN_view::Initialize(ILMS7002MTab::ControllerType *pControl)
 {
     lmsControl = pControl;
     if (lmsControl == nullptr)
         return;
     double freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
+    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
+    freq = lmsControl->GetFrequencyCGEN();
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    freq = lmsControl->GetReferenceClk_SX(false);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq));
 }
 
@@ -729,9 +731,8 @@ void lms7002_pnlCLKGEN_view::ParameterChangeHandler(wxCommandEvent& event)
 void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
 {
     double freqMHz;
-    auto device = lmsControl;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    LMS7002M *lms = static_cast<LMS7002M *>(device->GetInternalChip(mChannel / 2));
+    LMS7002M *lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
@@ -740,13 +741,13 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
         wxMessageBox(_("CLKGEN: failed to set interface frequency"));
         return;
     }
-    // TODO: device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
 
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
+    //device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
     wxPostEvent(this, evt);
     wxCommandEvent cmd;
     cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));
@@ -760,7 +761,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     double freqMHz;
     auto device = lmsControl;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    LMS7002M *lms = static_cast<LMS7002M *>(device->GetInternalChip(mChannel / 2));
+    LMS7002M *lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
@@ -775,15 +776,15 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 
     int status;
     // TODO:
-    try {
-        if (this->chkAutoPhase->GetValue())
-            device->SetFPGAInterfaceFreq(interp, decim, 999, 999);
-        else
-            device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
-    }
-    catch (...) {
-        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
-    }
+    // try {
+    //     if (this->chkAutoPhase->GetValue())
+    //         device->SetFPGAInterfaceFreq(interp, decim, 999, 999);
+    //     else
+    //         device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
+    // }
+    // catch (...) {
+    //     wxMessageBox(_("CLKGEN: failed to set interface frequency"));
+    // }
 
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
@@ -801,7 +802,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
 {
     auto device = lmsControl;
-    LMS7002M *lms = static_cast<LMS7002M *>(device->GetInternalChip(mChannel / 2));
+    LMS7002M *lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     if (lms->TuneVCO(lime::LMS7002M::VCO_CGEN)!=0)
     {
@@ -834,10 +835,12 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     UpdateInterfaceFrequencies();
     UpdateCLKL();
     double freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
+    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
+    freq = lmsControl->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    freq = lmsControl->GetReferenceClk_SX(false);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"),freq / 1e6 ));
     uint16_t value;
     value = ReadParam(LMS7param(FRAC_SDM_CGEN_MSB));
@@ -852,9 +855,11 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 {
     double freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_RXTSP,&freq);
+    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_RXTSP,&freq);
+    freq = lmsControl->GetReferenceClk_SX(false);
     lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);
+    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);
+    freq = lmsControl->GetReferenceClk_SX(true);
     lblTxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
 }
 

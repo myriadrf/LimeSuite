@@ -10,7 +10,7 @@ class lms7002_pnlTBB_view : public ILMS7002MTab
     lms7002_pnlTBB_view(wxWindow *parent, wxWindowID id = wxID_ANY,
                         const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
                         long style = wxTAB_TRAVERSAL);
-    virtual void Initialize(lime::SDRDevice *pControl);
+    virtual void Initialize(lime::LMS7002M *pControl);
     virtual void UpdateGUI();
 
   protected:

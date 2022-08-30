@@ -6,6 +6,8 @@
 #include <thread>
 #include "dataTypes.h"
 #include "SDRDevice.h"
+#include "PacketsFIFO.h"
+#include "Profiler.h"
 
 namespace lime {
 class FPGA;
@@ -17,13 +19,18 @@ class TRXLooper
     TRXLooper(FPGA *f, LMS7002M *chip, int id);
     virtual ~TRXLooper();
 
+    virtual void AssignFIFO(PacketsFIFO<FPGA_DataPacket> *rx, PacketsFIFO<FPGA_DataPacket> *tx);
+
     int GetStreamSize(bool tx);
 
     uint64_t GetHardwareTimestamp(void);
     void SetHardwareTimestamp(const uint64_t now);
-    void Start(const lime::SDRDevice::StreamConfig &config);
+    void Setup(const lime::SDRDevice::StreamConfig &config);
+    void Start();
     void Stop();
     float GetDataRate(bool tx);
+
+    const lime::SDRDevice::StreamConfig& GetConfig() const;
 
   protected:
     virtual void ReceivePacketsLoop() = 0;
@@ -41,8 +48,6 @@ class TRXLooper
     uint64_t mTimestampOffset;
 
     lime::SDRDevice::StreamConfig mConfig;
-    uint8_t rxActiveChannelCount;
-    uint8_t txActiveChannelCount;
 
     // void AlignRxTSP();
     // void AlignRxRF(bool restoreValues);
@@ -52,6 +57,12 @@ class TRXLooper
     FPGA *fpga;
     LMS7002M *lms;
     int chipId;
+
+    PacketsFIFO<FPGA_DataPacket> *rxFIFO;
+    PacketsFIFO<FPGA_DataPacket> *txFIFO;
+
+    Profiler *rxProfiler;
+    Profiler *txProfiler;
 };
 
 } // namespace lime

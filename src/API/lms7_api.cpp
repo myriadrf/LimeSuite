@@ -27,6 +27,7 @@ using namespace lime;
     }
 
 static uint8_t selectedChannel = 0;
+static uint8_t selectedChip = 0;
 
 namespace
 {
@@ -720,12 +721,12 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size
 
 API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, uint16_t *val)
 {
-    TRY_CATCH(*val = CheckDevice(device)->ReadLMSReg(address); return LMS_SUCCESS;)
+    TRY_CATCH(*val = CheckDevice(device)->ReadLMSReg(address, selectedChip); return LMS_SUCCESS;)
 }
 
 API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address, uint16_t val)
 {
-    TRY_CATCH(CheckDevice(device)->WriteLMSReg(address, val); return 0;)
+    TRY_CATCH(CheckDevice(device)->WriteLMSReg(address, val, selectedChip); return 0;)
 }
 
 API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address, uint16_t *val)

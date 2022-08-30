@@ -5,7 +5,7 @@ class IComms
 {
   public:
     IComms(){};
-    virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, size_t count) = 0;
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, size_t count) = 0;
 
     /*!
      * Write to an available I2C slave.
@@ -27,7 +27,7 @@ class IComms
      * \param length Number of bytes to read
      * @return 0-success
      */
-    virtual int I2CRead(int addr, uint8_t *dest, size_t length) = 0;
+    virtual int I2CRead(int addres, uint8_t *dest, size_t length) = 0;
 };
 
 } // namespace lime

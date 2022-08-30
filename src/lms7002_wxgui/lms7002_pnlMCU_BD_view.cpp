@@ -489,7 +489,7 @@ void lms7002_pnlMCU_BD_view::OnchkResetClick( wxCommandEvent& event )
         // RESET
         m_iMode0 = 0;
         m_iMode1 = 0;
-        LMS_Program(lmsControl, nullptr, 0, lime::program_mode::mcuReset, nullptr);
+        // TODO: LMS_Program(lmsControl, nullptr, 0, lime::program_mode::mcuReset, nullptr);
         rgrMode->Enable(false);
         btnStartProgramming->Enable(false);
         DebugMode->SetValue(false);
@@ -541,12 +541,13 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
     {
         int retval=0;
 
-        if (mode0 == 1 && mode1 == 0)
-            retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuEEPROM, OnProgrammingCallback);
-        else if (mode0 == 0 && mode1 == 1)
-            retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuRAM, OnProgrammingCallback);
-        else
-            retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuReset, OnProgrammingCallback);
+        // TODO:
+        // if (mode0 == 1 && mode1 == 0)
+        //     retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuEEPROM, OnProgrammingCallback);
+        // else if (mode0 == 0 && mode1 == 1)
+        //     retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuRAM, OnProgrammingCallback);
+        // else
+        //     retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuReset, OnProgrammingCallback);
 
         wxThreadEvent *evt = new wxThreadEvent();
         evt->SetInt(retval);
@@ -1478,9 +1479,9 @@ void lms7002_pnlMCU_BD_view::OnReadSFRfinished(wxThreadEvent &event)
         wxMessageBox(_("Unable to read SFR"));
         return;
     }
-    dlgViewSFR dlg(this);
-    dlg.InitGridData(m_SFR);
-    dlg.ShowModal();
+    // TODO: dlgViewSFR dlg(this);
+    // dlg.InitGridData(m_SFR);
+    // dlg.ShowModal();
 }
 
 void lms7002_pnlMCU_BD_view::OnProgrammingfinished(wxThreadEvent &event)

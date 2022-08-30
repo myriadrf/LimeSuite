@@ -459,11 +459,11 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
 
     int status;
     uint16_t ch;
-    status = LMS_SetLPFBW(lmsControl, LMS_CH_RX, mChannel, input1 * 1e6);
-    if (status != 0){
-        wxMessageBox(wxString(_("Rx Filter tune failed")), _("Error"));
-        return;
-    }
-    LMS_Synchronize(lmsControl,false);
+    // TODO: status = LMS_SetLPFBW(lmsControl, LMS_CH_RX, mChannel, input1 * 1e6);
+    // if (status != 0){
+    //     wxMessageBox(wxString(_("Rx Filter tune failed")), _("Error"));
+    //     return;
+    // }
+    // LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }

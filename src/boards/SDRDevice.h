@@ -4,24 +4,28 @@
 #include "DeviceHandle.h"
 #include "IComms.h"
 #include "LMS7002M_parameters.h"
+#include "PacketsFIFO.h"
+#include "dataTypes.h"
 
 #include <vector>
 #include <unordered_map>
 #include <functional>
 #include <string.h>
+#include "commonTypes.h"
 
 namespace lime {
+
+class LMS7002M;
+class TRXLooper;
+class FPGA;
+
+/// SDRDevice can have multiple modules (RF chips), that can operate independently
 
 class LIME_API SDRDevice : public IComms
 {
   public:
     static constexpr uint8_t MAX_CHANNEL_COUNT = 16;
-
-    enum Dir
-    {
-        Rx = false,
-        Tx = true
-    };
+    static constexpr uint8_t MAX_RFSOC_COUNT = 16;
 
     enum ClockID
     {
@@ -35,28 +39,66 @@ class LIME_API SDRDevice : public IComms
         CLK_TXTSP = 5
     };
 
-    struct Range
-    {
-        Range(double a = 0, double b = 0) : min(a), max(b){};
-        double min;
-        double max;
-    };
-
     typedef std::unordered_map<std::string, uint32_t> SlaveNameIds_t;
 
-    struct Descriptor
+    struct RFSOCDescripion
     {
-        SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
+        uint8_t channelCount;
+        std::vector<std::string> rxPathNames;
+        std::vector<std::string> txPathNames;
     };
 
+    // General information about device internals, static capabilities
+    struct Descriptor
+    {
+        std::string name; /// The displayable name for the device
+        /*! The displayable name for the expansion card
+        * Ex: if the RFIC is on a daughter-card
+        */
+        std::string expansionName;
+        std::string firmwareVersion; /// The firmware version as a string
+        std::string gatewareVersion; /// Gateware version as a string
+        std::string gatewareRevision; /// Gateware revision as a string
+        std::string gatewareTargetBoard; /// Which board should use this gateware
+        std::string hardwareVersion; /// The hardware version as a string
+        std::string protocolVersion; /// The protocol version as a string
+        uint64_t serialNumber; /// A unique board serial number
+
+        SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
+        //uint8_t rfSOC_count; // how many independent RF chips are on board
+        std::vector<RFSOCDescripion> rfSOC;
+    };
+
+    struct StreamStats
+    {
+        StreamStats() {
+            memset(this, 0, sizeof(StreamStats));
+        }
+        uint64_t timestamp;
+        float FIFO_filled;
+        float dataRate_Bps;
+        float txDataRate_Bps;
+        uint32_t overrun;
+        uint32_t underrun;
+        uint32_t loss;
+        uint32_t late;
+        bool isTx;
+    };
+
+    // channels order and data transmission formats setup
     struct StreamConfig
     {
+        typedef bool (*StatusCallbackFunc)(const StreamStats*, void*);
         enum DataFormat
         {
-            FMT_INT16,
-            FMT_INT12,
-            FMT_FLOAT32,
+            I16,
+            I12,
+            F32,
         };
+
+        StreamConfig(){
+            memset(this, 0, sizeof(StreamConfig));
+        }
 
         uint8_t rxCount;
         uint8_t rxChannels[MAX_CHANNEL_COUNT];
@@ -71,23 +113,16 @@ class LIME_API SDRDevice : public IComms
         uint32_t bufferSize;
         bool alignPhase; // attempt to do phases alignment between paired channels
 
+        StatusCallbackFunc statusCallback;
+        void* userData; // will be supplied to statusCallback
         // TODO: callback for drops and errors
     };
 
     struct StreamMeta
     {
-        uint64_t timestamp;
+        int64_t timestamp;
         bool useTimestamp;
         bool flushPartialPacket;
-    };
-
-    struct StreamStats
-    {
-        uint64_t timestamp;
-        float rxFIFO_filled;
-        float txFIFO_filled;
-        float rxDataRate_Bps;
-        float txDataRate_Bps;
     };
 
 /*!
@@ -138,6 +173,8 @@ class LIME_API SDRDevice : public IComms
         }
         double rxCenterFrequency;
         double txCenterFrequency;
+        double rxNCOoffset;
+        double txNCOoffset;
         double rxSampleRate;
         double txSampleRate;
         double rxGain;
@@ -146,10 +183,16 @@ class LIME_API SDRDevice : public IComms
         uint8_t txPath;
         double rxLPF;
         double txLPF;
+        uint8_t rxOversample;
+        uint8_t txOversample;
         bool rxEnabled;
         bool txEnabled;
         bool rxCalibrate;
         bool txCalibrate;
+        bool rxTestSignal;
+        bool txTestSignal;
+
+        // TODO:
         // GFIR
         // TestSignal
         // NCOs
@@ -157,17 +200,18 @@ class LIME_API SDRDevice : public IComms
 
     struct SDRConfig
     {
-        SDRConfig() : referenceClockFreq(0){};
+        SDRConfig() : referenceClockFreq(0), skipDefaults(false) {};
         double referenceClockFreq;
         ChannelConfig channel[MAX_CHANNEL_COUNT];
         // Loopback setup?
+        bool skipDefaults; // skip default values initialization and write on top of current config
     };
 
 public:
     SDRDevice();
     virtual ~SDRDevice();
 
-    virtual void Configure(const SDRConfig config) = 0;
+    virtual void Configure(const SDRConfig config, uint8_t moduleIndex) = 0;
 
     /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
     virtual const Descriptor &GetDescriptor() const = 0;
@@ -176,47 +220,24 @@ public:
     const DeviceHandle &GetHandle(void) const;
 
     virtual int Init() = 0;
-    virtual uint8_t GetNumChannels() const = 0;
-    virtual void Reset() = 0;
-    virtual int EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool enabled) = 0;
-    // virtual int SetRate(double f_MHz, int oversample);
-    // virtual int SetRate(bool tx, double f_MHz, unsigned oversample = 0);
-    // virtual int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0);
+    virtual void Reset();
 
-    virtual double GetRate(SDRDevice::Dir dir, uint8_t channel) const = 0;
-    virtual SDRDevice::Range GetRateRange(SDRDevice::Dir dir, uint8_t channel) const = 0;
+    //virtual double GetRate(Dir dir, uint8_t channel) const = 0;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
-    virtual SDRDevice::Range GetFrequencyRange(SDRDevice::Dir dir) const = 0;
-    virtual std::vector<std::string> GetPathNames(SDRDevice::Dir dir, uint8_t channel) const = 0;
-    virtual uint8_t GetPath(SDRDevice::Dir dir, uint8_t channel) const = 0;
+    virtual void Synchronize(bool toChip);
+    virtual void EnableCache(bool enable);
 
-    virtual void Synchronize(bool toChip) = 0;
-    virtual void EnableCache(bool enable) = 0;
-
-    virtual uint16_t ReadParam(const LMS7Parameter &param, uint8_t channel = 0,
-                               bool forceReadFromChip = false) const = 0;
-    virtual int WriteParam(const LMS7Parameter &param, uint16_t val, uint8_t channel = 0) = 0;
-
-    virtual int ReadLMSReg(uint16_t address, int ind = 0);
-    virtual void WriteLMSReg(uint16_t address, uint16_t val, int ind = 0);
-    virtual int ReadFPGAReg(uint16_t address);
-    virtual void WriteFPGAReg(uint16_t address, uint16_t val);
-
-    virtual double GetTemperature(uint8_t id) = 0;
-
-    /// Get information about a device for displaying helpful information or for making device-specific decisions.
-    virtual SDRDevice::DeviceInfo GetDeviceInfo(void);
-
-    virtual int StreamStart(const StreamConfig &config);
-    virtual void StreamStop();
+    virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) = 0;
+    virtual void StreamStart(uint8_t moduleIndex);
+    virtual void StreamStop(uint8_t moduleIndex);
 
     virtual int StreamRx(uint8_t channel, void **samples, uint32_t count, StreamMeta *meta);
     virtual int StreamTx(uint8_t channel, const void **samples, uint32_t count,
                          const StreamMeta *meta);
-    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status);
+    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) = 0;
 
     /*!
      * @brief Bulk SPI write/read transaction.
@@ -227,13 +248,13 @@ public:
      * MISO (Master input Slave output) may be NULL to indicate a write-only operation,
      * the underlying implementation may be able to optimize out the readback.
      *
-     * @param chipSelect SPI target chip address
+     * @param spiBusAddress SPI target chip address
      * @param MOSI Master output Slave input, data to write
      * @param [out] MISO Master input Slave output, buffer to fill with read data
      * @param count Number of SPI transactions
      * @return 0-success
      */
-    virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO,
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO,
                      size_t count) override;
 
     /*!
@@ -321,7 +342,26 @@ public:
                                       double rxPhase) = 0;
 
   protected:
+    struct PartialPacket
+    {
+        PartialPacket() : timestamp(0), start(0), end(0){};
+        lime::complex16_t chA[4096];
+        lime::complex16_t chB[4096];
+        uint64_t timestamp;
+        uint16_t start;
+        uint16_t end;
+    };
+    PartialPacket rxCrumbs[3]; // TODO: make members
+    PartialPacket txCrumbs[3]; // TODO: make members
+
     std::function<void(bool, const unsigned char *, const unsigned int)> callback_logData;
+    std::vector<LMS7002M*> mLMSChips;
+    std::vector<TRXLooper*> mStreamers;
+
+    std::vector< PacketsFIFO<FPGA_DataPacket> *> rxFIFOs;
+    std::vector< PacketsFIFO<FPGA_DataPacket> *> txFIFOs;
+    StreamConfig mStreamConfig;
+    FPGA *mFPGA;
 
   private:
     friend class DeviceRegistry;

@@ -16,12 +16,21 @@ using namespace lime;
 static std::mutex gRegistryMutex;
 static std::map<std::string, DeviceRegistryEntry *> registryEntries;
 
+void __loadLimeSDR_5GRadio();
+void __loadLimeSDR();
+
+void __loadDevicesSupport()
+{
+    __loadLimeSDR();
+    __loadLimeSDR_5GRadio();
+}
 
 /*******************************************************************
  * Registry implementation
  ******************************************************************/
-std::vector<DeviceHandle> DeviceRegistry::findDevices(const DeviceHandle &hint)
+std::vector<DeviceHandle> DeviceRegistry::enumerate(const DeviceHandle &hint)
 {
+    __loadDevicesSupport();
     std::lock_guard<std::mutex> lock(gRegistryMutex);
 
     std::vector<DeviceHandle> results;
@@ -42,6 +51,7 @@ std::vector<DeviceHandle> DeviceRegistry::findDevices(const DeviceHandle &hint)
 
 SDRDevice *DeviceRegistry::makeDevice(const DeviceHandle &handle)
 {
+    __loadDevicesSupport();
     std::lock_guard<std::mutex> lock(gRegistryMutex);
 
     //use the identifier as a hint to perform a discovery
@@ -79,6 +89,7 @@ void DeviceRegistry::freeDevice(SDRDevice *device)
 
 std::vector<std::string> DeviceRegistry::moduleNames(void)
 {
+    __loadDevicesSupport();
     std::vector<std::string> names;
     std::lock_guard<std::mutex> lock(gRegistryMutex);
     for (const auto &entry : registryEntries)

@@ -17,6 +17,7 @@
 #include "lms7002_pnlXBUF_view.h"
 #include "lms7002_pnlGains_view.h"
 #include "lms7002_pnlCalibrations_view.h"
+#include "SDRConfiguration_view.h"
 #include <wx/time.h>
 #include <wx/msgdlg.h>
 #include <iostream>
@@ -24,9 +25,9 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
 #include "lms7002_pnlR3.h"
-#include "lime/LimeSuite.h"
 
 #include "SDRDevice.h"
+#include "LMS7002M.h"
 using namespace std;
 using namespace lime;
 
@@ -69,7 +70,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
     fgSizer249->SetFlexibleDirection( wxHORIZONTAL );
     fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    cmbLmsDevice = new wxComboBox( this, ID_G_LNA_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+    cmbLmsDevice = new wxChoice( this, wxNewId());
     cmbLmsDevice->Append( wxT("LMS 1") );
     cmbLmsDevice->Append( wxT("LMS 2") );
     cmbLmsDevice->SetSelection( 0 );
@@ -124,9 +125,12 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
 
     tabsNotebook = new wxNotebook(this, ID_TABS_NOTEBOOK);
 
+    coarseConfigTab = new SDRConfiguration_view(tabsNotebook, wxNewId());
+    tabsNotebook->AddPage(coarseConfigTab, wxT("Coarse Setup"), true);
+
     ILMS7002MTab *tab;
     tab = new lms7002_pnlCalibrations_view(tabsNotebook, ID_TAB_CALIBRATIONS);
-    tabsNotebook->AddPage(tab, _("Calibration"), true);
+    tabsNotebook->AddPage(tab, _("Calibration"), false);
     mTabs[ID_TAB_CALIBRATIONS] = tab;
 #define CreatePage(klass, title)                                                                   \
     {                                                                                              \
@@ -185,11 +189,11 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
                      wxCommandEventHandler(lms7002_mainPanel::OnOpenProject), NULL, this);
     btnSave->Connect(wxEVT_COMMAND_BUTTON_CLICKED,
                      wxCommandEventHandler(lms7002_mainPanel::OnSaveProject), NULL, this);
-    cmbLmsDevice->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnLmsDeviceSelect ), NULL, this );
+    cmbLmsDevice->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnChannelOrSOCChange), NULL, this );
     rbChannelA->Connect(wxEVT_COMMAND_RADIOBUTTON_SELECTED,
-                        wxCommandEventHandler(lms7002_mainPanel::OnSwitchToChannel), NULL, this);
+                        wxCommandEventHandler(lms7002_mainPanel::OnChannelOrSOCChange), NULL, this);
     rbChannelB->Connect(wxEVT_COMMAND_RADIOBUTTON_SELECTED,
-                        wxCommandEventHandler(lms7002_mainPanel::OnSwitchToChannel), NULL, this);
+                        wxCommandEventHandler(lms7002_mainPanel::OnChannelOrSOCChange), NULL, this);
     chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnEnableMIMOchecked ), NULL, this );
     btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnDownloadAll ), NULL, this );
     btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnUploadAll ), NULL, this );
@@ -197,6 +201,8 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
     btnLoadDefault->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnLoadDefault ), NULL, this );
     btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnReadTemperature ), NULL, this );
     tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( lms7002_mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
+
+    Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(lms7002_mainPanel::OnCGENFrequencyChange), NULL, this);
 }
 
 void lms7002_mainPanel::UpdateVisiblePanel()
@@ -208,13 +214,15 @@ void lms7002_mainPanel::UpdateVisiblePanel()
     const wxWindowID pageId = currentPage->GetId();
     uint16_t spisw_ctrl = 0;
 
+    LMS7002M* chip = GetSelectedChip();
+
     if (pageId == ID_TAB_SXR) //change active channel to A
-        LMS_WriteParam(sdrDevice, LMS7param(MAC), 1);
+        chip->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     else if (pageId == ID_TAB_SXT) //change active channel to B
-        LMS_WriteParam(sdrDevice, LMS7param(MAC), 2);
+        chip->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     else
-        LMS_WriteParam(sdrDevice, LMS7param(MAC), rbChannelA->GetValue() == 1 ? 1 : 2);
-    LMS_ReadLMSReg(sdrDevice, 0x0006, &spisw_ctrl);
+        chip->Modify_SPI_Reg_bits(LMS7param(MAC), rbChannelA->GetValue() == 1 ? 1 : 2);
+    spisw_ctrl = chip->SPI_read(0x0006);
 
     if(spisw_ctrl & 1) // transceiver controlled by MCU
     {
@@ -239,28 +247,47 @@ void lms7002_mainPanel::UpdateVisiblePanel()
 void lms7002_mainPanel::Initialize(SDRDevice *pControl)
 {
     sdrDevice = pControl;
-    for (auto &tab : mTabs)
-        tab.second->Initialize(sdrDevice);
-
     if (sdrDevice == nullptr)
+    {
+        coarseConfigTab->Initialize(sdrDevice);
+        for (auto &tab : mTabs)
+            tab.second->Initialize(nullptr);
         return;
+    }
     cmbLmsDevice->SetSelection(0);
 
-    if (LMS_GetNumChannels(sdrDevice, false) > 2)
+    coarseConfigTab->Initialize(sdrDevice);
+    const int socCount = sdrDevice->GetDescriptor().rfSOC.size();
+    if (socCount > 1)
+    {
+
+        cmbLmsDevice->Clear();
+        for(int i=0; i<socCount; ++i)
+            cmbLmsDevice->Append( wxString::Format("LMS %i", i+1));
+        cmbLmsDevice->SetSelection( 0 );
         cmbLmsDevice->Show();
+    }
     else
         cmbLmsDevice->Hide();
     rbChannelA->SetValue(true);
     rbChannelB->SetValue(false);
+    LMS7002M* chip = GetSelectedChip();
+    for (auto &tab : mTabs)
+        tab.second->Initialize(chip);
     UpdateGUI();
     Layout();
 }
 
 void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
-    int status = LMS_Reset(sdrDevice);
-    if (status != 0)
-        wxMessageBox(_("Chip reset failed"), _("Warning"));
+    try {
+        sdrDevice->Reset();
+    }
+    catch (std::runtime_error &e)
+    {
+        wxMessageBox(wxString::Format("Reset failed: %s", e.what()), _("Warning"));
+        return;
+    }
     wxNotebookEvent evt;
     chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
@@ -298,13 +325,25 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     wxFileDialog dlg(this, _("Open config file"), "", "", "Project-File (*.ini)|*.ini", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    int status = -1; // TODO: LMS_LoadConfig(sdrDevice, dlg.GetPath().To8BitData());
-    if (status != 0)
+
+    const int socIndex = cmbLmsDevice->GetSelection();
+    LMS7002M* chip = GetSelectedChip();
+    if(chip == nullptr)
     {
-        wxMessageBox(_("Failed to load file"), _("Warning"));
+        wxMessageBox(_("Failed to load file: invalid chip index"), _("Warning"));
+        return;
+    }
+    try {
+         if (chip->LoadConfig(dlg.GetPath().To8BitData()) != 0)
+            throw;
+    }
+    catch (std::runtime_error &e)
+    {
+        wxMessageBox(wxString::Format("Failed to load file: %s", e.what()), _("Warning"));
+        return;
     }
     wxCommandEvent tevt;
-    LMS_WriteParam(sdrDevice, LMS7param(MAC), rbChannelA->GetValue() == 1 ? 1 : 2);
+    // LMS_WriteParam(sdrDevice, LMS7param(MAC), rbChannelA->GetValue() == 1 ? 1 : 2);
     UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
@@ -316,22 +355,33 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
     wxFileDialog dlg(this, _("Save config file"), "", "", "Project-File (*.ini)|*.ini", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    int status = -1; // TODO: LMS_SaveConfig(sdrDevice,dlg.GetPath().To8BitData());
-    if (status != 0)
+
+    const int socIndex = cmbLmsDevice->GetSelection();
+    LMS7002M* chip = GetSelectedChip();
+    if(chip == nullptr)
+    {
+        wxMessageBox(_("Failed to save file: invalid chip index"), _("Warning"));
+        return;
+    }
+
+    if (chip->SaveConfig(dlg.GetPath().To8BitData()) != 0)
         wxMessageBox(_("Failed to save file"), _("Warning"));
 }
 
-void lms7002_mainPanel::OnSwitchToChannel(wxCommandEvent &event)
+void lms7002_mainPanel::OnChannelOrSOCChange(wxCommandEvent &event)
 {
+    const int socIndex = cmbLmsDevice->GetSelection();
     int channel = -1;
     if (rbChannelA->GetValue())
         channel = 0;
     else if (rbChannelB->GetValue())
         channel = 1;
 
+    LMS7002M* chip = GetSelectedChip();
     for (auto iter : mTabs) {
         if (iter.first == ID_TAB_SXR || iter.first == ID_TAB_SXT)
             continue; // do not change assigned channel for SXR/SXT tabs
+        iter.second->Initialize(chip);
         iter.second->SetChannel(channel);
     }
     UpdateVisiblePanel();
@@ -374,17 +424,28 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
 
 void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
-    int status = LMS_Synchronize(sdrDevice, false);
-    if (status != 0)
-        wxMessageBox(_("Download all registers failed"), _("Warning"));
+    try {
+        sdrDevice->Synchronize(false);
+    }
+    catch (std::runtime_error &e)
+    {
+        wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
+        return;
+    }
     UpdateVisiblePanel();
 }
 
 void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
-    int status = LMS_Synchronize(sdrDevice, true);
-    if (status != 0)
-        wxMessageBox(_("Upload all registers failed"), _("Warning"));
+    try {
+        sdrDevice->Synchronize(false);
+    }
+    catch (std::runtime_error &e)
+    {
+        wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
+        return;
+    }
+
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
@@ -394,7 +455,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
     double t = 0.0;
-    int status = LMS_GetChipTemperature(sdrDevice, 0, &t);
+    int status = -1; // TODO: LMS_GetChipTemperature(sdrDevice, 0, &t);
     if (status != 0)
         wxMessageBox(_("Failed to read chip temperature"), _("Warning"));
     txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));
@@ -402,30 +463,32 @@ void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
 {
-    uint16_t chBck;
-    LMS_ReadParam(sdrDevice, LMS7param(MAC), &chBck);
-    bool enable = chkEnableMIMO->IsChecked();
-    for (int ch = enable ? 0 : 1; ch < LMS_GetNumChannels(sdrDevice, false); ch++) {
-        LMS_EnableChannel(sdrDevice, LMS_CH_RX, ch, enable);
-        LMS_EnableChannel(sdrDevice, LMS_CH_TX, ch, enable);
+    // TODO:
+    // uint16_t chBck;
+    // LMS_ReadParam(sdrDevice, LMS7param(MAC), &chBck);
+    // bool enable = chkEnableMIMO->IsChecked();
+    // for (int ch = enable ? 0 : 1; ch < LMS_GetNumChannels(sdrDevice, false); ch++) {
+    //     LMS_EnableChannel(sdrDevice, LMS_CH_RX, ch, enable);
+    //     LMS_EnableChannel(sdrDevice, LMS_CH_TX, ch, enable);
+    // }
+    // LMS_WriteParam(sdrDevice, LMS7param(MAC), chBck);
+    // UpdateVisiblePanel();
+}
+
+LMS7002M* lms7002_mainPanel::GetSelectedChip() const
+{
+    LMS7002M* chip = static_cast<LMS7002M*>(sdrDevice->GetInternalChip(cmbLmsDevice->GetSelection()));
+    return chip;
+}
+
+void lms7002_mainPanel::OnCGENFrequencyChange(wxCommandEvent &event)
+{
+    //if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
+    {
+        LMS7002M* lms = GetSelectedChip();
+        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        float phaseOffset = -999;
+        sdrDevice->SetFPGAInterfaceFreq(decim, interp, phaseOffset, phaseOffset); // TODO: switch for automatic phase offset
     }
-    LMS_WriteParam(sdrDevice, LMS7param(MAC), chBck);
-    UpdateVisiblePanel();
-}
-
-int lms7002_mainPanel::GetLmsSelection()
-{
-    return cmbLmsDevice->GetSelection();
-}
-
-void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
-{
-    int deviceSelection = cmbLmsDevice->GetSelection();
-    // TODO: ((LMS7_Device*)sdrDevice)->SetActiveChip(deviceSelection);
-
-    UpdateVisiblePanel();
-    wxCommandEvent evt;
-    evt.SetEventType(LMS_CHANGED);
-    evt.SetInt(deviceSelection);
-    wxPostEvent(this->GetParent(), evt);
 }

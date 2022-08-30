@@ -12,6 +12,7 @@ class SDRDevice;
 }
 class lms7002_pnlMCU_BD_view;
 class lms7002_pnlR3_view;
+class SDRConfiguration_view;
 
 class lms7002_mainPanel : public wxPanel
 {
@@ -24,14 +25,17 @@ class lms7002_mainPanel : public wxPanel
         void OnDownloadAll( wxCommandEvent& event );
         void OnReset( wxCommandEvent& event );
         void OnRegistersTest( wxCommandEvent& event );
-        void OnSwitchToChannel(wxCommandEvent &event);
         void Onnotebook_modulesPageChanged( wxNotebookEvent& event );
         void OnResetChip(wxCommandEvent& event);
         void OnLoadDefault(wxCommandEvent& event);
         void OnReadTemperature(wxCommandEvent& event);
         void OnEnableMIMOchecked(wxCommandEvent& event);
-        int GetLmsSelection();
-        void OnLmsDeviceSelect( wxCommandEvent& event );
+
+        void OnChannelOrSOCChange(wxCommandEvent &event);
+
+        lime::LMS7002M* GetSelectedChip() const;
+        void OnCGENFrequencyChange(wxCommandEvent& event);
+
 	public:
 		
 		lms7002_mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
@@ -76,7 +80,7 @@ class lms7002_mainPanel : public wxPanel
 
         wxButton *btnOpen;
         wxButton *btnSave;
-        wxComboBox* cmbLmsDevice;
+        wxChoice* cmbLmsDevice;
         wxRadioButton* rbChannelA;
         wxRadioButton* rbChannelB;
         wxCheckBox* chkEnableMIMO;
@@ -87,6 +91,7 @@ class lms7002_mainPanel : public wxPanel
         wxStaticText* txtTemperature;
         wxButton* btnReadTemperature;
         wxNotebook* tabsNotebook;
+        SDRConfiguration_view *coarseConfigTab;
 };
 
 #endif // __lms7002_mainPanel__

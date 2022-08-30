@@ -18,7 +18,10 @@ using namespace lime;
 
 static libusb_context* ctx; //a libusb session
 
-static LimeSDREntry limesdrSupport; // self register on initialization
+void __loadLimeSDR(void) //TODO fixme replace with LoadLibrary/dlopen
+{
+    static LimeSDREntry limesdrSupport; // self register on initialization
+}
 
 LimeSDREntry::LimeSDREntry() : DeviceRegistryEntry("LimeSDR")
 {

@@ -15,6 +15,8 @@
 #include <functional>
 #include <vector>
 
+#include "commonTypes.h"
+
 namespace lime{
 class IComms;
 class LMS7002M_RegistersMap;
@@ -42,11 +44,6 @@ class LIME_API LMS7002M
 {
 public:
   static constexpr double CGEN_MAX_FREQ = 640e6;
-  enum
-  {
-      Rx,
-      Tx
-  };
 
   enum class ClockID
   {
@@ -138,11 +135,11 @@ public:
      * Enable/disable the selected channel.
      * This powers on or off all of the respective hardware
      * for a given channel A or B: TSP, BB, and RF sections.
-     * @param isTx true for the transmit size, false for receive
+     * @param dir Rx or Tx
      * @param channel true for the transmit size, false for receive
      * @param enable true to enable, false to disable
      */
-    int EnableChannel(const bool isTx, const uint8_t channel, const bool enable);
+    int EnableChannel(Dir dir, const uint8_t channel, const bool enable);
 
     ///@name Registers writing and reading
     int UploadAll();
@@ -325,6 +322,15 @@ public:
 	int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *coef, uint8_t coefCount);
 	int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount);
     float_type GetReferenceClk_TSP(bool tx);
+
+    int SetNCOFrequencies(bool tx, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
+
+    // @param phaseOffset optional will be filled with phase offset value
+    std::vector<float_type> GetNCOFrequencies(bool tx, float_type* phaseOffset = nullptr);
+    int SetNCOPhases(bool tx, float_type *angles_deg, uint8_t count, float_type frequencyOffset);
+
+    // @param frequencyOffset optional will be filled with NCO frequency offset value
+    std::vector<float_type> GetNCOPhases(bool tx, float_type* frequencyOffset = nullptr);
     ///@}
 
     int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
@@ -446,6 +452,8 @@ public:
     void SetLogCallback(std::function<void(const char*, int)> callback);
     LMS7002M_RegistersMap *BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap *backup);
+
+    double GetSampleRate(bool tx, double *rf_rate_Hz = nullptr);
 
 protected:
     const uint32_t mSlaveID;

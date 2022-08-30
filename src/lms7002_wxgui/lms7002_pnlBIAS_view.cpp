@@ -125,7 +125,6 @@ lms7002_pnlBIAS_view::lms7002_pnlBIAS_view(wxWindow *parent, wxWindowID id, cons
 
 void lms7002_pnlBIAS_view::OnCalibrateRP_BIAS( wxCommandEvent& event )
 {
-    LMS7002M *lms = static_cast<LMS7002M *>(lmsControl->GetInternalChip(mChannel / 2));
-    lms->CalibrateRP_BIAS();
+    lmsControl->CalibrateRP_BIAS();
     UpdateGUI();
 }

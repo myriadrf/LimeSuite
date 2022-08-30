@@ -27,7 +27,7 @@ public:
   lms7002_pnlRXTSP_view(wxWindow *parent, wxWindowID id = wxID_ANY,
                         const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
                         long style = wxTAB_TRAVERSAL);
-  virtual void Initialize(lime::SDRDevice *pControl) override;
+  virtual void Initialize(ILMS7002MTab::ControllerType *pControl) override;
   virtual void UpdateGUI() override;
   void UpdateNCOinputs();
 

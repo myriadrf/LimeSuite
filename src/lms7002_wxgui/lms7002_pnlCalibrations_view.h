@@ -2,7 +2,6 @@
 #define __lms7002_pnlCalibrations_view__
 
 #include <map>
-#include "lime/LimeSuite.h"
 
 #include "ILMS7002MTab.h"
 
@@ -18,7 +17,7 @@ protected:
 
 public:
     lms7002_pnlCalibrations_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    virtual void Initialize(lime::SDRDevice *pControl) override;
+    virtual void Initialize(lime::LMS7002M *pControl) override;
     virtual void UpdateGUI() override;
 
   protected:

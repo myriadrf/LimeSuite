@@ -16,7 +16,7 @@ class wxChoice;
 #include <thread>
 #include <atomic>
 #include <vector>
-#include "lime/LimeSuite.h"
+#include "SDRDevice.h"
 
 class LMS_Programing_wxgui : public wxFrame
 {
@@ -41,7 +41,7 @@ protected:
     static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
     static bool test(int bsent, int btotal, const char* progressMsg);
     std::vector<char> mProgramData;
-    lms_device_t* lmsControl;
+    lime::SDRDevice* lmsControl;
     std::atomic<bool> mProgrammingInProgress;
     std::atomic<bool> mAbortProgramming;
     std::thread mWorkerThread;
