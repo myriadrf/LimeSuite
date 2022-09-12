@@ -9,7 +9,7 @@
 
 namespace lime {
 
-SDRDevice::SDRDevice()
+SDRDevice::SDRDevice() : mCallback_logData(nullptr)
 {
 }
 
@@ -75,9 +75,10 @@ int SDRDevice::CustomParameterRead(const uint8_t *ids, double *values, const siz
 {
     throw(OperationNotSupported("CustomParameterRead not implemented"));
 }
-void SDRDevice::SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback)
+
+void SDRDevice::SetDataLogCallback(DataCallbackType callback)
 {
-    throw(OperationNotSupported("SetDataLogCallback not implemented"));
+    mCallback_logData = callback;
 }
 
 // int SDRDevice::ReadLMSReg(uint16_t address, int ind)

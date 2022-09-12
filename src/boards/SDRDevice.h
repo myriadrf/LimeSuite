@@ -27,6 +27,8 @@ class LIME_API SDRDevice : public IComms
     static constexpr uint8_t MAX_CHANNEL_COUNT = 16;
     static constexpr uint8_t MAX_RFSOC_COUNT = 16;
 
+    typedef void(*DataCallbackType)(bool, const uint8_t*, const uint32_t);
+
     enum ClockID
     {
         CLK_REFERENCE = 0,
@@ -333,9 +335,8 @@ public:
     */
     virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
 
-    /** @brief Sets callback function which gets called each time data is sent or received
-    */
-    void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
+    /// @brief Sets callback function which gets called each time data is sent or received
+    void SetDataLogCallback(DataCallbackType callback);
 
     virtual void *GetInternalChip(uint32_t index);
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
@@ -354,7 +355,7 @@ public:
     PartialPacket rxCrumbs[3]; // TODO: make members
     PartialPacket txCrumbs[3]; // TODO: make members
 
-    std::function<void(bool, const unsigned char *, const unsigned int)> callback_logData;
+    DataCallbackType mCallback_logData;
     std::vector<LMS7002M*> mLMSChips;
     std::vector<TRXLooper*> mStreamers;
 

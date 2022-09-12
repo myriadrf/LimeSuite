@@ -484,6 +484,10 @@ const SDRDevice::Descriptor &LimeSDR_5GRadio::GetDescriptor() const
         {"LMS7002M_3", spi_LMS7002M_3},
         {"FPGA", spi_FPGA}
     };
+
+    if (d.rfSOC.size() != 0) // fill only once
+        return d;
+
     RFSOCDescripion soc;
     // LMS#1
     soc.channelCount = 2;
@@ -779,10 +783,15 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
         // flush packet
         //printPacket(pkt, wrPrint, "Wr:");
         int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
+        if (mCallback_logData)
+            mCallback_logData(true, (uint8_t*)&pkt, sizeof(pkt));
         if (sent != sizeof(pkt))
             throw std::runtime_error("SPI failed");
         auto t1 = std::chrono::high_resolution_clock::now();
         int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 1000);
+
+        if (mCallback_logData)
+            mCallback_logData(false, (uint8_t*)&pkt, recv);
 
         if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == STATUS_COMPLETED_CMD) {
             for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i) {

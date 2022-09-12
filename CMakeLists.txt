@@ -11,18 +11,6 @@ option(ENABLE_NEW_GAIN_BEHAVIOUR "Enable new gain functionality" OFF)
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
-if(POLICY CMP0015)
-    cmake_policy(SET CMP0015 NEW)
-endif()
-
-if(POLICY CMP0077)
-    cmake_policy(SET CMP0077 OLD)
-endif()
-
-if(${CMAKE_MAJOR_VERSION} GREATER 2)
-    cmake_policy(SET CMP0043 NEW)
-endif()
-
 list(FIND CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}" index)
 if (${index} EQUAL -1)
    set(CMAKE_BUILD_TYPE "Release")

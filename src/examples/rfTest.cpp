@@ -1,7 +1,7 @@
-#include "SDRDevice.h"
-#include "dataTypes.h"
-#include "LMS7002M.h"
-#include "DeviceRegistry.h"
+#include "lime/LimeSuite2/SDRDevice.h"
+#include "lime/LimeSuite2/dataTypes.h"
+#include "lime/LimeSuite2/LMS7002M.h"
+#include "lime/LimeSuite2/DeviceRegistry.h"
 #include <iostream>
 #include <chrono>
 #include <math.h>

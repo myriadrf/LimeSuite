@@ -11,9 +11,7 @@
 #include "wx/spinctrl.h"
 #include "numericSlider.h"
 
-namespace lime {
-class LMS7002M;
-}
+#include "LMS7002M.h"
 
 class ILMS7002MTab : public wxPanel
 {

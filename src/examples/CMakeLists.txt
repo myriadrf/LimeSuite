@@ -1,5 +1,3 @@
-return()
-
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_EXAMPLES "Enable library example programs" ON "ENABLE_LIBRARY" OFF)
@@ -24,13 +22,15 @@ endif()
 # set_target_properties(singleRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 # target_link_libraries(singleRX LimeSuite)
 
-add_executable(singleRX_cpp singleRX_cpp.cpp)
-set_target_properties(singleRX_cpp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-target_link_libraries(singleRX_cpp LimeSuite)
+# add_executable(singleRX_cpp singleRX_cpp.cpp)
+# set_target_properties(singleRX_cpp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+# target_link_libraries(singleRX_cpp LimeSuite)
 
 add_executable(rfTest rfTest.cpp)
 set_target_properties(rfTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-target_link_libraries(rfTest LimeSuite)
+target_include_directories(rfTest PUBLIC ${LIME_SUITE_INCLUDES})
+
+target_link_libraries(rfTest ${MAIN_LIBRARY_NAME})
 
 # add_executable(dualRXTX dualRXTX.cpp)
 # set_target_properties(dualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

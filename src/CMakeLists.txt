@@ -117,6 +117,7 @@ set(LIME_SUITE_INCLUDES
     limeRFE
     threadHelper
 )
+#list(TRANSFORM ${LIME_SUITE_INCLUDES} PREPEND ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
@@ -300,8 +301,9 @@ if (ENABLE_GUI)
     set_target_properties(LimeSuiteGUI PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
     target_compile_definitions(LimeSuiteGUI PRIVATE WIN32_LEAN_AND_MEAN)
+    target_include_directories(LimeSuiteGUI PRIVATE ${LIME_SUITE_INCLUDES})
 
-    target_link_libraries(LimeSuiteGUI LimeSuite oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(LimeSuiteGUI ${MAIN_LIBRARY_NAME} oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
         set_property(TARGET LimeSuiteGUI APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)

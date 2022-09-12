@@ -228,10 +228,12 @@ void LMS7SuiteAppFrame::OnDeviceConnect(wxCommandEvent &event)
             lime::DeviceRegistry::freeDevice(lmsControl);
 
         lmsControl = lime::DeviceRegistry::makeDevice(handle);
+
+        if (lmsControl)
         {
             //bind callback for spi data logging
             const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
-            //conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
+            lmsControl->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
             wxString controlDev = _("Device: ");
             controlDev.Append(info.name);
             double refClk = lmsControl->GetClockFreq(LMS_CLOCK_REF,
@@ -282,7 +284,7 @@ void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
 }
 
 #include <iomanip>
-void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
+void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const uint32_t length)
 {
     if (obj_ptr->mMiniLog == nullptr || obj_ptr->mMiniLog->chkLogData->IsChecked() == false)
         return;

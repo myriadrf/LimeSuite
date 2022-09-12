@@ -8,7 +8,7 @@ using namespace lime;
 
 ILMS7002MTab::ILMS7002MTab(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size,
                            long style)
-    : wxPanel(parent, id, pos, size, style), mChannel(0)
+    : wxPanel(parent, id, pos, size, style), lmsControl(nullptr), mChannel(0)
 {
 }
 
@@ -78,4 +78,5 @@ int ILMS7002MTab::LMS_WriteLMSReg(ControllerType* lms, uint16_t address, uint16_
 int ILMS7002MTab::LMS_ReadParam(ControllerType *lmsControl, const LMS7Parameter &param, uint16_t* value)
 {
     *value = ReadParam(param);
+    return 0;
 }

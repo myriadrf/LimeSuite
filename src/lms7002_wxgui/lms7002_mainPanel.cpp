@@ -189,7 +189,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
                      wxCommandEventHandler(lms7002_mainPanel::OnOpenProject), NULL, this);
     btnSave->Connect(wxEVT_COMMAND_BUTTON_CLICKED,
                      wxCommandEventHandler(lms7002_mainPanel::OnSaveProject), NULL, this);
-    cmbLmsDevice->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnChannelOrSOCChange), NULL, this );
+    cmbLmsDevice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnChannelOrSOCChange), NULL, this );
     rbChannelA->Connect(wxEVT_COMMAND_RADIOBUTTON_SELECTED,
                         wxCommandEventHandler(lms7002_mainPanel::OnChannelOrSOCChange), NULL, this);
     rbChannelB->Connect(wxEVT_COMMAND_RADIOBUTTON_SELECTED,
@@ -200,9 +200,13 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
     btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnResetChip ), NULL, this );
     btnLoadDefault->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnLoadDefault ), NULL, this );
     btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnReadTemperature ), NULL, this );
-    tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( lms7002_mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
-
+    tabsNotebook->Bind( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, &lms7002_mainPanel::Onnotebook_modulesPageChanged, this);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(lms7002_mainPanel::OnCGENFrequencyChange), NULL, this);
+}
+
+lms7002_mainPanel::~lms7002_mainPanel()
+{
+    tabsNotebook->Unbind( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, &lms7002_mainPanel::Onnotebook_modulesPageChanged, this);
 }
 
 void lms7002_mainPanel::UpdateVisiblePanel()
