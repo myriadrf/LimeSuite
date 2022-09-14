@@ -517,17 +517,24 @@ void TRXLooper::Start()
     bool needTx = mConfig.txCount > 0;
     bool needRx = true; //cfg.rxCount > 0; // always need Rx to know current timestamps;
 
+    // Don't just use REALTIME scheduling, or at least be cautious with it.
+    // if the thread blocks for too long, Linux can trigger RT throttling
+    // which can cause unexpected data packet losses and timing issues.
+    // Also need to set policy to default here, because if host process is running
+    // with REALTIME policy, these threads would inherit it and exhibit mentioned
+    // issues.
+    const auto schedulingPolicy = ThreadPolicy::DEFAULT;
     if (needRx) {
         terminateRx.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &rxThread);
+        SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &rxThread);
     }
     if (needTx) {
         terminateTx.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &txThread);
+        SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &txThread);
     }
 
     // if (cfg.alignPhase)
