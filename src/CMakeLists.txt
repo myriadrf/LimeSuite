@@ -276,7 +276,7 @@ set(LMS7SUITE_GUI_SOURCES
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_GUI "Enable build GUI" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
+cmake_dependent_option(ENABLE_GUI "Enable build GUI" OFF "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
 add_feature_info(LimeSuiteGUI ENABLE_GUI "GUI Application for LimeSuite")
 if (ENABLE_GUI)
 
