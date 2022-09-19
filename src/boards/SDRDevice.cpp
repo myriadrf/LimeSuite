@@ -201,8 +201,7 @@ void SDRDevice::StreamStop(uint8_t moduleIndex)
 
 int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, StreamMeta *meta)
 {
-    if (!rxFIFOs[moduleIndex])
-        return 0;
+    assert(rxFIFOs[moduleIndex]);
 
     //ProfilerScope s(&prof, "StreamRx", 1);
 
@@ -210,18 +209,18 @@ int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, Str
     uint32_t samplesProduced = 0;
     const SDRDevice::StreamConfig &config = mStreamers[moduleIndex]->GetConfig();
     const bool mimo = std::max(config.txCount, config.rxCount) > 1;
-    const bool compressed =
-        config.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    const bool useChannelB = config.rxCount > 1;
+    const bool compressed = config.linkFormat == StreamConfig::DataFormat::I12;
 
     PartialPacket &crumbs = rxCrumbs[moduleIndex];
 
     lime::complex16_t *dest[2];
     dest[0] = &static_cast<lime::complex16_t *>(samples[0])[samplesProduced];
-    if (mimo)
+    if (useChannelB)
         dest[1] = &static_cast<lime::complex16_t *>(samples[1])[samplesProduced];
     lime::complex32f_t *floatDest[2];
     floatDest[0] = &static_cast<lime::complex32f_t *>(samples[0])[samplesProduced];
-    if (mimo)
+    if (useChannelB)
         floatDest[1] = &static_cast<lime::complex32f_t *>(samples[1])[samplesProduced];
     const int samplesInPkt = (compressed ? 1360 : 1020) / (mimo ? 2 : 1);
 
@@ -236,7 +235,6 @@ int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, Str
 
     auto start = std::chrono::high_resolution_clock::now();
     while (samplesProduced < count) {
-
         if(crumbs.end == samplesInPkt)
         {
             if(config.format == SDRDevice::StreamConfig::F32)
@@ -245,7 +243,7 @@ int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, Str
                 {
                     floatDest[0][samplesProduced].i = crumbs.chA[i].i/normalizationAmplitude;
                     floatDest[0][samplesProduced].q = crumbs.chA[i].q/normalizationAmplitude;
-                    if(mimo)
+                    if(useChannelB)
                     {
                         floatDest[1][samplesProduced].i = crumbs.chB[i].i/normalizationAmplitude;
                         floatDest[1][samplesProduced].q = crumbs.chB[i].q/normalizationAmplitude;
@@ -259,7 +257,7 @@ int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, Str
                 for(int i=crumbs.start; i<samplesInPkt && samplesProduced < count; ++i)
                 {
                     dest[0][samplesProduced] = crumbs.chA[i];
-                    if(mimo)
+                    if(useChannelB)
                         dest[1][samplesProduced] = crumbs.chB[i];
                     ++samplesProduced;
                     ++crumbs.start;
@@ -311,8 +309,7 @@ int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, Str
 
 int SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint32_t count, const StreamMeta *meta)
 {
-    if(txFIFOs.at(moduleIndex) == nullptr)
-        return 0;
+    assert(txFIFOs.at(moduleIndex));
 
     //ProfilerScope s(&prof, "StreamTx", 2);
 
@@ -321,17 +318,18 @@ int SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint32_t coun
     uint32_t samplesConsumed = 0;
     const SDRDevice::StreamConfig &config = mStreamers[moduleIndex]->GetConfig();
     const bool mimo = std::max(config.txCount, config.rxCount) > 1;
+    const bool useChannelB = config.txCount > 1;
     const bool compressed = config.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
     const int samplesInPkt = (compressed ? 1360 : 1020) / (mimo ? 2 : 1);
 
     const lime::complex16_t *src[2];
         src[0] = &(static_cast<const lime::complex16_t *>(samples[0]))[samplesConsumed];
-        if (mimo)
+        if (useChannelB)
             src[1] = &(static_cast<const lime::complex16_t *>(samples[1]))[samplesConsumed];
 
     const lime::complex32f_t *floatSrc[2];
         floatSrc[0] = &(static_cast<const lime::complex32f_t *>(samples[0]))[samplesConsumed];
-        if (mimo)
+        if (useChannelB)
             floatSrc[1] = &(static_cast<const lime::complex32f_t *>(samples[1]))[samplesConsumed];
 
     const float normalizationAmplitude = compressed ? 2047 : 32767;
@@ -347,7 +345,7 @@ int SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint32_t coun
             {
                 crumbs.chA[i].i = floatSrc[0][samplesConsumed].i*normalizationAmplitude;
                 crumbs.chA[i].q = floatSrc[0][samplesConsumed].q*normalizationAmplitude;
-                if(mimo)
+                if(useChannelB)
                 {
                     crumbs.chB[i].i = floatSrc[1][samplesConsumed].i*normalizationAmplitude;
                     crumbs.chB[i].q = floatSrc[1][samplesConsumed].q*normalizationAmplitude;
@@ -362,7 +360,7 @@ int SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint32_t coun
             for(int i=crumbs.end; i<samplesInPkt && samplesConsumed < count; ++i)
             {
                 crumbs.chA[i] = src[0][samplesConsumed];
-                if(mimo)
+                if(useChannelB)
                     crumbs.chB[i] = src[1][samplesConsumed];
                 ++crumbs.end;
                 ++samplesConsumed;
