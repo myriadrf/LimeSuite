@@ -55,7 +55,7 @@ template <class T> class PacketsFIFO // Single producer, single consumer FIFO
     {
         std::unique_lock<std::mutex> lck(mLock);
         T *node;
-        if (queue.empty()) {
+        while (queue.empty()) {
             if (hasItems.wait_for(lck, std::chrono::milliseconds(1)) == std::cv_status::timeout)
                 return nullptr;
         }
