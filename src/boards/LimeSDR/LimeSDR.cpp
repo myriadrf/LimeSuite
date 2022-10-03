@@ -506,7 +506,7 @@ static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSi
     printf("\n");
 }
 
-void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, size_t count)
+void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     assert(comms);
     assert(MOSI);
@@ -587,7 +587,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, siz
     }
 }
 
-int LimeSDR::I2CWrite(int address, const uint8_t *data, size_t length)
+int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
     assert(comms);
     LMS64CProtocol::LMS64CPacket pkt;
@@ -613,7 +613,7 @@ int LimeSDR::I2CWrite(int address, const uint8_t *data, size_t length)
     return 0;
 }
 
-int LimeSDR::I2CRead(int address, uint8_t *data, size_t length)
+int LimeSDR::I2CRead(int address, uint8_t *data, uint32_t length)
 {
     assert(comms);
     LMS64CProtocol::LMS64CPacket pkt;

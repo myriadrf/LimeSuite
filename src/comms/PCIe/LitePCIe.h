@@ -1,6 +1,4 @@
 #pragma once
-#include <ConnectionRegistry.h>
-#include "LMS64CProtocol.h"
 #include <string>
 #include <mutex>
 #include <atomic>

@@ -1,12 +1,12 @@
 #include "FPGA_5G.h"
-#include "IConnection.h"
 #include "Logger.h"
-#include "LMS64CProtocol.h"
 #include <ciso646>
 #include <vector>
 #include <map>
 #include <math.h>
 #include <iostream>
+
+#include "Register.h"
 
 namespace lime
 {

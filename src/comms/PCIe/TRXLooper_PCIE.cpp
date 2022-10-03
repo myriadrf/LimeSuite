@@ -241,6 +241,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         if (timePeriod >= 1000) {
             t1 = t2;
             double dataRateBps = 1000.0 * totalBytesReceived / timePeriod;
+            stats.dataRate_Bps = dataRateBps;
+            stats.txDataRate_Bps = txDataRate_Bps.load(std::memory_order_relaxed);
             if (showStats)
             {
                 char ctemp[64];

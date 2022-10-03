@@ -32,17 +32,17 @@ SDRDevice::DeviceInfo SDRDevice::GetDeviceInfo(void)
     return info;
 }
 */
-void SDRDevice::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, size_t count)
+void SDRDevice::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     throw(OperationNotSupported("TransactSPI not implemented"));
 }
 
-int SDRDevice::I2CWrite(int address, const uint8_t *data, size_t length)
+int SDRDevice::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
     throw(OperationNotSupported("WriteI2C not implemented"));
 }
 
-int SDRDevice::I2CRead(int addr, uint8_t *dest, size_t length)
+int SDRDevice::I2CRead(int addr, uint8_t *dest, uint32_t length)
 {
     throw(OperationNotSupported("ReadI2C not implemented"));
 }

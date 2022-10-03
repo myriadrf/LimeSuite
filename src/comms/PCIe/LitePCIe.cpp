@@ -5,6 +5,8 @@
 #include <iostream>
 #include <poll.h>
 
+#include "LMS64CProtocol.h"
+
 using namespace std;
 using namespace lime;
 

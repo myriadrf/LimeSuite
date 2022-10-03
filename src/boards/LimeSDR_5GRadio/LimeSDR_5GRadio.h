@@ -17,6 +17,7 @@ namespace lime
 class LMS7002M;
 class LitePCIe;
 class FPGA;
+class Equalizer;
 class TRXLooper_PCIE;
 
 class LimeSDR_5GRadio : public SDRDevice
@@ -46,9 +47,9 @@ public:
     //                            bool forceReadFromChip = false) const override;
     // virtual int WriteParam(const LMS7Parameter &param, uint16_t val, uint8_t channel) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, size_t count) override;
-    virtual int I2CWrite(int address, const uint8_t *data, size_t length) override;
-    virtual int I2CRead(int addr, uint8_t *dest, size_t length) override;
+    virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
+    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
+    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
@@ -82,6 +83,7 @@ protected:
 private:
     CDCM_Dev* cdcm[2];
     LitePCIe *mControlPort;
+    Equalizer* mEqualizer;
     std::vector<LitePCIe*> mRxStreamPorts;
     std::vector<LitePCIe*> mTxStreamPorts;
 };

@@ -257,7 +257,7 @@ public:
      * @return 0-success
      */
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO,
-                     size_t count) override;
+                     uint32_t count) override;
 
     /*!
      * Write to an available I2C slave.
@@ -266,7 +266,7 @@ public:
      * @param length output data length
      * @return 0-success
      */
-    virtual int I2CWrite(int address, const uint8_t *data, size_t length) override;
+    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
 
     /*!
      * Read from an available I2C slave.
@@ -279,7 +279,7 @@ public:
      * \param length Number of bytes to read
      * @return 0-success
      */
-    virtual int I2CRead(int addr, uint8_t *dest, size_t length) override;
+    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     /***********************************************************************
      * GPIO API

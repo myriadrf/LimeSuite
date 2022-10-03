@@ -2,14 +2,14 @@
 
 #include <fcntl.h>
 
-//#include "FPGA_5G.h"
 #include "Logger.h"
-//#include "device_constants.h"
 #include "LitePCIe.h"
 #include "LMS7002M.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
 #include "FPGA_5G.h"
+#include "LMS64CProtocol.h"
+#include "DSP/Equalizer.h"
 
 #include "math.h"
 
@@ -37,6 +37,8 @@ LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
     mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
 
+    mEqualizer = new Equalizer(this, spi_FPGA);
+
     cdcm[0] = new CDCM_Dev(mFPGA, CDCM2_BASE_ADDR);
     // TODO: read back cdcm values or cdcm[0]->Reset(30.72e6, 25e6);
     // cdcm[1] = new CDCM_Dev(mFPGA, CDCM2_BASE_ADDR);
@@ -59,6 +61,7 @@ LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
 LimeSDR_5GRadio::~LimeSDR_5GRadio()
 {
     delete cdcm[0];
+    delete mEqualizer;
 }
 
 inline bool InRange(double val, double min, double max)
@@ -463,6 +466,19 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             LMS1_SetSampleRate(sampleRate, oversample);
         }
         else if(socIndex == 1) {
+            Equalizer::Config eqCfg;
+            for(int i=0; i<2; ++i)
+            {
+                eqCfg.bypassRxEqualizer[i] = true;
+                eqCfg.bypassTxEqualizer[i] = true;
+                eqCfg.cfr[i].bypass = true;
+                eqCfg.cfr[i].sleep = true;
+                eqCfg.cfr[i].bypassGain = true;
+                eqCfg.cfr[i].interpolation = oversample;
+                eqCfg.fir[i].sleep = true;
+                eqCfg.fir[i].bypass = true;
+            }
+            mEqualizer->Configure(eqCfg);
             LMS2_SetSampleRate(sampleRate, oversample);
         }
     } //try
@@ -712,7 +728,7 @@ static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSi
     printf("\n");
 }
 
-void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, size_t count)
+void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     assert(mControlPort);
     assert(MOSI);
@@ -814,7 +830,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
     }
 }
 
-int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, size_t length)
+int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;
@@ -840,7 +856,7 @@ int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, size_t length)
     return 0;
 }
 
-int LimeSDR_5GRadio::I2CRead(int address, uint8_t *data, size_t length)
+int LimeSDR_5GRadio::I2CRead(int address, uint8_t *data, uint32_t length)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;
@@ -1104,8 +1120,8 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
             value |= lms1PA[1] << 4;
             value |= lms2PA[0] << 3;
             value |= lms2PA[1] << 2;
-            value |= !(lms2LNA[0] << 1);
-            value |= !(lms2LNA[1] << 0);
+            value |= (!lms2LNA[0]) << 1;
+            value |= (!lms2LNA[1]) << 0;
             return value;
         }
         bool lms1PA[2];
@@ -1237,394 +1253,24 @@ void LimeSDR_5GRadio::LMS3SetPath(bool tx, uint8_t chan, uint8_t path)
     }
 }
 
-/*
-int LimeSDR_5GRadio::SetRate(double f_Hz, int oversample)
-{
-    double nco_f=0;
-    for (unsigned i = 0; i < 2; i++)
-    {
-         if (rx_channels[i].cF_offset_nco > nco_f)
-             nco_f = rx_channels[i].cF_offset_nco;
-         if (tx_channels[i].cF_offset_nco > nco_f)
-             nco_f = tx_channels[i].cF_offset_nco;
-         tx_channels[i].sample_rate = f_Hz;
-         rx_channels[i].sample_rate = f_Hz;
-    }
-
-    if (oversample == 0)
-    {
-        const int n = lime::cgenMax/(4*f_Hz);
-        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2;
-    }
-
-    if (nco_f != 0)
-    {
-        int nco_over = 2+2*(nco_f-1)/f_Hz;
-        if (nco_over > 32)
-        {
-            lime::error("Cannot achieve desired sample rate: rate too low");
-            return -1;
-        }
-        oversample = oversample > nco_over ? oversample : nco_over;
-    }
-
-    int decim = 4;
-    if (oversample <= 16)
-    {
-        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
-        decim = decTbl[oversample];
-    }
-
-    oversample = 2<<decim;
-
-    lime::LMS7002M* lms = lms_list[0];
-    if ((lms->SetFrequencyCGEN(f_Hz*4*oversample) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1) != 0)
-        || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), decim, decim) != 0))
-        return -1;
-    lms_chip_id = 0;
-    if (SetFPGAInterfaceFreq(decim, decim)!=0)
-        return -1;
-
-    for (unsigned i = 0; i < GetNumChannels(); i++)
-    {
-        if (rx_channels[i].cF_offset_nco != 0)
-           SetNCOFreq(false, i, 0, rx_channels[i].cF_offset_nco);
-
-        if (tx_channels[i].cF_offset_nco != 0)
-           SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
-        auto gfir_bw = tx_channels[i].gfir_bw;
-        if (gfir_bw > 0)
-            ConfigureGFIR(true, i, true, gfir_bw);
-        gfir_bw = rx_channels[i].gfir_bw;
-        if (gfir_bw > 0)
-            ConfigureGFIR(false, i, true, gfir_bw);
-    }
-
-    return 0;
-}
-
-int LimeSDR_5GRadio::SetRate(bool tx, double f_Hz, unsigned oversample)
-{
-    double tx_clock;
-    double rx_clock;
-    double cgen;
-
-    int decimation;
-    int interpolation;
-
-    double nco_rx=0;
-    double nco_tx=0;
-    int min_int = 1;
-    int min_dec = 1;
-    bool retain_nco = false;
-
-    lime::LMS7002M* lms = lms_list[0];
-
-    for (unsigned i = 0; i < 2; i++)
-    {
-        if (rx_channels[i].cF_offset_nco > nco_rx)
-            nco_rx = rx_channels[i].cF_offset_nco;
-        if (tx_channels[i].cF_offset_nco > nco_tx)
-            nco_tx = tx_channels[i].cF_offset_nco;
-        if (tx)
-            tx_channels[i].sample_rate = f_Hz;
-        else
-            rx_channels[i].sample_rate = f_Hz;
-    }
-
-    if (oversample == 0)
-    {
-        int n = tx ? lime::cgenMax/f_Hz : lime::cgenMax/(4*f_Hz);
-        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2;
-    }
-
-    if (nco_rx != 0 || nco_tx != 0)
-    {
-        retain_nco = true;
-        min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
-        min_dec = 2+2*(nco_rx-1)/rx_channels[0].sample_rate;
-        unsigned int nco_over = tx ? min_int : min_dec;
-        if (nco_over > 32)
-        {
-            lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
-            return -1;
-        }
-        oversample = oversample > nco_over ? oversample : nco_over;
-    }
-
-    int tmp = 4;
-    if (oversample <= 16)
-    {
-        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
-        tmp = decTbl[oversample];
-    }
-
-    int ratio = 2<<tmp;
-
-    if (tx)
-    {
-        interpolation = tmp;
-        decimation = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        rx_clock = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        tx_clock = f_Hz*ratio;
-    }
-    else
-    {
-        decimation = tmp;
-        interpolation = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        tx_clock = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-        rx_clock = f_Hz * ratio;
-    }
-
-    int div_index = floor(log2(tx_clock/rx_clock)+0.5);
-
-    while (div_index < -1)
-    {
-        if (tx)
-        {
-           if ((decimation > 0) && (min_dec <= (1<<decimation)))
-           {
-             decimation--;
-             div_index++;
-           }
-           else if (interpolation < 4)
-           {
-             interpolation++;
-             div_index++;
-           }
-           else
-           {
-               div_index = -1;
-               break;
-           }
-        }
-        else
-        {
-           if (interpolation < 4)
-           {
-             interpolation++;
-             div_index++;
-           }
-           else if ((decimation > 0) && (min_dec <= (1<<decimation)))
-           {
-             decimation--;
-             div_index++;
-           }
-           else
-           {
-               div_index = -1;
-               break;
-           }
-        }
-    }
-
-    while (div_index > 5)
-    {
-        if (tx)
-        {
-           if (decimation < 4)
-           {
-             decimation++;
-             div_index--;
-           }
-           else if ((interpolation > 0) && (min_int <= (1<<interpolation)))
-           {
-             interpolation--;
-             div_index--;
-           }
-           else
-           {
-             div_index = 5;
-             break;
-           }
-        }
-        else
-        {
-           if ((interpolation > 0) && (min_int <= (1<<interpolation)))
-           {
-             interpolation--;
-             div_index--;
-           }
-           else if (decimation < 4)
-           {
-             decimation++;
-             div_index--;
-           }
-           else
-           {
-               div_index = 5;
-               break;
-           }
-        }
-    }
-
-    if (min_int > (2<<interpolation) || min_dec > (2<<decimation))
-    {
-        lime::ReportError(ERANGE, "Unable to meet NCO oversampling requirements");
-        return -1;
-    }
-
-    int clk_mux;
-    int clk_div;
-
-    switch (div_index)
-    {
-        case -1://2:1
-                clk_mux = 0;
-                clk_div = 3;
-                break;
-        case 0://1:1
-                clk_mux = 0;
-                clk_div = 2;
-                break;
-        case 1: //1:2
-                clk_mux = 0;
-                clk_div = 1;
-                break;
-        case 2://1:4
-                clk_mux = 0;
-                clk_div = 0;
-                break;
-        case 3: //1:8
-                clk_mux = 1;
-                clk_div = 1;
-                break;
-        case 4: //1:16
-                clk_mux = 1;
-                clk_div = 2;
-                break;
-        case 5: //1:32
-                clk_mux = 1;
-                clk_div = 3;
-                break;
-    }
-
-    if (tx)
-    {
-        ratio = 2<<interpolation;
-        cgen = f_Hz*ratio;
-    }
-    else
-    {
-        ratio = 2<<decimation;
-        cgen = f_Hz * ratio * 4;
-    }
-
-    if ((tx && clk_mux == 0)||(tx == false && clk_mux == 1))
-    {
-        while (cgen*(1<<clk_div)>lime::cgenMax)
-        {
-            if (clk_div > 0)
-            {
-                clk_div--;
-            }
-            else
-            {
-               lime::ReportError(ERANGE, "Cannot set desired sample rate. CGEN clock out of range");
-               return -1;
-            }
-        }
-        cgen *= (1 << clk_div);
-    }
-
-    if (cgen > lime::cgenMax)
-    {
-        lime::ReportError(ERANGE, "Cannot set desired sample rate. CGEN clock out of range");
-        return -1;
-    }
-
-    lms = lms_list[0];
-    if ((lms->SetFrequencyCGEN(cgen, retain_nco) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), clk_mux) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), clk_div) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1) != 0)
-        || (lms->SetInterfaceFrequency(cgen, interpolation, decimation) != 0))
-        return -1;
-    lms_chip_id = 0;
-    if (SetFPGAInterfaceFreq(interpolation, decimation)!=0)
-        return -1;
-
-    for (unsigned i = 0; i < GetNumChannels(); i++)
-    {
-        if (rx_channels[i].cF_offset_nco != 0)
-           SetNCOFreq(false, i, 0, rx_channels[i].cF_offset_nco);
-
-        if (tx_channels[i].cF_offset_nco != 0)
-           SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
-        auto gfir_bw = tx ? tx_channels[i].gfir_bw : rx_channels[i].gfir_bw;
-        if (gfir_bw > 0)
-            ConfigureGFIR(tx, i, true, gfir_bw);
-    }
-
-    return 0;
-}
-*/
 void LimeSDR_5GRadio::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
 {
-    printf("LMS#2 SetSampleRate(%g)\n", f_Hz);
     assert(cdcm[0]);
-    if(cdcm[0]->SetFrequency(CDCM_Y0Y1, f_Hz, false) != 0) // Tx Ch. A&B
+    double txClock = f_Hz;
+
+    // Oversample is available only to Tx for LMS#2
+    oversample = std::min(oversample, uint8_t(2));
+    if(oversample == 2 || oversample == 0) // 0 is "auto", use max oversample
+        txClock *= 2;
+
+    mEqualizer->SetOversample(oversample);
+
+    if(cdcm[0]->SetFrequency(CDCM_Y0Y1, txClock, false) != 0) // Tx Ch. A&B
         throw std::runtime_error("Failed to configure CDCM_Y0Y1");
     if(cdcm[0]->SetFrequency(CDCM_Y4, f_Hz, false) != 0) // Rx Ch. A
         throw std::runtime_error("Failed to configure CDCM_Y4");
     if(cdcm[0]->SetFrequency(CDCM_Y5, f_Hz, true) != 0) // Rx Ch. B
         throw std::runtime_error("Failed to configure CDCM_Y5");
 }
-
-/*
-int LimeSDR_5GRadio::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
-{
-    if(ch > 3)
-    {
-        cdcm_output_t rx_output = ch == 4 ?  CDCM_Y6 : CDCM_Y7;
-//        return cdcm[1]->SetFrequency(rx_output, rxRate, true);
-        return cdcm[0]->SetFrequency(rx_output, rxRate, true);
-    }
-    else if (ch > 1)
-    {
-        cdcm_output_t rx_output = ch == 2 ?  CDCM_Y4 : CDCM_Y5;
-        cdcm_output_t tx_output = CDCM_Y0Y1;
-//        if(cdcm[1]->SetFrequency(tx_output, txRate, false) != 0)
-        if(cdcm[0]->SetFrequency(tx_output, txRate, false) != 0)
-            return -1;
-//        return cdcm[1]->SetFrequency(rx_output, rxRate, true);
-        return cdcm[0]->SetFrequency(rx_output, rxRate, true);
-    }
-    return LMS7_Device::SetRate(ch,rxRate,txRate,oversample);
-}
-/*
-double LimeSDR_5GRadio::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
-{
-    if(chan > 3)
-    {
-        if(tx)
-            return 0;
-        cdcm_output_t rx_output = chan == 4 ?  CDCM_Y6 : CDCM_Y7;
-//        return cdcm[1]->GetFrequency(rx_output);
-        return cdcm[0]->GetFrequency(rx_output);
-    }
-    else if (chan > 1)
-    {
-        cdcm_output_t output;
-        if(tx)
-            output = CDCM_Y0Y1;
-        else
-            output = chan == 2 ? CDCM_Y4 : CDCM_Y5;
-//        return cdcm[1]->GetFrequency(output);
-            return cdcm[0]->GetFrequency(output);
-    }
-
-    return LMS7_Device::GetRate(tx, chan, rf_rate_Hz);
-}
-*/
 
 } //namespace lime

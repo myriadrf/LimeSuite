@@ -38,6 +38,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     limeRFE/limeRFE.h
 
     CDCM6208/CDCM6208_Dev.h
+    include/Register.h
 )
 
 include(FeatureSummary)
@@ -96,10 +97,13 @@ set(LIME_SUITE_SOURCES
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp
     Profiler.cpp
+
+    DSP/Equalizer.cpp
 )
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
+    include
     boards
     API
     lime
