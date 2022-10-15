@@ -1,3 +1,12 @@
+Release 22.09.1 (2022-10-15)
+==========================
+
+Minor updates missed in previous release:
+
+- API version info in src/VersionInfo.h 
+- Debian packaging
+- Doxygen change log
+
 Release 22.09.0 (2022-09-08)
 ==========================
 

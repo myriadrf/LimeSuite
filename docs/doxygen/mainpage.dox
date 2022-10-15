@@ -13,6 +13,19 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
+### v22.09.1
+
+\li Bump API version info
+\li Update Debian packaging
+\li Update this log with details for 22.09.0 and 22.09.1
+
+### v22.09.0
+
+\li Fix FFTviewer crash when forwarding X11 over SSH
+\li Add LimeSDR-mini-v2 support
+\li Workaround crash with libusb-1.0.25
+\li Fix wxWidgets assertions, GUI sizers and alignments
+
 ### v20.10.0
 
 \li Fixed GFIR floating point comparison

@@ -1,3 +1,15 @@
+limesuite (22.09.1-1) unstable; urgency=low
+
+  * Release 22.09.1 (2022-10-15)
+
+ -- Lime Microsystems <apps@limemicro.com>  Sat, 15 Oct 2022 16:30:00 +0100
+
+limesuite (22.09.0-1) unstable; urgency=low
+
+  * Release 22.09.0 (2022-09-08)
+
+ -- Lime Microsystems <apps@limemicro.com>  Thu, 08 Sep 2022 19:00:22 +0300
+
 limesuite (20.10.0-1) unstable; urgency=low
 
   * Release 20.10.0 (2020-10-29)
