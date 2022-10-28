@@ -99,6 +99,7 @@ set(LIME_SUITE_SOURCES
     Profiler.cpp
 
     DSP/Equalizer.cpp
+    memory/MemoryPool.cpp
 )
 
 set(LIME_SUITE_INCLUDES
@@ -120,6 +121,7 @@ set(LIME_SUITE_INCLUDES
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
     limeRFE
     threadHelper
+    memory
 )
 #list(TRANSFORM ${LIME_SUITE_INCLUDES} PREPEND ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -176,7 +178,7 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-include(comms/USB/CMakeLists.txt)
+#include(comms/USB/CMakeLists.txt)
 include(comms/PCIe/CMakeLists.txt)
 
 
@@ -187,7 +189,7 @@ include(comms/PCIe/CMakeLists.txt)
 #include(ConnectionXillybus/CMakeLists.txt)
 #include(ConnectionSPI/CMakeLists.txt)
 
-include(boards/LimeSDR/CMakeLists.txt)
+#include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_5GRadio/CMakeLists.txt)
 
 ## Remote connection is not safe or efficient, it should not be in releases (github #263)

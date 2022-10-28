@@ -124,7 +124,7 @@ class LIME_API SDRDevice : public IComms
     {
         int64_t timestamp;
         bool useTimestamp;
-        bool flushPartialPacket;
+        bool flush; // submit data to hardware without waiting for full buffer
     };
 
 /*!
@@ -343,24 +343,10 @@ public:
                                       double rxPhase) = 0;
 
   protected:
-    struct PartialPacket
-    {
-        PartialPacket() : timestamp(0), start(0), end(0){};
-        lime::complex16_t chA[4096];
-        lime::complex16_t chB[4096];
-        uint64_t timestamp;
-        uint16_t start;
-        uint16_t end;
-    };
-    PartialPacket rxCrumbs[3]; // TODO: make members
-    PartialPacket txCrumbs[3]; // TODO: make members
-
     DataCallbackType mCallback_logData;
     std::vector<LMS7002M*> mLMSChips;
     std::vector<TRXLooper*> mStreamers;
 
-    std::vector< PacketsFIFO<FPGA_DataPacket> *> rxFIFOs;
-    std::vector< PacketsFIFO<FPGA_DataPacket> *> txFIFOs;
     StreamConfig mStreamConfig;
     FPGA *mFPGA;
 

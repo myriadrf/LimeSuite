@@ -8,6 +8,7 @@
 #include "SDRDevice.h"
 #include "PacketsFIFO.h"
 #include "Profiler.h"
+#include "MemoryPool.h"
 
 namespace lime {
 class FPGA;
@@ -15,26 +16,32 @@ class LMS7002M;
 
 class TRXLooper
 {
-  public:
+public:
     TRXLooper(FPGA *f, LMS7002M *chip, int id);
     virtual ~TRXLooper();
-
-    virtual void AssignFIFO(PacketsFIFO<FPGA_DataPacket> *rx, PacketsFIFO<FPGA_DataPacket> *tx);
 
     int GetStreamSize(bool tx);
 
     uint64_t GetHardwareTimestamp(void);
     void SetHardwareTimestamp(const uint64_t now);
     void Setup(const lime::SDRDevice::StreamConfig &config);
-    void Start();
-    void Stop();
+    virtual void Start();
+    virtual void Stop();
     float GetDataRate(bool tx);
 
-    const lime::SDRDevice::StreamConfig& GetConfig() const;
+    inline const lime::SDRDevice::StreamConfig& GetConfig() const {
+      return mConfig;
+    }
+
+    virtual int StreamRx(void **samples, uint32_t count, SDRDevice::StreamMeta *meta);
+    virtual int StreamTx(const void **samples, uint32_t count, const SDRDevice::StreamMeta *meta);
 
   protected:
     virtual void ReceivePacketsLoop() = 0;
     virtual void TransmitPacketsLoop() = 0;
+
+    void ParseRxPacketsLoop();
+    void ParseTxPacketsLoop();
 
     std::atomic<uint32_t> rxDataRate_Bps;
     std::atomic<uint32_t> txDataRate_Bps;
@@ -58,11 +65,27 @@ class TRXLooper
     LMS7002M *lms;
     int chipId;
 
-    PacketsFIFO<FPGA_DataPacket> *rxFIFO;
-    PacketsFIFO<FPGA_DataPacket> *txFIFO;
+    typedef DataBlock RawDataBlock;
+    typedef DataBlock SamplesBlock;
+
+    PacketsFIFO<SamplesBlock> rxOut;
+    PacketsFIFO<SamplesBlock> txIn;
+
+    SamplesBlock rxStaging;
+    SamplesBlock txStaging;
+
+    MemoryPool rxOutPool;
+    MemoryPool txInPool;
+
+    std::thread rxParsingThread;
+    std::thread txParsingThread;
 
     Profiler *rxProfiler;
     Profiler *txProfiler;
+
+    int mMaxBufferSize;
+    std::atomic<int> mThreadsReady;
+    std::chrono::time_point<std::chrono::high_resolution_clock> pcStreamStart;
 };
 
 } // namespace lime

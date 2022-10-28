@@ -85,7 +85,7 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow *parent, wxWindowID id)
     mTimeDomainPanel->AddSerie(new cDataSerie());
     mTimeDomainPanel->AddSerie(new cDataSerie());
     mTimeDomainPanel->AddSerie(new cDataSerie());
-    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -2050, 2050);
+    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -1, 1);
     mTimeDomainPanel->settings.title = "IQ samples";
     mTimeDomainPanel->series[0]->color = 0xFF0000FF;
     mTimeDomainPanel->series[1]->color = 0x0000FFFF;
@@ -97,7 +97,7 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow *parent, wxWindowID id)
     mConstelationPanel->AddSerie(new cDataSerie());
     mConstelationPanel->series[0]->color = 0xFF0000FF;
     mConstelationPanel->series[1]->color = 0x0000FFFF;
-    mConstelationPanel->SetInitialDisplayArea(-2050, 2050, -2050, 2050);
+    mConstelationPanel->SetInitialDisplayArea(-1, 1, -1, 1);
     mConstelationPanel->SetDrawingMode(GLG_POINTS);
     mConstelationPanel->settings.title = "I versus Q";
     mConstelationPanel->settings.titleXaxis = "I";
@@ -219,8 +219,9 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
 {
     if (mStreamRunning.load() == false)
         return;
-    SDRDevice::StreamStats stats;
-    lmsControl->StreamStatus(0, stats);
+    // TODO:
+    //SDRDevice::StreamStats stats;
+    //lmsControl->StreamStatus(0, stats);
 
     // TODO:
     // float RxFilled = 100 * (float)stats.rxFIFO_filled;
@@ -293,7 +294,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
             {
                 for (int s = 0; s < fftSize; ++s)
                 {
-                    streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (10 * log10(streamData.fftBins[ch][s])) - dbOffset : -300);
+                    streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (10 * log10(streamData.fftBins[ch][s]))  : -300);
                 }
             }
             mFFTpanel->series[0]->AssignValues(&fftFreqAxis[0], &streamData.fftBins[0][0], fftSize);
@@ -331,17 +332,13 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
     bool fftEnabled = true;
-    int ch_offset = 0;
+
     bool syncTx = pthis->chkEnSync->GetValue();
-    if (channelsCount == 1)
-    {
-        if (pthis->cmbChannelVisibility->GetSelection() == 1)
-            ch_offset = 1;
-    }
+
     vector<float> wndCoef;
     GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, 1);
 
-    lime::complex16_t** buffers;
+    lime::complex32f_t** buffers;
 
     DataToGUI localDataResults;
     localDataResults.nyquist_Hz = 7.68e6;
@@ -354,19 +351,19 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         pthis->streamData.samplesQ[i].resize(fftSize);
         pthis->streamData.fftBins[i].resize(fftSize);
     }
-    buffers = new lime::complex16_t*[channelsCount];
+    buffers = new lime::complex32f_t*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
-        buffers[i] = new complex16_t[fftSize];
+        buffers[i] = new complex32f_t[fftSize];
 
     vector<complex16_t> captureBuffer[cMaxChCount];
-    uint32_t samplesToCapture[cMaxChCount];
-    uint32_t samplesCaptured[cMaxChCount];
+    uint32_t samplesToCapture;
+    uint32_t samplesCaptured;
     if(pthis->captureSamples.load() == true)
         for(int ch=0; ch<channelsCount; ++ch)
         {
-            samplesToCapture[ch] = pthis->spinCaptureCount->GetValue();
-            captureBuffer[ch].resize(samplesToCapture[ch]);
-            samplesCaptured[ch] = 0;
+            samplesToCapture = pthis->spinCaptureCount->GetValue();
+            captureBuffer[ch].resize(samplesToCapture);
+            samplesCaptured = 0;
         }
 
     auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::I16
@@ -389,7 +386,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
 
-    const uint8_t chipIndex = 1;
+    const uint8_t chipIndex = pthis->lmsIndex;
 
     try
     {
@@ -417,7 +414,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     pthis->mStreamRunning.store(true);
     SDRDevice::StreamMeta txMeta;
     txMeta.useTimestamp = syncTx;
-    txMeta.flushPartialPacket = false;
+    txMeta.flush = false;
     int fftCounter = 0;
 
     SDRDevice::StreamMeta rxMeta;
@@ -426,11 +423,11 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     {
         do
         {
-            uint32_t samplesPopped[cMaxChCount];
+            uint32_t samplesPopped;
 
             int i = 0;
-            samplesPopped[i] = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
-            int64_t rxTS = rxMeta.timestamp + fifoSize / 4;
+            samplesPopped = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
+            int64_t rxTS = rxMeta.timestamp;
 
             if (runTx) {
                 txMeta.timestamp = rxTS + 1020*64;
@@ -441,12 +438,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             {
                 for(int ch=0; ch<channelsCount; ++ch)
                 {
-                    uint32_t samplesToCopy = min(samplesPopped[ch], samplesToCapture[ch]);
+                    uint32_t samplesToCopy = min(samplesPopped, samplesToCapture);
                     if(samplesToCopy <= 0)
                         break;
-                    memcpy((captureBuffer[ch].data() + samplesCaptured[ch]), buffers[ch], samplesToCopy*sizeof(complex16_t));
-                    samplesToCapture[ch] -= samplesToCopy;
-                    samplesCaptured[ch] += samplesToCopy;
+                    memcpy((captureBuffer[ch].data() + samplesCaptured), buffers[ch], samplesToCopy*sizeof(complex32f_t));
+                    samplesToCapture -= samplesToCopy;
+                    samplesCaptured += samplesToCopy;
                 }
             }
 
@@ -508,7 +505,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             if(pthis->stopProcessing.load() == false)
             {
                 pthis->streamData = localDataResults;
-                wxThreadEvent* evt = new wxThreadEvent;
+                wxThreadEvent* evt = new wxThreadEvent();
                 evt->SetEventObject(pthis);
                 pthis->updateGUI.store(false);
                 pthis->QueueEvent(evt);
@@ -525,7 +522,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         }
     }
 
-    if(pthis->captureSamples.load() == true)
+  /*  if(pthis->captureSamples.load() == true)
     {
         ofstream fout;
         fout.open(pthis->captureFilename.c_str());
@@ -563,7 +560,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             fout << endl;
         }
         fout.close();
-    }
+    }*/
 
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
@@ -614,7 +611,7 @@ void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
 void fftviewer_frFFTviewer::OnFmtChange(wxCommandEvent& event)
 {
     int val = event.GetInt();
-    int max = val == 1 ? 32800 : 2050;
+    int max = 1.0;//val == 1 ? 32800 : 2050;
     if (val != cmbFmt->GetSelection())
         cmbFmt->SetSelection(val);
     mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -max, max);

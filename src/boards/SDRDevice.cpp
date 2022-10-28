@@ -179,239 +179,26 @@ void SDRDevice::StreamStart(uint8_t moduleIndex)
     mStreamers.at(moduleIndex)->Start();
 }
 
-//static Profiler prof;
-
 void SDRDevice::StreamStop(uint8_t moduleIndex)
 {
     if (mStreamers.at(moduleIndex) == nullptr)
         return;
 
     mStreamers.at(moduleIndex)->Stop();
-    if(txFIFOs[moduleIndex])
-        delete txFIFOs[moduleIndex];
-    txFIFOs[moduleIndex] = nullptr;
-    if(rxFIFOs[moduleIndex])
-        delete rxFIFOs[moduleIndex];
-    rxFIFOs[moduleIndex] = nullptr;
+
     if(mStreamers[moduleIndex])
         delete mStreamers[moduleIndex];
     mStreamers[moduleIndex] = nullptr;
-    //prof.Done();
 }
 
-int SDRDevice::StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, StreamMeta *meta)
+int SDRDevice::StreamRx(uint8_t moduleIndex, void **dest, uint32_t count, StreamMeta *meta)
 {
-    assert(rxFIFOs[moduleIndex]);
-
-    //ProfilerScope s(&prof, "StreamRx", 1);
-
-    bool timestampSet = false;
-    uint32_t samplesProduced = 0;
-    const SDRDevice::StreamConfig &config = mStreamers[moduleIndex]->GetConfig();
-    const bool mimo = std::max(config.txCount, config.rxCount) > 1;
-    const bool useChannelB = config.rxCount > 1;
-    const bool compressed = config.linkFormat == StreamConfig::DataFormat::I12;
-
-    PartialPacket &crumbs = rxCrumbs[moduleIndex];
-
-    lime::complex16_t *dest[2];
-    dest[0] = &static_cast<lime::complex16_t *>(samples[0])[samplesProduced];
-    if (useChannelB)
-        dest[1] = &static_cast<lime::complex16_t *>(samples[1])[samplesProduced];
-    lime::complex32f_t *floatDest[2];
-    floatDest[0] = &static_cast<lime::complex32f_t *>(samples[0])[samplesProduced];
-    if (useChannelB)
-        floatDest[1] = &static_cast<lime::complex32f_t *>(samples[1])[samplesProduced];
-    const int samplesInPkt = (compressed ? 1360 : 1020) / (mimo ? 2 : 1);
-
-    if(!timestampSet && crumbs.end != 0)
-    {
-        if(meta)
-            meta->timestamp = crumbs.timestamp+crumbs.start;
-        timestampSet = true;
-    }
-
-    const float normalizationAmplitude = compressed ? 2048 : 32768;
-
-    auto start = std::chrono::high_resolution_clock::now();
-    while (samplesProduced < count) {
-        if(crumbs.end == samplesInPkt)
-        {
-            if(config.format == SDRDevice::StreamConfig::F32)
-            {
-                for(int i=crumbs.start; i<samplesInPkt && samplesProduced < count; ++i)
-                {
-                    floatDest[0][samplesProduced].i = crumbs.chA[i].i/normalizationAmplitude;
-                    floatDest[0][samplesProduced].q = crumbs.chA[i].q/normalizationAmplitude;
-                    if(useChannelB)
-                    {
-                        floatDest[1][samplesProduced].i = crumbs.chB[i].i/normalizationAmplitude;
-                        floatDest[1][samplesProduced].q = crumbs.chB[i].q/normalizationAmplitude;
-                    }
-                    ++samplesProduced;
-                    ++crumbs.start;
-                }
-            }
-            else
-            {
-                for(int i=crumbs.start; i<samplesInPkt && samplesProduced < count; ++i)
-                {
-                    dest[0][samplesProduced] = crumbs.chA[i];
-                    if(useChannelB)
-                        dest[1][samplesProduced] = crumbs.chB[i];
-                    ++samplesProduced;
-                    ++crumbs.start;
-                }
-            }
-        }
-
-        if(samplesProduced == count)
-        {
-            //printf("TS: %li, rx: %i, Crumbs left: %i\n", meta->timestamp, samplesProduced, crumbs.end-crumbs.start);
-            return samplesProduced;
-        }
-
-        FPGA_DataPacket *pkt = rxFIFOs[moduleIndex]->pop();
-        if (!pkt)
-        {
-            int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-            if(duration > 100) // TODO: timeout duration in meta
-                return samplesProduced;
-            else
-                continue;
-        }
-        if(!timestampSet)
-        {
-            if(meta)
-                meta->timestamp = pkt->counter;
-            timestampSet = true;
-            //printf("RxPop %f\n", GetTimeSinceStartup());
-        }
-
-        int recv;
-        {
-            lime::complex16_t *dest2[2];
-            dest2[0] = static_cast<lime::complex16_t *>(crumbs.chA);
-            if (mimo)
-                dest2[1] = static_cast<lime::complex16_t *>(crumbs.chB);
-            recv = FPGA::FPGAPacketPayload2Samples(pkt->data, sizeof(FPGA_DataPacket::data), mimo,
-                                                   compressed, (lime::complex16_t **)dest2);
-
-            crumbs.timestamp = pkt->counter;
-            rxFIFOs[moduleIndex]->release(pkt);
-            crumbs.start = 0;
-            crumbs.end = recv;
-
-        }
-    }
-    return samplesProduced;
+    return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
 int SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint32_t count, const StreamMeta *meta)
 {
-    assert(txFIFOs.at(moduleIndex));
-
-    //ProfilerScope s(&prof, "StreamTx", 2);
-
-    PartialPacket &crumbs = txCrumbs[moduleIndex];
-
-    uint32_t samplesConsumed = 0;
-    const SDRDevice::StreamConfig &config = mStreamers[moduleIndex]->GetConfig();
-    const bool mimo = std::max(config.txCount, config.rxCount) > 1;
-    const bool useChannelB = config.txCount > 1;
-    const bool compressed = config.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    const int samplesInPkt = (compressed ? 1360 : 1020) / (mimo ? 2 : 1);
-
-    const lime::complex16_t *src[2];
-        src[0] = &(static_cast<const lime::complex16_t *>(samples[0]))[samplesConsumed];
-        if (useChannelB)
-            src[1] = &(static_cast<const lime::complex16_t *>(samples[1]))[samplesConsumed];
-
-    const lime::complex32f_t *floatSrc[2];
-        floatSrc[0] = &(static_cast<const lime::complex32f_t *>(samples[0]))[samplesConsumed];
-        if (useChannelB)
-            floatSrc[1] = &(static_cast<const lime::complex32f_t *>(samples[1]))[samplesConsumed];
-
-    const float normalizationAmplitude = compressed ? 2047 : 32767;
-
-    while (samplesConsumed < count) {
-        // fill crumbs
-        if(crumbs.end == 0)
-            crumbs.timestamp = meta ? meta->timestamp+samplesConsumed : 0;
-
-        if(config.format == StreamConfig::F32)
-        {
-            for(int i=crumbs.end; i<samplesInPkt && samplesConsumed < count; ++i)
-            {
-                crumbs.chA[i].i = floatSrc[0][samplesConsumed].i*normalizationAmplitude;
-                crumbs.chA[i].q = floatSrc[0][samplesConsumed].q*normalizationAmplitude;
-                if(useChannelB)
-                {
-                    crumbs.chB[i].i = floatSrc[1][samplesConsumed].i*normalizationAmplitude;
-                    crumbs.chB[i].q = floatSrc[1][samplesConsumed].q*normalizationAmplitude;
-                }
-                ++crumbs.end;
-                ++samplesConsumed;
-            }
-        }
-        else
-        {
-            // TODO: optimize to memcpy
-            for(int i=crumbs.end; i<samplesInPkt && samplesConsumed < count; ++i)
-            {
-                crumbs.chA[i] = src[0][samplesConsumed];
-                if(useChannelB)
-                    crumbs.chB[i] = src[1][samplesConsumed];
-                ++crumbs.end;
-                ++samplesConsumed;
-            }
-        }
-
-        if(crumbs.end < samplesInPkt && meta->flushPartialPacket==false)
-            return samplesConsumed;
-
-        FPGA_DataPacket *pkt = txFIFOs[moduleIndex]->acquire();
-        if (!pkt)
-        {
-            printf("StreamTx failed acquire fifo packet, queue already full\n");
-            return samplesConsumed;
-        }
-
-        const bool useTimestamp = meta ? meta->useTimestamp : true;
-        pkt->ClearHeader();
-        pkt->counter = crumbs.timestamp;
-        pkt->ignoreTimestamp(!useTimestamp);
-        const int payloadSize = sizeof(FPGA_DataPacket::data);
-        pkt->payloadSizeLSB = payloadSize & 0xFF;
-        pkt->payloadSizeMSB = (payloadSize >> 8) & 0xFF;
-
-        const lime::complex16_t *src[2];
-        // src[0] = &(static_cast<const lime::complex16_t *>(samples[0]))[samplesConsumed];
-        // if (mimo)
-        //     src[1] = &(static_cast<const lime::complex16_t *>(samples[1]))[samplesConsumed];
-        src[0] = crumbs.chA;
-        if (mimo)
-            src[1] = crumbs.chB;
-
-        //memset(pkt->data, 0, 4080);
-        int bytesUsed = FPGA::Samples2FPGAPacketPayload(src, crumbs.end, mimo, compressed, pkt->data);
-        crumbs.end = 0;
-        crumbs.start = 0;
-        memset(crumbs.chA, 0, sizeof(crumbs.chA));
-        memset(crumbs.chB, 0, sizeof(crumbs.chB));
-        // if(meta->flushPartialPacket)
-        //     printf("TxTS: %li  , p:%i\n", pkt->counter, meta->flushPartialPacket);
-        const int64_t rxTimestampNow = mStreamers[moduleIndex]->GetHardwareTimestamp();
-        if (pkt->counter < rxTimestampNow && useTimestamp)
-        {
-            txFIFOs[moduleIndex]->release(pkt); // packet is going to be late, so don't even add it to FIFO
-            return -(rxTimestampNow - pkt->counter); // TODO: error code for late packet
-        }
-        else
-            txFIFOs[moduleIndex]->push(pkt);
-
-    }
-    return samplesConsumed;
+    return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
 } // namespace lime

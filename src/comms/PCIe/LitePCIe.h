@@ -3,6 +3,9 @@
 #include <mutex>
 #include <atomic>
 
+#include "software/kernel/litepcie.h"
+#include "software/kernel/config.h"
+
 namespace lime{
 
 class LitePCIe
@@ -24,6 +27,10 @@ public:
     int ReadRaw(uint8_t *buffer, int length, int timeout_ms = 100);
 
     const std::string& GetPathName() const { return mFilePath; };
+    void SetPathName(const char* filePath) { mFilePath = std::string(filePath); };
+
+    bool DMA(bool enable);
+    int GetFd() const { return mFileDescriptor; };
 protected:
     std::string mFilePath;
     int mFileDescriptor;

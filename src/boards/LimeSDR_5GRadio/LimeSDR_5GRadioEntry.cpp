@@ -67,8 +67,7 @@ std::vector<DeviceHandle> LimeSDR_5GRadioEntry::enumerate(const DeviceHandle &hi
 SDRDevice* LimeSDR_5GRadioEntry::make(const DeviceHandle &handle)
 {
     LitePCIe* control = new LitePCIe();
-    std::vector<LitePCIe*> rxStreams(3);
-    std::vector<LitePCIe*> txStreams(3);
+    std::vector<LitePCIe*> trxStreams(3);
     try {
         std::string controlFile(handle.addr + "_control");
         control->Open(controlFile.c_str(), O_RDWR);
@@ -77,15 +76,11 @@ SDRDevice* LimeSDR_5GRadioEntry::make(const DeviceHandle &handle)
         for (int i=0; i<3; ++i)
         {
             char portName[128];
-            sprintf(portName, "%s_read%i", handle.addr.c_str(), i);
-            rxStreams[i] = new LitePCIe();
-            rxStreams[i]->Open(portName, O_RDONLY);
-
-            sprintf(portName, "%s_write%i", handle.addr.c_str(), i);
-            txStreams[i] = new LitePCIe();
-            txStreams[i]->Open(portName, O_WRONLY);
+            sprintf(portName, "%s_trx%i", handle.addr.c_str(), i);
+            trxStreams[i] = new LitePCIe();
+            trxStreams[i]->SetPathName(portName);
         }
-        return new LimeSDR_5GRadio(control, std::move(rxStreams), std::move(txStreams));
+        return new LimeSDR_5GRadio(control, std::move(trxStreams));
     }
     catch ( std::runtime_error &e )
     {

@@ -23,4 +23,4 @@ endif()
 ## Add to library
 ########################################################################
 target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${COMMS_LITE_PCIE_SOURCES})
-target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${THIS_SOURCE_DIR} ${THIS_SOURCE_DIR}/kernel/)
+target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${THIS_SOURCE_DIR} ${THIS_SOURCE_DIR}/software/user/liblitepcie ${THIS_SOURCE_DIR}/software/kernel)

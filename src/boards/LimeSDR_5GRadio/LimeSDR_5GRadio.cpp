@@ -30,9 +30,8 @@ static inline void ValidateChannel(uint8_t channel)
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
-    std::vector<lime::LitePCIe*> rxStreams,
-    std::vector<lime::LitePCIe*> txStreams)
-    : mControlPort(control), mRxStreamPorts(rxStreams), mTxStreamPorts(txStreams)
+    std::vector<lime::LitePCIe*> trxStreams)
+    : mControlPort(control), mTRXStreamPorts(trxStreams)
 {
     mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
@@ -54,8 +53,6 @@ LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
 
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
-    rxFIFOs.resize(chipCount, nullptr);
-    txFIFOs.resize(chipCount, nullptr);
 }
 
 LimeSDR_5GRadio::~LimeSDR_5GRadio()
@@ -798,14 +795,19 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
 
         // flush packet
         //printPacket(pkt, wrPrint, "Wr:");
-        int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
+        int sent = 0;
+        int recv = 0;
+        auto t1 = std::chrono::high_resolution_clock::now();
+        {
+        std::unique_lock<std::mutex> lk(mCommsMutex);
+        sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
         if (mCallback_logData)
             mCallback_logData(true, (uint8_t*)&pkt, sizeof(pkt));
         if (sent != sizeof(pkt))
             throw std::runtime_error("SPI failed");
-        auto t1 = std::chrono::high_resolution_clock::now();
-        int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 1000);
-
+        t1 = std::chrono::high_resolution_clock::now();
+        recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 1000);
+        }
         if (mCallback_logData)
             mCallback_logData(false, (uint8_t*)&pkt, recv);
 
@@ -836,6 +838,7 @@ int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, uint32_t length)
     LMS64CProtocol::LMS64CPacket pkt;
     int remainingBytes = length;
     const uint8_t* src = data;
+    std::unique_lock<std::mutex> lk(mCommsMutex);
     while (remainingBytes > 0)
     {
         pkt.cmd = CMD_I2C_WR;
@@ -862,6 +865,7 @@ int LimeSDR_5GRadio::I2CRead(int address, uint8_t *data, uint32_t length)
     LMS64CProtocol::LMS64CPacket pkt;
     int remainingBytes = length;
     uint8_t* dest = data;
+    std::unique_lock<std::mutex> lk(mCommsMutex);
     while (remainingBytes > 0)
     {
         pkt.cmd = CMD_I2C_RD;
@@ -890,15 +894,11 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
         return -1; // already running
     try {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(
-            mRxStreamPorts.at(moduleIndex),
-            mTxStreamPorts.at(moduleIndex),
+            mTRXStreamPorts.at(moduleIndex),
             mFPGA, mLMSChips.at(moduleIndex),
             moduleIndex
         );
         mStreamers[moduleIndex]->Setup(config);
-        rxFIFOs[moduleIndex] = new PacketsFIFO<FPGA_DataPacket>(1024*64);
-        txFIFOs[moduleIndex] = new PacketsFIFO<FPGA_DataPacket>(1024*64);
-        mStreamers[moduleIndex]->AssignFIFO(rxFIFOs[moduleIndex], txFIFOs[moduleIndex]);
         mStreamConfig = config;
         return 0;
     }
@@ -914,24 +914,13 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
 
 void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 {
-    LitePCIe* rxPort = mRxStreamPorts.at(moduleIndex);
-    LitePCIe* txPort = mRxStreamPorts.at(moduleIndex);
-    // TODO: fix PCIE driver, right now workaround to flush and clear PCIE buffer
-    rxPort->Close();
-    txPort->Close();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    if (rxPort->Open(rxPort->GetPathName().c_str(), O_RDONLY) != 0)
-    {
-        char ctemp[128];
-        sprintf(ctemp, "Failed to reopen device to clear buffers: %s", rxPort->GetPathName().c_str());
-        //throw std::runtime_error(ctemp);
-    }
+    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
 
-    if (txPort->Open(rxPort->GetPathName().c_str(), O_RDONLY) != 0)
+    if (trxPort->Open(trxPort->GetPathName().c_str(), O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
     {
         char ctemp[128];
-        sprintf(ctemp, "Failed to reopen device to clear buffers: %s", txPort->GetPathName().c_str());
-        //throw std::runtime_error(ctemp);
+        sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
+        throw std::runtime_error(ctemp);
     }
     mStreamers.at(moduleIndex)->Start();
 }
@@ -939,19 +928,13 @@ void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
 {
     SDRDevice::StreamStop(moduleIndex);
-    LitePCIe* rxPort = mRxStreamPorts.at(moduleIndex);
-    LitePCIe* txPort = mRxStreamPorts.at(moduleIndex);
-    // TODO: fix PCIE driver, right now workaround to flush and clear PCIE buffer
-    rxPort->Close();
-    txPort->Close();
+    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
+    assert(trxPort);
+    if (trxPort->IsOpen())
+        trxPort->Close();
 
     delete mStreamers.at(moduleIndex);
     mStreamers[moduleIndex] = nullptr;
-
-    delete rxFIFOs[moduleIndex];
-    rxFIFOs[moduleIndex] = nullptr;
-    delete txFIFOs[moduleIndex];
-    txFIFOs[moduleIndex] = nullptr;
 }
 
 void LimeSDR_5GRadio::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
@@ -1271,6 +1254,9 @@ void LimeSDR_5GRadio::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
         throw std::runtime_error("Failed to configure CDCM_Y4");
     if(cdcm[0]->SetFrequency(CDCM_Y5, f_Hz, true) != 0) // Rx Ch. B
         throw std::runtime_error("Failed to configure CDCM_Y5");
+
+    if (!cdcm[0]->IsLocked())
+        throw std::runtime_error("CDCM is not locked");
 }
 
 } //namespace lime

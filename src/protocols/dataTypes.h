@@ -5,8 +5,37 @@
 #include <stdint.h>
 #include <utility>
 #include <complex>
+#include <chrono>
 
 namespace lime{
+
+template<class T>
+struct PartialPacket
+{
+    PartialPacket() : timestamp(0), start(0), end(0), useTimestamp(false) {};
+    static constexpr int samplesStorage = 510*8;
+    T chA[samplesStorage];
+    T chB[samplesStorage];
+    int64_t timestamp;
+    int16_t start;
+    int16_t end;
+    bool useTimestamp;
+    bool flush;
+};
+
+struct DataBlock
+{
+    DataBlock() : size(0), usage(0), offset(0), ptr(nullptr) {};
+    inline bool isValid() const { 
+        return (ptr != nullptr) && (usage <= size) && (offset <= usage);
+    }
+    // ~DataBlock() { if(ptr != nullptr) delete ptr; };
+    std::chrono::time_point<std::chrono::high_resolution_clock> genTime;
+    int32_t size;
+    int32_t usage;
+    int32_t offset;
+    void* ptr;
+};
 
 struct FPGA_DataPacket
 {
@@ -19,14 +48,29 @@ struct FPGA_DataPacket
     }
     inline void ignoreTimestamp(bool enabled) {
         const uint8_t mask = 1 << 4;
-        header0 &= ~mask; //ignore timestamp
+        header0 &= ~mask; //clear ignore timestamp
         header0 |= enabled ? mask : 0; //ignore timestamp
+    }
+    inline bool getIgnoreTimestamp() {
+        const uint8_t mask = 1 << 4;
+        return header0 & mask; //ignore timestamp
     }
     inline void ClearHeader() {
         memset(this, 0, 16);
     }
+    inline float RxFIFOFill() {
+        return (header0 & 0x7) * 0.125;
+    }
+    inline void SetPayloadSize(uint16_t size) {
+        payloadSizeLSB = size & 0xFF;
+        payloadSizeMSB = (size >> 8) & 0xFF;
+    }
+    inline int16_t GetPayloadSize() const {
+        return (payloadSizeMSB << 8) | payloadSizeLSB;
+    }
     // order matters
     uint8_t header0;
+    // payload size specifies how many bytes are valid samples data, 0-full packet is valid
     uint8_t payloadSizeLSB;
     uint8_t payloadSizeMSB;
     uint8_t reserved[5];
@@ -54,7 +98,7 @@ const int samples16InPkt = 1020;
 class SamplesPacket
 {
 public:
-    uint64_t timestamp; //timestamp of the packet
+    int64_t timestamp; //timestamp of the packet
     uint32_t last; //end index of samples
     uint32_t flags;
     complex16_t* samples;

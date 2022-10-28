@@ -11,25 +11,25 @@
 #include "TRXLooper.h"
 #include "SDRDevice.h"
 
+using namespace std;
+
 namespace lime {
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
+    : rxOut(512), txIn(512),
+    rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
+    txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
+    mMaxBufferSize(32768)
 {
     lms = chip, fpga = f;
     chipId = id;
-    //dataPort = f->GetConnection();
     mTimestampOffset = 0;
     rxLastTimestamp.store(0, std::memory_order_relaxed);
     terminateRx.store(false, std::memory_order_relaxed);
     terminateTx.store(false, std::memory_order_relaxed);
     rxDataRate_Bps.store(0, std::memory_order_relaxed);
     txDataRate_Bps.store(0, std::memory_order_relaxed);
-}
-
-void TRXLooper::AssignFIFO(PacketsFIFO<FPGA_DataPacket> *rx, PacketsFIFO<FPGA_DataPacket> *tx)
-{
-    rxFIFO = rx;
-    txFIFO = tx;
+    mThreadsReady.store(0);
 }
 
 TRXLooper::~TRXLooper()
@@ -440,10 +440,10 @@ int TRXLooper::UpdateThreads(bool stopAll)
 }
 */
 
-const lime::SDRDevice::StreamConfig& TRXLooper::GetConfig() const
-{
-    return mConfig;
-}
+// const lime::SDRDevice::StreamConfig& TRXLooper::GetConfig() const
+// {
+//     return mConfig;
+// }
 
 void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
 {
@@ -452,7 +452,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
 
     bool needTx = cfg.txCount > 0;
     bool needRx = true; // always need Rx to know current timestamps, cfg.rxCount > 0;
-    bool needMIMO = cfg.rxCount > 1 || cfg.txCount > 1; // TODO: what if using only B channel, does it need MIMO configuration?
+    //bool needMIMO = cfg.rxCount > 1 || cfg.txCount > 1; // TODO: what if using only B channel, does it need MIMO configuration?
     uint8_t channelEnables = 0;
 
     for (int i = 0; i < cfg.rxCount; ++i) {
@@ -515,7 +515,7 @@ void TRXLooper::Start()
 
     //FPGA should be configured and activated, start needed threads
     bool needTx = mConfig.txCount > 0;
-    bool needRx = true; //cfg.rxCount > 0; // always need Rx to know current timestamps;
+    bool needRx = true; // mConfig.rxCount > 0; // always need Rx to know current timestamps;
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.
     // if the thread blocks for too long, Linux can trigger RT throttling
@@ -523,23 +523,39 @@ void TRXLooper::Start()
     // Also need to set policy to default here, because if host process is running
     // with REALTIME policy, these threads would inherit it and exhibit mentioned
     // issues.
-    const auto schedulingPolicy = ThreadPolicy::DEFAULT;
+    const auto schedulingPolicy = ThreadPolicy::REALTIME;
     if (needRx) {
         terminateRx.store(false, std::memory_order_relaxed);
+        // auto parsingFunction = std::bind(&TRXLooper::ParseRxPacketsLoop, this);
+        // rxParsingThread = std::thread(parsingFunction);
+        // SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &rxParsingThread);
+        // pthread_setname_np(rxParsingThread.native_handle(), "lime:RxParse");
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
         SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &rxThread);
+        pthread_setname_np(rxThread.native_handle(), "lime:RxLoop");
     }
     if (needTx) {
         terminateTx.store(false, std::memory_order_relaxed);
+        // auto parsingFunction = std::bind(&TRXLooper::ParseTxPacketsLoop, this);
+        // txParsingThread = std::thread(parsingFunction);
+        // SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &txParsingThread);
+        // pthread_setname_np(txParsingThread.native_handle(), "lime:TxParse");
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
         SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &txThread);
+        pthread_setname_np(txThread.native_handle(), "lime:TxLoop");
     }
 
     // if (cfg.alignPhase)
     //     TODO: AlignRxRF(true);
     //enable FPGA streaming
+
+    // wait for all thread to be ready
+    while(mThreadsReady.load() < 2)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
     fpga->StartStreaming();
     // if (!mConfig.alignPhase)
     //     lms->ResetLogicregisters();
@@ -547,13 +563,226 @@ void TRXLooper::Start()
 
 void TRXLooper::Stop()
 {
-    terminateRx.store(true, std::memory_order_relaxed);
     terminateTx.store(true, std::memory_order_relaxed);
-    if (rxThread.joinable())
-        rxThread.join();
-    if (txThread.joinable())
-        txThread.join();
+    terminateRx.store(true, std::memory_order_relaxed);
+    try {
+        if (rxThread.joinable())
+            rxThread.join();
+        if (rxParsingThread.joinable())
+            rxParsingThread.join();
+
+        if (txThread.joinable())
+            txThread.join();
+        if (txParsingThread.joinable())
+            txParsingThread.join();
+    } catch (...)
+    {
+        printf("Failed to join TRXLooper threads\n");
+    }
     fpga->StopStreaming();
+    pcStreamStart = chrono::high_resolution_clock::now();
+}
+
+int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta)
+{
+    typedef PartialPacket<complex32f_t> PacketType;
+
+    bool timestampSet = false;
+    uint32_t samplesProduced = 0;
+    const SDRDevice::StreamConfig &config = mConfig;
+    const bool useChannelB = config.rxCount > 1;
+    const int totalTimeout = 500;
+
+    lime::complex32f_t *f32_dest[2] = {
+        static_cast<lime::complex32f_t *>(dest[0]),
+        useChannelB ? static_cast<lime::complex32f_t *>(dest[1]) : nullptr
+    };
+
+    // rxStaging holding buffer for reading samples count not multiple of packet contents
+    if(!rxStaging.ptr)
+    {
+        bool got = rxOut.pop(&rxStaging, true, 200);
+        if(!got)
+            return 0;
+        assert(rxStaging.isValid());
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+    while (samplesProduced < count) {
+        if(!rxStaging.ptr)
+            return samplesProduced;
+
+        int packetsRemaining = (rxStaging.usage - rxStaging.offset) / sizeof(PacketType);
+        if (packetsRemaining == 0)
+        {
+            rxOutPool.Free(rxStaging.ptr);
+            rxStaging.ptr = nullptr;
+            rxStaging.usage = 0;
+            rxStaging.offset = 0;
+            bool got = rxOut.pop(&rxStaging, true, 200);
+            if(!got)
+            {
+                //printf("StreamRx did not get packet\n");
+                int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+                if(duration > totalTimeout) // TODO: timeout duration in meta
+                    return samplesProduced;
+                else
+                    continue;
+            }
+            assert(rxStaging.isValid());
+        }
+
+        auto pkt = reinterpret_cast<PacketType*>(((uint8_t*)rxStaging.ptr) + rxStaging.offset);
+        packetsRemaining = (rxStaging.usage - rxStaging.offset) / sizeof(PacketType);
+        assert(packetsRemaining > 0);
+
+        if(!timestampSet && meta)
+        {
+            meta->timestamp = pkt->timestamp;
+            timestampSet = true;
+        }
+
+        while ((count - samplesProduced > 0) && packetsRemaining > 0)
+        //for (int i=0; i<packetsRemaining; ++i)
+        {
+            const int samplesPending = count - samplesProduced;
+            const int available = pkt->end - pkt->start;
+            const int transferCount = samplesPending > available ? available : samplesPending;
+
+            memcpy(&f32_dest[0][samplesProduced], &pkt->chA[pkt->start], transferCount*sizeof(pkt->chA[0]));
+            if (useChannelB)
+                memcpy(&f32_dest[1][samplesProduced], &pkt->chB[pkt->start], transferCount*sizeof(pkt->chB[0]));
+            pkt->start += transferCount;
+            samplesProduced += transferCount;
+            if (pkt->end - pkt->start == 0) // packet fully consumed, advance to next one
+            {
+                --packetsRemaining;
+                rxStaging.offset += sizeof(PacketType);
+                if(rxStaging.offset == rxStaging.usage)
+                    break;
+                ++pkt;
+            }
+        }
+
+        // int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+        // if(duration > 300) // TODO: timeout duration in meta
+        //     return samplesProduced;
+    }
+    return samplesProduced;
+}
+
+int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::StreamMeta *meta)
+{
+    typedef PartialPacket<complex32f_t> PacketType;
+    const SDRDevice::StreamConfig &config = mConfig;
+    const bool useChannelB = config.txCount > 1;
+    const int samplesInPkt = PacketType::samplesStorage;
+
+    uint32_t samplesConsumed = 0;
+    const lime::complex32f_t *floatSrc[2] = {
+        static_cast<const lime::complex32f_t *>(samples[0]),
+        useChannelB ? static_cast<const lime::complex32f_t *>(samples[1]) : nullptr
+    };
+
+    const bool useTimestamp = meta ? meta->useTimestamp : false;
+    const bool flush = meta && meta->flush;
+    int64_t ts = useTimestamp ? meta->timestamp : 0;
+
+    const int allocSize = sizeof(PacketType);
+
+    while (samplesConsumed < count) {
+        if(!txStaging.ptr)
+        {
+            txStaging.genTime = std::chrono::high_resolution_clock::now();
+            txStaging.ptr = txInPool.Allocate(allocSize);
+            memset(txStaging.ptr, 0, txStaging.size);
+            txStaging.usage = 0;
+            txStaging.offset = 0;
+            txStaging.size = allocSize;
+        }
+        if(!txStaging.ptr)
+            return samplesConsumed;
+
+        const int samplesRemaining = count - samplesConsumed;
+
+        int expectedPacketCount = ceil(samplesRemaining/(float)samplesInPkt);
+        assert(expectedPacketCount > 0);
+
+        const int freePackets = (txStaging.size - txStaging.usage)/sizeof(PacketType);
+        const int pktCount = std::min(expectedPacketCount, freePackets);
+
+        assert(txStaging.offset == 0);
+        assert(txStaging.size > 0);
+        assert(txStaging.usage < txStaging.size);
+
+        bool doFlush = false;
+
+        for (int i=0; i<pktCount; ++i)
+        {
+            auto pkt = reinterpret_cast<PacketType*>(((uint8_t*)txStaging.ptr) + txStaging.usage);
+            if(pkt->end == 0)
+            {
+                pkt->timestamp = useTimestamp ? ts : 0;
+                pkt->useTimestamp = useTimestamp;
+                pkt->start = 0;
+
+                
+                pkt->flush = flush;
+            }
+            // else if (pkt->timestamp + pkt->end != ts)
+            // {
+            //     // appending would be discontinuity within packet, flush it.
+            //     printf("Tx discontinuity flush\n");
+            //     txStaging.usage += sizeof(PacketType);
+            //     doFlush = true;
+            //     break;
+            // }
+
+            const int availableSpace = samplesInPkt - pkt->end;
+            assert(availableSpace > 0);
+            const int copyCount = std::min(samplesRemaining, availableSpace);
+
+            memcpy(&pkt->chA[pkt->start], &floatSrc[0][samplesConsumed], copyCount*sizeof(pkt->chA[0]));
+            if(useChannelB)
+                memcpy(&pkt->chB[pkt->start], &floatSrc[1][samplesConsumed], copyCount*sizeof(pkt->chB[0]));
+            pkt->end += copyCount;
+            samplesConsumed += copyCount;
+            ts += copyCount;
+
+            if (samplesConsumed == count && flush)
+            {
+                pkt->flush = flush;
+                doFlush = true;
+            }
+
+            if(pkt->end == samplesInPkt || doFlush)
+            {
+                txStaging.usage += sizeof(PacketType);
+                assert(txStaging.usage <= txStaging.size);
+                break;
+            }
+        }
+
+        if (txStaging.usage == txStaging.size || doFlush)
+        {
+            txStaging.offset = 0;
+            assert(txStaging.usage > 0);
+            assert(txStaging.size > 0);
+            if (txIn.push(txStaging, true, 100))
+            {
+                //printf("Push Tx staging %i\n", txStaging.usage);
+                txStaging.ptr = nullptr;
+            }
+            else
+            {
+                txStaging.usage = 0;
+                txStaging.offset = 0;
+                memset(txStaging.ptr, 0, txStaging.size);
+                return samplesConsumed;
+            }
+        }
+    }
+    return samplesConsumed;
 }
 
 } // namespace lime

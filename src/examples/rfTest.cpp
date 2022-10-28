@@ -7,6 +7,9 @@
 #include <math.h>
 #include <assert.h>
 #include "Profiler.h"
+#include <thread>
+#include <signal.h>
+#include <atomic>
 #undef USE_GNU_PLOT
 
 #ifdef USE_GNU_PLOT
@@ -19,7 +22,13 @@ using namespace std;
 SDRDevice *device = nullptr;
 
 static const double frequencyLO = 2e9;
-static const uint8_t chipIndex = 1; // device might have several RF chips
+static uint8_t chipIndex = 1; // device might have several RF chips
+
+std::atomic<bool> runForever;
+void intHandler(int dummy) {
+    printf("Stoppping\n");
+    runForever.store(false);
+}
 
 typedef std::pair<SDRDevice::SDRConfig, SDRDevice::StreamConfig> TestConfigType;
 
@@ -80,7 +89,7 @@ int TrySDRConfigure(SDRDevice::SDRConfig &config)
 {
     try {
         auto t1 = std::chrono::high_resolution_clock::now();
-        device->Init();
+        //device->Init();
         device->Configure(config, chipIndex);
         auto t2 = std::chrono::high_resolution_clock::now();
         cout << "SDR configured in " <<
@@ -100,7 +109,9 @@ int TrySDRConfigure(SDRDevice::SDRConfig &config)
 
 bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
 {
-    const float sampleRate = 40e6;
+    printf("Press CTRL+C to stop\n\n");
+    float sampleRate = 20e6;//30.72e6/4;
+    chipIndex = 0;
     printf("----------TEST FullStreamTxRx, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
     auto configPair = generateTestConfig(MIMO, sampleRate);
     SDRDevice::StreamConfig &stream = configPair.second;
@@ -108,113 +119,194 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/stream.rxCount;
+    sampleRate = 122.88e6;
+    chipIndex = 1;
+    printf("----------TEST FullStreamTxRx, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
+    configPair = generateTestConfig(MIMO, sampleRate);
+    SDRDevice::StreamConfig &stream2 = configPair.second;
+
+    if (TrySDRConfigure(configPair.first) != 0)
+        return false;
+
+    const int channelCount = std::max(stream.rxCount, stream.txCount);
+    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
 
     const float rxBufferTime = 0.002; // max buffer size in time (seconds)
     const uint32_t samplesToBuffer = (int)(rxBufferTime*sampleRate/samplesInPkt)*samplesInPkt;
     assert(samplesToBuffer > 0);
 
-    const float txTimeOffset = 0.001; // tx packets delay in time (seconds), will be rounded to even packets count
-    const int32_t txDeltaTS = (int)(txTimeOffset*sampleRate/samplesInPkt)*samplesInPkt;
+    const float txTimeOffset = 0.010; // tx packets delay in time (seconds), will be rounded to even packets count
+    const int64_t txDeltaTS = (int)(txTimeOffset*sampleRate/samplesInPkt)*samplesInPkt;
+    printf("TxDeltaTS +%li, (+%.3fms) %li packets\n", txDeltaTS, 1000.0*txDeltaTS/sampleRate, txDeltaTS/samplesInPkt);
 
+    // const int alignment = 4096;
+    // complex32f_t rxSamples[2];
+    // rxSamples[0] = aligned_alloc(alignment, samplesToBuffer);
     std::vector< std::vector<complex32f_t> > rxSamples(2); // allocate two channels for simplicity
     for(uint i=0; i<rxSamples.size(); ++i)
         rxSamples[i].resize(samplesToBuffer);
 
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
-    std::vector< std::vector<complex32f_t> > txPattern(stream.txCount);
-    const int txPacketCount = 1;
+    std::vector< std::vector<complex32f_t> > txPattern(2);
+    const int txPacketCount = 8;
     for(uint i=0; i<txPattern.size(); ++i)
     {
-        txPattern[i].resize(txPacketCount*samplesInPkt); // 4 packets should be enough
+        txPattern[i].resize(txPacketCount*samplesInPkt);
         for(int j=0; j<txPacketCount; ++j)
         {
-            int16_t src[4] = {1, 0, -1, 0};
-            float ampl = (j+1)*(1.0/(txPacketCount+1));
+            float src[4] = {1.0, 0.0, -1.0, 0.0};
+            float ampl = 0.9;//(j+1)*(1.0/(txPacketCount+1));
             for(int k=0; k<samplesInPkt; ++k)
             {
-                txPattern[i][j*samplesInPkt+k].i = src[k & 3];
-                txPattern[i][j*samplesInPkt+k].q = src[(k+1) & 3];
+                txPattern[i][j*samplesInPkt+k].i = src[k & 3] * ampl;
+                txPattern[i][j*samplesInPkt+k].q = src[(k+1) & 3] * ampl;
             }
         }
     }
 
     // skip some packets at the start in case of leftover data garbage
-    int64_t ignoreSamplesAtStart = 0;//samplesInPkt*32;
+    int64_t ignoreSamplesAtStart = samplesInPkt*32;
 
     //Initialize stream
     bool streamHadIssues = false;
     stream.statusCallback = OnStreamStatusChange;
     stream.userData = &streamHadIssues; // gets set to true if problems occour
-    device->StreamSetup(stream, chipIndex);
+    device->StreamSetup(stream, 1);
+
+    device->StreamSetup(stream2, 0);
 
     // simple pointers for stream functions, can't just pass vector of vectors
     lime::complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
     lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
 
-    dev.StreamStart(chipIndex);
+    int testStreamIndex = 1;
+
+    dev.StreamStart(testStreamIndex);
+    //dev.StreamStart(0);
 
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = t1;
+    auto start = t1;
 
-    //while(1)
-    while (chrono::high_resolution_clock::now() - t1 < chrono::milliseconds(2100))
+    int64_t totalSent = 0;
+    int64_t brecv = 0;
+    int64_t bsent = 0;
+
+    bool show = false;
+    int fired = 0;
+    int64_t lastRxTS = 0;
+
+    int badSignal = 0;
+    while(runForever.load())
+    //while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(3100))
     {
+
         //Receive samples
         SDRDevice::StreamMeta rxMeta;
-        int samplesRead = dev.StreamRx(chipIndex, (void **)dest, samplesInPkt, &rxMeta);
+        rxMeta.timestamp = 0;
+        auto tt1 = std::chrono::high_resolution_clock::now();
+        int samplesRead = dev.StreamRx(testStreamIndex, (void **)dest, samplesInPkt*txPacketCount, &rxMeta);
+        auto tt2 = std::chrono::high_resolution_clock::now();
+        int duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2 - tt1).count();
+        if(show)
+            printf("rxStream %ius\n", duration);
+        //int samplesRead = dev.StreamRx(0, (void **)dest, samplesInPkt*txPacketCount, &rxMeta);
         if(samplesRead == 0)
         {
-            printf("Failed to StreamRx\n");
+            printf("StreamRx 0\n");
+            continue;
+        }
+
+        if(samplesRead < 0)
+        {
+            printf("Failed to StreamRx %i\n", samplesRead);
             streamHadIssues = true;
             break;
         }
-        // if(rxcnt < 8)
-        //     printf("StreamRx %li, %f\n", rxMeta.timestamp, lime::GetTimeSinceStartup());
-        //if(rxMeta.timestamp < 2e6)
-        //printf("StreamRX @ %li\n", rxMeta.timestamp);
+
+        if(rxMeta.timestamp < lastRxTS)
+            printf("non monotonous RXTS:%li, last:%li\n", rxMeta.timestamp, lastRxTS);
+        lastRxTS = rxMeta.timestamp;
+
+        // for(int j=0; j<samplesRead; ++j)
+        // {
+        //     float i = dest[0][j].i;
+        //     float q = dest[0][j].q;
+        //     float ampl = sqrt(pow(i, 2) + pow(q, 2));
+        //     if(ampl < 0.4)
+        //     {
+        //         //printf("NO ampl >0.4\n");
+        //         ++badSignal;
+        //         break;
+        //     }
+        // }
+
+        brecv += txPacketCount;
 
         // TODO: verify if Rx RF is what has been transmitted, need to setup digital
         // loopback or verify gain values to know what power change to expect
 
-        if(rxMeta.timestamp >= ignoreSamplesAtStart)
+        SDRDevice::StreamMeta txMeta;
+        if(rxMeta.timestamp >= ignoreSamplesAtStart && stream.txCount > 0)
         {
-            SDRDevice::StreamMeta txMeta;
+            ++fired;
             int64_t rxNow = rxMeta.timestamp + samplesInPkt;
             txMeta.timestamp = rxNow + txDeltaTS;
             txMeta.useTimestamp = true;
-            txMeta.flushPartialPacket = true; // not really matters since only full packets are sent here
-            // if(rxMeta.timestamp < 2e6)
-            //     printf("StreamTX @ %li\n", txMeta.timestamp);
-            int samplesSent = dev.StreamTx(chipIndex, (const void **)src, txPacketCount*samplesInPkt, &txMeta);
+            txMeta.flush = false; // not really matters since only full packets are sent here
+
+            auto tt1 = std::chrono::high_resolution_clock::now();
+            int samplesSent = dev.StreamTx(testStreamIndex, (const void **)src, samplesInPkt*txPacketCount, &txMeta);
+            bsent += txPacketCount;
+            //int samplesSent2 = dev.StreamTx(0, (const void **)src, samplesInPkt*txPacketCount/4, &txMeta);
+            auto tt2 = std::chrono::high_resolution_clock::now();
+            int duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2 - tt1).count();
+            if(show)
+                printf("txStream %ius\n", duration);
             if(samplesSent <= 0)
             {
-                if(samplesSent < 0)
-                    printf("Tx timestamp is already late by %i\n", samplesSent);
+                if(samplesSent < 0) {
+                    //printf("Tx timestamp is already late by %i\n", samplesSent);
+                }
                 else
                 {
-                    printf("Failure to send\n");
-                    return false;
+                    //printf("Send 0\n");
+                    //std::this_thread::sleep_for(std::chrono::microseconds(120));
+                    //return false;
                 }
             }
-            // if(txcnt < 8)
-            //     printf("StreamTx %li, %f\n", txMeta.timestamp, lime::GetTimeSinceStartup());
+            else
+                totalSent += samplesSent;
             // if(streamIssues)
             //     return false;
         }
+        t2 = std::chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000) {
+            t1 = t2;
+            for(int j=0; j<1; ++j)
+            {
+                float i = dest[0][j*20].i;
+                float q = dest[0][j*20].q;
+                float ampl = sqrt(pow(i, 2) + pow(q, 2));
+                printf("Main Rx: %li  ampl: %f, badSignal: %i\n", rxMeta.timestamp, ampl, badSignal);
+            }
+        }
+
     }
-    
-    device->StreamStop(chipIndex);
+
+    device->StreamStop(testStreamIndex);
+    //device->StreamStop(0);
     return !streamHadIssues;
 }
 
 
-bool TxTiming(SDRDevice &dev, bool MIMO)
+bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
 {
-    const float sampleRate = 10e6;
+    const float sampleRate = 122.88e6/4;
     printf("----------TEST TxTiming, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
-    auto configPair = generateTestConfig(MIMO, sampleRate);
+    auto configPair = generateTestConfig(true, sampleRate);
     SDRDevice::StreamConfig &stream = configPair.second;
 
     if (TrySDRConfigure(configPair.first) != 0)
@@ -222,12 +314,13 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
 
     const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/stream.rxCount;
 
-    const float rxBufferTime = 0.002; // max buffer size in time (seconds)
+    const float rxBufferTime = 0.005; // max buffer size in time (seconds)
     const uint32_t samplesToBuffer = (int)(rxBufferTime*sampleRate/samplesInPkt)*samplesInPkt;
     assert(samplesToBuffer > 0);
 
-    const float txTimeOffset = 0.001; // tx packets delay in time (seconds), will be rounded to even packets count
-    const int32_t txDeltaTS = (int)(txTimeOffset*sampleRate/samplesInPkt)*samplesInPkt;
+    const float txTimeOffset = 0.001*tsDelay_ms; // tx packets delay in time (seconds)
+    const int64_t txDeltaTS = (int)(txTimeOffset*sampleRate);
+    printf("\nusing TxOffsetTS +%li (%+.3fms) (%+.3f packets)\n", txDeltaTS, 1000.0*txDeltaTS/sampleRate, (float)txDeltaTS/samplesInPkt);
 
     std::vector< std::vector<complex32f_t> > rxSamples(2); // allocate two channels for simplicity
     for(uint i=0; i<rxSamples.size(); ++i)
@@ -253,7 +346,8 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
     }
 
     // skip some packets at the start in case of leftover data garbage
-    int64_t ignoreSamplesAtStart = 0;//samplesInPkt*32;
+    int64_t ignoreSamplesAtStart = 0;//samplesInPkt*1024;
+    //printf("Skipping %i rx samples at the beginning", ignoreSamplesAtStart);
 
     //Initialize stream
     bool streamHadIssues = false;
@@ -275,11 +369,12 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
     float RxAmpl = 0;
 
     bool done = false;
-    while (chrono::high_resolution_clock::now() - t1 < chrono::milliseconds(5100) && !done)
+    while (chrono::high_resolution_clock::now() - t1 < chrono::milliseconds(1100) && !done)
+    //while(!done)
     {
         //Receive samples
         SDRDevice::StreamMeta rxMeta;
-        int samplesRead = dev.StreamRx(chipIndex, (void **)dest, samplesInPkt, &rxMeta);
+        int samplesRead = dev.StreamRx(chipIndex, (void **)dest, txPacketCount*samplesInPkt, &rxMeta);
         if(samplesRead == 0)
         {
             printf("Failed to StreamRx\n");
@@ -290,13 +385,13 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
         if (rxMeta.timestamp < ignoreSamplesAtStart)
             continue;
 
+        int64_t rxNow = rxMeta.timestamp + samplesRead;
         if(!txPending)
         {
-            int64_t rxNow = rxMeta.timestamp + samplesInPkt;
             txMeta.timestamp = rxNow + txDeltaTS;
             txMeta.useTimestamp = true;
-            txMeta.flushPartialPacket = true; // not really matters since only full packets are sent here
-            int samplesSent = dev.StreamTx(chipIndex, (const void **)src, txPacketCount*samplesInPkt, &txMeta);
+            txMeta.flush = true; // not really matters since only full packets are sent here
+            int samplesSent = dev.StreamTx(chipIndex, (const void **)src, samplesInPkt, &txMeta);
             if(samplesSent <= 0)
             {
                 if(samplesSent < 0)
@@ -307,10 +402,14 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
                     return false;
                 }
             }
-            float i = src[0][0].i;
-            float q = src[0][0].q;
-            float ampl = sqrt(pow(i, 2) + pow(q, 2));
-            printf("Tx sent @ %li, ampl: %g\n", txMeta.timestamp, ampl);
+            float i = dest[0][0].i;
+            float q = dest[0][0].q;
+            float rxAmpl = sqrt(pow(i, 2) + pow(q, 2));
+
+            i = src[0][0].i;
+            q = src[0][0].q;
+            float txAmpl = sqrt(pow(i, 2) + pow(q, 2));
+            printf("meta: %li, RxTS now:%li background amplitude: ~%g, %i Tx packets sent with target TS: %li, amplitude: %g\n\n", rxMeta.timestamp, rxNow, rxAmpl, txPacketCount, txMeta.timestamp, txAmpl);
             txPending = true;
         }
         else // wait and check for tx packet reception
@@ -323,7 +422,14 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
                 RxAmpl = ampl;
                 if (ampl > 0.3)
                 {
-                    printf("Reception @ %li, ampl: %g,  delta: %li, j: %i\n", rxMeta.timestamp, ampl, rxMeta.timestamp + j - txMeta.timestamp, j);
+                    int64_t diff = rxMeta.timestamp + j - txMeta.timestamp;
+                    printf("Rx received signal amplitude %g, RxTS:%li - TxTS:%li = %li (%+.3fms) (%+g packets)\n\n",
+                        ampl,
+                        rxMeta.timestamp + j,
+                        txMeta.timestamp,
+                        diff,
+                        1000.0*diff/sampleRate,
+                        float(diff)/samplesInPkt);
                     txPending = false;
                     done = true;
                     break;
@@ -331,131 +437,21 @@ bool TxTiming(SDRDevice &dev, bool MIMO)
             }
         }
     }
-    printf("Rx ampl: %g\n", RxAmpl);
+    if(!done)
+    {
+        printf("\n\tDid not receive expected signal!\n\n");
+    }
     device->StreamStop(chipIndex);
     return !streamHadIssues;
 }
 
-/*
-bool TestSynclessTx(SDRDevice &dev, SDRDevice::StreamConfig &stream)
-{
-    //Data buffers
-    const int samplesInPkt = 1020/stream.rxCount;
-    const int bufersize = samplesInPkt * 16; //complex samples per buffer
-    lime::complex16_t **buffers = new complex16_t *[stream.rxCount];
-    for (int i = 0; i < stream.rxCount; ++i)
-        buffers[i] = new lime::complex16_t[bufersize];
-
-    auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = t1;
-
-    int samplesReceived = 0;
-
-    int samplesRead = 0;
-    SDRDevice::StreamMeta meta;
-
-    const float bufferTime = 0.05;
-    const uint32_t samplesToBuffer = (int)(bufferTime*sampleRate/samplesInPkt)*samplesInPkt;
-    assert(samplesToBuffer > 0);
-
-    const float txTimeOffset = 0.0005;
-    const int32_t deltaTS = samplesInPkt * (int)(txTimeOffset*sampleRate/samplesInPkt);
-
-    std::vector< std::vector<complex16_t> > rxSamples(stream.rxCount);
-    for(uint i=0; i<rxSamples.size(); ++i)
-        rxSamples[i].resize(samplesToBuffer);
-
-    lime::complex16_t *dest[2];
-    dest[0] = static_cast<lime::complex16_t *>(rxSamples[0].data());
-    if (mimo)
-        dest[1] = static_cast<lime::complex16_t *>(rxSamples[1].data());
-
-
-    std::vector< std::vector<complex16_t> > txPattern(stream.txCount);
-    const int txPacketCount = 1;
-    for(uint i=0; i<txPattern.size(); ++i)
-    {
-        txPattern[i].resize(txPacketCount*samplesInPkt); // 4 packets should be enough
-        for(int j=0; j<txPacketCount; ++j)
-        {
-            int16_t src[4] = {1, 0, -1, 0};
-            int16_t ampl = (j+1)*(32768/(txPacketCount+1));
-            for(int k=0; k<samplesInPkt; ++k)
-            {
-                txPattern[i][j*samplesInPkt+k].i = src[k & 3] * ampl;
-                txPattern[i][j*samplesInPkt+k].q = src[(k+1) & 3] * ampl;
-            }
-        }
-    }
-
-    lime::complex16_t *src[2];
-    src[0] = static_cast<lime::complex16_t *>(txPattern[0].data());
-    if (mimo)
-        src[1] = static_cast<lime::complex16_t *>(txPattern[1].data());
-
-    bool txSent = false;
-    SDRDevice::StreamMeta txMeta;
-    int64_t currentTimestamp = 0;
-    int64_t startOffset = samplesInPkt*1024*20;
-
-    struct TestData
-    {
-        int64_t sentAt;
-        int64_t recvAt;
-    };
-
-    TestData testNoTS;
-    testNoTS.sentAt = 0;
-    testNoTS.recvAt = 0;
-
-    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(3)) //run for 10 seconds
-    {
-        //Receive samples
-        samplesRead = dev.StreamRx(chipIndex, (void **)dest, samplesInPkt, &meta);
-        if(samplesRead == 0)
-        {
-            printf("Failed to StreamRx\n");
-            return false;
-        }
-        currentTimestamp = meta.timestamp;
-
-        float ampl = sqrt(pow(rxSamples[0][0].i, 2) + pow(rxSamples[0][0].q, 2));
-        bool gotSignal = ampl > 2000;
-        if(gotSignal)
-        {
-            printf("Got something @ %li, ampl: %g\n", currentTimestamp, ampl);
-        }
-
-        if(currentTimestamp >= startOffset)
-        {
-            if(testNoTS.sentAt == 0)
-            {
-                testNoTS.sentAt = currentTimestamp + samplesInPkt;  // it's already in the past, need to add samples count
-                txMeta.useTimestamp = false;
-                txMeta.flushPartialPacket = true;
-                uint samplesSent = dev.StreamTx(chipIndex, (const void **)src, txPacketCount*samplesInPkt, &txMeta);
-                if(samplesSent == 0)
-                {
-                    printf("Failure to send\n");
-                    return false;
-                }
-                else
-                    printf("Syncless: Tx sent @ %li\n", testNoTS.sentAt);
-            }
-            else if (gotSignal)
-            {
-                testNoTS.recvAt = currentTimestamp;
-                float timeDiff = float(testNoTS.recvAt-testNoTS.sentAt)/sampleRate;
-                printf("Syncless: Rx got @ %li, RF frontend overhead: %li (%.3f ms)\n", testNoTS.recvAt, testNoTS.recvAt-testNoTS.sentAt, timeDiff*1e3);
-                return true;
-            }
-        }
-    }
-    return false;
-}
-*/
 int main(int argc, char **argv)
 {
+#ifdef NDEBUG
+    printf("Release build\n");
+#else
+    printf("Debug build\n");
+#endif
     //Find devices
     auto handles = DeviceRegistry::enumerate();
     for (uint32_t i = 0; i < handles.size(); i++) //print device list
@@ -471,11 +467,17 @@ int main(int argc, char **argv)
     device = DeviceRegistry::makeDevice(handles[0]);
     device->Init();
 
+    runForever.store(true);
+    signal(SIGINT, intHandler);
+
     // Run tests
-    return TxTiming(*device, true);
+    float millis = 10;
+    if(argc > 1)
+        sscanf(argv[1], "%f", &millis);
+    //return TxTiming(*device, true, millis);
 
-    bool okStreamSISO = FullStreamTxRx(*device, false);
-
+    bool okStreamSISO = FullStreamTxRx(*device, true);
+    return 0;
     // !!!need to close device entirely to clear PCIE data buffers between runs, otherwise FPGA gets stuck with packets from previous run and waits for their timestamps
     // might be LitePCIE Kernel driver issue, because closing individual write/read endpoints does not clear buffers
     DeviceRegistry::freeDevice(device);
