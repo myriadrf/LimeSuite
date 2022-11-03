@@ -119,7 +119,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    sampleRate = 122.88e6;
+    sampleRate = 122.88e6/4;
     chipIndex = 1;
     printf("----------TEST FullStreamTxRx, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
     configPair = generateTestConfig(MIMO, sampleRate);

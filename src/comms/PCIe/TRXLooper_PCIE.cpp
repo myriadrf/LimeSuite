@@ -90,7 +90,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         return;
     }
 
-    const int outDMA_BUFFER_SIZE = packetSize * 2;
+    const int outDMA_BUFFER_SIZE = packetSize * 1;
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
     memset(dmaMem, 0, DMA_BUFFER_TOTAL_SIZE);
     const int irqPeriod = 16;
@@ -219,7 +219,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             desc.events = POLLOUT;
 
             //printf("Poll\n");
-            const int pollTimeout = 1000;
+            const int pollTimeout = 10;
             const int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
                 printf("TransmitLoop poll errno(%i) %s\n", errno, strerror(errno));
@@ -280,7 +280,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             {
                 //printf("Sent sw: %li hw: %li, diff: %li\n", stagingBufferIndex, reader.hw_count, stagingBufferIndex-reader.hw_count);
                 outputReady = false;
-                ++writeTransactions;
+                //++writeTransactions;
                 pendingWrites.push(wrInfo);
             }
 #endif
@@ -310,7 +310,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             //blockTiming.avg = 0;//sqrt(blockProcessTime / blockTiming.blockCount);
 
             if(showStats)
-                printf("%s Tx: %.3f MB/s | FIFO:%i/%i/%i pktOut:%i TS:%li avgBatch:%.1f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i bTime:%i/%.1f/%ius, shw:%li/%li underrun:%i\n",
+                printf("%s Tx: %.3f MB/s | FIFO:%i/%i/%i pktOut:%i TS:%li avgBatch:%.1f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li underrun:%i\n",
                     rxPort->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     txIn.size(),
@@ -324,9 +324,6 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     totalPacketSent&0xFFFFFFFF,
                     fpgaTxPktIngressCount,
                     totalPacketSent - fpgaTxPktIngressCount,
-                    0,//blockTiming.min,
-                    0.0,//blockTiming.avg,
-                    0,//blockTiming.max,
                     reader.sw_count,
                     reader.hw_count,
                     underrun
@@ -474,7 +471,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
             if(buffersAvailable >= DMA_BUFFER_COUNT) // data overflow
             {
-                readIndex = writer.hw_count-1; // reset read position right behind current hardware index
+                readIndex = writer.hw_count-2; // reset read position right behind current hardware index
                 ++rxOverrun;
                 ++stats.overrun;
                 reportProblems = true;
@@ -560,7 +557,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             desc.fd = fd;
             desc.events = POLLIN;
 
-            const int pollTimeout = 100;
+            const int pollTimeout = 10;
             int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
             {
