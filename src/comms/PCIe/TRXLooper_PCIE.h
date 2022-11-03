@@ -13,13 +13,14 @@ class LitePCIe;
 class TRXLooper_PCIE : public lime::TRXLooper
 {
   public:
-    TRXLooper_PCIE(LitePCIe *trxPort, FPGA *f, LMS7002M *chip, uint8_t moduleIndex);
+    TRXLooper_PCIE(LitePCIe *rxPort, LitePCIe *txPort, FPGA *f, LMS7002M *chip, uint8_t moduleIndex);
     virtual ~TRXLooper_PCIE();
     virtual void Start();
   protected:
     virtual void ReceivePacketsLoop() override;
     virtual void TransmitPacketsLoop() override;
-    LitePCIe *trxPort;
+    LitePCIe *rxPort;
+    LitePCIe *txPort;
 };
 
 } // namespace lime

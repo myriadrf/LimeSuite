@@ -30,8 +30,8 @@ static inline void ValidateChannel(uint8_t channel)
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
-    std::vector<lime::LitePCIe*> trxStreams)
-    : mControlPort(control), mTRXStreamPorts(trxStreams)
+    std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
+    : mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
 {
     mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
@@ -894,7 +894,8 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
         return -1; // already running
     try {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(
-            mTRXStreamPorts.at(moduleIndex),
+            mRXStreamPorts.at(moduleIndex),
+            mTXStreamPorts.at(moduleIndex),
             mFPGA, mLMSChips.at(moduleIndex),
             moduleIndex
         );
@@ -914,24 +915,34 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
 
 void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 {
-    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
-
+    LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
     if (trxPort->Open(trxPort->GetPathName().c_str(), O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
     {
         char ctemp[128];
         sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
         throw std::runtime_error(ctemp);
     }
+    // trxPort = mTXStreamPorts.at(moduleIndex);
+    // if (trxPort->Open(trxPort->GetPathName().c_str(), O_WRONLY | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
+    // {
+    //     char ctemp[128];
+    //     sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
+    //     throw std::runtime_error(ctemp);
+    // }
     mStreamers.at(moduleIndex)->Start();
 }
 
 void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
 {
     SDRDevice::StreamStop(moduleIndex);
-    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
+    LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
     assert(trxPort);
     if (trxPort->IsOpen())
         trxPort->Close();
+    // trxPort = mTXStreamPorts.at(moduleIndex);
+    // assert(trxPort);
+    // if (trxPort->IsOpen())
+    //     trxPort->Close();
 
     delete mStreamers.at(moduleIndex);
     mStreamers[moduleIndex] = nullptr;

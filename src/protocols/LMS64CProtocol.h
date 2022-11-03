@@ -79,9 +79,9 @@ public:
         static const int pktLength = 64;
         static const int maxDataLength = 56;
         static const int headerSize = pktLength - maxDataLength;
-        LMS64CPacket() :cmd(0), status(STATUS_UNDEFINED), blockCount(0)
+        LMS64CPacket()
         {
-             memset(reserved, 0, sizeof(reserved));
+             memset(this, 0, sizeof(LMS64CPacket));
         };
         uint8_t cmd;
         uint8_t status;

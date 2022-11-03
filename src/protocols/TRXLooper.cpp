@@ -19,7 +19,7 @@ TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     : rxOut(512), txIn(512),
     rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
     txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
-    mMaxBufferSize(32768)
+    mMaxBufferSize(32768), txStaging(nullptr), rxStaging(nullptr)
 {
     lms = chip, fpga = f;
     chipId = id;
@@ -550,9 +550,10 @@ void TRXLooper::Start()
     // if (cfg.alignPhase)
     //     TODO: AlignRxRF(true);
     //enable FPGA streaming
+    int threadsToWait = needTx ? 2 : 1;
 
     // wait for all thread to be ready
-    while(mThreadsReady.load() < 2)
+    while(mThreadsReady.load() < threadsToWait)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
@@ -598,70 +599,32 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
         useChannelB ? static_cast<lime::complex32f_t *>(dest[1]) : nullptr
     };
 
-    // rxStaging holding buffer for reading samples count not multiple of packet contents
-    if(!rxStaging.ptr)
-    {
-        bool got = rxOut.pop(&rxStaging, true, 200);
-        if(!got)
-            return 0;
-        assert(rxStaging.isValid());
-    }
-
     auto start = std::chrono::high_resolution_clock::now();
     while (samplesProduced < count) {
-        if(!rxStaging.ptr)
+        if(!rxStaging && !rxOut.pop(&rxStaging, true, 200))
             return samplesProduced;
-
-        int packetsRemaining = (rxStaging.usage - rxStaging.offset) / sizeof(PacketType);
-        if (packetsRemaining == 0)
-        {
-            rxOutPool.Free(rxStaging.ptr);
-            rxStaging.ptr = nullptr;
-            rxStaging.usage = 0;
-            rxStaging.offset = 0;
-            bool got = rxOut.pop(&rxStaging, true, 200);
-            if(!got)
-            {
-                //printf("StreamRx did not get packet\n");
-                int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-                if(duration > totalTimeout) // TODO: timeout duration in meta
-                    return samplesProduced;
-                else
-                    continue;
-            }
-            assert(rxStaging.isValid());
-        }
-
-        auto pkt = reinterpret_cast<PacketType*>(((uint8_t*)rxStaging.ptr) + rxStaging.offset);
-        packetsRemaining = (rxStaging.usage - rxStaging.offset) / sizeof(PacketType);
-        assert(packetsRemaining > 0);
 
         if(!timestampSet && meta)
         {
-            meta->timestamp = pkt->timestamp;
+            meta->timestamp = rxStaging->timestamp;
             timestampSet = true;
         }
 
-        while ((count - samplesProduced > 0) && packetsRemaining > 0)
-        //for (int i=0; i<packetsRemaining; ++i)
-        {
-            const int samplesPending = count - samplesProduced;
-            const int available = pkt->end - pkt->start;
-            const int transferCount = samplesPending > available ? available : samplesPending;
+        int expectedCount = count-samplesProduced;
+        const int samplesToCopy = std::min(expectedCount, rxStaging->size());
 
-            memcpy(&f32_dest[0][samplesProduced], &pkt->chA[pkt->start], transferCount*sizeof(pkt->chA[0]));
-            if (useChannelB)
-                memcpy(&f32_dest[1][samplesProduced], &pkt->chB[pkt->start], transferCount*sizeof(pkt->chB[0]));
-            pkt->start += transferCount;
-            samplesProduced += transferCount;
-            if (pkt->end - pkt->start == 0) // packet fully consumed, advance to next one
-            {
-                --packetsRemaining;
-                rxStaging.offset += sizeof(PacketType);
-                if(rxStaging.offset == rxStaging.usage)
-                    break;
-                ++pkt;
-            }
+        lime::complex32f_t * const *f32_src = rxStaging->front();
+
+        memcpy(&f32_dest[0][samplesProduced], f32_src[0], samplesToCopy*sizeof(complex32f_t));
+        if (useChannelB)
+            memcpy(&f32_dest[1][samplesProduced], f32_src[1], samplesToCopy*sizeof(complex32f_t));
+        rxStaging->pop(samplesToCopy);
+        samplesProduced += samplesToCopy;
+
+        if (rxStaging->empty())
+        {
+            delete rxStaging;
+            rxStaging = nullptr;
         }
 
         // int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
@@ -673,116 +636,46 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
 
 int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::StreamMeta *meta)
 {
-    typedef PartialPacket<complex32f_t> PacketType;
     const SDRDevice::StreamConfig &config = mConfig;
     const bool useChannelB = config.txCount > 1;
-    const int samplesInPkt = PacketType::samplesStorage;
-
-    uint32_t samplesConsumed = 0;
-    const lime::complex32f_t *floatSrc[2] = {
-        static_cast<const lime::complex32f_t *>(samples[0]),
-        useChannelB ? static_cast<const lime::complex32f_t *>(samples[1]) : nullptr
-    };
 
     const bool useTimestamp = meta ? meta->useTimestamp : false;
     const bool flush = meta && meta->flush;
     int64_t ts = useTimestamp ? meta->timestamp : 0;
 
-    const int allocSize = sizeof(PacketType);
+    int samplesRemaining = count;
+    const lime::complex32f_t* floatSrc[2] = {
+        static_cast<const lime::complex32f_t *>(samples[0]),
+        useChannelB ? static_cast<const lime::complex32f_t *>(samples[0]) : nullptr
+    };
 
-    while (samplesConsumed < count) {
-        if(!txStaging.ptr)
+    while (samplesRemaining) {
+        if (!txStaging)
         {
-            txStaging.genTime = std::chrono::high_resolution_clock::now();
-            txStaging.ptr = txInPool.Allocate(allocSize);
-            memset(txStaging.ptr, 0, txStaging.size);
-            txStaging.usage = 0;
-            txStaging.offset = 0;
-            txStaging.size = allocSize;
+            txStaging = new StagingPacketType(510*8);
+            txStaging->timestamp = ts;
+            txStaging->useTimestamp = useTimestamp;
         }
-        if(!txStaging.ptr)
-            return samplesConsumed;
 
-        const int samplesRemaining = count - samplesConsumed;
+        int consumed = txStaging->push(floatSrc, samplesRemaining);
+        floatSrc[0] += consumed;
+        if(useChannelB)
+            floatSrc[1] += consumed;
 
-        int expectedPacketCount = ceil(samplesRemaining/(float)samplesInPkt);
-        assert(expectedPacketCount > 0);
+        samplesRemaining -= consumed;
+        ts += consumed;
 
-        const int freePackets = (txStaging.size - txStaging.usage)/sizeof(PacketType);
-        const int pktCount = std::min(expectedPacketCount, freePackets);
-
-        assert(txStaging.offset == 0);
-        assert(txStaging.size > 0);
-        assert(txStaging.usage < txStaging.size);
-
-        bool doFlush = false;
-
-        for (int i=0; i<pktCount; ++i)
+        if(txStaging->isFull() || flush)
         {
-            auto pkt = reinterpret_cast<PacketType*>(((uint8_t*)txStaging.ptr) + txStaging.usage);
-            if(pkt->end == 0)
-            {
-                pkt->timestamp = useTimestamp ? ts : 0;
-                pkt->useTimestamp = useTimestamp;
-                pkt->start = 0;
+            if(samplesRemaining == 0)
+                txStaging->flush = flush;
 
-                
-                pkt->flush = flush;
-            }
-            // else if (pkt->timestamp + pkt->end != ts)
-            // {
-            //     // appending would be discontinuity within packet, flush it.
-            //     printf("Tx discontinuity flush\n");
-            //     txStaging.usage += sizeof(PacketType);
-            //     doFlush = true;
-            //     break;
-            // }
-
-            const int availableSpace = samplesInPkt - pkt->end;
-            assert(availableSpace > 0);
-            const int copyCount = std::min(samplesRemaining, availableSpace);
-
-            memcpy(&pkt->chA[pkt->start], &floatSrc[0][samplesConsumed], copyCount*sizeof(pkt->chA[0]));
-            if(useChannelB)
-                memcpy(&pkt->chB[pkt->start], &floatSrc[1][samplesConsumed], copyCount*sizeof(pkt->chB[0]));
-            pkt->end += copyCount;
-            samplesConsumed += copyCount;
-            ts += copyCount;
-
-            if (samplesConsumed == count && flush)
-            {
-                pkt->flush = flush;
-                doFlush = true;
-            }
-
-            if(pkt->end == samplesInPkt || doFlush)
-            {
-                txStaging.usage += sizeof(PacketType);
-                assert(txStaging.usage <= txStaging.size);
+            if(!txIn.push(txStaging))
                 break;
-            }
-        }
-
-        if (txStaging.usage == txStaging.size || doFlush)
-        {
-            txStaging.offset = 0;
-            assert(txStaging.usage > 0);
-            assert(txStaging.size > 0);
-            if (txIn.push(txStaging, true, 100))
-            {
-                //printf("Push Tx staging %i\n", txStaging.usage);
-                txStaging.ptr = nullptr;
-            }
-            else
-            {
-                txStaging.usage = 0;
-                txStaging.offset = 0;
-                memset(txStaging.ptr, 0, txStaging.size);
-                return samplesConsumed;
-            }
+            txStaging = nullptr;
         }
     }
-    return samplesConsumed;
+    return count - samplesRemaining;
 }
 
 } // namespace lime

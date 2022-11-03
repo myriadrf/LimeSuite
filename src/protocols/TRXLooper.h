@@ -68,11 +68,12 @@ public:
     typedef DataBlock RawDataBlock;
     typedef DataBlock SamplesBlock;
 
-    PacketsFIFO<SamplesBlock> rxOut;
-    PacketsFIFO<SamplesBlock> txIn;
+    typedef StagingPacket<lime::complex32f_t, 2> StagingPacketType;
+    StagingPacketType *rxStaging;
+    StagingPacketType *txStaging;
 
-    SamplesBlock rxStaging;
-    SamplesBlock txStaging;
+    PacketsFIFO<StagingPacketType*> rxOut;
+    PacketsFIFO<StagingPacketType*> txIn;
 
     MemoryPool rxOutPool;
     MemoryPool txInPool;

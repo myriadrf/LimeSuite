@@ -6,8 +6,83 @@
 #include <utility>
 #include <complex>
 #include <chrono>
+#include <type_traits>
+#include <assert.h>
 
 namespace lime{
+
+template<typename T, uint8_t chCount>
+class StagingPacket
+{
+public:
+    StagingPacket(uint16_t samplesCount) : timestamp(0), useTimestamp(false), flush(false),
+        offset(0), length(0), mCapacity(samplesCount)
+    {
+        assert(samplesCount > 0);
+        constexpr int alignment = sizeof(T);
+        for(uint8_t i=0; i<chCount; ++i)
+        {
+            uint8_t* mem = (uint8_t*)aligned_alloc(alignment, alignment*samplesCount);
+            tail[i] = head[i] = channel[i] = reinterpret_cast<T*>(mem);
+        }
+
+    };
+    ~StagingPacket()
+    {
+        for(uint8_t i=0; i<chCount; ++i)
+            free(channel[i]);
+    };
+    int64_t timestamp;
+    bool useTimestamp;
+    bool flush;
+
+    inline int size() const { return length-offset; };
+    inline bool empty() const { return size() == 0; };
+    inline int capacity() const { return mCapacity; };
+    inline bool isFull() const { return mCapacity-length == 0; };
+    inline constexpr int channelCount() const { return chCount; };
+
+    // copies samples data to buffer, returns actual copied samples count
+    inline int push(const T* const * src, uint16_t count)
+    {
+        const uint16_t freeSamples = mCapacity-length;
+        const int samplesToCopy = std::min(freeSamples, count);
+        constexpr int alignment = sizeof(T);
+        for(uint8_t i=0; i<chCount; ++i)
+        {
+            if(src[i] == nullptr)
+                continue;
+            memcpy(tail[i], src[i], samplesToCopy * alignment);
+            tail[i] += samplesToCopy;
+        }
+        length += samplesToCopy;
+        return samplesToCopy;
+    }
+    // returns number of samples removed
+    inline int pop(int count)
+    {
+        const uint16_t toPop = std::min(count, length-offset);
+        for(uint8_t i=0; i<chCount; ++i)
+            head[i] += toPop;
+        offset += toPop;
+        timestamp += toPop; // also offset timestamp
+        return toPop;
+    }
+    inline T* const * front() const { return head; }
+    inline void Reset() {
+        offset = 0;
+        length = 0;
+        for(uint8_t i=0; i<chCount; ++i)
+            tail[i] = head[i] = channel[i];
+    }
+private:
+    T* head[chCount];
+    T* tail[chCount];
+    T* channel[chCount];
+    uint16_t offset;
+    uint16_t length;
+    uint16_t mCapacity;
+};
 
 template<class T>
 struct PartialPacket
@@ -26,7 +101,7 @@ struct PartialPacket
 struct DataBlock
 {
     DataBlock() : size(0), usage(0), offset(0), ptr(nullptr) {};
-    inline bool isValid() const { 
+    inline bool isValid() const {
         return (ptr != nullptr) && (usage <= size) && (offset <= usage);
     }
     // ~DataBlock() { if(ptr != nullptr) delete ptr; };

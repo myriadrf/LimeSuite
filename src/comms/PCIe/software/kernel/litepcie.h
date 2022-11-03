@@ -41,12 +41,16 @@ struct litepcie_ioctl_dma_writer {
 	uint8_t enable;
 	int64_t hw_count;
 	int64_t sw_count;
+	int16_t write_size;
+	uint8_t irqFreq;
 };
 
 struct litepcie_ioctl_dma_reader {
 	uint8_t enable;
 	int64_t hw_count;
 	int64_t sw_count;
+	uint64_t interruptCounter;
+	uint8_t irqFreq;
 };
 
 struct litepcie_ioctl_lock {

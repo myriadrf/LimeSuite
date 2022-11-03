@@ -23,7 +23,7 @@ class TRXLooper_PCIE;
 class LimeSDR_5GRadio : public SDRDevice
 {
 public:
-    LimeSDR_5GRadio(lime::LitePCIe* control, std::vector<lime::LitePCIe*> trxStreams);
+    LimeSDR_5GRadio(lime::LitePCIe* control, std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams);
     virtual ~LimeSDR_5GRadio();
 
     virtual void Configure(const SDRConfig config, uint8_t socIndex) override;
@@ -84,7 +84,8 @@ private:
     CDCM_Dev* cdcm[2];
     LitePCIe *mControlPort;
     Equalizer* mEqualizer;
-    std::vector<LitePCIe*> mTRXStreamPorts;
+    std::vector<LitePCIe*> mRXStreamPorts;
+    std::vector<LitePCIe*> mTXStreamPorts;
     std::mutex mCommsMutex;
 };
 

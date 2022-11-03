@@ -328,7 +328,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
 void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
 {
     const bool runTx = pthis->chkEnTx->GetValue();
-    const int fifoSize = fftSize*512;
+    //const int fifoSize = fftSize*512;
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
     bool fftEnabled = true;
@@ -388,6 +388,29 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     const uint8_t chipIndex = pthis->lmsIndex;
 
+    std::vector< std::vector<complex32f_t> > txPattern(2);
+    const int txPacketCount = 8;
+    for(uint i=0; i<txPattern.size(); ++i)
+    {
+        txPattern[i].resize(fftSize);
+        float srcI[8];// = {1.0, 0.0, -1.0, 0.0};
+        float srcQ[8];// = {-1.0, 0.0, 1.0, 0.0};
+        for(int j=0; j<8; ++j)
+        {
+            srcI[j] = cos(j*2*3.141592/8);// = {1.0, 0.0, -1.0, 0.0};
+            srcQ[j] = sin(j*2*3.141592/8);// = {-1.0, 0.0, 1.0, 0.0};
+        }
+        
+        float ampl = 1.0;//(j+1)*(1.0/(txPacketCount+1));
+        for(int k=0; k<fftSize; ++k)
+        {
+            txPattern[i][k].q = srcI[k & 7] * ampl;
+            txPattern[i][k].i = srcI[k & 7] * ampl;
+        }
+    }
+
+    lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
+
     try
     {
 
@@ -414,7 +437,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     pthis->mStreamRunning.store(true);
     SDRDevice::StreamMeta txMeta;
     txMeta.useTimestamp = syncTx;
-    txMeta.flush = false;
+    txMeta.flush = true;
     int fftCounter = 0;
 
     SDRDevice::StreamMeta rxMeta;
@@ -430,8 +453,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             int64_t rxTS = rxMeta.timestamp;
 
             if (runTx) {
-                txMeta.timestamp = rxTS + 1020*64;
-                pthis->lmsControl->StreamTx(chipIndex, (const void **)buffers, fftSize, &txMeta);
+                txMeta.timestamp = rxTS + 1020*128;
+                pthis->lmsControl->StreamTx(chipIndex, (const void **)src, fftSize, &txMeta);
             }
 
             if(pthis->captureSamples.load())
