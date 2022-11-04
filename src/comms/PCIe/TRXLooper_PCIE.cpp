@@ -17,6 +17,8 @@
 
 #include "ConstellationDisplay.h"
 
+extern int gPacketsInDMAbuffer;
+
 #define ZEROED_MEM 0
 //#define OLD_PCIE_CORE
 
@@ -90,7 +92,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         return;
     }
 
-    const int outDMA_BUFFER_SIZE = packetSize * 8;
+    const int outDMA_BUFFER_SIZE = packetSize * gPacketsInDMAbuffer;
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
     memset(dmaMem, 0, DMA_BUFFER_TOTAL_SIZE);
     const int irqPeriod = 8;
@@ -428,7 +430,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     lockInfo.dma_writer_request = 1;
     ret = guarded_ioctl(fd, LITEPCIE_IOCTL_LOCK, &lockInfo);
 
-    const int readBlockSize = packetSize * 8;
+    const int readBlockSize = packetSize * gPacketsInDMAbuffer;
     const int stagingSamplesCapacity = samplesInPkt*readBlockSize/packetSize;
     assert(readBlockSize <= DMA_BUFFER_SIZE);
 

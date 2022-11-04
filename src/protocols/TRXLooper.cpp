@@ -13,10 +13,12 @@
 
 using namespace std;
 
+int gPacketsInDMAbuffer = 2; // should not be more than 8
+
 namespace lime {
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
-    : rxOut(512), txIn(512),
+    : rxOut(512), txIn(1024),
     rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
     txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
     mMaxBufferSize(32768), txStaging(nullptr), rxStaging(nullptr)
@@ -657,7 +659,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         if (!txStaging)
         {
             const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
-            txStaging = new StagingPacketType(samplesInPkt*8);
+            txStaging = new StagingPacketType(samplesInPkt*gPacketsInDMAbuffer);
             txStaging->timestamp = ts;
             txStaging->useTimestamp = useTimestamp;
         }
