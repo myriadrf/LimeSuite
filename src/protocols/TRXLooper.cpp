@@ -599,10 +599,14 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
         useChannelB ? static_cast<lime::complex32f_t *>(dest[1]) : nullptr
     };
 
+    bool firstIteration = true;
+
     auto start = std::chrono::high_resolution_clock::now();
     while (samplesProduced < count) {
-        if(!rxStaging && !rxOut.pop(&rxStaging, true, 10))
+        if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 10))
             return samplesProduced;
+
+        firstIteration = false;
 
         if(!timestampSet && meta)
         {

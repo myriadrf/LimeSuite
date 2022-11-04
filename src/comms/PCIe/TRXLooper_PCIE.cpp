@@ -90,7 +90,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         return;
     }
 
-    const int outDMA_BUFFER_SIZE = packetSize * 1;
+    const int outDMA_BUFFER_SIZE = packetSize * 2;
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
     memset(dmaMem, 0, DMA_BUFFER_TOTAL_SIZE);
     const int irqPeriod = 8;
