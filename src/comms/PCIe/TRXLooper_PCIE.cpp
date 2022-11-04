@@ -93,7 +93,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     const int outDMA_BUFFER_SIZE = packetSize * 1;
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
     memset(dmaMem, 0, DMA_BUFFER_TOTAL_SIZE);
-    const int irqPeriod = 16;
+    const int irqPeriod = 8;
     const int maxDMAqueue = 255;
 
     // Initialize DMA
@@ -130,6 +130,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     int stagingBufferIndex = 0;
     int writeTransactions = 0;
     int underrun = 0;
+    float packetsIn = 0;
 
     StagingPacketType* srcPkt = nullptr;
 
@@ -182,7 +183,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             else
                 break;
 #endif
-            ++writeTransactions;
+            //++writeTransactions;
         }
 
         // get input data
@@ -191,8 +192,14 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         // collect and transform samples data to output buffer
         while (!outputReady && output.hasSpace() && !terminateTx.load(std::memory_order_relaxed))
         {
-            if(!srcPkt && !txIn.pop(&srcPkt, true, 100))
-                break;
+            if(!srcPkt)
+            {
+                if(txIn.pop(&srcPkt, true, 100))
+                    packetsIn += (float)srcPkt->size()/samplesInPkt;
+                else
+                    break;
+            } 
+                
             const bool doFlush = output.consume(srcPkt);
             if(srcPkt->empty())
             {
@@ -280,7 +287,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             {
                 //printf("Sent sw: %li hw: %li, diff: %li\n", stagingBufferIndex, reader.hw_count, stagingBufferIndex-reader.hw_count);
                 outputReady = false;
-                //++writeTransactions;
+                ++writeTransactions;
                 pendingWrites.push(wrInfo);
             }
 #endif
@@ -299,7 +306,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
             ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
             double dataRate = 1000.0 * totalBytesSent / timePeriod;
-            float avgBatchPktCount = float(totalBytesSent/packetSize)/writeTransactions;
+            float avgBatchPktCount = float(packetsSent)/writeTransactions;
 
             const uint16_t addr = 0x7FE2 + (chipId*5);
             //fpga->WriteRegister(addr, 0);
@@ -310,12 +317,13 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             //blockTiming.avg = 0;//sqrt(blockProcessTime / blockTiming.blockCount);
 
             if(showStats)
-                printf("%s Tx: %.3f MB/s | FIFO:%i/%i/%i pktOut:%i TS:%li avgBatch:%.1f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li underrun:%i\n",
+                printf("%s Tx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%g pktOut:%i TS:%li avgBatch:%.1f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li underrun:%i\n",
                     rxPort->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     txIn.size(),
                     maxFIFOlevel,
                     txIn.max_size(),
+                    packetsIn,
                     packetsSent,
                     lastTS,
                     avgBatchPktCount,
@@ -333,6 +341,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             // {
             //     printf("HW (%li) reader should be behind SW (%li), diff: %li\n", reader.hw_count, reader.sw_count, reader.hw_count-reader.sw_count);
             // }
+            packetsIn = 0;
             packetsSent = 0;
             totalBytesSent = 0;
             txDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);
@@ -419,14 +428,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     lockInfo.dma_writer_request = 1;
     ret = guarded_ioctl(fd, LITEPCIE_IOCTL_LOCK, &lockInfo);
 
-    const int readBlockSize = packetSize * 2;
+    const int readBlockSize = packetSize * 1;
     const int stagingSamplesCapacity = samplesInPkt*readBlockSize/packetSize;
     assert(readBlockSize <= DMA_BUFFER_SIZE);
 
     litepcie_ioctl_dma_writer writer;
     writer.enable = 1;
     writer.write_size = readBlockSize;
-    writer.irqFreq = 16;
+    writer.irqFreq = 8;
 
     ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
     if( ret < 0)
@@ -526,7 +535,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                         const int fifoLevel = rxOut.size();
                         maxFIFOlevel = std::max(maxFIFOlevel, fifoLevel);
                         ++packetsOut;
-                        rxStaging = new StagingPacketType(510*8);
+                        rxStaging = new StagingPacketType(stagingSamplesCapacity);
                     }
                     else
                     {
