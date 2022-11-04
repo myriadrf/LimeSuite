@@ -603,7 +603,7 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
 
     auto start = std::chrono::high_resolution_clock::now();
     while (samplesProduced < count) {
-        if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 10))
+        if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 250))
             return samplesProduced;
 
         firstIteration = false;
@@ -657,7 +657,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         if (!txStaging)
         {
             const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
-            txStaging = new StagingPacketType(samplesInPkt*4);
+            txStaging = new StagingPacketType(samplesInPkt*8);
             txStaging->timestamp = ts;
             txStaging->useTimestamp = useTimestamp;
         }
