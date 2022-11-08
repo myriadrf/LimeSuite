@@ -92,6 +92,9 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 
+    # include module for check_cxx_compiler_flag
+    include(CheckCXXCompilerFlag)
+
     #enable C++11 on older versions of cmake
     if (CMAKE_VERSION VERSION_LESS "3.1")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
@@ -118,7 +121,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     #default SIMD configuration uses native build flags
     #when packaging and x86, use sse3 so the binaries work across multiple x86 variants
     if(NOT DEFAULT_SIMD_FLAGS)
-        set(DEFAULT_SIMD_FLAGS "native")
+        check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
+        if (COMPILER_SUPPORTS_MARCH_NATIVE)
+            set(DEFAULT_SIMD_FLAGS "native")
+        endif()
     endif()
     if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr" AND X86)
         set(DEFAULT_SIMD_FLAGS "SSE3")
