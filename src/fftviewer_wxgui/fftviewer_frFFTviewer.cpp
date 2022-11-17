@@ -220,17 +220,18 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
     if (mStreamRunning.load() == false)
         return;
     // TODO:
-    //SDRDevice::StreamStats stats;
-    //lmsControl->StreamStatus(0, stats);
+    SDRDevice::StreamStats stats;
+    const uint8_t chipIndex = this->lmsIndex;
+    lmsControl->StreamStatus(chipIndex, stats);
 
     // TODO:
     // float RxFilled = 100 * (float)stats.rxFIFO_filled;
     // gaugeRxBuffer->SetValue((int)RxFilled);
-    // lblRxDataRate->SetLabel(printDataRate(stats.rxDataRate_Bps));
+    lblRxDataRate->SetLabel(printDataRate(stats.dataRate_Bps));
 
     // float TxFilled = 100 * (float)stats.txFIFO_filled;
     // gaugeTxBuffer->SetValue((int)TxFilled);
-    // lblTxDataRate->SetLabel(printDataRate(stats.txDataRate_Bps));
+    lblTxDataRate->SetLabel(printDataRate(stats.txDataRate_Bps));
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
@@ -450,6 +451,9 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
             int i = 0;
             samplesPopped = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
+            if(samplesPopped <= 0)
+                continue;
+
             int64_t rxTS = rxMeta.timestamp;
 
             if (runTx) {
@@ -474,13 +478,14 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             {
                 //take only first buffer for time domain display
                 //reset fftBins for accumulation
-                for (unsigned i = 0; fftCounter==0 && i < fftSize; ++i)
-                {
-                    if (fftEnabled)
-                        localDataResults.fftBins[ch][i] = 0;
-                    localDataResults.samplesI[ch][i] = buffers[ch][i].i;
-                    localDataResults.samplesQ[ch][i] = buffers[ch][i].q;
-                }
+                if(fftCounter==0)
+                    for (unsigned i = 0; i < fftSize; ++i)
+                    {
+                        if (fftEnabled)
+                            localDataResults.fftBins[ch][i] = 0;
+                        localDataResults.samplesI[ch][i] = buffers[ch][i].i;
+                        localDataResults.samplesQ[ch][i] = buffers[ch][i].q;
+                    }
                 if (fftEnabled)
                 {
                     if (wndFunction == 0)
