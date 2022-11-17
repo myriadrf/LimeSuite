@@ -51,13 +51,13 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
     TRXLooper::Setup(config);
 
     float combinedSampleRate = std::max(config.txCount, config.rxCount)*config.hintSampleRate;
-    int batchSize = 4; // should be good enough for most cases
+    int batchSize = 2; // should be good enough for most cases
     // for high data rates e.g 16bit ADC/DAC 2x2 MIMO @ 122.88Msps = ~1973 MB/s
     // need to batch as many packets as possible into transfer buffers
     if (combinedSampleRate != 0)
     {
-        batchSize = combinedSampleRate/30.72e6;
-        batchSize = std::min(batchSize, int(DMA_BUFFER_SIZE/sizeof(FPGA_DataPacket)));
+        batchSize = combinedSampleRate/122.88e6;
+        batchSize = std::min(batchSize, 2);//int(DMA_BUFFER_SIZE/sizeof(FPGA_DataPacket)));
         batchSize = std::max(1, batchSize);
     }
     mRxPacketsToBatch = mTxPacketsToBatch = batchSize;
