@@ -899,6 +899,8 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
             mFPGA, mLMSChips.at(moduleIndex),
             moduleIndex
         );
+        if (mCallback_logMessage)
+            mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
         mStreamers[moduleIndex]->Setup(config);
         mStreamConfig = config;
         return 0;

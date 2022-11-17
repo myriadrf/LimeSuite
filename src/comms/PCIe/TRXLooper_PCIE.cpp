@@ -20,7 +20,7 @@
 #define ZEROED_MEM 0
 //#define OLD_PCIE_CORE
 
-static bool showStats = true;
+static bool showStats = false;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
 
 namespace lime {
@@ -57,12 +57,10 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
     if (combinedSampleRate != 0)
     {
         batchSize = combinedSampleRate/30.72e6;
-        printf("Bsize %i\n", batchSize);
         batchSize = std::min(batchSize, int(DMA_BUFFER_SIZE/sizeof(FPGA_DataPacket)));
         batchSize = std::max(1, batchSize);
     }
     mRxPacketsToBatch = mTxPacketsToBatch = batchSize;
-    printf("Batching %i packets\n", mRxPacketsToBatch);
 }
 
 void TRXLooper_PCIE::Start()
@@ -337,8 +335,10 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             uint32_t fpgaTxPktIngressCount = (values[0] << 16) | values[1];
             //blockTiming.avg = 0;//sqrt(blockProcessTime / blockTiming.blockCount);
 
-            if(showStats)
-                printf("%s Tx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%g pktOut:%i TS:%li avgBatch:%.1f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li underrun:%i\n",
+            if(showStats || mCallback_logMessage)
+            {
+                char msg[512];
+                int len = snprintf(msg, sizeof(msg)-1, "%s Tx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%g pktOut:%i TS:%li avgBatch:%.1f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li underrun:%i",
                     rxPort->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     txIn.size(),
@@ -357,6 +357,11 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     reader.hw_count,
                     underrun
                 );
+                if(showStats)
+                    printf("%s\n", msg);
+                if(mCallback_logMessage)
+                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+            }
             // hardware counter should be less than software's
             //assert(reader.hw_count < reader.sw_count);
             // {
@@ -625,11 +630,12 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             if( expectedDataRateBps!=0 && abs(expectedDataRateBps - dataRateBps) > dataRateMargin )
                 printf("Unexpected Rx data rate, should be: ~%g MB/s, got: %g MB/s, diff: %g\n", expectedDataRateBps/1e6, dataRateBps/1e6, (expectedDataRateBps - dataRateBps)/1e6);
             stats.txDataRate_Bps = txDataRate_Bps.load(std::memory_order_relaxed);
-            if (showStats)
+            if(showStats || mCallback_logMessage)
             {
                 ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
                 // sprintf(ctemp, "%02X %02X %02X %02X %02X %02X %02X %02X", probeBuffer[0],probeBuffer[1],probeBuffer[2],probeBuffer[3],probeBuffer[4],probeBuffer[5], probeBuffer[6],probeBuffer[7]);
-                printf("%s Rx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%i pktOut:%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li\n",
+                char msg[512];
+                int len = snprintf(msg, sizeof(msg)-1, "%s Rx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%i pktOut:%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li",
                     rxPort->GetPathName().c_str(),
                     dataRateBps / 1000000.0,
                     rxOut.size(),
@@ -646,6 +652,10 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                     readIndex,//writer.sw_count,
                     writer.hw_count
                 );
+                if(showStats)
+                    printf("%s\n", msg);
+                if(mCallback_logMessage)
+                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
             }
             packetsRecv = 0;
             packetsOut = 0;

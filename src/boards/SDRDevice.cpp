@@ -9,7 +9,7 @@
 
 namespace lime {
 
-SDRDevice::SDRDevice() : mCallback_logData(nullptr)
+SDRDevice::SDRDevice() : mCallback_logData(nullptr), mCallback_logMessage(nullptr)
 {
 }
 
@@ -79,6 +79,11 @@ int SDRDevice::CustomParameterRead(const uint8_t *ids, double *values, const siz
 void SDRDevice::SetDataLogCallback(DataCallbackType callback)
 {
     mCallback_logData = callback;
+}
+
+void SDRDevice::SetMessageLogCallback(LogCallbackType callback)
+{
+    mCallback_logMessage = callback;
 }
 
 // int SDRDevice::ReadLMSReg(uint16_t address, int ind)

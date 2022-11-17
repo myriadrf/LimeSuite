@@ -36,6 +36,9 @@ public:
     virtual int StreamRx(void **samples, uint32_t count, SDRDevice::StreamMeta *meta);
     virtual int StreamTx(const void **samples, uint32_t count, const SDRDevice::StreamMeta *meta);
 
+    void SetMessageLogCallback(SDRDevice::LogCallbackType callback) {
+      mCallback_logMessage = callback;
+    }
   protected:
     virtual void ReceivePacketsLoop() = 0;
     virtual void TransmitPacketsLoop() = 0;
@@ -92,6 +95,7 @@ public:
     // lower count will give better latency, but can cause problems with really high data rates
     uint8_t mRxPacketsToBatch;
     uint8_t mTxPacketsToBatch;
+    SDRDevice::LogCallbackType mCallback_logMessage;
 };
 
 } // namespace lime

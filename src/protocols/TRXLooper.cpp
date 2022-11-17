@@ -20,7 +20,8 @@ TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
     txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
     mMaxBufferSize(32768), txStaging(nullptr), rxStaging(nullptr),
-    mRxPacketsToBatch(4), mTxPacketsToBatch(4)
+    mRxPacketsToBatch(4), mTxPacketsToBatch(4),
+    mCallback_logMessage(nullptr)
 {
     lms = chip, fpga = f;
     chipId = id;
