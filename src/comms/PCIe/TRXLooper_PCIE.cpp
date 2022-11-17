@@ -249,8 +249,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             const int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
                 printf("TransmitLoop poll errno(%i) %s\n", errno, strerror(errno));
-            if (ret == 0)
-                printf("TransmitLoop poll timeout\n");
+            // if (ret == 0)
+            //     printf("TransmitLoop poll timeout\n");
             else
                 canSend = true;
         }
