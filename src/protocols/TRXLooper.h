@@ -24,7 +24,7 @@ public:
 
     uint64_t GetHardwareTimestamp(void);
     void SetHardwareTimestamp(const uint64_t now);
-    void Setup(const lime::SDRDevice::StreamConfig &config);
+    virtual void Setup(const lime::SDRDevice::StreamConfig &config);
     virtual void Start();
     virtual void Stop();
     float GetDataRate(bool tx);
@@ -87,6 +87,11 @@ public:
     int mMaxBufferSize;
     std::atomic<int> mThreadsReady;
     std::chrono::time_point<std::chrono::high_resolution_clock> pcStreamStart;
+
+    // how many packets to batch in data transaction
+    // lower count will give better latency, but can cause problems with really high data rates
+    uint8_t mRxPacketsToBatch;
+    uint8_t mTxPacketsToBatch;
 };
 
 } // namespace lime

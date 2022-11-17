@@ -113,6 +113,10 @@ class LIME_API SDRDevice : public IComms
         /// memory size to allocate for each channel buffering
         /// Default: 0 - allow to decide internally
         uint32_t bufferSize;
+
+        /// optional: expected sampling rate for data transfer optimizations.
+        /// Default: 0 - deicide internally
+        float hintSampleRate;
         bool alignPhase; // attempt to do phases alignment between paired channels
 
         StatusCallbackFunc statusCallback;

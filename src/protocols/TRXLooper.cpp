@@ -13,15 +13,14 @@
 
 using namespace std;
 
-int gPacketsInDMAbuffer = 2; // should not be more than 8
-
 namespace lime {
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     : rxOut(512), txIn(1024),
     rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
     txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
-    mMaxBufferSize(32768), txStaging(nullptr), rxStaging(nullptr)
+    mMaxBufferSize(32768), txStaging(nullptr), rxStaging(nullptr),
+    mRxPacketsToBatch(4), mTxPacketsToBatch(4)
 {
     lms = chip, fpga = f;
     chipId = id;
@@ -608,7 +607,7 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
         if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 250))
             return samplesProduced;
 
-        firstIteration = false;
+        //firstIteration = false;
 
         if(!timestampSet && meta)
         {
@@ -659,7 +658,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         if (!txStaging)
         {
             const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
-            txStaging = new StagingPacketType(samplesInPkt*gPacketsInDMAbuffer);
+            txStaging = new StagingPacketType(samplesInPkt*mTxPacketsToBatch);
             txStaging->timestamp = ts;
             txStaging->useTimestamp = useTimestamp;
         }

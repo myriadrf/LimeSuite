@@ -15,6 +15,7 @@ class TRXLooper_PCIE : public lime::TRXLooper
   public:
     TRXLooper_PCIE(LitePCIe *rxPort, LitePCIe *txPort, FPGA *f, LMS7002M *chip, uint8_t moduleIndex);
     virtual ~TRXLooper_PCIE();
+    virtual void Setup(const lime::SDRDevice::StreamConfig &config);
     virtual void Start();
   protected:
     virtual void ReceivePacketsLoop() override;
