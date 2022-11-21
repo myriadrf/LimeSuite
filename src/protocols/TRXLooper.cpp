@@ -652,7 +652,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
     int samplesRemaining = count;
     const lime::complex32f_t* floatSrc[2] = {
         static_cast<const lime::complex32f_t *>(samples[0]),
-        useChannelB ? static_cast<const lime::complex32f_t *>(samples[0]) : nullptr
+        useChannelB ? static_cast<const lime::complex32f_t *>(samples[1]) : nullptr
     };
 
     while (samplesRemaining) {
