@@ -425,16 +425,21 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3);
     const int maxSamplesInPkt = sizeof(FPGA_DataPacket::data) / chCount / sampleSize;
 
-    int samplesInPkt = maxSamplesInPkt; // replace with desired samples count
+    int samplesInPkt = 384;// replace with desired samples count
     samplesInPkt = std::min(samplesInPkt, maxSamplesInPkt);
     assert(samplesInPkt > 0);
 
     const int payloadSize = samplesInPkt * sampleSize * chCount;
     const int packetSize = 16 + payloadSize;
+    const int packet_size_samples = payloadSize/(sampleSize*2); //magic number needed for fpga's FSMs
 
     // request fpga to provide Rx packets with desired payloadSize
-    const uint16_t requestAddr = 0x0000; // TODO: needs to be implemented
-    fpga->WriteRegister(requestAddr, payloadSize);
+    //// Two writes are needed
+    uint16_t requestAddr = 0x0019; 
+    fpga->WriteRegister(requestAddr, packetSize);
+
+    requestAddr = 0x000E; 
+    fpga->WriteRegister(requestAddr, packet_size_samples);
 
     mRxPacketsToBatch = std::min((int)mRxPacketsToBatch, DMA_BUFFER_SIZE/packetSize);
     assert(mRxPacketsToBatch > 0);
