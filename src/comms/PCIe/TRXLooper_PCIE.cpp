@@ -60,7 +60,8 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
         batchSize = std::min(batchSize, 2);//int(DMA_BUFFER_SIZE/sizeof(FPGA_DataPacket)));
         batchSize = std::max(1, batchSize);
     }
-    mRxPacketsToBatch = mTxPacketsToBatch = batchSize;
+    mRxPacketsToBatch = batchSize;
+    mTxPacketsToBatch = batchSize;
 }
 
 void TRXLooper_PCIE::Start()
@@ -422,24 +423,29 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
     rxLastTimestamp.store(0, std::memory_order_relaxed);
     const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
-    const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3);
+    const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
     const int maxSamplesInPkt = sizeof(FPGA_DataPacket::data) / chCount / sampleSize;
 
-    int samplesInPkt = 384;// replace with desired samples count
+    int requestSamplesInPkt = maxSamplesInPkt;
+    int samplesInPkt = requestSamplesInPkt;
+
     samplesInPkt = std::min(samplesInPkt, maxSamplesInPkt);
     assert(samplesInPkt > 0);
 
-    const int payloadSize = samplesInPkt * sampleSize * chCount;
+    int payloadSize = requestSamplesInPkt * sampleSize * chCount;
+
+    // iqSamplesCount must be N*16, or N*8 depending on device BUS width
+    const int iqSamplesCount = (payloadSize/(sampleSize*2)) & ~0xF; //magic number needed for fpga's FSMs
+    payloadSize = iqSamplesCount * sampleSize * 2;
+    samplesInPkt = payloadSize / (sampleSize * chCount);
+
     const int packetSize = 16 + payloadSize;
-    const int packet_size_samples = payloadSize/(sampleSize*2); //magic number needed for fpga's FSMs
 
     // request fpga to provide Rx packets with desired payloadSize
     //// Two writes are needed
-    uint16_t requestAddr = 0x0019; 
-    fpga->WriteRegister(requestAddr, packetSize);
-
-    requestAddr = 0x000E; 
-    fpga->WriteRegister(requestAddr, packet_size_samples);
+    uint32_t requestAddr[] = {0x0019, 0x000E};
+    uint32_t requestData[] = {packetSize, iqSamplesCount};
+    fpga->WriteRegisters(requestAddr, requestData, 2);
 
     mRxPacketsToBatch = std::min((int)mRxPacketsToBatch, DMA_BUFFER_SIZE/packetSize);
     assert(mRxPacketsToBatch > 0);
@@ -476,6 +482,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     const int readBlockSize = packetSize * mRxPacketsToBatch;
     const int stagingSamplesCapacity = samplesInPkt*mRxPacketsToBatch;
     assert(readBlockSize <= DMA_BUFFER_SIZE);
+
+    //printf("Stream, samples:%i pktSize:%i payload:%i smplSize:%i, batch:%i, DMAread:%i\n", samplesInPkt, packetSize, payloadSize, iqSamplesCount, mRxPacketsToBatch, readBlockSize);
 
     litepcie_ioctl_dma_writer writer;
     writer.enable = 1;
