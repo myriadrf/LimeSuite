@@ -19,6 +19,8 @@ std::atomic<bool> LimeSDRTest::running(false);
 LimeSDRTest::TestCallback LimeSDRTest::callback = nullptr;
 std::chrono::steady_clock::time_point LimeSDRTest::tp_start;
 
+int limeversion = 1;
+
 LimeSDRTest::LimeSDRTest(LMS7_Device* dev)
 {
     step = 0;
@@ -72,6 +74,8 @@ LimeSDRTest* LimeSDRTest::Connect()
     if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR))
         || strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
     {
+        if  (strstr (info->deviceName,"v2"))
+            limeversion = 2;
         std::string str = "->Device: ";
         str += handles[0].serialize();
         str += ", HW=" + std::string(info->hardwareVersion);
@@ -133,20 +137,27 @@ int LimeSDRTest::FPGA_EEPROM_Test()
     char str[64];
     UpdateStatus(LMS_TEST_INFO, "->Read EEPROM");
 
+    if  (limeversion != 1)  {
+//        std::snprintf(str, sizeof(str), "FPGA EEPROM not supported in v2");
+        UpdateStatus(LMS_TEST_INFO, "FPGA EEPROM not supported in v2");
+//        UpdateStatus(LMS_TEST_INFO, str);
+        return 0;
+    }
     memset(buf, 0, 64);
     buf[0] = CMD_MEMORY_RD;
     buf[2] = 56;
     buf[13] = 7;				//read count
     buf[19] = 3;
 
-    if (TransferLMS64C(buf) != 0)
+    if (TransferLMS64C(buf) != 0)	{
         return -1;
-
+    }
     std::snprintf(str, sizeof(str), "->Read data: %02X %02X %02X %02X %02X %02X %02X", buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38]);
     UpdateStatus(LMS_TEST_INFO, str);
 
-    if (buf[32]<16 || buf[35]<16 || buf[33]>12 || buf[36]>12 || buf[34]>31 || buf[37]>31 || buf[34]==0 || buf[37]==0)
+    if (buf[32]<16 || buf[35]<16 || buf[33]>12 || buf[36]>12 || buf[34]>31 || buf[37]>31 || buf[34]==0 || buf[37]==0)	{
         return -1;
+    }
     return 0;
 }
 
@@ -296,7 +307,10 @@ int LimeSDRTest::VCTCXOTest()
     count2 = vals[0] + (vals[1] << 16);
     std::string str = "  Results : " + std::to_string(count1) + " (min); " + std::to_string(count2) + " (max)";
 
-    if ((count1 + 50 > count2) || (count1 + 300 < count2))
+    int val_ = 30;
+    if (limeversion == 1)
+        val_ = 50;
+    if ((count1 + val_ > count2) || (count1 + 300 < count2))
     {
         str += " - FAILED";
         UpdateStatus(LMS_TEST_INFO, str.c_str());

@@ -1,3 +1,4 @@
+builddir/**
 build/**
 mcu_program/*.lst
 mcu_program/*.obj

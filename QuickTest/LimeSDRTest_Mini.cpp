@@ -37,7 +37,12 @@ int LimeSDRTest_Mini::RFTest()
             return false;
         if (device->GetLMS()->SetFrequencySX(lime::LMS7002M::Rx, freq)!=0)
             return false;
-        RFTestData testinfo = {freq, freq+tx_offset, -14, tx_offset, 0};
+	extern int limeversion;
+	RFTestData testinfo;
+	if	(limeversion == 1)
+		testinfo = {freq, freq+tx_offset, -14, tx_offset, 0};
+	else
+        	testinfo = {freq, freq+tx_offset, -30, tx_offset, 0};
         device->SetPath(false, 0, rxPath);
         device->SetPath(true, 0, rxPath==1? 1 : 2);
         if (device->GetConnection()->WriteRegister(0x17, rxPath==1? 0x2200:0x1100) != 0)
@@ -62,7 +67,7 @@ int LimeSDRTest_Mini::RFTest()
     device->SetTestSignal(true,0,LMS_TESTSIG_DC, 0x7000, 0x7000);
 
     UpdateStatus(LMS_TEST_INFO, "->Run Tests (TX_2 -> LNA_W):");
-    bool passed = testPath(1000e6, 3);
+    bool passed = testPath(1000e6,3);
     UpdateStatus(LMS_TEST_INFO, "->Run Tests (TX_1 -> LNA_H):");
     passed &= testPath(2100e6, 1);
 
