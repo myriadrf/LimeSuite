@@ -60,10 +60,8 @@ int lime::ReportError(const int errnum, const char *format, va_list argList)
 
 static void defaultLogHandler(const lime::LogLevel level, const char *message)
 {
-//#ifdef NDEBUG
-    if (level == lime::LOG_LEVEL_DEBUG)
+    if (level > lime::LogLevel::LOG_LEVEL_ERROR)
         return;
-//#endif
     fprintf(stderr, "%s\n", message);
 }
 

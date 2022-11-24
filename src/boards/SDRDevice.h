@@ -28,7 +28,8 @@ class LIME_API SDRDevice : public IComms
     static constexpr uint8_t MAX_RFSOC_COUNT = 16;
 
     enum LogLevel {
-        ERROR = 0,
+        CRITICAL = 0,
+        ERROR,
         WARNING,
         INFO,
         VERBOSE,

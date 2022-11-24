@@ -1240,9 +1240,6 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
             SetNCOFrequency(Tx, i, txNCO[ch][i]);
     }
     this->SetActiveChannel(chBck);
-#ifndef NDEBUG
-    printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq_Hz/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
-#endif // NDEBUG
     if(TuneVCO(VCO_CGEN) != 0)
     {
         if (output)
