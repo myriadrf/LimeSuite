@@ -581,8 +581,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
                 const int64_t samplesDiff = srcPkt->counter - lastTS;
                 if (samplesDiff != samplesInPkt) {
-                    printf("Rx discontinuity: %li -> %li (diff: %li), bytesIn: %i, sw:%li hw:%li\n",
-                        lastTS, srcPkt->counter, samplesDiff, readBlockSize, readIndex, writer.hw_count);
+                    // printf("Rx discontinuity: %li -> %li (diff: %li), bytesIn: %i, sw:%li hw:%li\n",
+                    //     lastTS, srcPkt->counter, samplesDiff, readBlockSize, readIndex, writer.hw_count);
                     ++rxDiscontinuity;
                     ++stats.loss;
                     stats.timestamp = srcPkt->counter;
