@@ -901,6 +901,14 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
         );
         if (mCallback_logMessage)
             mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
+        LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
+        if(!trxPort->IsOpen())
+            if (trxPort->Open(trxPort->GetPathName().c_str(), O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
+            {
+                char ctemp[128];
+                sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
+                throw std::runtime_error(ctemp);
+            }
         mStreamers[moduleIndex]->Setup(config);
         mStreamConfig = config;
         return 0;
@@ -917,13 +925,13 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
 
 void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 {
-    LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
-    if (trxPort->Open(trxPort->GetPathName().c_str(), O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
-    {
-        char ctemp[128];
-        sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
-        throw std::runtime_error(ctemp);
-    }
+    // LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
+    // if (trxPort->Open(trxPort->GetPathName().c_str(), O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
+    // {
+    //     char ctemp[128];
+    //     sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
+    //     throw std::runtime_error(ctemp);
+    // }
     // trxPort = mTXStreamPorts.at(moduleIndex);
     // if (trxPort->Open(trxPort->GetPathName().c_str(), O_WRONLY | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
     // {

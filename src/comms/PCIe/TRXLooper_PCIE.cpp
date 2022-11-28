@@ -25,6 +25,14 @@ static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt count
 
 namespace lime {
 
+static inline int64_t ts_to_us(int64_t fs, int64_t ts)
+{
+    int n, r;
+    n = (ts / fs);
+    r = (ts % fs);
+    return (int64_t)n * 1000000 + (((int64_t)r * 1000000) / fs);
+}
+
 static std::mutex gIOCTLmutex;
 
 static int guarded_ioctl(int fd, unsigned long request, void* argp)
@@ -83,6 +91,9 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     const bool compressed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
     const int packetSize = sizeof(FPGA_DataPacket);
+
+    if(!rxPort->IsOpen())
+        throw std::runtime_error("ReceivePacketsLoop tx data port not open\n");
 
     const int fd = rxPort->GetFd();
     int ret;
@@ -299,7 +310,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             int ret = guarded_ioctl(fd, LITEPCIE_IOCTL_MMAP_DMA_READER_UPDATE, &sub);
             if(ret)
             {
-                printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
+                //printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
                 ++retryWrites;
                 continue;
             }
@@ -450,6 +461,9 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     mRxPacketsToBatch = std::min((int)mRxPacketsToBatch, DMA_BUFFER_SIZE/packetSize);
     assert(mRxPacketsToBatch > 0);
 
+    if(!rxPort->IsOpen())
+        throw std::runtime_error("ReceivePacketsLoop rx data port not open\n");
+
     // Initialize DMA
     const int fd = rxPort->GetFd();
     int ret;
@@ -532,6 +546,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     auto pushT1 = std::chrono::high_resolution_clock::now();
     int pushCnt = 0;
     double latency = 0;
+    int streamDelay = 0;
     while (terminateRx.load(std::memory_order_relaxed) == false) {
         ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
         if( ret < 0)
@@ -634,6 +649,11 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                     }
                 }
             }
+            auto streamDuration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now()-pcStreamStart).count();
+            int64_t rxTsDuration = ts_to_us(mConfig.hintSampleRate, lastTS+samplesInPkt);
+            streamDelay = streamDuration-rxTsDuration;
+            //printf("Trx%i, RxDelay: %lius\n", chipId, streamDelay);
+
             ++readIndex;
             // one callback for the entire batch
             if(reportProblems && mConfig.statusCallback)
@@ -663,7 +683,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
             const double dataRateMargin = expectedDataRateBps*0.02;
             if( expectedDataRateBps!=0 && abs(expectedDataRateBps - dataRateBps) > dataRateMargin )
-                printf("Unexpected Rx data rate, should be: ~%g MB/s, got: %g MB/s, diff: %g\n", expectedDataRateBps/1e6, dataRateBps/1e6, (expectedDataRateBps - dataRateBps)/1e6);
+                printf("Rx%i Unexpected Rx data rate, should be: ~%g MB/s, got: %g MB/s, diff: %g\n", chipId, expectedDataRateBps/1e6, dataRateBps/1e6, (expectedDataRateBps - dataRateBps)/1e6);
             stats.txDataRate_Bps = txDataRate_Bps.load(std::memory_order_relaxed);
             if(showStats || mCallback_logMessage)
             {
@@ -673,7 +693,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
                 // sprintf(ctemp, "%02X %02X %02X %02X %02X %02X %02X %02X", probeBuffer[0],probeBuffer[1],probeBuffer[2],probeBuffer[3],probeBuffer[4],probeBuffer[5], probeBuffer[6],probeBuffer[7]);
                 char msg[512];
-                int len = snprintf(msg, sizeof(msg)-1, "%s Rx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%i pktOut:%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li, l:%gus",
+                int len = snprintf(msg, sizeof(msg)-1, "%s Rx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%i pktOut:%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li, l:%gus, delay:%ius",
                     rxPort->GetPathName().c_str(),
                     dataRateBps / 1000000.0,
                     rxOut.size(),
@@ -689,7 +709,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                     txDrops,
                     readIndex,//writer.sw_count,
                     writer.hw_count,
-                    latencyUs
+                    latencyUs,
+                    streamDelay
                 );
                 if(showStats)
                     printf("%s\n", msg);

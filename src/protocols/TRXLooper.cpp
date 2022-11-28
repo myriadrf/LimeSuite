@@ -42,6 +42,10 @@ TRXLooper::~TRXLooper()
         txThread.join();
     if (rxThread.joinable())
         rxThread.join();
+    if(rxStaging)
+        delete rxStaging;
+    if(txStaging)
+        delete txStaging;
 }
 
 float TRXLooper::GetDataRate(bool tx)
@@ -502,10 +506,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     fpga->WriteRegister(0x0008, mode | smpl_width);
     fpga->WriteRegister(0x0007, channelEnables);
     fpga->ResetTimestamp();
-}
 
-void TRXLooper::Start()
-{
     if (rxThread.joinable() || txThread.joinable())
         throw std::logic_error("Samples streaming already running");
 
@@ -514,10 +515,6 @@ void TRXLooper::Start()
     fpga->StopStreaming();
     fpga->WriteRegister(0xD, 0); //stop WFM
     fpga->ResetTimestamp();
-
-    //FPGA should be configured and activated, start needed threads
-    bool needTx = mConfig.txCount > 0;
-    bool needRx = true; // mConfig.rxCount > 0; // always need Rx to know current timestamps;
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.
     // if the thread blocks for too long, Linux can trigger RT throttling
@@ -559,7 +556,14 @@ void TRXLooper::Start()
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
+}
+
+void TRXLooper::Start()
+{
     fpga->StartStreaming();
+    pcStreamStart = chrono::high_resolution_clock::now();
+    //int64_t startPoint = std::chrono::time_point_cast<std::chrono::microseconds>(pcStreamStart).time_since_epoch().count();
+    //printf("Stream%i start %lius\n", chipId, startPoint);
     // if (!mConfig.alignPhase)
     //     lms->ResetLogicregisters();
 }
@@ -583,7 +587,6 @@ void TRXLooper::Stop()
         printf("Failed to join TRXLooper threads\n");
     }
     fpga->StopStreaming();
-    pcStreamStart = chrono::high_resolution_clock::now();
 }
 
 int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta)

@@ -72,8 +72,6 @@ public:
     typedef DataBlock SamplesBlock;
 
     typedef StagingPacket<lime::complex32f_t, 2> StagingPacketType;
-    StagingPacketType *rxStaging;
-    StagingPacketType *txStaging;
 
     PacketsFIFO<StagingPacketType*> rxOut;
     PacketsFIFO<StagingPacketType*> txIn;
@@ -96,6 +94,9 @@ public:
     uint8_t mRxPacketsToBatch;
     uint8_t mTxPacketsToBatch;
     SDRDevice::LogCallbackType mCallback_logMessage;
+private:
+    StagingPacketType *rxStaging;
+    StagingPacketType *txStaging;
 };
 
 } // namespace lime
