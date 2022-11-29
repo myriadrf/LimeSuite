@@ -125,7 +125,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
     memset(dmaMem, 0, DMA_BUFFER_TOTAL_SIZE);
     const int irqPeriod = 8;
-    const int maxDMAqueue = 255;
+    const int maxDMAqueue = 255-2*irqPeriod;
 
     // Initialize DMA
     litepcie_ioctl_dma_reader reader;
@@ -182,29 +182,6 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         while(!pendingWrites.empty() && !terminateTx.load(std::memory_order_relaxed))
         {
             PendingWrite &dataBlock = pendingWrites.front();
-#ifdef OLD_PCIE_CORE
-            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(dataBlock.data + dataBlock.offset);
-            lastTS = pkt->counter;
-            int64_t rxNow = rxLastTimestamp.load();
-            if (pkt->counter-rxNow < 0)
-            {
-                ++underrun;
-                //printf("TxOUT: %li, rxNow: %li, diff: %li\n", pkt->counter, rxNow, pkt->counter-rxNow);
-            }
-            const int bytesWritten = rxPort->WriteRaw(dataBlock.data + dataBlock.offset, dataBlock.size - dataBlock.offset, 500);
-            if(bytesWritten < 0)
-            {
-                ++retryWrites;
-                break;
-            }
-            dataBlock.offset += bytesWritten;
-            if(dataBlock.size - dataBlock.offset == 0)
-            {
-                pendingWrites.pop();
-                ++pendingWriteBufferIndex;
-            }
-            totalBytesSent += bytesWritten;
-#else
             if (reader.hw_count > dataBlock.id)
             {
                 ++pendingWriteBufferIndex;
@@ -213,7 +190,6 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
             else
                 break;
-#endif
             //++writeTransactions;
         }
 
@@ -257,13 +233,11 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             desc.events = POLLOUT;
 
             //printf("Poll\n");
-            const int pollTimeout = 10;
+            const int pollTimeout = 50;
             const int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
                 printf("TransmitLoop poll errno(%i) %s\n", errno, strerror(errno));
-            // if (ret == 0)
-            //     printf("TransmitLoop poll timeout\n");
-            else
+            else if (ret > 0)
                 canSend = true;
         }
         // send output buffer if possible
@@ -275,20 +249,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             wrInfo.size = output.size();
             wrInfo.data = output.data();
             // write or schedule write
-#ifdef OLD_PCIE_CORE
-            const int bytesWritten = rxPort->WriteRaw(dataBlock.data + dataBlock.offset, dataBlock.size - dataBlock.offset, 500);
-            if(bytesWritten < 0)
-            {
-                ++retryWrites;
-                continue;
-            }
-            dataBlock.offset += bytesWritten;
-            if(dataBlock.size - dataBlock.offset != 0)
-                pendingWrites.push(wrInfo); // not all data has been written, add to pending for later retry
-            else
-                ++pendingWriteBufferIndex;
-            totalBytesSent += bytesWritten;
-#else
+
             litepcie_ioctl_mmap_dma_update sub;
             sub.sw_count = stagingBufferIndex;
             sub.buffer_size = wrInfo.size;
@@ -321,7 +282,6 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 ++writeTransactions;
                 pendingWrites.push(wrInfo);
             }
-#endif
             ++stagingBufferIndex;
 
             // todo: check if can take next one
@@ -560,7 +520,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
             if(buffersAvailable >= DMA_BUFFER_COUNT) // data overflow
             {
-                readIndex = writer.hw_count-2; // reset read position right behind current hardware index
+                readIndex = writer.hw_count- 2*(mMaxBufferSize/readBlockSize); // reset read position right behind current hardware index
+
                 ++rxOverrun;
                 ++stats.overrun;
                 reportProblems = true;
@@ -650,10 +611,12 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 }
             }
             auto streamDuration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now()-pcStreamStart).count();
-            int64_t rxTsDuration = ts_to_us(mConfig.hintSampleRate, lastTS+samplesInPkt);
-            streamDelay = streamDuration-rxTsDuration;
-            //printf("Trx%i, RxDelay: %lius\n", chipId, streamDelay);
-
+            if(mConfig.hintSampleRate)
+            {
+                int64_t rxTsDuration = ts_to_us(mConfig.hintSampleRate, lastTS+samplesInPkt);
+                streamDelay = streamDuration-rxTsDuration;
+                //printf("Trx%i, RxDelay: %lius\n", chipId, streamDelay);
+            }
             ++readIndex;
             // one callback for the entire batch
             if(reportProblems && mConfig.statusCallback)
@@ -693,7 +656,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
                 // sprintf(ctemp, "%02X %02X %02X %02X %02X %02X %02X %02X", probeBuffer[0],probeBuffer[1],probeBuffer[2],probeBuffer[3],probeBuffer[4],probeBuffer[5], probeBuffer[6],probeBuffer[7]);
                 char msg[512];
-                int len = snprintf(msg, sizeof(msg)-1, "%s Rx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%i pktOut:%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li, l:%gus, delay:%ius",
+                int len = snprintf(msg, sizeof(msg)-1, "%s Rx: %.3f MB/s | FIFO:%i/%i/%i pktIn:%i pktOut:%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li, l:%gus, pcTime-RxTS:%ius",
                     rxPort->GetPathName().c_str(),
                     dataRateBps / 1000000.0,
                     rxOut.size(),
