@@ -40,7 +40,7 @@ static int guarded_ioctl(int fd, unsigned long request, void* argp)
 #ifdef OLD_PCIE_CORE
     return 0;
 #endif
-    std::unique_lock<std::mutex> lock(gIOCTLmutex);
+    //std::unique_lock<std::mutex> lock(gIOCTLmutex);
     return ioctl(fd, request, argp);
 }
 
