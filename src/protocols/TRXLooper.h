@@ -73,11 +73,14 @@ public:
 
     typedef StagingPacket<lime::complex32f_t, 2> StagingPacketType;
 
+
     PacketsFIFO<StagingPacketType*> rxOut;
     PacketsFIFO<StagingPacketType*> txIn;
 
-    MemoryPool rxOutPool;
-    MemoryPool txInPool;
+    PacketsFIFO<StagingPacketType*> rxPacketsPool;
+    PacketsFIFO<StagingPacketType*> txPacketsPool;
+    // MemoryPool rxOutPool;
+    // MemoryPool txInPool;
 
     std::thread rxParsingThread;
     std::thread txParsingThread;
@@ -95,8 +98,8 @@ public:
     uint8_t mTxPacketsToBatch;
     SDRDevice::LogCallbackType mCallback_logMessage;
 private:
-    StagingPacketType *rxStaging;
     StagingPacketType *txStaging;
+    StagingPacketType *rxStaging;
 };
 
 } // namespace lime

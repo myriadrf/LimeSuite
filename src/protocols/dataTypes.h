@@ -88,7 +88,7 @@ template<class T>
 struct PartialPacket
 {
     PartialPacket() : timestamp(0), start(0), end(0), useTimestamp(false) {};
-    static constexpr int samplesStorage = 510*8;
+    static constexpr int samplesStorage = 512*8;
     T chA[samplesStorage];
     T chB[samplesStorage];
     int64_t timestamp;

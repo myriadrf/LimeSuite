@@ -116,7 +116,7 @@ public:
             src->pop(transferCount);
             currentPacket->SetPayloadSize(payloadSize);
             assert(payloadSize > 0);
-            assert(payloadSize <= 4080);
+            assert(payloadSize <= sizeof(FPGA_DataPacket::data));
             if(bytesUsed >= mCapacity-16)
                 return true; // not enough space for more packets, need to flush
             else

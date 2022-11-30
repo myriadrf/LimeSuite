@@ -17,11 +17,14 @@ namespace lime {
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     : rxOut(512), txIn(1024),
-    rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
-    txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
-    mMaxBufferSize(32768), txStaging(nullptr), rxStaging(nullptr),
+    rxPacketsPool(1024),
+    txPacketsPool(1024),
+    // rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
+    // txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
+    mMaxBufferSize(32768),
     mRxPacketsToBatch(4), mTxPacketsToBatch(4),
-    mCallback_logMessage(nullptr)
+    mCallback_logMessage(nullptr),
+    txStaging(nullptr), rxStaging(nullptr)
 {
     lms = chip, fpga = f;
     chipId = id;
@@ -42,10 +45,6 @@ TRXLooper::~TRXLooper()
         txThread.join();
     if (rxThread.joinable())
         rxThread.join();
-    if(rxStaging)
-        delete rxStaging;
-    if(txStaging)
-        delete txStaging;
 }
 
 float TRXLooper::GetDataRate(bool tx)
@@ -597,7 +596,7 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
     uint32_t samplesProduced = 0;
     const SDRDevice::StreamConfig &config = mConfig;
     const bool useChannelB = config.rxCount > 1;
-    const int totalTimeout = 500;
+    //const int totalTimeout = 500;
 
     lime::complex32f_t *f32_dest[2] = {
         static_cast<lime::complex32f_t *>(dest[0]),
@@ -632,7 +631,8 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
 
         if (rxStaging->empty())
         {
-            delete rxStaging;
+            rxPacketsPool.push(rxStaging, true, 100);
+            //delete rxStaging;
             rxStaging = nullptr;
         }
 
@@ -662,7 +662,9 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         if (!txStaging)
         {
             const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
-            txStaging = new StagingPacketType(samplesInPkt*mTxPacketsToBatch);
+            txPacketsPool.pop(&txStaging, true, 100);
+            txStaging->Reset();
+            //txStaging = new StagingPacketType(samplesInPkt*mTxPacketsToBatch);
             txStaging->timestamp = ts;
             txStaging->useTimestamp = useTimestamp;
         }
