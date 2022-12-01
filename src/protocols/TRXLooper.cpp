@@ -15,6 +15,8 @@ using namespace std;
 
 namespace lime {
 
+using namespace std::chrono;
+
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     : rxOut(512), txIn(1024),
     rxPacketsPool(1024),
@@ -24,6 +26,7 @@ TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     mMaxBufferSize(32768),
     mRxPacketsToBatch(4), mTxPacketsToBatch(4),
     mCallback_logMessage(nullptr),
+    mStreamEnabled(false),
     txStaging(nullptr), rxStaging(nullptr)
 {
     lms = chip, fpga = f;
@@ -530,7 +533,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
         // pthread_setname_np(rxParsingThread.native_handle(), "lime:RxParse");
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &rxThread);
+        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &rxThread);
         pthread_setname_np(rxThread.native_handle(), "lime:RxLoop");
     }
     if (needTx) {
@@ -553,14 +556,19 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     // wait for all thread to be ready
     while(mThreadsReady.load() < threadsToWait)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(milliseconds(2));
     }
 }
 
 void TRXLooper::Start()
 {
     fpga->StartStreaming();
-    pcStreamStart = chrono::high_resolution_clock::now();
+    {
+        std::lock_guard<std::mutex> lock (streamMutex);
+        mStreamEnabled = true;
+        streamActive.notify_all();
+    }
+    steamClockStart = steady_clock::now();
     //int64_t startPoint = std::chrono::time_point_cast<std::chrono::microseconds>(pcStreamStart).time_since_epoch().count();
     //printf("Stream%i start %lius\n", chipId, startPoint);
     // if (!mConfig.alignPhase)
@@ -586,6 +594,7 @@ void TRXLooper::Stop()
         printf("Failed to join TRXLooper threads\n");
     }
     fpga->StopStreaming();
+    mStreamEnabled = false;
 }
 
 int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta)
@@ -605,7 +614,7 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
 
     bool firstIteration = true;
 
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = high_resolution_clock::now();
     while (samplesProduced < count) {
         if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 250))
             return samplesProduced;
@@ -662,7 +671,9 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         if (!txStaging)
         {
             const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
-            txPacketsPool.pop(&txStaging, true, 100);
+            txPacketsPool.pop(&txStaging, true, 1000);
+            if(!txStaging)
+                break;
             txStaging->Reset();
             //txStaging = new StagingPacketType(samplesInPkt*mTxPacketsToBatch);
             txStaging->timestamp = ts;

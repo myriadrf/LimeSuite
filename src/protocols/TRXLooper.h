@@ -90,13 +90,16 @@ public:
 
     int mMaxBufferSize;
     std::atomic<int> mThreadsReady;
-    std::chrono::time_point<std::chrono::high_resolution_clock> pcStreamStart;
+    std::chrono::time_point<std::chrono::steady_clock> steamClockStart;
 
     // how many packets to batch in data transaction
     // lower count will give better latency, but can cause problems with really high data rates
     uint8_t mRxPacketsToBatch;
     uint8_t mTxPacketsToBatch;
     SDRDevice::LogCallbackType mCallback_logMessage;
+    std::condition_variable streamActive;
+    std::mutex streamMutex;
+    bool mStreamEnabled;
 private:
     StagingPacketType *txStaging;
     StagingPacketType *rxStaging;
