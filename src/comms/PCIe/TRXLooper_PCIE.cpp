@@ -112,6 +112,7 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
         batchSize = std::min(batchSize, 4);//int(DMA_BUFFER_SIZE/sizeof(FPGA_DataPacket)));
         batchSize = std::max(1, batchSize);
     }
+
     mRxPacketsToBatch = 2*config.hintSampleRate/30.72e6;//4;//batchSize;
     mTxPacketsToBatch = 8;//mRxPacketsToBatch;
     //printf("Batch size %i\n", batchSize);
@@ -162,6 +163,19 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                        fd, mmap_dma_info.dma_tx_buf_offset);
     if (dmaMem == MAP_FAILED || dmaMem == nullptr)
         throw std::runtime_error("TransmitLoop failed to allocate memory\n");
+
+    if(mConfig.extraConfig && mConfig.extraConfig->txMaxPacketsInBatch != 0)
+        mTxPacketsToBatch = mConfig.extraConfig->txMaxPacketsInBatch;
+
+    mTxPacketsToBatch = std::min((int)mTxPacketsToBatch, DMA_BUFFER_SIZE/packetSize);
+    mTxPacketsToBatch = std::max((int)mTxPacketsToBatch, 1);
+
+    float bufferTimeDuration = float(samplesInPkt*mTxPacketsToBatch) / mConfig.hintSampleRate;
+    char msg[256];
+    int len = sprintf(msg, "Stream%i samplesInTxPkt:%i maxTxPktInBatch:%i, batchSizeInTime:%gus\n",
+        chipId, samplesInPkt, mTxPacketsToBatch, bufferTimeDuration*1e6);
+    if(mCallback_logMessage)
+        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
 
     const int outDMA_BUFFER_SIZE = packetSize * mTxPacketsToBatch;
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
@@ -273,7 +287,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
         }
         bool canSend = stagingBufferIndex - reader.hw_count < maxDMAqueue;
-        if(!canSend)
+        if(!canSend && (mConfig.extraConfig == nullptr || mConfig.extraConfig->usePoll))
         {
             // auto pt1 = perfClock::now();
             pollfd desc;
@@ -446,8 +460,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     fpga->ReadRegisters(addrs, values, 4);
     const uint32_t fpgaTxPktIngressCount = (values[0] << 16) | values[1];
     const uint32_t fpgaTxPktDropCounter = (values[2] << 16) | values[3];
-    char msg[256];
-    int len = sprintf(msg, "Tx Loop totals: packets sent: %i (0x%08X) , FPGA packet counter: %i (0x%08X), diff: %i, FPGA tx drops: %i\n",
+    len = sprintf(msg, "Tx Loop totals: packets sent: %i (0x%08X) , FPGA packet counter: %i (0x%08X), diff: %i, FPGA tx drops: %i\n",
         totalPacketSent, totalPacketSent, fpgaTxPktIngressCount, fpgaTxPktIngressCount, (totalPacketSent&0xFFFFFFFF)-fpgaTxPktIngressCount, fpgaTxPktDropCounter
         );
     if(mCallback_logMessage)
@@ -462,6 +475,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 {
     const bool mimo = std::max(mConfig.txCount, mConfig.rxCount) > 1;
     const bool compressed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    bool usePoll = true;
 
     rxLastTimestamp.store(0, std::memory_order_relaxed);
     const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
@@ -470,7 +484,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     const int maxSamplesInPkt = 1024 / chCount;
 
     int requestSamplesInPkt = 256;//maxSamplesInPkt;
+    if(mConfig.extraConfig && mConfig.extraConfig->rxSamplesInPacket != 0)
+        requestSamplesInPkt = mConfig.extraConfig->rxSamplesInPacket;
+
+    if(mConfig.extraConfig)
+        usePoll = mConfig.extraConfig->usePoll;
+
     int samplesInPkt = std::min(requestSamplesInPkt, maxSamplesInPkt);
+    samplesInPkt = std::max(samplesInPkt, 64);
     assert(samplesInPkt > 0);
 
     int payloadSize = requestSamplesInPkt * sampleSize * chCount;
@@ -489,6 +510,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     uint32_t requestData[] = {packetSize, iqSamplesCount};
     fpga->WriteRegisters(requestAddr, requestData, 2);
 
+    if(mConfig.extraConfig && mConfig.extraConfig->rxPacketsInBatch != 0)
+        mRxPacketsToBatch = mConfig.extraConfig->rxPacketsInBatch;
     mRxPacketsToBatch = std::min((uint32_t)mRxPacketsToBatch, DMA_BUFFER_SIZE/packetSize);
     mRxPacketsToBatch = std::max((int)mRxPacketsToBatch, 1);
     assert(mRxPacketsToBatch > 0);
@@ -525,8 +548,6 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     const int stagingSamplesCapacity = samplesInPkt*mRxPacketsToBatch;
     assert(readBlockSize <= DMA_BUFFER_SIZE);
 
-    //printf("Stream, samples:%i pktSize:%i payload:%i smplSize:%i, batch:%i, DMAread:%i\n", samplesInPkt, packetSize, payloadSize, iqSamplesCount, mRxPacketsToBatch, readBlockSize);
-
     int totalTxDrops = 0;
     int totalPacketsReceived = 0;
     int64_t totalBytesReceived = 0; //for data rate calculation
@@ -556,6 +577,12 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     irqPeriod = std::max(1, irqPeriod);
     irqPeriod = std::min(irqPeriod, 16);
     //printf("Buffer duration: %g us, irq: %i\n", bufferTimeDuration*1e6, irqPeriod);
+
+    char msg[256];
+    int len = sprintf(msg, "Stream%i usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus\n",
+        chipId, usePoll ? 1 : 0, samplesInPkt, mRxPacketsToBatch, readBlockSize, bufferTimeDuration*1e6);
+    if(mCallback_logMessage)
+        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
 
     float expectedDataRateBps = 0;
     if (mConfig.hintSampleRate != 0)
@@ -725,7 +752,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             if(reportProblems && mConfig.statusCallback)
                 mConfig.statusCallback(&stats, mConfig.userData);
         }
-        else
+        else if(usePoll)
         {
             auto pt1 = perfClock::now();
             pollfd desc;
@@ -763,7 +790,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             if( expectedDataRateBps!=0 && abs(expectedDataRateBps - dataRateBps) > dataRateMargin )
                 printf("Rx%i Unexpected Rx data rate, should be: ~%g MB/s, got: %g MB/s, diff: %g\n", chipId, expectedDataRateBps/1e6, dataRateBps/1e6, (expectedDataRateBps - dataRateBps)/1e6);
             if ( abs(streamDelay) > 2000 )
-                printf("Discrepancy between PC clock and Rx timestamps: %ius\n", streamDelay);
+                printf("\n\tDiscrepancy between PC clock and Rx timestamps: %ius\n\n", streamDelay);
             stats.txDataRate_Bps = txDataRate_Bps.load(std::memory_order_relaxed);
             if(showStats || mCallback_logMessage)
             {
@@ -821,8 +848,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
     rxDataRate_Bps.store(0, std::memory_order_relaxed);
 
-    char msg[256];
-    int len = sprintf(msg, "Rx loop totals: packets recv: %i, txDrops: %i\n", totalPacketsReceived, totalTxDrops);
+    len = sprintf(msg, "Rx loop totals: packets recv: %i, txDrops: %i\n", totalPacketsReceived, totalTxDrops);
 
     if(mCallback_logMessage)
         mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);

@@ -99,6 +99,16 @@ class LIME_API SDRDevice : public IComms
     // channels order and data transmission formats setup
     struct StreamConfig
     {
+        struct Extras {
+            Extras() {
+                memset(this, 0, sizeof(Extras));
+                usePoll = true;
+            };
+            bool usePoll;
+            uint16_t rxSamplesInPacket;
+            uint32_t rxPacketsInBatch;
+            uint32_t txMaxPacketsInBatch;
+        };
         typedef bool (*StatusCallbackFunc)(const StreamStats*, void*);
         enum DataFormat
         {
@@ -131,6 +141,8 @@ class LIME_API SDRDevice : public IComms
         StatusCallbackFunc statusCallback;
         void* userData; // will be supplied to statusCallback
         // TODO: callback for drops and errors
+
+        Extras* extraConfig;
     };
 
     struct StreamMeta
