@@ -539,10 +539,9 @@ int LimeSDR_5GRadio::Init()
 
     uint8_t paramId = 2;
     double dacVal = 65535;
-    // TODO:
-    // connection->CustomParameterWrite(&paramId,&dacVal,1,"");
-    // paramId = 3;
-    // connection->CustomParameterWrite(&paramId,&dacVal,1,"");
+    CustomParameterWrite(&paramId,&dacVal,1,"");
+    paramId = 3;
+    CustomParameterWrite(&paramId,&dacVal,1,"");
 
     // TODO:
     cdcm[0]->Reset(30.72e6, 25e6);
@@ -799,7 +798,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
         int recv = 0;
         auto t1 = std::chrono::high_resolution_clock::now();
         {
-        std::unique_lock<std::mutex> lk(mCommsMutex);
+        std::lock_guard<std::mutex> lock(mCommsMutex);
         sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
         if (mCallback_logData)
             mCallback_logData(true, (uint8_t*)&pkt, sizeof(pkt));
@@ -838,7 +837,7 @@ int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, uint32_t length)
     LMS64CProtocol::LMS64CPacket pkt;
     int remainingBytes = length;
     const uint8_t* src = data;
-    std::unique_lock<std::mutex> lk(mCommsMutex);
+    std::lock_guard<std::mutex> lock(mCommsMutex);
     while (remainingBytes > 0)
     {
         pkt.cmd = CMD_I2C_WR;
@@ -865,7 +864,7 @@ int LimeSDR_5GRadio::I2CRead(int address, uint8_t *data, uint32_t length)
     LMS64CProtocol::LMS64CPacket pkt;
     int remainingBytes = length;
     uint8_t* dest = data;
-    std::unique_lock<std::mutex> lk(mCommsMutex);
+    std::lock_guard<std::mutex> lock(mCommsMutex);
     while (remainingBytes > 0)
     {
         pkt.cmd = CMD_I2C_RD;
@@ -1278,6 +1277,39 @@ void LimeSDR_5GRadio::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
 
     if (!cdcm[0]->IsLocked())
         throw std::runtime_error("CDCM is not locked");
+}
+
+int LimeSDR_5GRadio::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
+{
+    assert(mControlPort);
+    LMS64CProtocol::LMS64CPacket pkt;
+    pkt.cmd = CMD_ANALOG_VAL_WR;
+    pkt.status = STATUS_UNDEFINED;
+    pkt.blockCount = count;
+    pkt.periphID = 0;
+    int byteIndex = 0;
+    std::lock_guard<std::mutex> lock(mCommsMutex);
+    for (size_t i = 0; i < count; ++i)
+    {
+        pkt.payload[byteIndex++] = ids[i];
+        int powerOf10 = 0;
+        if(values[i] > 65535.0 && (units != ""))
+            powerOf10 = log10(values[i]/65.536)/3;
+        if (values[i] < 65.536 && (units != ""))
+            powerOf10 = log10(values[i]/65535.0) / 3;
+        int unitsId = 0; // need to convert given units to their enum
+        pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
+        int value = values[i] / pow(10, 3*powerOf10);
+        pkt.payload[byteIndex++] = (value >> 8);
+        pkt.payload[byteIndex++] = (value & 0xFF);
+    }
+    int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
+    if (sent != sizeof(pkt))
+        throw std::runtime_error("I2C write failed");
+    int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
+
+    if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+        throw std::runtime_error("I2C write failed");
 }
 
 } //namespace lime
