@@ -1305,11 +1305,11 @@ int LimeSDR_5GRadio::CustomParameterWrite(const uint8_t *ids, const double *valu
     }
     int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
     if (sent != sizeof(pkt))
-        throw std::runtime_error("I2C write failed");
+        throw std::runtime_error("CustomParameterWrite write failed");
     int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
-
     if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-        throw std::runtime_error("I2C write failed");
+        throw std::runtime_error("CustomParameterWrite write failed");
+    return 0;
 }
 
 } //namespace lime
