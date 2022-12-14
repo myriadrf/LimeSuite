@@ -13,8 +13,8 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
-#define VERBOSE 1
-#define DRAW_GNU_PLOTS
+//#define VERBOSE 1
+//#define DRAW_GNU_PLOTS
 
 #include <thread>
 #include <vector>

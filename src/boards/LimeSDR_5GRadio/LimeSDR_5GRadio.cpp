@@ -11,6 +11,8 @@
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 
+#include "mcu_program/common_src/lms7002m_calibrations.h"
+
 #include "math.h"
 
 namespace lime
@@ -478,6 +480,22 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             mEqualizer->Configure(eqCfg);
             LMS2_SetSampleRate(sampleRate, oversample);
         }
+
+        for (int i = 0; i < 2; ++i) {
+            chip->SetActiveChannel(i==0 ? LMS7002M::ChA : LMS7002M::ChB);
+            const ChannelConfig &ch = cfg.channel[i];
+            if (ch.rxCalibrate && ch.rxEnabled)
+            {
+                SetupCalibrations(chip, ch.rxSampleRate);
+                CalibrateRx(false, false);
+            }
+            if (ch.txCalibrate && ch.txEnabled)
+            {
+                SetupCalibrations(chip, ch.txSampleRate);
+                CalibrateTx(false);
+            }
+        }
+        chip->SetActiveChannel(LMS7002M::ChA);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_5GRadio config: %s", e.what());

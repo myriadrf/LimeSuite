@@ -29,7 +29,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     protocols/LMS64CProtocol.h
     protocols/LMSBoards.h
     protocols/dataTypes.h
-    protocols/fifo.h
     protocols/PacketsFIFO.h
     Si5351C/Si5351C.h
     FPGA_common/FPGA_common.h
@@ -78,7 +77,6 @@ set(LIME_SUITE_SOURCES
     #protocols/Streamer.cpp
     protocols/TRXLooper.cpp
     #protocols/ConnectionImages.cpp
-    protocols/ConstellationDisplay.cpp
     Si5351C/Si5351C.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     # API/lms7_api.cpp
@@ -100,7 +98,18 @@ set(LIME_SUITE_SOURCES
 
     DSP/Equalizer.cpp
     memory/MemoryPool.cpp
+
+    mcu_program/spi.cpp
+    mcu_program/common_src/lms7002m_calibrations.c
+    mcu_program/common_src/lms7002m_controls.c
+    mcu_program/common_src/lms7002m_filters.c
 )
+
+SET_SOURCE_FILES_PROPERTIES( 
+    mcu_program/common_src/lms7002m_calibrations.c
+    mcu_program/common_src/lms7002m_controls.c
+    mcu_program/common_src/lms7002m_filters.c
+    PROPERTIES LANGUAGE CXX)
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}

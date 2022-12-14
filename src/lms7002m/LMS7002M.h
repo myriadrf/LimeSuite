@@ -454,7 +454,8 @@ public:
     void RestoreRegisterMap(LMS7002M_RegistersMap *backup);
 
     double GetSampleRate(bool tx, double *rf_rate_Hz = nullptr);
-
+    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
+    int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 protected:
     const uint32_t mSlaveID;
     bool mCalibrationByMCU;
@@ -501,8 +502,7 @@ protected:
     int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
-    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
-    int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
+    
     int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop);
     ///@}
 

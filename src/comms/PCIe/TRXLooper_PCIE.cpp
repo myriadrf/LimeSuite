@@ -15,7 +15,6 @@
 #include "LitePCIe.h"
 #include "Profiler.h"
 
-#include "ConstellationDisplay.h"
 
 #define ZEROED_MEM 0
 

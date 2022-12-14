@@ -48,7 +48,8 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
         config.channel[i].txOversample = 2;
         config.channel[i].rxPath = 2; // Loopback_1 // TODO: replace with string names
         config.channel[i].txPath = 2; // band1 // TODO: replace with string names
-        config.channel[i].rxCalibrate = false;
+        config.channel[i].rxCalibrate = true;
+        config.channel[i].txCalibrate = true;
         config.channel[i].rxTestSignal = false;
         config.channel[i].txTestSignal = false;
     }
