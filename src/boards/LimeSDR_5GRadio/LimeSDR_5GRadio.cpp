@@ -12,6 +12,7 @@
 #include "DSP/Equalizer.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
+#include "mcu_program/common_src/lms7002m_filters.h"
 
 #include "math.h"
 
@@ -493,6 +494,16 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             {
                 SetupCalibrations(chip, ch.txSampleRate);
                 CalibrateTx(false);
+            }
+            if (ch.rxLPF > 0 && ch.rxEnabled)
+            {
+                SetupCalibrations(chip, ch.rxSampleRate);
+                TuneRxFilter(ch.rxLPF);
+            }
+            if (ch.txLPF > 0 && ch.txEnabled)
+            {
+                SetupCalibrations(chip, ch.txSampleRate);
+                TuneTxFilter(ch.txLPF);
             }
         }
         chip->SetActiveChannel(LMS7002M::ChA);

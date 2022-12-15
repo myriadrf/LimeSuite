@@ -3,9 +3,12 @@
 #include "LMS7002M.h"
 static lime::LMS7002M* serPort;
 
+extern float bandwidthRF;
+
 void SetupCalibrations(lime::LMS7002M* chip, double BW)
 {
     serPort = chip;
+    bandwidthRF = BW;
 }
 
 #include <vector>
