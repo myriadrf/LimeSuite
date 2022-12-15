@@ -13,6 +13,7 @@
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
+#include "MCU_BD.h"
 
 #include "math.h"
 
@@ -488,22 +489,30 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             if (ch.rxCalibrate && ch.rxEnabled)
             {
                 SetupCalibrations(chip, ch.rxSampleRate);
-                CalibrateRx(false, false);
+                int status = CalibrateRx(false, false);
+                if(status != MCU_BD::MCU_NO_ERROR)
+                    throw std::runtime_error(strFormat("Rx ch%i DC/IQ calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
             }
             if (ch.txCalibrate && ch.txEnabled)
             {
                 SetupCalibrations(chip, ch.txSampleRate);
-                CalibrateTx(false);
+                int status = CalibrateTx(false);
+                if(status != MCU_BD::MCU_NO_ERROR)
+                    throw std::runtime_error(strFormat("Rx ch%i DC/IQ calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
             }
             if (ch.rxLPF > 0 && ch.rxEnabled)
             {
                 SetupCalibrations(chip, ch.rxSampleRate);
-                TuneRxFilter(ch.rxLPF);
+                int status = TuneRxFilter(ch.rxLPF);
+                if(status != MCU_BD::MCU_NO_ERROR)
+                    throw std::runtime_error(strFormat("Rx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
             }
             if (ch.txLPF > 0 && ch.txEnabled)
             {
                 SetupCalibrations(chip, ch.txSampleRate);
-                TuneTxFilter(ch.txLPF);
+                int status = TuneTxFilter(ch.txLPF);
+                if(status != MCU_BD::MCU_NO_ERROR)
+                    throw std::runtime_error(strFormat("Tx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
             }
         }
         chip->SetActiveChannel(LMS7002M::ChA);
