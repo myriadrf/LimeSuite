@@ -329,7 +329,6 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
 void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
 {
     const bool runTx = pthis->chkEnTx->GetValue();
-    //const int fifoSize = fftSize*512;
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
     bool fftEnabled = true;
@@ -374,13 +373,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     config.rxCount = channelsCount;
     if (runTx)
         config.txCount = channelsCount;
-    config.format = fmt;
+    config.format = SDRDevice::StreamConfig::F32;
     config.linkFormat = fmt;
     for(int i=0; i<channelsCount; ++i)
     {
         config.rxChannels[i] = i;
-        if(runTx)
-            config.txChannels[i] = i;
+        config.txChannels[i] = i;
     }
 
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
@@ -414,10 +412,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     try
     {
-
-    pthis->lmsControl->StreamSetup(config, chipIndex);
-    pthis->lmsControl->StreamStart(chipIndex);
-
+        pthis->lmsControl->StreamSetup(config, chipIndex);
+        pthis->lmsControl->StreamStart(chipIndex);
     }
     catch (std::logic_error &e) {
         printf("%s\n", e.what());
@@ -448,7 +444,6 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         do
         {
             uint32_t samplesPopped;
-
             int i = 0;
             samplesPopped = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
             if(samplesPopped <= 0)
@@ -514,7 +509,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                         localDataResults.fftBins[ch][output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
                 }
             }
-        } while (++fftCounter < avgCount && pthis->stopProcessing.load() == false);
+            ++fftCounter;
+        } while (fftCounter < avgCount && pthis->stopProcessing.load() == false);
 
         if (fftCounter >= avgCount && pthis->updateGUI.load() == true)
         {
@@ -592,7 +588,6 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
-    pthis->mStreamRunning.store(false);
     pthis->lmsControl->StreamStop(chipIndex);
 
     for (int i = 0; i < channelsCount; ++i)
@@ -600,6 +595,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     delete [] buffers;
     delete [] m_fftCalcIn;
     delete [] m_fftCalcOut;
+    pthis->mStreamRunning.store(false);
 }
 
 wxString fftviewer_frFFTviewer::printDataRate(float dataRate)

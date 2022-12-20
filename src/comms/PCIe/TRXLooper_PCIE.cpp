@@ -64,7 +64,6 @@ public:
         max = 1e-16;
         return temp;
     }
-    
 private:
     int32_t counter;
     double avgAccumulator;
@@ -571,8 +570,13 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     lime::complex32f_t tempAbuffer[1360];
     lime::complex32f_t tempBbuffer[1360];
 
-    float bufferTimeDuration = float(samplesInPkt*mRxPacketsToBatch) / mConfig.hintSampleRate;
-    int irqPeriod = 80e-6 / bufferTimeDuration;
+    int irqPeriod = 8;
+    float bufferTimeDuration = 0;
+    if (mConfig.hintSampleRate > 0)
+    {
+        bufferTimeDuration = float(samplesInPkt*mRxPacketsToBatch) / mConfig.hintSampleRate;
+        irqPeriod = 80e-6 / bufferTimeDuration;
+    }
     irqPeriod = std::max(1, irqPeriod);
     irqPeriod = std::min(irqPeriod, 16);
     //printf("Buffer duration: %g us, irq: %i\n", bufferTimeDuration*1e6, irqPeriod);

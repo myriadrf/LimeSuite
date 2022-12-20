@@ -962,20 +962,6 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
 
 void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 {
-    // LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
-    // if (trxPort->Open(trxPort->GetPathName().c_str(), O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
-    // {
-    //     char ctemp[128];
-    //     sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
-    //     throw std::runtime_error(ctemp);
-    // }
-    // trxPort = mTXStreamPorts.at(moduleIndex);
-    // if (trxPort->Open(trxPort->GetPathName().c_str(), O_WRONLY | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
-    // {
-    //     char ctemp[128];
-    //     sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
-    //     throw std::runtime_error(ctemp);
-    // }
     mStreamers.at(moduleIndex)->Start();
 }
 
@@ -983,16 +969,8 @@ void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
 {
     SDRDevice::StreamStop(moduleIndex);
     LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
-    assert(trxPort);
-    if (trxPort->IsOpen())
+    if (trxPort && trxPort->IsOpen())
         trxPort->Close();
-    // trxPort = mTXStreamPorts.at(moduleIndex);
-    // assert(trxPort);
-    // if (trxPort->IsOpen())
-    //     trxPort->Close();
-
-    delete mStreamers.at(moduleIndex);
-    mStreamers[moduleIndex] = nullptr;
 }
 
 void LimeSDR_5GRadio::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
@@ -1000,7 +978,6 @@ void LimeSDR_5GRadio::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &
     TRXLooper *trx = mStreamers.at(moduleIndex);
     status.dataRate_Bps = trx->GetDataRate(false);
     status.txDataRate_Bps = trx->GetDataRate(true);
-
 }
 
 void LimeSDR_5GRadio::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
