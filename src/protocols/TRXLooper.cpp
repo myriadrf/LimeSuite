@@ -594,6 +594,30 @@ void TRXLooper::Stop()
         printf("Failed to join TRXLooper threads\n");
     }
     fpga->StopStreaming();
+    // clear memory pools
+    while(rxStaging)
+    {
+        delete rxStaging;
+        rxStaging = nullptr;
+        rxPacketsPool.pop(&rxStaging, true, 100);
+    }
+    while(rxOut.pop(&rxStaging, true, 100))
+    {
+        delete rxStaging;
+        rxStaging = nullptr;
+    }
+
+    while(txStaging)
+    {
+        delete txStaging;
+        txStaging = nullptr;
+        txPacketsPool.pop(&txStaging, true, 100);
+    }
+    while(txIn.pop(&txStaging, true, 100))
+    {
+        delete txStaging;
+        txStaging = nullptr;
+    }
     mStreamEnabled = false;
 }
 
