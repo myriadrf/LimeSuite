@@ -36,7 +36,7 @@ class LIME_API SDRDevice : public IComms
         DEBUG
     };
     typedef void(*DataCallbackType)(bool, const uint8_t*, const uint32_t);
-    typedef void(*LogCallbackType)(LogLevel, const char*, const uint32_t);
+    typedef void(*LogCallbackType)(LogLevel, const char*);
 
     enum ClockID
     {

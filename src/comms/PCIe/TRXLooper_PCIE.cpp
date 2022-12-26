@@ -169,11 +169,13 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     mTxPacketsToBatch = std::max((int)mTxPacketsToBatch, 1);
 
     float bufferTimeDuration = float(samplesInPkt*mTxPacketsToBatch) / mConfig.hintSampleRate;
-    char msg[256];
-    int len = sprintf(msg, "Stream%i samplesInTxPkt:%i maxTxPktInBatch:%i, batchSizeInTime:%gus\n",
-        chipId, samplesInPkt, mTxPacketsToBatch, bufferTimeDuration*1e6);
     if(mCallback_logMessage)
-        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+    {
+        char msg[256];
+        sprintf(msg, "Stream%i samplesInTxPkt:%i maxTxPktInBatch:%i, batchSizeInTime:%gus\n",
+            chipId, samplesInPkt, mTxPacketsToBatch, bufferTimeDuration*1e6);
+        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+    }
 
     const int outDMA_BUFFER_SIZE = packetSize * mTxPacketsToBatch;
     assert(outDMA_BUFFER_SIZE <= DMA_BUFFER_SIZE);
@@ -294,8 +296,12 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
             const int pollTimeout = 50;
             const int ret = poll(&desc, 1, pollTimeout);
-            if (ret < 0)
-                printf("TransmitLoop poll errno(%i) %s\n", errno, strerror(errno));
+            if (ret < 0 && mCallback_logMessage)
+            {
+                char msg[256];
+                sprintf(msg, "TransmitLoop poll errno(%i) %s\n", errno, strerror(errno));
+                mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+            }
 
             int ret2 = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
             if (ret2)
@@ -391,7 +397,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 uint32_t fpgaTxPktIngressCount = (values[0] << 16) | values[1];
 
                 char msg[512];
-                int len = snprintf(msg, sizeof(msg)-1, "%s Tx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li avgBatch:%.0f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li(%+li) underrun:%i tsAdvance:%+.0f/%+.0f/%+.0f%s",
+                snprintf(msg, sizeof(msg)-1, "%s Tx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li avgBatch:%.0f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li(%+li) underrun:%i tsAdvance:%+.0f/%+.0f/%+.0f%s",
                     rxPort->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     txIn.size(),
@@ -416,7 +422,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 if(showStats)
                     printf("%s\n", msg);
                 if(mCallback_logMessage)
-                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
             }
             // hardware counter should be less than software's
             //assert(reader.hw_count < reader.sw_count);
@@ -458,11 +464,14 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     fpga->ReadRegisters(addrs, values, 4);
     const uint32_t fpgaTxPktIngressCount = (values[0] << 16) | values[1];
     const uint32_t fpgaTxPktDropCounter = (values[2] << 16) | values[3];
-    len = sprintf(msg, "Tx Loop totals: packets sent: %i (0x%08X) , FPGA packet counter: %i (0x%08X), diff: %i, FPGA tx drops: %i\n",
-        totalPacketSent, totalPacketSent, fpgaTxPktIngressCount, fpgaTxPktIngressCount, (totalPacketSent&0xFFFFFFFF)-fpgaTxPktIngressCount, fpgaTxPktDropCounter
-        );
     if(mCallback_logMessage)
-        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+    {
+        char msg[256];
+        sprintf(msg, "Tx Loop totals: packets sent: %i (0x%08X) , FPGA packet counter: %i (0x%08X), diff: %i, FPGA tx drops: %i\n",
+            totalPacketSent, totalPacketSent, fpgaTxPktIngressCount, fpgaTxPktIngressCount, (totalPacketSent&0xFFFFFFFF)-fpgaTxPktIngressCount, fpgaTxPktDropCounter
+        );
+        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+    }
     munmap(dmaMem, mmap_dma_info.dma_tx_buf_size * mmap_dma_info.dma_tx_buf_count);
 }
 #include <unistd.h>
@@ -581,11 +590,13 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     irqPeriod = std::min(irqPeriod, 16);
     //printf("Buffer duration: %g us, irq: %i\n", bufferTimeDuration*1e6, irqPeriod);
 
-    char msg[256];
-    int len = sprintf(msg, "Stream%i usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus\n",
-        chipId, usePoll ? 1 : 0, samplesInPkt, mRxPacketsToBatch, readBlockSize, bufferTimeDuration*1e6);
     if(mCallback_logMessage)
-        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+    {
+        char msg[256];
+        sprintf(msg, "Stream%i usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus\n",
+            chipId, usePoll ? 1 : 0, samplesInPkt, mRxPacketsToBatch, readBlockSize, bufferTimeDuration*1e6);
+        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+    }
 
     float expectedDataRateBps = 0;
     if (mConfig.hintSampleRate != 0)
@@ -601,7 +612,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
     if( ret < 0)
     {
-        printf("Failed to start DMA writer\n");
+        if(mCallback_logMessage)
+            mCallback_logMessage(SDRDevice::LogLevel::DEBUG, "Failed to start DMA writer");
         return;
     }
 
@@ -771,7 +783,12 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             //int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
             {
-                printf("ReceiveLoop poll errno(%i) %s\n", errno, strerror(errno));
+                if (mCallback_logMessage)
+                {
+                    char msg[256];
+                    sprintf(msg, "ReceiveLoop poll errno(%i) %s\n", errno, strerror(errno));
+                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+                }
                 return;
             }
             auto pt2 = perfClock::now();
@@ -790,10 +807,18 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             stats.dataRate_Bps = dataRateBps;
 
             const double dataRateMargin = expectedDataRateBps*0.02;
-            if( expectedDataRateBps!=0 && abs(expectedDataRateBps - dataRateBps) > dataRateMargin )
-                printf("Rx%i Unexpected Rx data rate, should be: ~%g MB/s, got: %g MB/s, diff: %g\n", chipId, expectedDataRateBps/1e6, dataRateBps/1e6, (expectedDataRateBps - dataRateBps)/1e6);
-            if ( abs(streamDelay) > 2000 )
-                printf("\n\tDiscrepancy between PC clock and Rx timestamps: %ius\n\n", streamDelay);
+            if( expectedDataRateBps!=0 && abs(expectedDataRateBps - dataRateBps) > dataRateMargin && mCallback_logMessage)
+            {
+                char msg[256];
+                sprintf(msg, "Rx%i Unexpected Rx data rate, should be: ~%g MB/s, got: %g MB/s, diff: %g", chipId, expectedDataRateBps/1e6, dataRateBps/1e6, (expectedDataRateBps - dataRateBps)/1e6);
+                mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+            }
+            if ( abs(streamDelay) > 2000 && mCallback_logMessage)
+            {
+                char msg[256];
+                sprintf(msg, "\n\tDiscrepancy between PC clock and Rx timestamps: %ius", streamDelay);
+                mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+            }
             stats.txDataRate_Bps = txDataRate_Bps.load(std::memory_order_relaxed);
             if(showStats || mCallback_logMessage)
             {
@@ -802,7 +827,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
                 // sprintf(ctemp, "%02X %02X %02X %02X %02X %02X %02X %02X", probeBuffer[0],probeBuffer[1],probeBuffer[2],probeBuffer[3],probeBuffer[4],probeBuffer[5], probeBuffer[6],probeBuffer[7]);
                 char msg[512];
-                int len = snprintf(msg, sizeof(msg)-1, "%s Rx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li(%+i), l:%.0f/%.0f/%.0fus, pcTime-RxTS:%ius",
+                snprintf(msg, sizeof(msg)-1, "%s Rx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li(%+i), l:%.0f/%.0f/%.0fus, pcTime-RxTS:%ius",
                     rxPort->GetPathName().c_str(),
                     dataRateBps / 1000000.0,
                     rxOut.size(),
@@ -825,7 +850,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 if(showStats)
                     printf("%s\n", msg);
                 if(mCallback_logMessage)
-                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
             }
             packetsRecv = 0;
             packetsOut = 0;
@@ -851,10 +876,12 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
     rxDataRate_Bps.store(0, std::memory_order_relaxed);
 
-    len = sprintf(msg, "Rx loop totals: packets recv: %i, txDrops: %i\n", totalPacketsReceived, totalTxDrops);
-
     if(mCallback_logMessage)
-        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg, len);
+    {
+        char msg[256];
+        sprintf(msg, "Rx loop totals: packets recv: %i, txDrops: %i\n", totalPacketsReceived, totalTxDrops);
+        mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
+    }
     munmap(dmaMem, mmap_dma_info.dma_rx_buf_size * mmap_dma_info.dma_rx_buf_count);
 }
 
