@@ -1,4 +1,5 @@
 set(MAIN_LIBRARY_NAME LimeSuite2)
+set(GUI_EXECUTABLE_NAME LimeSuiteGUI2)
 
 ########################################################################
 ## public headers
@@ -292,7 +293,7 @@ set(LMS7SUITE_GUI_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_GUI "Enable build GUI" OFF "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
-add_feature_info(LimeSuiteGUI ENABLE_GUI "GUI Application for LimeSuite")
+add_feature_info(${GUI_EXECUTABLE_NAME} ENABLE_GUI "GUI Application for LimeSuite")
 if (ENABLE_GUI)
 
     include_directories(lms7002_wxgui)
@@ -312,19 +313,19 @@ if (ENABLE_GUI)
 
     set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
-    add_executable(LimeSuiteGUI ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
-    set_target_properties(LimeSuiteGUI PROPERTIES
+    add_executable(${GUI_EXECUTABLE_NAME} ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
+    set_target_properties(${GUI_EXECUTABLE_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_compile_definitions(LimeSuiteGUI PRIVATE WIN32_LEAN_AND_MEAN)
-    target_include_directories(LimeSuiteGUI PRIVATE ${LIME_SUITE_INCLUDES})
+    target_compile_definitions(${GUI_EXECUTABLE_NAME} PRIVATE WIN32_LEAN_AND_MEAN)
+    target_include_directories(${GUI_EXECUTABLE_NAME} PRIVATE ${LIME_SUITE_INCLUDES})
 
-    target_link_libraries(LimeSuiteGUI ${MAIN_LIBRARY_NAME} oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(${GUI_EXECUTABLE_NAME} ${MAIN_LIBRARY_NAME} oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
-        set_property(TARGET LimeSuiteGUI APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
+        set_property(TARGET ${GUI_EXECUTABLE_NAME} APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
     endif(MSVC)
 
-    install(TARGETS LimeSuiteGUI DESTINATION bin)
+    install(TARGETS ${GUI_EXECUTABLE_NAME} DESTINATION bin)
 
 endif()
 
