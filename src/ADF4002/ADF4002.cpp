@@ -11,8 +11,9 @@
 
 using namespace lime;
 
-ADF4002::ADF4002()
+ADF4002::ADF4002() : txtFref(10), txtFvco(30.72)
 {
+    SetDefaults();
 }
 
 ADF4002::~ADF4002()
@@ -23,6 +24,8 @@ ADF4002::~ADF4002()
 */
 void ADF4002::SetDefaults()
 {
+    txtFref = 10;
+    txtFvco = 30.72;
     //Reference Counter Latch
     cmbLDP = 0;
     cmbABW = 0;
