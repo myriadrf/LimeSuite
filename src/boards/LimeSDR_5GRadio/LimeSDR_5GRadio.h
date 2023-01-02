@@ -64,7 +64,7 @@ protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS2SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS3SetPath(bool tx, uint8_t chan, uint8_t path);
-    void LMS1_SetSampleRate(double f_Hz, uint8_t oversample);
+    void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
     SDRDevice::DeviceInfo GetDeviceInfo();
 

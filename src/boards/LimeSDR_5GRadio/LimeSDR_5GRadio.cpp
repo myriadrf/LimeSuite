@@ -464,7 +464,7 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             oversample = cfg.channel[0].txOversample;
         }
         if(socIndex == 0) {
-            LMS1_SetSampleRate(sampleRate, oversample);
+            LMS1_SetSampleRate(sampleRate, cfg.channel[0].rxOversample, cfg.channel[0].txOversample);
         }
         else if(socIndex == 1) {
             Equalizer::Config eqCfg;
@@ -518,7 +518,7 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
         chip->SetActiveChannel(LMS7002M::ChA);
     } //try
     catch (std::logic_error &e) {
-        printf("LimeSDR_5GRadio config: %s", e.what());
+        printf("LimeSDR_5GRadio config: %s\n", e.what());
         throw;
     }
     catch (std::runtime_error &e) {
@@ -996,16 +996,21 @@ void LimeSDR_5GRadio::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double t
     }
 
     if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360) {
-        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0);
+        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0) != 0)
+            throw std::runtime_error("Failed to configure FPGA interface");
         return;
     }
     else
-        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0);
+        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0) != 0)
+            throw std::runtime_error("Failed to configure FPGA interface");
     mLMSChips[0]->ResetLogicregisters();
 }
 
-void LimeSDR_5GRadio::LMS1_SetSampleRate(double f_Hz, uint8_t oversample)
+void LimeSDR_5GRadio::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
+    if(txInterpolation/rxDecimation > 4)
+        throw std::logic_error(strFormat("TxInterpolation(%i)/RxDecimation(%i) should not be more than 4", txInterpolation, rxDecimation));
+    uint8_t oversample = rxDecimation;
     const bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
     uint8_t hbd_ovr = 7;  // decimation ratio is 2^(1+hbd_ovr), HBD_OVR_RXTSP=7 - bypass
     uint8_t hbi_ovr = 7;  // interpolation ratio is 2^(1+hbi_ovr), HBI_OVR_TXTSP=7 - bypass
@@ -1030,20 +1035,25 @@ void LimeSDR_5GRadio::LMS1_SetSampleRate(double f_Hz, uint8_t oversample)
             const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
             hbd_ovr = decTbl[oversample];
         }
-        hbi_ovr = hbd_ovr;
         cgenFreq *= 2 << hbd_ovr;
+        if (txInterpolation >= rxDecimation)
+            hbi_ovr = hbd_ovr + std::log2(txInterpolation/rxDecimation);
+        else
+            throw std::logic_error(strFormat("Rx decimation(2^%i) > Tx interpolation(2^%i) currently not supported", hbd_ovr, hbi_ovr));
     }
     lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
                cgenFreq / 1e6, 1+hbd_ovr, 1+hbi_ovr);
     LMS7002M* mLMSChip = mLMSChips[0];
     mLMSChip->SetFrequencyCGEN(cgenFreq);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2 - std::log2(txInterpolation/rxDecimation));
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChip->SetInterfaceFrequency(mLMSChip->GetFrequencyCGEN(), hbi_ovr, hbd_ovr);
+    mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
+    mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
+    mLMSChip->SetInterfaceFrequency(cgenFreq, hbi_ovr, hbd_ovr);
 
     SetFPGAInterfaceFreq(hbi_ovr, hbd_ovr, 999, 999); // TODO: default phase
 }
