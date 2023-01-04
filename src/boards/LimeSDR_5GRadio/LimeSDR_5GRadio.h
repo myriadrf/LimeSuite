@@ -61,8 +61,10 @@ public:
                                       double rxPhase) override;
     virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
 protected:
+    void LMS1_PA_Enable(uint8_t chan, bool enabled);
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS2SetPath(bool tx, uint8_t chan, uint8_t path);
+    void LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled);
     void LMS3SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);

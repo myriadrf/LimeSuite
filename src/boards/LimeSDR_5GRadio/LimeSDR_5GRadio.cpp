@@ -168,7 +168,7 @@ static void EnableChannelLMS2(LMS7002M* chip, Dir dir, const uint8_t channel, co
     chip->Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE1 : LMS7_PD_RX_AFE1, 1);
     chip->Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE2 : LMS7_PD_RX_AFE2, 1);
 
-    int disabledChannels = (chip->Get_SPI_Reg_bits(LMS7_PD_AFE.address,4,1)&0xF);//check if all channels are disabled
+    //int disabledChannels = (chip->Get_SPI_Reg_bits(LMS7_PD_AFE.address,4,1)&0xF);//check if all channels are disabled
     //chip->Modify_SPI_Reg_bits(LMS7param(EN_G_AFE),disabledChannels==0xF ? 0 : 1);
     //chip->Modify_SPI_Reg_bits(LMS7param(PD_AFE), disabledChannels==0xF ? 1 : 0);
 
@@ -371,6 +371,18 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
         }
 
         // config validation complete, now do the actual configuration
+        switch(socIndex)
+        {
+            case 0:
+                // Turn off PAs before configuring chip to avoid unexpectedly strong signal input
+                LMS1_PA_Enable(0, false);
+                LMS1_PA_Enable(1, false);
+                break;
+            case 1:
+                LMS2_PA_LNA_Enable(0, false, false);
+                LMS2_PA_LNA_Enable(1, false, false);
+                break;
+        }
 
         LMS7002M* chip = mLMSChips.at(socIndex);
         if (!cfg.skipDefaults)
@@ -516,6 +528,20 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             }
         }
         chip->SetActiveChannel(LMS7002M::ChA);
+
+        // Turn on needed PAs
+        for (int c = 0; c < 2; ++c) {
+            const ChannelConfig &ch = cfg.channel[c];
+            switch(socIndex)
+            {
+                case 0:
+                    LMS1_PA_Enable(c, ch.txEnabled);
+                    break;
+                case 1:
+                    LMS2_PA_LNA_Enable(c, ch.txEnabled, ch.rxEnabled);
+                    break;
+            }
+        }
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_5GRadio config: %s\n", e.what());
@@ -569,8 +595,12 @@ int LimeSDR_5GRadio::Init()
 
     const std::vector<regVal> mFPGAInitVals = {
         {0x00D1, 0x3357}, // RF Switches
-        {0x00D2, 0x003C} // PA controls
+        //{0x00D2, 0x003C} // PA controls
     };
+    LMS1_PA_Enable(0, false);
+    LMS1_PA_Enable(1, false);
+    LMS2_PA_LNA_Enable(0, false, false);
+    LMS2_PA_LNA_Enable(1, false, false);
 
     for (auto i : mFPGAInitVals)
         mFPGA->WriteRegister(i.adr, i.val);
@@ -1069,12 +1099,23 @@ enum // TODO: replace
     LMS_PATH_AUTO = 255, ///<Automatically select port (if supported)
 };
 
+void LimeSDR_5GRadio::LMS1_PA_Enable(uint8_t chan, bool enabled)
+{
+    uint16_t pa_addr = 0x00D2;
+    uint16_t pa_val = mFPGA->ReadRegister(pa_addr);
+
+    const int bitMask = 1 << (5-chan);
+    if (enabled)
+        pa_val |= bitMask; // PA on
+    else
+        pa_val &= ~bitMask; // chan 0 = 5; chan 1 = 4
+    mFPGA->WriteRegister(pa_addr, pa_val);
+}
+
 void LimeSDR_5GRadio::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
 {
     uint16_t sw_addr = 0x00D1;
-    uint16_t pa_addr = 0x00D2;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
-    uint16_t pa_val = mFPGA->ReadRegister(pa_addr);
     lime::LMS7002M* lms = mLMSChips.at(0);
 
     if(tx)
@@ -1088,17 +1129,12 @@ void LimeSDR_5GRadio::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             default: throw std::logic_error("Invalid LMS1 Tx path");
         }
 
-        pa_val |= 1 << (5-chan);
-
-        if(path == LMS_PATH_NONE)
-            pa_val &= ~(1 << (5-chan)); // chan 0 = 5; chan 1 = 4
-        else if (path == LMS_PATH_TX1)
+        if (path == LMS_PATH_TX1)
             sw_val |= 1 << (13-chan);   // chan 0 = 13; chan 1 = 12
         else if (path == LMS_PATH_TX2)
             sw_val &= ~(1 << (13-chan));
 
         mFPGA->WriteRegister(sw_addr, sw_val);
-        mFPGA->WriteRegister(pa_addr, pa_val);
         lms->SetBandTRF(path);
     }
     else
@@ -1125,11 +1161,8 @@ void LimeSDR_5GRadio::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
     }
 }
 
-void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
+void LimeSDR_5GRadio::LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled)
 {
-    //path = 3;
-    //printf("LMS2SetPath %i, %i, %i\n", tx, chan, path);
-    uint16_t sw_addr = 0x00D1;
     uint16_t pa_addr = 0x00D2;
     struct RegPA
     {
@@ -1157,6 +1190,17 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
         bool lms2LNA[2];
     };
 
+    RegPA pa(mFPGA->ReadRegister(pa_addr));
+
+    pa.lms2PA[chan] = PAenabled;
+    pa.lms2LNA[chan] = LNAenabled;
+
+    mFPGA->WriteRegister(pa_addr, pa.Value());
+}
+
+void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
+{
+    uint16_t sw_addr = 0x00D1;
     /*struct RegSW
     {
         RegSW(uint16_t value)
@@ -1172,28 +1216,18 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
         bool lms2tx
     }*/
 
-
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
-    RegPA pa(mFPGA->ReadRegister(pa_addr));
 
     int tx_path = LMS_PATH_TX1;
     int rx_path = LMS_PATH_LNAH;
     uint16_t shift = chan == 0 ? 0 : 2;
-    //pa_val |= 1 << (chan == 0 ? 3 : 2);         // enable PA
-    //pa_val &= ~(1 << (chan == 0 ? 1 : 0));      // enable LNA
     if (path == 0)
     {
-        pa.lms2PA[chan] = false;
-        pa.lms2LNA[chan] = false;
         tx_path = LMS_PATH_NONE;
         rx_path = LMS_PATH_NONE;
     }
     else if (tx && ePathLMS2_Tx(path) == ePathLMS2_Tx::TDD) // TDD_TX
     {
-        if(tx)
-            pa.lms2PA[chan] = true;
-        else
-            pa.lms2LNA[chan] = true;
         if(chan == 0)
             sw_val &= ~(1 << 7);                // TRX1T to RSFW_TRX1
         else
@@ -1204,10 +1238,6 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
     }
     else if (!tx && ePathLMS2_Rx(path) == ePathLMS2_Rx::TDD) // TDD_RX
     {
-        if(tx)
-            pa.lms2PA[chan] = true;
-        else
-            pa.lms2LNA[chan] = true;
         if(chan == 0)
             sw_val |= 1 << 7;                   // TRX1T to ground
         else
@@ -1218,10 +1248,6 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
     }
     else if (ePathLMS2_Rx(path) == ePathLMS2_Rx::FDD || ePathLMS2_Tx(path) == ePathLMS2_Tx::FDD) // FDD
     {
-        if(tx)
-            pa.lms2PA[chan] = true;
-        else
-            pa.lms2LNA[chan] = true;
         if(chan == 0)
             sw_val &= ~(1 << 7);                // TRX1T to RSFW_TRX1
         else
@@ -1237,15 +1263,11 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
         else
             sw_val &= ~(1 << 9);                // TRX2T to ground
         sw_val |= 1 << (6+shift);               // TRX1 or TRX2 to J8 or J10
-        sw_val |= 1 << (2+shift);            // RX1C or RX2C to LMS3 TX1_1 or TX2_1
+        sw_val |= 1 << (2+shift);               // RX1C or RX2C to LMS3 TX1_1 or TX2_1
         sw_val |= 1 << (3+shift);               // RX1IN or RX2IN to RFSW_TRX1 or RFSW_TRX1
-        //pa_val |= 1 << (chan == 0 ? 1 : 0);      // disable LNA
-        if(!tx)
-            pa.lms2LNA[chan] = false;
     }
 
     mFPGA->WriteRegister(sw_addr, sw_val);
-    mFPGA->WriteRegister(pa_addr, pa.Value());
     lime::LMS7002M* lms = mLMSChips.at(1);
     lms->SetBandTRF(1); // LMS2 uses only BAND1
     lms->SetPathRFE(lime::LMS7002M::PathRFE(LMS7002M::PATH_RFE_LNAH)); // LMS2 only uses LNAH
@@ -1254,9 +1276,7 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
 void LimeSDR_5GRadio::LMS3SetPath(bool tx, uint8_t chan, uint8_t path)
 {
     uint16_t sw_addr = 0x00D1;
-    uint16_t pa_addr = 0x00D2;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
-    uint16_t pa_val = mFPGA->ReadRegister(pa_addr);
     lime::LMS7002M* lms = mLMSChips.at(0);
 
     if(tx)
