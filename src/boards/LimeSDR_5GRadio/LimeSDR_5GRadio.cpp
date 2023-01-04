@@ -1000,12 +1000,13 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
     }
 }
 
+static std::mutex PAmutex;
 void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 {
     mStreamers.at(moduleIndex)->Start();
     std::thread t([this](int modIndex){
         std::this_thread::sleep_for(std::chrono::seconds(2));
-        std::lock_guard<std::mutex> lk(mPAmutex);
+        std::lock_guard<std::mutex> lk(PAmutex);
         switch(modIndex)
         {
             case 0:
