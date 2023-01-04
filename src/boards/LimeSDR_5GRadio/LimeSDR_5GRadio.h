@@ -94,6 +94,7 @@ private:
     bool lms1paDelayedEnable[2];
     bool lms2paDelayedEnable[2];
     bool lms2lnaDelayedEnable[2];
+    std::mutex mPAmutex;
 };
 
 class LimeSDR_5GRadioEntry : public DeviceRegistryEntry

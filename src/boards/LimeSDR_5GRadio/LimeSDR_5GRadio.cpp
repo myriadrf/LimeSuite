@@ -542,7 +542,6 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
             {
                 case 0:
                     //LMS1_PA_Enable(c, ch.txEnabled);
-
                     // enable PA after data is already streamed, to avoid unexpected values being amplified
                     lms1paDelayedEnable[c] = ch.txEnabled;
                     break;
@@ -1008,19 +1007,20 @@ void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
     {
         std::thread t([this](int modIndex){
             std::this_thread::sleep_for(std::chrono::seconds(2));
+            std::lock_guard<std::mutex> lk(mPAmutex);
             switch(modIndex)
             {
                 case 0:
                     if(mCallback_logMessage)
-                        mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS1 PA Enable ch0:%i ch1:%i", lms1paDelayedEnable[0], lms1paDelayedEnable[1]).c_str());
+                        mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS1 PA Enable ch[0]:%i ch[1]:%i", lms1paDelayedEnable[0]?1:0, lms1paDelayedEnable[1]?1:0).c_str());
                     // Turn off PAs before configuring chip to avoid unexpectedly strong signal input
                     LMS1_PA_Enable(0, lms1paDelayedEnable[0]);
                     LMS1_PA_Enable(1, lms1paDelayedEnable[1]);
                     break;
                 case 1:
                     if(mCallback_logMessage)
-                        mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS2 PA Enable ch0:%i ch1:%i, LNA Enable ch0:%i ch1:%i",
-                            lms2paDelayedEnable[0], lms2paDelayedEnable[1], lms2lnaDelayedEnable[0], lms2lnaDelayedEnable[1]).c_str());
+                        mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS2 PA Enable ch[0]:%i ch[1]:%i, LNA Enable ch[0]:%i ch[1]:%i",
+                            lms2paDelayedEnable[0]?1:0, lms2paDelayedEnable[1]?1:0, lms2lnaDelayedEnable[0]?1:0, lms2lnaDelayedEnable[1]?1:0).c_str());
                     LMS2_PA_LNA_Enable(0, lms2paDelayedEnable[0], lms2lnaDelayedEnable[0]);
                     LMS2_PA_LNA_Enable(1, lms2paDelayedEnable[1], lms2lnaDelayedEnable[1]);
                     break;
