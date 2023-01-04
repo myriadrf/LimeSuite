@@ -720,7 +720,7 @@ int LimeSDR_5GRadio::EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool ena
     LMS7002M* chip = mLMSChips[channel / 2];
     return chip->GetSampleRate(dir, (channel&1) ? LMS7002M::ChB : LMS7002M::ChA);
 }
-/*
+
 std::vector<std::string> LimeSDR_5GRadio::GetPathNames(SDRDevice::Dir dir, uint8_t channel) const
 {
     if(channel == 0 || channel == 1) // LMS1
@@ -1007,18 +1007,20 @@ void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
     if(moduleIndex == 0)
     {
         std::thread t([this](int modIndex){
-            printf("Delayed work\n");
             std::this_thread::sleep_for(std::chrono::seconds(2));
             switch(modIndex)
             {
                 case 0:
-                    printf("Chip0 PA\n");
+                    if(mCallback_logMessage)
+                        mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS1 PA Enable ch0:%i ch1:%i", lms1paDelayedEnable[0], lms1paDelayedEnable[1]).c_str());
                     // Turn off PAs before configuring chip to avoid unexpectedly strong signal input
                     LMS1_PA_Enable(0, lms1paDelayedEnable[0]);
                     LMS1_PA_Enable(1, lms1paDelayedEnable[1]);
                     break;
                 case 1:
-                    printf("Chip1 PALNA\n");
+                    if(mCallback_logMessage)
+                        mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS2 PA Enable ch0:%i ch1:%i, LNA Enable ch0:%i ch1:%i",
+                            lms2paDelayedEnable[0], lms2paDelayedEnable[1], lms2lnaDelayedEnable[0], lms2lnaDelayedEnable[1]).c_str());
                     LMS2_PA_LNA_Enable(0, lms2paDelayedEnable[0], lms2lnaDelayedEnable[0]);
                     LMS2_PA_LNA_Enable(1, lms2paDelayedEnable[1], lms2lnaDelayedEnable[1]);
                     break;
