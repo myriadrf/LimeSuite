@@ -464,16 +464,13 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
         chip->SetActiveChannel(LMS7002M::ChA);
 
         double sampleRate;
-        uint8_t oversample;
         if (rxUsed)
         {
             sampleRate = cfg.channel[0].rxSampleRate;
-            oversample = cfg.channel[0].rxOversample;
         }
         else
         {
             sampleRate = cfg.channel[0].txSampleRate;
-            oversample = cfg.channel[0].txOversample;
         }
         if(socIndex == 0) {
             LMS1_SetSampleRate(sampleRate, cfg.channel[0].rxOversample, cfg.channel[0].txOversample);
@@ -487,12 +484,12 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
                 eqCfg.cfr[i].bypass = true;
                 eqCfg.cfr[i].sleep = true;
                 eqCfg.cfr[i].bypassGain = true;
-                eqCfg.cfr[i].interpolation = oversample;
+                eqCfg.cfr[i].interpolation = cfg.channel[0].txOversample;
                 eqCfg.fir[i].sleep = true;
                 eqCfg.fir[i].bypass = true;
             }
             mEqualizer->Configure(eqCfg);
-            LMS2_SetSampleRate(sampleRate, oversample);
+            LMS2_SetSampleRate(sampleRate, cfg.channel[0].txOversample);
         }
 
         for (int i = 0; i < 2; ++i) {
