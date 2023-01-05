@@ -90,10 +90,6 @@ private:
     std::vector<LitePCIe*> mRXStreamPorts;
     std::vector<LitePCIe*> mTXStreamPorts;
     std::mutex mCommsMutex;
-
-    bool lms1paDelayedEnable[2];
-    bool lms2paDelayedEnable[2];
-    bool lms2lnaDelayedEnable[2];
 };
 
 class LimeSDR_5GRadioEntry : public DeviceRegistryEntry

@@ -37,12 +37,6 @@ LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
     std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
     : mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
 {
-    lms1paDelayedEnable[0] = false;
-    lms1paDelayedEnable[1] = false;
-    lms2paDelayedEnable[0] = false;
-    lms2paDelayedEnable[1] = false;
-    lms2lnaDelayedEnable[0] = false;
-    lms2lnaDelayedEnable[1] = false;
     mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
 
@@ -535,20 +529,21 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
         }
         chip->SetActiveChannel(LMS7002M::ChA);
 
+        // Workaround: Toggle LimeLights transmit port to flush residual value from data interface
+        uint16_t txMux = chip->Get_SPI_Reg_bits(LMS7param(TX_MUX));
+        chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), 2);
+        chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
+
         // Turn on needed PAs
         for (int c = 0; c < 2; ++c) {
             const ChannelConfig &ch = cfg.channel[c];
             switch(socIndex)
             {
                 case 0:
-                    //LMS1_PA_Enable(c, ch.txEnabled);
-                    // enable PA after data is already streamed, to avoid unexpected values being amplified
-                    lms1paDelayedEnable[c] = ch.txEnabled;
+                    LMS1_PA_Enable(c, ch.txEnabled);
                     break;
                 case 1:
-                    lms2paDelayedEnable[c] = ch.txEnabled;
-                    lms2lnaDelayedEnable[c] = ch.rxEnabled;
-                    //LMS2_PA_LNA_Enable(c, ch.txEnabled, ch.rxEnabled);
+                    LMS2_PA_LNA_Enable(c, ch.txEnabled, ch.rxEnabled);
                     break;
             }
         }
@@ -1000,32 +995,9 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
     }
 }
 
-static std::mutex PAmutex;
 void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 {
     mStreamers.at(moduleIndex)->Start();
-    std::thread t([this](int modIndex){
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        std::lock_guard<std::mutex> lk(PAmutex);
-        switch(modIndex)
-        {
-            case 0:
-                if(mCallback_logMessage)
-                    mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS1 PA Enable ch[0]:%i ch[1]:%i", lms1paDelayedEnable[0]?1:0, lms1paDelayedEnable[1]?1:0).c_str());
-                // Turn off PAs before configuring chip to avoid unexpectedly strong signal input
-                LMS1_PA_Enable(0, lms1paDelayedEnable[0]);
-                LMS1_PA_Enable(1, lms1paDelayedEnable[1]);
-                break;
-            case 1:
-                if(mCallback_logMessage)
-                    mCallback_logMessage(LogLevel::DEBUG, strFormat("LMS2 PA Enable ch[0]:%i ch[1]:%i, LNA Enable ch[0]:%i ch[1]:%i",
-                        lms2paDelayedEnable[0]?1:0, lms2paDelayedEnable[1]?1:0, lms2lnaDelayedEnable[0]?1:0, lms2lnaDelayedEnable[1]?1:0).c_str());
-                LMS2_PA_LNA_Enable(0, lms2paDelayedEnable[0], lms2lnaDelayedEnable[0]);
-                LMS2_PA_LNA_Enable(1, lms2paDelayedEnable[1], lms2lnaDelayedEnable[1]);
-                break;
-        }
-    }, moduleIndex);
-    t.detach();
 }
 
 void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
