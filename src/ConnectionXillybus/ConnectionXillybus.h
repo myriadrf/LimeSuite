@@ -12,6 +12,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <array>
 
 #ifndef __unix__
 #include "windows.h"
@@ -64,8 +65,8 @@ private:
         std::string name;
         std::string ctrlRead;
         std::string ctrlWrite;
-        std::string streamRead[MAX_EP_CNT];
-        std::string streamWrite[MAX_EP_CNT];
+        std::array<std::string, MAX_EP_CNT> streamRead;
+        std::array<std::string, MAX_EP_CNT> streamWrite;
     };
 
     static const std::vector<EPConfig> deviceConfigs;
