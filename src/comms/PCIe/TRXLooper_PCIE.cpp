@@ -16,8 +16,6 @@
 #include "Profiler.h"
 
 
-#define ZEROED_MEM 0
-
 static bool showStats = false;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
 
@@ -80,12 +78,11 @@ static inline int64_t ts_to_us(int64_t fs, int64_t ts)
     return (int64_t)n * 1000000 + (((int64_t)r * 1000000) / fs);
 }
 
-static std::mutex gIOCTLmutex;
-
-static int guarded_ioctl(int fd, unsigned long request, void* argp)
+template<typename T>
+inline static T clamp(T value, T low, T high)
 {
-    //std::unique_lock<std::mutex> lock(gIOCTLmutex);
-    return ioctl(fd, request, argp);
+    assert(low <= high);
+    return value < low ? low : (value > high ? high : value);
 }
 
 TRXLooper_PCIE::TRXLooper_PCIE(LitePCIe *rxPort, LitePCIe *txPort, FPGA *f, LMS7002M *chip, uint8_t moduleIndex)
@@ -111,8 +108,11 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
         batchSize = std::max(1, batchSize);
     }
 
-    mRxPacketsToBatch = 2*config.hintSampleRate/30.72e6;//4;//batchSize;
-    mTxPacketsToBatch = 8;//mRxPacketsToBatch;
+    if (config.hintSampleRate)
+        mRxPacketsToBatch = 2*config.hintSampleRate/30.72e6;
+    else
+        mRxPacketsToBatch = 4;
+    mTxPacketsToBatch = 8;
     //printf("Batch size %i\n", batchSize);
 
     fpga->WriteRegister(0xFFFF, 1 << chipId);
@@ -139,35 +139,16 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
     const int packetSize = sizeof(FPGA_DataPacket);
 
-    if(!rxPort->IsOpen())
-        throw std::runtime_error("ReceivePacketsLoop tx data port not open\n");
+    if(!txPort->IsOpen())
+        throw std::runtime_error("TransmitPacketsLoop tx data port not open\n");
 
-    const int fd = rxPort->GetFd();
-    int ret;
-
-    litepcie_ioctl_lock lockInfo;
-    memset(&lockInfo, 0, sizeof(lockInfo));
-    lockInfo.dma_reader_request = 1;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_LOCK, &lockInfo);
-    if(ret)
-        throw std::runtime_error("IOCTL failed to lock DMA reader");
-
-    litepcie_ioctl_mmap_dma_info mmap_dma_info;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_MMAP_DMA_INFO, &mmap_dma_info);
-    if(ret)
-        throw std::runtime_error("TransmitLoop IOCTL failed to get DMA info\n");
-
-    uint64_t mapSize = mmap_dma_info.dma_tx_buf_size*mmap_dma_info.dma_tx_buf_count;
-    uint8_t* dmaMem = (uint8_t*)mmap(NULL, mapSize, PROT_WRITE, MAP_SHARED,
-                       fd, mmap_dma_info.dma_tx_buf_offset);
-    if (dmaMem == MAP_FAILED || dmaMem == nullptr)
-        throw std::runtime_error("TransmitLoop failed to allocate memory\n");
+    LitePCIe::DMAInfo dma = txPort->GetDMAInfo();
+    uint8_t* dmaMem = dma.txMemory;
 
     if(mConfig.extraConfig && mConfig.extraConfig->txMaxPacketsInBatch != 0)
         mTxPacketsToBatch = mConfig.extraConfig->txMaxPacketsInBatch;
 
-    mTxPacketsToBatch = std::min((int)mTxPacketsToBatch, (int)(mmap_dma_info.dma_tx_buf_size/packetSize));
-    mTxPacketsToBatch = std::max((int)mTxPacketsToBatch, 1);
+    mTxPacketsToBatch = clamp((int)mTxPacketsToBatch, 1, (int)(dma.bufferSize/packetSize));
 
     float bufferTimeDuration = float(samplesInPkt*mTxPacketsToBatch) / mConfig.hintSampleRate;
     if(mCallback_logMessage)
@@ -179,18 +160,12 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     }
 
     const int outDMA_BUFFER_SIZE = packetSize * mTxPacketsToBatch;
-    assert(outDMA_BUFFER_SIZE <= mmap_dma_info.dma_tx_buf_size);
-    memset(dmaMem, 0, mapSize);
+    assert(outDMA_BUFFER_SIZE <= dma.bufferSize);
     const int irqPeriod = 16;
-    const int maxDMAqueue = mmap_dma_info.dma_tx_buf_count-16;
+    const int maxDMAqueue = dma.bufferCount-16;
 
     // Initialize DMA
-    litepcie_ioctl_dma_reader reader;
-    reader.enable = 1;
-    reader.irqFreq = irqPeriod;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
-    if(ret)
-        throw std::runtime_error("TransmitLoop IOCTL failed to enable DMA reader");
+    txPort->TxDMAEnable(true);
 
     int64_t totalBytesSent = 0; //for data rate calculation
     int retryWrites = 0;
@@ -207,9 +182,9 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     };
     std::queue<PendingWrite> pendingWrites;
 
-    std::vector<uint8_t*> dmaBuffers(mmap_dma_info.dma_tx_buf_count);
+    std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
     for(int i=0; i<dmaBuffers.size();++i)
-        dmaBuffers[i] = dmaMem+mmap_dma_info.dma_tx_buf_size*i;
+        dmaBuffers[i] = dmaMem+dma.bufferSize*i;
 
     int stagingBufferIndex = 0;
     int underrun = 0;
@@ -242,17 +217,17 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     auto t1 = perfClock::now();
     auto t2 = t1;
 
+    LitePCIe::DMAState state;
+    state.swIndex = 0;
     while (terminateTx.load(std::memory_order_relaxed) == false) {
         // check if DMA transfers have completed
-        ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
-        if (ret)
-            throw std::runtime_error("TransmitLoop IOCTL failed to get DMA reader counters");
+        state = txPort->GetTxDMAState();
 
         // process pending transactions
         while(!pendingWrites.empty() && !terminateTx.load(std::memory_order_relaxed))
         {
             PendingWrite &dataBlock = pendingWrites.front();
-            if (reader.hw_count > dataBlock.id)
+            if (state.hwIndex > dataBlock.id)
             {
                 totalBytesSent += dataBlock.size;
                 pendingWrites.pop();
@@ -287,32 +262,12 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 break;
             }
         }
-        bool canSend = stagingBufferIndex - reader.hw_count < maxDMAqueue;
+        bool canSend = stagingBufferIndex - state.hwIndex < maxDMAqueue;
         if(!canSend && (mConfig.extraConfig == nullptr || mConfig.extraConfig->usePoll))
         {
-            // auto pt1 = perfClock::now();
-            pollfd desc;
-            desc.fd = fd;
-            desc.events = POLLOUT;
-
-            const int pollTimeout = 50;
-            const int ret = poll(&desc, 1, pollTimeout);
-            if (ret < 0 && mCallback_logMessage)
-            {
-                char msg[256];
-                sprintf(msg, "TransmitLoop poll errno(%i) %s\n", errno, strerror(errno));
-                mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
-            }
-
-            int ret2 = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
-            if (ret2)
-                throw std::runtime_error("TransmitLoop IOCTL failed to get DMA reader counters");
-
-            canSend = stagingBufferIndex - reader.hw_count < maxDMAqueue;
-
-            // auto pt2 = perfClock::now();
-            // auto pollDur = duration_cast<microseconds>(pt2 - pt1).count();
-            //printf("Tx Poll %ius\n", pollDur);
+            txPort->WaitTx();
+            state = txPort->GetTxDMAState();
+            canSend = stagingBufferIndex - state.hwIndex < maxDMAqueue;
         }
         // send output buffer if possible
         if(outputReady && canSend)
@@ -323,16 +278,11 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             wrInfo.size = output.size();
             wrInfo.data = output.data();
             // write or schedule write
+            state.swIndex = stagingBufferIndex;
+            state.bufferSize = wrInfo.size;
+            state.genIRQ = (wrInfo.id % irqPeriod) == 0;
 
-            litepcie_ioctl_mmap_dma_update sub;
-            sub.sw_count = stagingBufferIndex;
-            sub.buffer_size = wrInfo.size;
-            sub.genIRQ = (wrInfo.id % irqPeriod) == 0;
-            assert(sub.buffer_size <= DMA_BUFFER_SIZE);
-            assert(sub.buffer_size <= outDMA_BUFFER_SIZE);
-            assert(sub.buffer_size > 0);
-
-            msync(dmaBuffers[stagingBufferIndex % mmap_dma_info.dma_tx_buf_count], sub.buffer_size, MS_SYNC);
+            msync(dmaBuffers[stagingBufferIndex % dma.bufferCount], state.bufferSize, MS_SYNC);
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(output.data());
             lastTS = pkt->counter;
             int64_t rxNow = rxLastTimestamp.load(std::memory_order_relaxed);
@@ -355,7 +305,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 // continue;
             }
 
-            int ret = guarded_ioctl(fd, LITEPCIE_IOCTL_MMAP_DMA_READER_UPDATE, &sub);
+            int ret = txPort->SetTxDMAState(state);
             if(ret)
             {
                 //printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
@@ -371,7 +321,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 ++stagingBufferIndex;
                 packetsSent += output.packetCount();
                 totalPacketSent += output.packetCount();
-                output.Reset(dmaBuffers[stagingBufferIndex % mmap_dma_info.dma_tx_buf_count], outDMA_BUFFER_SIZE);
+                output.Reset(dmaBuffers[stagingBufferIndex % dma.bufferCount], outDMA_BUFFER_SIZE);
             }
         }
 
@@ -380,7 +330,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         if (timePeriod >= statsPeriod_ms || terminateTx.load(std::memory_order_relaxed)) {
             t1 = t2;
 
-            ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
+            state = txPort->GetTxDMAState();
             double dataRate = 1000.0 * totalBytesSent / timePeriod;
             double avgTransferSize = 0, rmsTransferSize = 0;
             transferSize.GetResult(avgTransferSize, rmsTransferSize);
@@ -398,7 +348,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 uint32_t fpgaTxPktIngressCount = (values[0] << 16) | values[1];
 
                 char msg[512];
-                snprintf(msg, sizeof(msg)-1, "%s Tx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li avgBatch:%.0f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%li/%li(%+li) underrun:%i tsAdvance:%+.0f/%+.0f/%+.0f%s",
+                snprintf(msg, sizeof(msg)-1, "%s Tx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li avgBatch:%.0f retry:%i totalOut:%i(x%08X)-fpga(x%08X)=%i, shw:%u/%u(%+i) underrun:%i tsAdvance:%+.0f/%+.0f/%+.0f%s",
                     rxPort->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     txIn.size(),
@@ -411,9 +361,9 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     totalPacketSent&0xFFFFFFFF,
                     fpgaTxPktIngressCount,
                     totalPacketSent - fpgaTxPktIngressCount,
-                    reader.sw_count,
-                    reader.hw_count,
-                    reader.sw_count-reader.hw_count,
+                    state.swIndex,
+                    state.hwIndex,
+                    state.swIndex-state.hwIndex,
                     underrun,
                     txTSAdvance.Min(),
                     avgTxAdvance,
@@ -441,22 +391,11 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
     // give some time for the dma transfers to complete, than check the fpga packets counter
     std::this_thread::sleep_for(milliseconds(10));
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
+    state = txPort->GetTxDMAState();
     //printf("DMA reader %li/%li, diff: %li\n", reader.sw_count, reader.hw_count, reader.sw_count - reader.hw_count);
 
-    reader.enable = 0;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_READER, &reader);
-    if(ret)
-        throw std::runtime_error("TransmitLoop IOCTL failed to stop DMA reader\n");
-
-    lockInfo.dma_reader_request = 0;
-    lockInfo.dma_reader_release = 1;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_LOCK, &lockInfo);
-    if (ret)
-        throw std::runtime_error("TransmitLoop IOCTL failed to release DMA reader\n");
+    txPort->TxDMAEnable(false);
     txDataRate_Bps.store(0, std::memory_order_relaxed);
-
-    //printf("Tx pending transactions: %lu\n", pendingWrites.size());
 
     uint16_t addr = 0x7FE1 + chipId*5;
     //fpga->WriteRegister(addr, 0);
@@ -473,35 +412,31 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         );
         mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
     }
-    munmap(dmaMem, mmap_dma_info.dma_tx_buf_size * mmap_dma_info.dma_tx_buf_count);
 }
+
 #include <unistd.h>
 /** @brief Function dedicated for receiving data samples from board
     @param stream a pointer to an active receiver stream
 */
 void TRXLooper_PCIE::ReceivePacketsLoop()
 {
-    const bool mimo = std::max(mConfig.txCount, mConfig.rxCount) > 1;
-    const bool compressed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    bool usePoll = true;
+    if(!rxPort->IsOpen())
+        throw std::runtime_error("ReceivePacketsLoop rx data port not open\n");
 
     rxLastTimestamp.store(0, std::memory_order_relaxed);
+    const bool mimo = std::max(mConfig.txCount, mConfig.rxCount) > 1;
+    const bool compressed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    const bool usePoll = mConfig.extraConfig ? mConfig.extraConfig->usePoll : true;
     const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
-    //const int maxSamplesInPkt = sizeof(FPGA_DataPacket::data) / chCount / sampleSize;
     const int maxSamplesInPkt = 1024 / chCount;
 
     int requestSamplesInPkt = 256;//maxSamplesInPkt;
     if(mConfig.extraConfig && mConfig.extraConfig->rxSamplesInPacket != 0)
         requestSamplesInPkt = mConfig.extraConfig->rxSamplesInPacket;
 
-    if(mConfig.extraConfig)
-        usePoll = mConfig.extraConfig->usePoll;
 
-    int samplesInPkt = std::min(requestSamplesInPkt, maxSamplesInPkt);
-    samplesInPkt = std::max(samplesInPkt, 64);
-    assert(samplesInPkt > 0);
-
+    int samplesInPkt = clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
     int payloadSize = requestSamplesInPkt * sampleSize * chCount;
 
     // iqSamplesCount must be N*16, or N*8 depending on device BUS width
@@ -518,44 +453,17 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     uint32_t requestData[] = {packetSize, iqSamplesCount};
     fpga->WriteRegisters(requestAddr, requestData, 2);
 
-    if(!rxPort->IsOpen())
-        throw std::runtime_error("ReceivePacketsLoop rx data port not open\n");
-
-    // Initialize DMA
-    const int fd = rxPort->GetFd();
-    int ret;
-
-    litepcie_ioctl_mmap_dma_info mmap_dma_info;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_MMAP_DMA_INFO, &mmap_dma_info);
-    if(ret)
-        throw std::runtime_error("TransmitLoop IOCTL failed to get DMA info\n");
-
-    uint8_t* dmaMem = (uint8_t*)mmap(NULL,
-        mmap_dma_info.dma_rx_buf_size*mmap_dma_info.dma_rx_buf_count,
-        PROT_READ, MAP_SHARED, fd, mmap_dma_info.dma_rx_buf_offset);
-    if (dmaMem == MAP_FAILED || dmaMem == nullptr) {
-        throw std::runtime_error("ReceiverLoop memory allocation failed\n");
-        return;
-    }
+    LitePCIe::DMAInfo dma = rxPort->GetDMAInfo();
 
     if(mConfig.extraConfig && mConfig.extraConfig->rxPacketsInBatch != 0)
         mRxPacketsToBatch = mConfig.extraConfig->rxPacketsInBatch;
-    mRxPacketsToBatch = std::min((uint32_t)mRxPacketsToBatch, (int)mmap_dma_info.dma_rx_buf_size/packetSize);
-    mRxPacketsToBatch = std::max((int)mRxPacketsToBatch, 1);
-    assert(mRxPacketsToBatch > 0);
+    mRxPacketsToBatch = clamp((int)mRxPacketsToBatch, 1, (int)(dma.bufferSize/packetSize));
 
-    std::vector<uint8_t*> dmaBuffers(mmap_dma_info.dma_rx_buf_count);
+    std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
     for(int i=0; i<dmaBuffers.size();++i)
-        dmaBuffers[i] = dmaMem+mmap_dma_info.dma_rx_buf_size*i;
-
-    litepcie_ioctl_lock lockInfo;
-    memset(&lockInfo, 0, sizeof(lockInfo));
-    lockInfo.dma_writer_request = 1;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_LOCK, &lockInfo);
+        dmaBuffers[i] = dma.rxMemory+dma.bufferSize*i;
 
     const int readBlockSize = packetSize * mRxPacketsToBatch;
-    const int stagingSamplesCapacity = samplesInPkt*mRxPacketsToBatch;
-    assert(readBlockSize <= mmap_dma_info.dma_rx_buf_size);
 
     int totalTxDrops = 0;
     int totalPacketsReceived = 0;
@@ -572,7 +480,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
     // prefill packets pool
     for(int i=0; i<768; ++i)
-        rxPacketsPool.push(new StagingPacketType(stagingSamplesCapacity));
+        rxPacketsPool.push(new StagingPacketType(samplesInPkt*mRxPacketsToBatch));
     StagingPacketType* rxStaging = nullptr;
     rxPacketsPool.pop(&rxStaging, true, 1000);
 
@@ -586,8 +494,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         bufferTimeDuration = float(samplesInPkt*mRxPacketsToBatch) / mConfig.hintSampleRate;
         irqPeriod = 80e-6 / bufferTimeDuration;
     }
-    irqPeriod = std::max(1, irqPeriod);
-    irqPeriod = std::min(irqPeriod, 16);
+    irqPeriod = clamp(irqPeriod, 1, 16);
     //printf("Buffer duration: %g us, irq: %i\n", bufferTimeDuration*1e6, irqPeriod);
 
     if(mCallback_logMessage)
@@ -600,22 +507,9 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
     float expectedDataRateBps = 0;
     if (mConfig.hintSampleRate != 0)
-    {
-        // samples data
         expectedDataRateBps = (mConfig.hintSampleRate/samplesInPkt) * (16 + samplesInPkt * sampleSize * chCount);
-    }
 
-    litepcie_ioctl_dma_writer writer;
-    writer.enable = 1;
-    writer.write_size = readBlockSize; // bad size here can cause system instability/reboot!!!
-    writer.irqFreq = irqPeriod;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
-    if( ret < 0)
-    {
-        if(mCallback_logMessage)
-            mCallback_logMessage(SDRDevice::LogLevel::DEBUG, "Failed to start DMA writer");
-        return;
-    }
+    rxPort->RxDMAEnable(true, readBlockSize, irqPeriod);
 
     mThreadsReady.fetch_add(1);
     //at this point FPGA has to be already configured to output samples
@@ -640,16 +534,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     AvgRmsCounter pktPushTimes_us;
     AvgRmsCounter timeDiscrepancy_us;
 
-    const int bufferCount = mmap_dma_info.dma_rx_buf_count;
+    const int bufferCount = dma.bufferCount;
 
     uint32_t readIndex = 0;
+    LitePCIe::DMAState state;
+    state.swIndex = 0;
     while (terminateRx.load(std::memory_order_relaxed) == false) {
-        writer.sw_count = readIndex;
-        ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
-        if( ret < 0)
-            throw std::runtime_error("Failed to get DMA writer status\n");
-
-        uint32_t hwIndex = (writer.hw_count >> 8) | (writer.hw_count & 0xFF);
+        state = rxPort->GetRxDMAState();
+        uint32_t hwIndex = state.hwIndex;
         if(hwIndex != lastDMAcounter)
         {
             totalBytesReceived += (hwIndex - lastDMAcounter) * readBlockSize;
@@ -670,8 +562,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
             msync(dmaBuffers[readIndex % bufferCount], readBlockSize, MS_SYNC);
 
-            uint8_t* inBuffer = dmaBuffers[readIndex % bufferCount];
-            FPGA_DataPacket *firstPkt = reinterpret_cast<FPGA_DataPacket*>(inBuffer);
+            const uint8_t* inBuffer = dmaBuffers[readIndex % bufferCount];
+            const FPGA_DataPacket *firstPkt = reinterpret_cast<const FPGA_DataPacket*>(inBuffer);
             const int srcPktCount = readBlockSize / packetSize;
             totalPacketsReceived += srcPktCount;
             packetsRecv += srcPktCount;
@@ -683,7 +575,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             };
 
             for (int i=0; i<srcPktCount && !terminateRx.load(std::memory_order_relaxed); ++i) {
-                FPGA_DataPacket *srcPkt = reinterpret_cast<FPGA_DataPacket*>(&inBuffer[i*packetSize]);
+                const FPGA_DataPacket *srcPkt = reinterpret_cast<const FPGA_DataPacket*>(&inBuffer[i*packetSize]);
                 int64_t ts = 0;
                 uint8_t* ptr = (uint8_t*)srcPkt;
                 ptr+=2;
@@ -765,43 +657,15 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 timeDiscrepancy_us.Add(streamDelay);
             }
             readIndex = (readIndex + 1);// % bufferCount;
-            litepcie_ioctl_mmap_dma_update sub;
-            sub.sw_count = readIndex;
-            int ret = guarded_ioctl(fd, LITEPCIE_IOCTL_MMAP_DMA_WRITER_UPDATE, &sub);
+            state.swIndex = readIndex;
+            rxPort->SetRxDMAState(state);
             // one callback for the entire batch
             if(reportProblems && mConfig.statusCallback)
                 mConfig.statusCallback(&stats, mConfig.userData);
         }
         else if(usePoll)
         {
-            auto pt1 = perfClock::now();
-            pollfd desc;
-            desc.fd = fd;
-            desc.events = POLLIN;
-
-            struct timespec timeout_ts;
-            timeout_ts.tv_sec = 0;
-            timeout_ts.tv_nsec = 50e3;
-            sigset_t origmask;
-            int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
-
-            //int ret = poll(&desc, 1, pollTimeout);
-            if (ret < 0)
-            {
-                if (mCallback_logMessage)
-                {
-                    char msg[256];
-                    sprintf(msg, "ReceiveLoop poll errno(%i) %s\n", errno, strerror(errno));
-                    mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
-                }
-                return;
-            }
-            auto pt2 = perfClock::now();
-            auto pollDur = duration_cast<microseconds>(pt2 - pt1).count();
-            //printf("POLLIN %ius\n", pollDur);
-            ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
-            if( ret < 0)
-                throw std::runtime_error("Failed to get DMA writer status\n");
+            rxPort->WaitRx();
         }
 
         t2 = perfClock::now();
@@ -829,10 +693,9 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             {
                 double pushPeriodAvg, pushPeriodRms;
                 pktPushTimes_us.GetResult(pushPeriodAvg, pushPeriodRms);
-                ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
-                // sprintf(ctemp, "%02X %02X %02X %02X %02X %02X %02X %02X", probeBuffer[0],probeBuffer[1],probeBuffer[2],probeBuffer[3],probeBuffer[4],probeBuffer[5], probeBuffer[6],probeBuffer[7]);
+                state = rxPort->GetRxDMAState();
                 char msg[512];
-                snprintf(msg, sizeof(msg)-1, "%s Rx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%li/%li(%+i), l:%.0f/%.0f/%.0fus, pcTime-RxTS:%ius",
+                snprintf(msg, sizeof(msg)-1, "%s Rx: %3.3f MB/s | FIFO:%i/%i/%i TS:%li/%li=%li overrun:%i loss:%i, txDrops:%i, shw:%u/%u(%+i), l:%.0f/%.0f/%.0fus, pcTime-RxTS:%ius",
                     rxPort->GetPathName().c_str(),
                     dataRateBps / 1000000.0,
                     rxOut.size(),
@@ -845,8 +708,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                     rxDiscontinuity,
                     txDrops,
                     readIndex,//writer.sw_count,
-                    writer.hw_count,
-                    int(writer.hw_count-readIndex),
+                    state.hwIndex,
+                    int(state.hwIndex-readIndex),
                     pushPeriodAvg,
                     pushPeriodRms,
                     pktPushTimes_us.Max(),
@@ -867,17 +730,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             rxDataRate_Bps.store((uint32_t)dataRateBps, std::memory_order_relaxed);
         }
     }
-    writer.enable = 0;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_DMA_WRITER, &writer);
-    if( ret < 0)
-    {
-        printf("Failed to stop DMA writer\n");
-        return;
-    }
 
-    lockInfo.dma_writer_request = 0;
-    lockInfo.dma_writer_release = 1;
-    ret = guarded_ioctl(fd, LITEPCIE_IOCTL_LOCK, &lockInfo);
+    rxPort->RxDMAEnable(false, readBlockSize, irqPeriod);
 
     rxDataRate_Bps.store(0, std::memory_order_relaxed);
 
@@ -887,7 +741,6 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         sprintf(msg, "Rx loop totals: packets recv: %i, txDrops: %i\n", totalPacketsReceived, totalTxDrops);
         mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
     }
-    munmap(dmaMem, mmap_dma_info.dma_rx_buf_size * mmap_dma_info.dma_rx_buf_count);
 }
 
 } // namespace lime

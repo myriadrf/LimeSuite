@@ -29,12 +29,42 @@ public:
     const std::string& GetPathName() const { return mFilePath; };
     void SetPathName(const char* filePath) { mFilePath = std::string(filePath); };
 
-    bool DMA(bool enable);
     int GetFd() const { return mFileDescriptor; };
+
+    void RxDMAEnable(bool enabled, uint32_t bufferSize, uint8_t irqPeriod);
+    void TxDMAEnable(bool enabled);
+
+    struct DMAInfo {
+        uint8_t* rxMemory;
+        uint8_t* txMemory;
+        int bufferSize;
+        int bufferCount;
+    };
+    DMAInfo GetDMAInfo() { return mDMA; };
+
+    struct DMAState {
+        uint32_t hwIndex;
+        uint32_t swIndex;
+        uint32_t bufferSize;
+        bool enabled;
+        bool genIRQ;
+    };
+    DMAState GetRxDMAState();
+    DMAState GetTxDMAState();
+
+    int SetRxDMAState(DMAState s);
+    int SetTxDMAState(DMAState s);
+
+    bool WaitRx();
+    bool WaitTx();
+
+
 protected:
     std::string mFilePath;
     int mFileDescriptor;
     bool isConnected;
+
+    DMAInfo mDMA;
 };
 
 }
