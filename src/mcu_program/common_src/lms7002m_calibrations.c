@@ -24,13 +24,14 @@
 
 #ifdef DRAW_GNU_PLOTS
 #define PUSH_GMEASUREMENT_VALUES(value, rssi) gMeasurements.push_back({value, rssi})
+GNUPlotPipe saturationPlot;
+GNUPlotPipe IQImbalancePlot;
+GNUPlotPipe txDCPlot;
+
 #else
 #define PUSH_GMEASUREMENT_VALUES(value, rssi)
 #endif
 #include <gnuPlotPipe.h>
-GNUPlotPipe saturationPlot;
-GNUPlotPipe IQImbalancePlot;
-GNUPlotPipe txDCPlot;
 
 typedef std::vector< std::pair<float, float> > MeasurementsVector;
 MeasurementsVector gMeasurements;
