@@ -1858,8 +1858,8 @@ void lms7002_pnlRXTSP_view::OnbtnSetLPFClick(wxCommandEvent &event)
 {
     double bw;
     txtLPFBW->GetValue().ToDouble(&bw);
-    // TODO: if (LMS_SetGFIRLPF(lmsControl, LMS_CH_RX, mChannel, true, bw * 1e6) != 0)
-    //     wxMessageBox(_("GFIR configuration failed"), _("Error"));
+    if (lmsControl->SetGFIRFilter(false, mChannel, true, bw*1e6) != 0)
+        wxMessageBox(_("GFIR configuration failed"), _("Error"));
 
     UpdateGUI();// API changes nco selection
 }
