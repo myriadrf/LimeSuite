@@ -348,10 +348,18 @@ bool LitePCIe::WaitRx()
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
     {
+        if (errno == EINTR)
+            return false;
         char msg[256];
         sprintf(msg, "DMA writer poll errno(%i) %s\n", errno, strerror(errno));
         throw std::runtime_error(msg);
     }
+    auto state = GetRxDMAState();
+    if(state.hwIndex > state.swIndex)
+        return true;
+    else
+        return false;
+
 }
 
 bool LitePCIe::WaitTx()
@@ -367,10 +375,13 @@ bool LitePCIe::WaitTx()
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
     {
+        if (errno == EINTR)
+            return false;
         char msg[256];
         sprintf(msg, "DMA reader poll errno(%i) %s\n", errno, strerror(errno));
         throw std::runtime_error(msg);
     }
+    return ret > 0;
 }
 
 int LitePCIe::SetRxDMAState(DMAState s)
