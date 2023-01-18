@@ -2,7 +2,7 @@
 
 namespace lime{
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const char* name) :
-    mBlockSize(blockSize), allocCnt(0), freeCnt(0), name(name)
+    name(name), allocCnt(0), freeCnt(0), mBlockSize(blockSize)
 {
     for(int i=0; i<blockCount; ++i)
     {

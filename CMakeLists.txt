@@ -86,9 +86,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     endif()
 
     #enable warnings in Debug configurations
-    if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
-    	add_compile_options(-Wall -Wpedantic)
-    endif()
+    add_compile_options(-Wall -Wpedantic)
 
     #symbols are only exported from libraries/modules explicitly
     add_compile_options(-fvisibility=hidden)

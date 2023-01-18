@@ -593,7 +593,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
 
         m_iTestResultFileLine = 0;
         scanStatus = fscanf(inFile, "%d", &test_code);
-        while (!feof(inFile))
+        while (!feof(inFile) && scanStatus >= 0)
         {
             //fscanf(inFile, "%d %d %d", &test_code, &address, &value);
             scanStatus = fscanf(inFile, "%d ", &address);
@@ -876,7 +876,7 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
         int  address = 0;
         int  value = 0;
         scanStatus = fscanf(inFile, "%d", &test_code);
-        while (!feof(inFile))
+        while (!feof(inFile) && scanStatus >= 0)
         {
             scanStatus = fscanf(inFile, "%d ", &address);
             scanStatus = fscanf(inFile, "%d\n", &value);
@@ -981,7 +981,7 @@ void lms7002_pnlMCU_BD_view::OnDebugModeClick( wxCommandEvent& event )
 void lms7002_pnlMCU_BD_view::OnRunInstruction( wxCommandEvent& event )
 {
     wxString m_sPCVal;
-    int i = 0;
+    unsigned int i = 0;
     int retval = 0;
     unsigned short m_iPC = 0;
 

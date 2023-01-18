@@ -14,7 +14,7 @@ wxPanel* SDRConfiguration_view::CreateChannelPanel(SDRConfigGUI &config ,wxWindo
         
     wxWindow* base = sbSizer->GetStaticBox();
 
-    wxSizerFlags columnFlags = wxALIGN_CENTER_VERTICAL;
+    //wxSizerFlags columnFlags = wxALIGN_CENTER_VERTICAL;
     wxSizerFlags titleFlags(0); 
     titleFlags = titleFlags.Center();
     wxSizerFlags ctrlFlags(0);

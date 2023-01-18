@@ -457,8 +457,8 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     double input1;
     txtLowBW_MHz->GetValue().ToDouble(&input1);
 
-    int status;
-    uint16_t ch;
+    // int status;
+    // uint16_t ch;
     // TODO: status = LMS_SetLPFBW(lmsControl, LMS_CH_RX, mChannel, input1 * 1e6);
     // if (status != 0){
     //     wxMessageBox(wxString(_("Rx Filter tune failed")), _("Error"));

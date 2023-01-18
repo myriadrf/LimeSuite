@@ -140,7 +140,7 @@ struct FPGA_DataPacket
         payloadSizeLSB = size & 0xFF;
         payloadSizeMSB = (size >> 8) & 0xFF;
     }
-    inline int16_t GetPayloadSize() const {
+    inline uint16_t GetPayloadSize() const {
         return (payloadSizeMSB << 8) | payloadSizeLSB;
     }
     // order matters

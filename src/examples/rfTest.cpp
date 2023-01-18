@@ -46,12 +46,14 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
         config.channel[i].txSampleRate = sampleRate;
         config.channel[i].rxOversample = 2;
         config.channel[i].txOversample = 2;
-        config.channel[i].rxLPF = 20e6;
-        config.channel[i].txLPF = 20e6;
+        config.channel[i].rxLPF = 5e6;
+        config.channel[i].txLPF = 5e6;
+        config.channel[i].rxGFIR.enabled = true;
+        config.channel[i].rxGFIR.bandwidth = config.channel[i].rxLPF;
         config.channel[i].rxPath = 2; // Loopback_1 // TODO: replace with string names
         config.channel[i].txPath = 2; // band1 // TODO: replace with string names
-        config.channel[i].rxCalibrate = true;
-        config.channel[i].txCalibrate = true;
+        config.channel[i].rxCalibrate = false;
+        config.channel[i].txCalibrate = false;
         config.channel[i].rxTestSignal = false;
         config.channel[i].txTestSignal = false;
     }
@@ -212,8 +214,8 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     int64_t lastRxTS = 0;
 
     int badSignal = 0;
-    while(runForever.load())
-    //while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(1100))
+    //while(runForever.load())
+    while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(3100))
     {
 
         //Receive samples
@@ -294,7 +296,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
                 sumi += i*i;
                 float q = dest[0][j*20].q;
                 sumq += q*q;
-                float ampl = sqrt(pow(i, 2) + pow(q, 2));
+                //float ampl = sqrt(pow(i, 2) + pow(q, 2));
             }
             float rmsI = sqrt(sumi/cnt);
             float rmsQ = sqrt(sumq/cnt);
@@ -355,7 +357,7 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
         for(int j=0; j<txPacketCount; ++j)
         {
             int16_t src[4] = {1, 0, -1, 0};
-            float ampl = (j+1)*(1.0/(txPacketCount));
+            //float ampl = (j+1)*(1.0/(txPacketCount));
             for(int k=0; k<samplesInPkt; ++k)
             {
                 txPattern[i][j*samplesInPkt+k].i = src[k & 3];
@@ -381,11 +383,9 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
     dev.StreamStart(chipIndex);
 
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = t1;
 
     bool txPending = false;
     SDRDevice::StreamMeta txMeta;
-    float RxAmpl = 0;
 
     bool done = false;
     while (chrono::high_resolution_clock::now() - t1 < chrono::milliseconds(3100) && !done)
@@ -441,7 +441,6 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
                 float i = dest[0][j].i;
                 float q = dest[0][j].q;
                 float ampl = sqrt(pow(i, 2) + pow(q, 2));
-                RxAmpl = ampl;
                 if (ampl > 0.2)
                 {
                     int64_t diff = rxMeta.timestamp + j - txMeta.timestamp;

@@ -129,7 +129,12 @@ int LitePCIe::ReadControl(uint8_t *buffer, const int length, int timeout_ms)
     auto t1 = chrono::high_resolution_clock::now();
     do
     { //wait for status byte to change
-        read(mFileDescriptor, &status, sizeof(status));
+        int ret = read(mFileDescriptor, &status, sizeof(status));
+        if (ret < 0)
+        {
+            if (errno != EAGAIN)
+                break;
+        }
         if ((status & 0xFF00) != 0)
             break;
         std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -348,18 +353,16 @@ bool LitePCIe::WaitRx()
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
     {
-        if (errno == EINTR)
-            return false;
+    
         char msg[256];
         sprintf(msg, "DMA writer poll errno(%i) %s\n", errno, strerror(errno));
-        throw std::runtime_error(msg);
+        //throw std::runtime_error(msg);
     }
     auto state = GetRxDMAState();
     if(state.hwIndex > state.swIndex)
         return true;
     else
         return false;
-
 }
 
 bool LitePCIe::WaitTx()
@@ -406,12 +409,11 @@ int LitePCIe::SetTxDMAState(DMAState s)
     sub.buffer_size = s.bufferSize;
     sub.genIRQ = s.genIRQ;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_MMAP_DMA_READER_UPDATE, &sub);
-    if (ret < 0)
-    {
-        char msg[256];
-        printf("DMA reader failed update");
-        //throw std::runtime_error(msg);
-    }
+    // if (ret < 0)
+    // {
+    //     char msg[256];
+    //     sprintf(msg, "DMA reader failed update");
+    // }
     return ret;
 }
 

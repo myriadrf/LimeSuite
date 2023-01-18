@@ -787,6 +787,7 @@ void LimeSDR_5GRadio::Synchronize(bool toChip)
 static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSize,
                         const char *prefix)
 {
+    return;
     printf("%s", prefix);
     int i = 0;
     for (; i < 8; ++i)
@@ -872,7 +873,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
         }
 
         // flush packet
-        //printPacket(pkt, wrPrint, "Wr:");
+        printPacket(pkt, wrPrint, "Wr:");
         int sent = 0;
         int recv = 0;
         auto t1 = std::chrono::high_resolution_clock::now();
@@ -904,7 +905,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
         int duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if(duration > 100)
             printf("=======SPI read blocked for %ims\n", duration);
-        //printPacket(pkt, rdPrint, "Rd:");
+        printPacket(pkt, rdPrint, "Rd:");
         pkt.blockCount = 0;
         pkt.status = STATUS_UNDEFINED;
     }
@@ -1238,13 +1239,10 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
 
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
 
-    int tx_path = LMS_PATH_TX1;
-    int rx_path = LMS_PATH_LNAH;
     uint16_t shift = chan == 0 ? 0 : 2;
     if (path == 0)
     {
-        tx_path = LMS_PATH_NONE;
-        rx_path = LMS_PATH_NONE;
+
     }
     else if (tx && ePathLMS2_Tx(path) == ePathLMS2_Tx::TDD) // TDD_TX
     {

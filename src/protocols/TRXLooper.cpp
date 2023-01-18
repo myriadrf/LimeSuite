@@ -623,8 +623,6 @@ void TRXLooper::Stop()
 
 int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta)
 {
-    typedef PartialPacket<complex32f_t> PacketType;
-
     bool timestampSet = false;
     uint32_t samplesProduced = 0;
     const SDRDevice::StreamConfig &config = mConfig;
@@ -638,7 +636,7 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
 
     bool firstIteration = true;
 
-    auto start = high_resolution_clock::now();
+    //auto start = high_resolution_clock::now();
     while (samplesProduced < count) {
         if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 250))
             return samplesProduced;
@@ -694,12 +692,10 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
     while (samplesRemaining) {
         if (!txStaging)
         {
-            const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / std::max(mConfig.rxCount, mConfig.txCount);
             txPacketsPool.pop(&txStaging, true, 1000);
             if(!txStaging)
                 break;
             txStaging->Reset();
-            //txStaging = new StagingPacketType(samplesInPkt*mTxPacketsToBatch);
             txStaging->timestamp = ts;
             txStaging->useTimestamp = useTimestamp;
         }

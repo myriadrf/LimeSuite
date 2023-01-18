@@ -89,9 +89,9 @@ void ProfilerCollection::GenerateChromeJSON()
     printf("Generating JSON, events: %li\n", profilers.size());
     std::ofstream o("perfTrace.json");
     o.write("[\n", 2);
-    for(int j=0; j<profilers.size(); ++j)
+    for(uint32_t j=0; j<profilers.size(); ++j)
     {
-        for(int i=0; i<profilers[j]->entries.size(); ++i)
+        for(uint32_t i=0; i<profilers[j]->entries.size(); ++i)
         {
             const ProfilerEvent& event = profilers[j]->entries[i];
             o << "{\n";

@@ -267,8 +267,8 @@ lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , lms_dev
 
 void lms7002_dlgVCOfrequencies::OnBtnOkClick( wxCommandEvent& event )
 {
-    double multiplier = 1e9;
-    double value;
+    // double multiplier = 1e9;
+    // double value;
     // TODO:
     // LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
 

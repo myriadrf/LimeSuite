@@ -730,9 +730,9 @@ int LMS7002M::LoadConfig(const char* filename)
 
 int LMS7002M::ResetLogicregisters()
 {
-    auto x0020_value = SPI_read(0x0020); //reset logic registers
+    const uint16_t x0020_value = SPI_read(0x0020); //reset logic registers
     const uint16_t addr[] = {0x0020, 0x0020};
-    const uint16_t values[] = {x0020_value & 0x553F, x0020_value | 0xFFC0};
+    const uint16_t values[] = {uint16_t(x0020_value & 0x553F), uint16_t(x0020_value | 0xFFC0)};
     //const uint16_t values[] = {x0020_value & 0x55FF, x0020_value | 0xFF00};
     // LRST_TX_B, LRST_TX_A, LRST_RX_B, LRST_RX_A
     return SPI_write_batch(addr, values, 2);
@@ -1541,7 +1541,7 @@ int LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb, con
 */
 int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop)
 {
-    int status;
+    int status = 0;
     uint16_t reg_data;
     vector<uint16_t> addresses;
     vector<uint16_t> data;

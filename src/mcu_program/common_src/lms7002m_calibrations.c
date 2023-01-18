@@ -864,7 +864,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
 uint8_t CalibrateTx(bool extLoopback)
 {
     const uint16_t x0020val = SPI_read(0x0020);
-#ifdef __cplusplus
+#ifdef VERBOSE
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
 #if VERBOSE
@@ -1035,7 +1035,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         Modify_SPI_Reg_bits(0x0084, MSB_LSB(10, 6), rp_calib_bias);
     }
 
-    /*if(!extLoopback)
+    if(!extLoopback)
     {
         Modify_SPI_Reg_bits(ICT_IAMP_FRP_TBB, 1);
         Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 6);
@@ -1234,7 +1234,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
 
 uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
 {
-#ifdef __cplusplus
+#ifdef VERBOSE
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
     uint8_t status;

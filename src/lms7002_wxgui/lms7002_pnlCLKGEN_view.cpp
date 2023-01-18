@@ -759,7 +759,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
 void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 {
     double freqMHz;
-    auto device = lmsControl;
+    //auto device = lmsControl;
     txtFrequency->GetValue().ToDouble(&freqMHz);
     LMS7002M *lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
@@ -774,7 +774,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         return ;
     }
 
-    int status;
+    // int status;
     // TODO:
     // try {
     //     if (this->chkAutoPhase->GetValue())
@@ -801,7 +801,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 
 void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
 {
-    auto device = lmsControl;
     LMS7002M *lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     if (lms->TuneVCO(lime::LMS7002M::VCO_CGEN)!=0)
@@ -810,10 +809,10 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
         return ;
     }
 
-    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    // int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    // int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
 
-    int status;
+    // int status;
     // TODO:
     // if (this->chkAutoPhase->GetValue())
     //     status = device->SetFPGAInterfaceFreq(interp, decim);

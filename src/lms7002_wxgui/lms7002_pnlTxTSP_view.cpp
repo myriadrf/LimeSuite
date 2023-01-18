@@ -1586,7 +1586,7 @@ void lms7002_pnlTXTSP_view::onbtnGFIR1Coef(wxCommandEvent &event)
     std::vector<double> coefficients;
     const int maxCoefCount = 40;
     coefficients.resize(maxCoefCount, 0);
-    uint16_t ch;
+    // uint16_t ch;
     // LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     // ch = (ch == 2) ? 1 : 0;
     // ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
@@ -1616,7 +1616,7 @@ void lms7002_pnlTXTSP_view::onbtnGFIR2Coef(wxCommandEvent &event)
     std::vector<double> coefficients;
     const int maxCoefCount = 40;
     coefficients.resize(maxCoefCount, 0);
-    uint16_t ch;
+    // uint16_t ch;
     // LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     // ch = (ch == 2) ? 1 : 0;
     // ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
@@ -1645,7 +1645,7 @@ void lms7002_pnlTXTSP_view::onbtnGFIR3Coef(wxCommandEvent &event)
     std::vector<double> coefficients;
     const int maxCoefCount = 120;
     coefficients.resize(maxCoefCount, 0);
-    uint16_t ch;
+    // uint16_t ch;
     // LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     // ch = (ch == 2) ? 1 : 0;
     // ch += 2*LMS7SuiteAppFrame::m_lmsSelection;

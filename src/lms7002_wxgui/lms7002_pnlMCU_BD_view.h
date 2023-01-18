@@ -61,7 +61,7 @@ class lms7002_pnlMCU_BD_view : public ILMS7002MTab
     std::thread mWorkerThread;
     wxTimer* progressPooler;
     int m_iTestNo;
-    int m_iInstrNo;
+    unsigned int m_iInstrNo;
     int m_iPCvalue;
     int m_iDebug;
     int m_iMode0;

@@ -330,7 +330,6 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
-    const int socIndex = cmbLmsDevice->GetSelection();
     LMS7002M* chip = GetSelectedChip();
     if(chip == nullptr)
     {
@@ -360,7 +359,6 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
-    const int socIndex = cmbLmsDevice->GetSelection();
     LMS7002M* chip = GetSelectedChip();
     if(chip == nullptr)
     {
@@ -374,7 +372,6 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
 
 void lms7002_mainPanel::OnChannelOrSOCChange(wxCommandEvent &event)
 {
-    const int socIndex = cmbLmsDevice->GetSelection();
     int channel = -1;
     if (rbChannelA->GetValue())
         channel = 0;

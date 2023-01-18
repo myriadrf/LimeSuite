@@ -96,7 +96,7 @@ static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& par
         result *= -1;
     return result;
 }
-
+/*
 static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
 {
     //enable external loopback switches
@@ -172,7 +172,7 @@ static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
         return ReportError(status, "Failed to enable external loopback");
     return status;
 }
-
+*/
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
 */
 uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
@@ -202,9 +202,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     }
     if(controlPort == nullptr)
         return ReportError(EINVAL, "Tx Calibration: Device not connected");
-#ifdef LMS_VERBOSE_OUTPUT
     auto beginTime = std::chrono::high_resolution_clock::now();
-#endif
     int status;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
     if(ch == 0 || ch == 3)
@@ -273,7 +271,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_TXTSP, true));
 
     Log("Tx calibration finished", LOG_INFO);
-#ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("Tx | DC  | GAIN | PHASE\n");
     verbose_printf("---+-----+------+------\n");
     verbose_printf("I: | %3i | %4i | %i\n", dccorri, gcorri, phaseOffset);
@@ -281,7 +278,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
         (std::chrono::high_resolution_clock::now()-beginTime).count();
     verbose_printf("Duration: %i ms\n", duration);
-#endif //LMS_VERBOSE_OUTPUT
     return 0;
 }
 
@@ -383,11 +379,11 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_RXTSP, true));
 
     Log("Rx calibration finished", LOG_INFO);
-#ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("RX | DC  | GAIN | PHASE\n");
     verbose_printf("---+-----+------+------\n");
     verbose_printf("I: | %3i | %4i | %i\n", dcoffi, gcorri, phaseOffset);
     verbose_printf("Q: | %3i | %4i |\n", dcoffq, gcorrq);
+#ifdef LMS_VERBOSE_OUTPUT
     int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
         (std::chrono::high_resolution_clock::now()-beginTime).count();
     verbose_printf("Duration: %i ms\n", duration);

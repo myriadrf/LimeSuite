@@ -356,8 +356,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         buffers[i] = new complex32f_t[fftSize];
 
     vector<complex16_t> captureBuffer[cMaxChCount];
-    uint32_t samplesToCapture;
-    uint32_t samplesCaptured;
+    uint32_t samplesToCapture = 0;
+    uint32_t samplesCaptured = 0;
     if(pthis->captureSamples.load() == true)
         for(int ch=0; ch<channelsCount; ++ch)
         {
@@ -388,7 +388,6 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     const uint8_t chipIndex = pthis->lmsIndex;
 
     std::vector< std::vector<complex32f_t> > txPattern(2);
-    const int txPacketCount = 8;
     for(uint i=0; i<txPattern.size(); ++i)
     {
         txPattern[i].resize(fftSize);
@@ -401,9 +400,9 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         }
         
         float ampl = 1.0;//(j+1)*(1.0/(txPacketCount+1));
-        for(int k=0; k<fftSize; ++k)
+        for(uint32_t k=0; k<fftSize; ++k)
         {
-            txPattern[i][k].q = srcI[k & 7] * ampl;
+            txPattern[i][k].q = srcQ[k & 7] * ampl;
             txPattern[i][k].i = srcI[k & 7] * ampl;
         }
     }
@@ -422,7 +421,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         printf("%s\n", e.what());
     }
 
-    uint16_t regVal = 0;
+    // uint16_t regVal = 0;
     // TODO:
     // if (LMS_ReadFPGAReg(pthis->lmsControl, 0x0008, &regVal) == 0)
     // {
@@ -444,7 +443,6 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         do
         {
             uint32_t samplesPopped;
-            int i = 0;
             samplesPopped = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
             if(samplesPopped <= 0)
                 continue;

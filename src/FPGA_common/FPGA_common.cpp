@@ -176,7 +176,7 @@ int FPGA::WriteLMS7002MSPI(const uint32_t *data, uint32_t length)
 int FPGA::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, uint32_t length)
 {
     std::vector<uint32_t> spiBuf(length);
-    for (int i = 0; i < length; ++i)
+    for (uint32_t i = 0; i < length; ++i)
         spiBuf[i] = writeData[i] >> 16;
     connection->SPI(mLMSSlaveId, spiBuf.data(), readData, length);
     return 0;

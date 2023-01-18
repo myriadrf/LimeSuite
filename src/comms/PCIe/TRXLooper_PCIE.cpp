@@ -162,7 +162,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     const int outDMA_BUFFER_SIZE = packetSize * mTxPacketsToBatch;
     assert(outDMA_BUFFER_SIZE <= dma.bufferSize);
     const int irqPeriod = 16;
-    const int maxDMAqueue = dma.bufferCount-16;
+    const uint32_t maxDMAqueue = dma.bufferCount-16;
 
     // Initialize DMA
     txPort->TxDMAEnable(true);
@@ -183,10 +183,10 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     std::queue<PendingWrite> pendingWrites;
 
     std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
-    for(int i=0; i<dmaBuffers.size();++i)
+    for(uint32_t i=0; i<dmaBuffers.size();++i)
         dmaBuffers[i] = dmaMem+dma.bufferSize*i;
 
-    int stagingBufferIndex = 0;
+    uint32_t stagingBufferIndex = 0;
     int underrun = 0;
     float packetsIn = 0;
 
@@ -460,7 +460,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     mRxPacketsToBatch = clamp((int)mRxPacketsToBatch, 1, (int)(dma.bufferSize/packetSize));
 
     std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
-    for(int i=0; i<dmaBuffers.size();++i)
+    for(uint32_t i=0; i<dmaBuffers.size();++i)
         dmaBuffers[i] = dma.rxMemory+dma.bufferSize*i;
 
     const int readBlockSize = packetSize * mRxPacketsToBatch;
@@ -514,7 +514,6 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     mThreadsReady.fetch_add(1);
     //at this point FPGA has to be already configured to output samples
     int64_t realTS = 0;
-    double latency = 0;
     int streamDelay = 0;
 
     // thread ready for work, just wait for stream enable
@@ -645,7 +644,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                         f32_dest[0] += samplesPushed;
                         f32_dest[1] += samplesPushed;
                         rxStaging->timestamp = srcPkt->counter + samplesPushed;
-                        int samplesPushed = rxStaging->push(f32_dest, samplesRemaining);
+                        samplesPushed = rxStaging->push(f32_dest, samplesRemaining);
                     }
                 }
             }

@@ -225,7 +225,6 @@ void lms7002_pnlGains_view::Initialize(ILMS7002MTab::ControllerType *pControl)
     if (pControl == nullptr)
         return;
 
-    uint16_t value;
     if (ReadParam(LMS7param(MASK)) == 0) {
         chkTRX_GAIN_SRC->Enable(false);
         chkTRX_GAIN_SRC->SetValue(false);
@@ -301,7 +300,7 @@ void lms7002_pnlGains_view::OnAGCStateChange(wxCommandEvent& event)
     {
         double crestFactor;
         txtCrestFactor->GetValue().ToDouble(&crestFactor);
-        uint32_t wantedRSSI = 87330 / pow(10.0, (3+crestFactor)/20);
+        // uint32_t wantedRSSI = 87330 / pow(10.0, (3+crestFactor)/20);
         // TODO: lms->MCU_AGCStart(wantedRSSI);
         txtCrestFactor->Disable();
     }

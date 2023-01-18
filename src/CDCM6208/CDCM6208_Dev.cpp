@@ -847,7 +847,7 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
    l_den/=gcd;
 
    // find out how many bits are used by numerator and denominator
-   int num_bits, den_bits;
+   int num_bits = 0, den_bits = 0;
    for(int i=0; i<64; i++)
    {
       if((l_num >> i) > 0)

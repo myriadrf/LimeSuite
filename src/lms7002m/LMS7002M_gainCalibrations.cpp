@@ -104,7 +104,7 @@ int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
         return -1;
     }
     int status;
-    int cg_iamp;
+    int cg_iamp = 0;
     auto registersBackup = BackupRegisterMap();
     status = CalibrateTxGainSetup();
     if(status == 0)
