@@ -323,6 +323,9 @@ public:
 	int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount);
     float_type GetReferenceClk_TSP(bool tx);
 
+    int WriteGFIRCoefficients(bool tx, uint8_t gfirIndex, const float_type *coef, uint8_t coefCount);
+    int SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth);
+
     int SetNCOFrequencies(bool tx, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     // @param phaseOffset optional will be filled with phase offset value

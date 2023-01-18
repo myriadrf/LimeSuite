@@ -192,6 +192,12 @@ class LIME_API SDRDevice : public IComms
         uint64_t boardSerialNumber;
     };
 
+    struct GFIRFilter
+    {
+        double bandwidth;
+        bool enabled;
+    };
+
     struct ChannelConfig
     {
         ChannelConfig()
@@ -212,6 +218,8 @@ class LIME_API SDRDevice : public IComms
         double txLPF;
         uint8_t rxOversample;
         uint8_t txOversample;
+        GFIRFilter rxGFIR;
+        GFIRFilter txGFIR;
         bool rxEnabled;
         bool txEnabled;
         bool rxCalibrate;
@@ -220,7 +228,6 @@ class LIME_API SDRDevice : public IComms
         bool txTestSignal;
 
         // TODO:
-        // GFIR
         // TestSignal
         // NCOs
     };

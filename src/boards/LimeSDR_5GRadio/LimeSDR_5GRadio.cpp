@@ -495,6 +495,15 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
         for (int i = 0; i < 2; ++i) {
             chip->SetActiveChannel(i==0 ? LMS7002M::ChA : LMS7002M::ChB);
             const ChannelConfig &ch = cfg.channel[i];
+
+            if (socIndex == 0)
+            {
+                if (ch.rxEnabled && chip->SetGFIRFilter(false, i, ch.rxGFIR.enabled, ch.rxGFIR.bandwidth) != 0)
+                    throw std::logic_error(strFormat("Rx ch%i GFIR config failed", i));
+                if (ch.txEnabled && chip->SetGFIRFilter(true,  i, ch.txGFIR.enabled, ch.txGFIR.bandwidth) != 0)
+                    throw std::logic_error(strFormat("Tx ch%i GFIR config failed", i));
+            }
+
             if (ch.rxCalibrate && ch.rxEnabled)
             {
                 SetupCalibrations(chip, ch.rxSampleRate);

@@ -28,6 +28,8 @@
 
 #include "MCU_BD.h"
 
+#include "lms_gfir.h"
+
 using namespace std;
 using namespace lime;
 
@@ -1971,6 +1973,47 @@ int LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *co
     return 0;
 }
 
+int LMS7002M::WriteGFIRCoefficients(bool tx, uint8_t gfirIndex, const float_type *coef, uint8_t coefCount)
+{
+    if (gfirIndex > 2)
+    {
+        lime::warning("SetGFIRCoefficients: Invalid GFIR index(%i). Will configure GFIR[2].");
+        gfirIndex = 2;
+    }
+
+    const uint16_t startAddr = 0x0280 + (gfirIndex * 64) + (tx ? 0 : 0x0200);
+    const uint8_t maxCoefCount = gfirIndex < 2 ? 40 : 120;
+    const uint8_t bankCount = gfirIndex < 2 ? 5 : 15;
+
+    if (coefCount > maxCoefCount)
+        return ReportError(ERANGE, "SetGFIRCoefficients: too many coefficients(%i), GFIR[%i] can have only %i", coefCount, maxCoefCount);
+
+    uint16_t addrs[120];
+    int16_t words[120];
+    // actual used coefficients count is multiple of 'bankCount'
+    // if coefCount is not multiple, extra '0' coefficients will be written
+    const uint8_t bankLength = ceil((float)coefCount / bankCount);
+    const int16_t actualCoefCount = bankLength * bankCount;
+    assert(actualCoefCount <= maxCoefCount);
+
+    for (int i=0; i < actualCoefCount; ++i)
+    {
+        uint8_t bank = i / bankLength;
+        uint8_t bankRow = i % bankLength;
+        addrs[i] = startAddr + (bank * 8) + bankRow;
+        addrs[i] += 24 * (bank/5);
+        if (i < coefCount)
+            words[i] = coef[i] * 32767;
+        else
+            words[i] = 0;
+    }
+    LMS7Parameter gfirL_param = LMS7param(GFIR1_L_TXTSP);
+    gfirL_param.address += gfirIndex + (tx ? 0 : 0x0200);
+    Modify_SPI_Reg_bits(gfirL_param, bankLength - 1);
+
+    return SPI_write_batch(addrs, (const uint16_t*)words, actualCoefCount, true);
+}
+
 /** @brief Returns currently loaded FIR coefficients
     @param tx Transmitter or receiver selection
     @param GFIR_index GIR index from 0 to 2
@@ -2993,4 +3036,112 @@ double LMS7002M::GetSampleRate(bool tx, double *rf_rate_Hz)
         interface_Hz /= 2*pow(2.0, ratio);
 
     return interface_Hz;
+}
+
+int LMS7002M::SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth)
+{
+    ChannelScope scope(this, ch);
+    const bool bypassFIR = !enabled;
+    if (tx)
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), bypassFIR);
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), bypassFIR);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), bypassFIR);
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), bypassFIR);
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), bypassFIR);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), bypassFIR);
+        const bool sisoDDR = Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        const bool clockIsNotInverted = !(enabled | sisoDDR);
+        if (ch%2)
+        {
+            Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), clockIsNotInverted);
+            Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled ? 3 : 0);
+        }
+        else
+        {
+            Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), clockIsNotInverted);
+            Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled ? 3 : 0);
+        }
+    }
+    if (!enabled)
+        return 0;
+
+    if (bandwidth <= 0)
+        return -1;
+
+    double w,w2;
+    int L;
+    int div = 1;
+
+    bandwidth /= 1e6;
+    double interface_MHz;
+    int ratio;
+    if (tx)
+    {
+        ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        interface_MHz = GetReferenceClk_TSP(true) / 1e6;
+    }
+    else
+    {
+        ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        interface_MHz = GetReferenceClk_TSP(false) / 1e6;
+    }
+    if (ratio != 7)
+        div = (2<<(ratio));
+
+    w = (bandwidth/2) / (interface_MHz/div);
+    L = div > 8 ? 8 : div;
+    div -= 1;
+
+    w2 = w*1.1;
+    if (w2 > 0.495)
+    {
+        w2 = w*1.05;
+        if (w2 > 0.495)
+        {
+            printf("GFIR LPF cannot be set to the requested bandwidth (%f)", bandwidth);
+            return -1;
+        }
+    }
+
+    double coef[120];
+    double coef2[40];
+
+    GenerateFilter(L*15, w, w2, 1.0, 0, coef);
+    GenerateFilter(L*5, w, w2, 1.0, 0, coef2);
+
+    if (tx)
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP), div);
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_N_TXTSP), div);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP), div);
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_N_RXTSP), div);
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_N_RXTSP), div);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), div);
+    }
+
+    if ((WriteGFIRCoefficients(tx, 0, coef2, L*5) != 0)
+        || (WriteGFIRCoefficients(tx, 1, coef2, L*5) != 0)
+        || (WriteGFIRCoefficients(tx, 2, coef, L*15) != 0))
+        return -1;
+
+    // stringstream ss;
+    // ss << "LMS(" << mSlaveID << ") " << (tx ? "Tx" : "Rx") << " GFIR coefficients (BW: " << bandwidth << " MHz):\n";
+    // ss << "GFIR1 = GFIR2:";
+    // for (int i=0; i<L*5; ++i)
+    //     ss << " " << coef2[i];
+    // ss << std::endl;
+    // ss << "GFIR3:";
+    // for (int i=0; i<L*15; ++i)
+    //     ss << " " << coef[i];
+    // ss << std::endl;
+    // printf("%s", ss.str().c_str());
+
+    return ResetLogicregisters();
 }

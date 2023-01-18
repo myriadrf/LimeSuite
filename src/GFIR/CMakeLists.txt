@@ -9,5 +9,5 @@ set(lms_gfir_src_files
 	${THIS_SOURCE_DIR}/rounding.c
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(LimeSuite PRIVATE ${lms_gfir_src_files})
+target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${THIS_SOURCE_DIR} )
+target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${lms_gfir_src_files})

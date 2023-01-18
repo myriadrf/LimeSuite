@@ -181,7 +181,7 @@ if (ENABLE_LIBRARY)
 		set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 	endif(MSVC)
 
-    # TODO: add_subdirectory(GFIR)
+    add_subdirectory(GFIR)
     set(LIME_SUITE_LIBS LimeSuite)
 endif()
 
