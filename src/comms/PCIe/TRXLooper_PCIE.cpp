@@ -88,7 +88,7 @@ inline static T clamp(T value, T low, T high)
 TRXLooper_PCIE::TRXLooper_PCIE(LitePCIe *rxPort, LitePCIe *txPort, FPGA *f, LMS7002M *chip, uint8_t moduleIndex)
     : TRXLooper(f, chip, moduleIndex), rxPort(rxPort), txPort(txPort)
 {
-    mMaxBufferSize = DMA_BUFFER_SIZE;
+    mMaxBufferSize = 256;
     mRxPacketsToBatch = 1;
     mTxPacketsToBatch = 1;
 }
@@ -104,7 +104,7 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
     if (combinedSampleRate != 0)
     {
         batchSize = combinedSampleRate/61.44e6;
-        batchSize = std::min(batchSize, 4);//int(DMA_BUFFER_SIZE/sizeof(FPGA_DataPacket)));
+        batchSize = std::min(batchSize, 4);
         batchSize = std::max(1, batchSize);
     }
 

@@ -202,6 +202,7 @@ include(comms/PCIe/CMakeLists.txt)
 
 #include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_5GRadio/CMakeLists.txt)
+include(boards/LimeSDR_XTRX/CMakeLists.txt)
 
 ## Remote connection is not safe or efficient, it should not be in releases (github #263)
 ## it's only for debugging purposes when USB device cannot be used by multiple applications simultaneously.

@@ -4,7 +4,6 @@
 #include <atomic>
 
 #include "software/kernel/litepcie.h"
-#include "software/kernel/config.h"
 
 namespace lime{
 

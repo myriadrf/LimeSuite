@@ -13,9 +13,6 @@
 
 #include <linux/types.h>
 
-#include "csr.h"
-#include "config.h"
-
 struct litepcie_ioctl_reg {
 	uint32_t addr;
 	uint32_t val;
