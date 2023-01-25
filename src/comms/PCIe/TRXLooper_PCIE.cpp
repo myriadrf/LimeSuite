@@ -185,7 +185,7 @@ int TRXLooper_PCIE::TxSetup()
 
     char name[64];
     sprintf(name, "Tx%i_memPool", chipId);
-    const int upperAllocationLimit = sizeof(complex32f_t) * mTxPacketsToBatch * samplesInPkt + SamplesPacketType::headerSize;
+    const int upperAllocationLimit = sizeof(complex32f_t) * mTxPacketsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
     return 0;
 }
@@ -518,7 +518,7 @@ int TRXLooper_PCIE::RxSetup()
 
     char name[64];
     sprintf(name, "Rx%i_memPool", chipId);
-    const int upperAllocationLimit = sizeof(complex32f_t) * mRxPacketsToBatch * samplesInPkt + SamplesPacketType::headerSize;
+    const int upperAllocationLimit = sizeof(complex32f_t) * mRxPacketsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mRx.memPool = new MemoryPool(1024, dma.bufferSize, 4096, name);
     return 0;
 }
