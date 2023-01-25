@@ -48,7 +48,7 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
         config.channel[i].txOversample = 2;
         config.channel[i].rxLPF = 5e6;
         config.channel[i].txLPF = 5e6;
-        config.channel[i].rxGFIR.enabled = true;
+        config.channel[i].rxGFIR.enabled = false;
         config.channel[i].rxGFIR.bandwidth = config.channel[i].rxLPF;
         config.channel[i].rxPath = 2; // Loopback_1 // TODO: replace with string names
         config.channel[i].txPath = 2; // band1 // TODO: replace with string names
@@ -145,7 +145,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     }*/
 
     const int channelCount = std::max(stream.rxCount, stream.txCount);
-    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
+    const int samplesInPkt = 256;//(stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
 
     const float rxBufferTime = 0.002; // max buffer size in time (seconds)
     const uint32_t samplesToBuffer = (int)(rxBufferTime*sampleRate/samplesInPkt)*samplesInPkt;
@@ -165,7 +165,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
     std::vector< std::vector<complex32f_t> > txPattern(2);
-    const int txPacketCount = 8;
+    const int txPacketCount = 4;
     for(uint i=0; i<txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount*samplesInPkt);
@@ -190,7 +190,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     stream.userData = &streamHadIssues; // gets set to true if problems occour
     device->StreamSetup(stream, 1);
 
-    device->StreamSetup(stream2, 0);
+    //device->StreamSetup(stream2, 0);
 
     // simple pointers for stream functions, can't just pass vector of vectors
     lime::complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
@@ -214,8 +214,8 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     int64_t lastRxTS = 0;
 
     int badSignal = 0;
-    //while(runForever.load())
-    while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(3100))
+    while(runForever.load())
+    //while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(3100))
     {
 
         //Receive samples
@@ -242,7 +242,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
         }
 
         if(rxMeta.timestamp < lastRxTS)
-            printf("non monotonous RXTS:%li, last:%li\n", rxMeta.timestamp, lastRxTS);
+            printf("non monotonous RXTS:%li, last:%li, diff:%li\n", rxMeta.timestamp, lastRxTS, lastRxTS - rxMeta.timestamp);
         lastRxTS = rxMeta.timestamp;
         brecv += txPacketCount;
 

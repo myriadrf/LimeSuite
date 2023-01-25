@@ -3131,17 +3131,17 @@ int LMS7002M::SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth
         || (WriteGFIRCoefficients(tx, 2, coef, L*15) != 0))
         return -1;
 
-    // stringstream ss;
-    // ss << "LMS(" << mSlaveID << ") " << (tx ? "Tx" : "Rx") << " GFIR coefficients (BW: " << bandwidth << " MHz):\n";
-    // ss << "GFIR1 = GFIR2:";
-    // for (int i=0; i<L*5; ++i)
-    //     ss << " " << coef2[i];
-    // ss << std::endl;
-    // ss << "GFIR3:";
-    // for (int i=0; i<L*15; ++i)
-    //     ss << " " << coef[i];
-    // ss << std::endl;
-    // printf("%s", ss.str().c_str());
+    stringstream ss;
+    ss << "LMS(" << mSlaveID << ") " << (tx ? "Tx" : "Rx") << " GFIR coefficients (BW: " << bandwidth << " MHz):\n";
+    ss << "GFIR1 = GFIR2:";
+    for (int i=0; i<L*5; ++i)
+        ss << " " << coef2[i];
+    ss << std::endl;
+    ss << "GFIR3:";
+    for (int i=0; i<L*15; ++i)
+        ss << " " << coef[i];
+    ss << std::endl;
+    printf("%s", ss.str().c_str());
 
     return ResetLogicregisters();
 }

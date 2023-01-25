@@ -34,10 +34,7 @@ void* MemoryPool::Allocate(int size)
         throw std::runtime_error("Memory request too big");
     std::lock_guard<std::mutex> lock(mLock);
     if(mFreeBlocks.empty())
-    {
-        return nullptr;
         throw std::runtime_error("No memory in pool");
-    }
 
     void* ptr = mFreeBlocks.top();
     mUsedBlocks.insert(ptr);
@@ -54,7 +51,7 @@ void MemoryPool::Free(void* ptr)
         if(ownedAddresses.find(ptr) != ownedAddresses.end())
         {
             char ctemp[1024];
-            sprintf(ctemp, "%s Double free?, allocs: %i , frees: %i, used: %li, free: %li\n ptr: %p", name, allocCnt, freeCnt, mUsedBlocks.size(), mFreeBlocks.size(), ptr);
+            sprintf(ctemp, "%s Double free?, allocs: %i , frees: %i, used: %li, free: %li\n ptr: %p", name.c_str(), allocCnt, freeCnt, mUsedBlocks.size(), mFreeBlocks.size(), ptr);
             for(auto adr : mUsedBlocks)
                 printf("addrs: %p\n", adr);
             throw std::runtime_error(ctemp);

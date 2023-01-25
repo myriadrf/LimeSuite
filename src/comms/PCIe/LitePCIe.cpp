@@ -353,7 +353,6 @@ bool LitePCIe::WaitRx()
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
     {
-    
         char msg[256];
         sprintf(msg, "DMA writer poll errno(%i) %s\n", errno, strerror(errno));
         //throw std::runtime_error(msg);

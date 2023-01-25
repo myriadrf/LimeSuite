@@ -1027,8 +1027,8 @@ void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
 void LimeSDR_5GRadio::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
 {
     TRXLooper *trx = mStreamers.at(moduleIndex);
-    status.dataRate_Bps = trx->GetDataRate(false);
-    status.txDataRate_Bps = trx->GetDataRate(true);
+    //status.dataRate_Bps = trx->GetDataRate(false);
+    //status.txDataRate_Bps = trx->GetDataRate(true);
 }
 
 void LimeSDR_5GRadio::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)

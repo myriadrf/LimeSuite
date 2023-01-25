@@ -17,7 +17,7 @@ public:
     void Free(void* ptr);
 
 private:
-    const char* name;
+    std::string name;
     int allocCnt;
     int freeCnt;
     int mBlockSize;

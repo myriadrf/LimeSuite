@@ -86,6 +86,8 @@ class LIME_API SDRDevice : public IComms
             memset(this, 0, sizeof(StreamStats));
         }
         uint64_t timestamp;
+        int64_t bytesTransferred;
+        int64_t packets;
         float FIFO_filled;
         float dataRate_Bps;
         float txDataRate_Bps;

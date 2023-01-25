@@ -24,7 +24,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     lms7002m/LMS7002M.h
     lms7002m/LMS7002M_RegistersMap.h
     lime/LMS7002M_parameters.h
-    protocols/Streamer.h
+    protocols/BufferInterleaving.h
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
@@ -77,6 +77,7 @@ set(LIME_SUITE_SOURCES
     #protocols/LMS64CProtocol.cpp
     #protocols/Streamer.cpp
     protocols/TRXLooper.cpp
+    protocols/BufferInterleaving.cpp
     #protocols/ConnectionImages.cpp
     Si5351C/Si5351C.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c

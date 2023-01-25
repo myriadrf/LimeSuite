@@ -9,6 +9,7 @@
 #include "PacketsFIFO.h"
 #include "Profiler.h"
 #include "MemoryPool.h"
+#include "SamplesPacket.h"
 
 namespace lime {
 class FPGA;
@@ -20,14 +21,11 @@ public:
     TRXLooper(FPGA *f, LMS7002M *chip, int id);
     virtual ~TRXLooper();
 
-    int GetStreamSize(bool tx);
-
     uint64_t GetHardwareTimestamp(void);
     void SetHardwareTimestamp(const uint64_t now);
     virtual void Setup(const lime::SDRDevice::StreamConfig &config);
     virtual void Start();
     virtual void Stop();
-    float GetDataRate(bool tx);
 
     inline const lime::SDRDevice::StreamConfig& GetConfig() const {
       return mConfig;
@@ -39,12 +37,16 @@ public:
     void SetMessageLogCallback(SDRDevice::LogCallbackType callback) {
       mCallback_logMessage = callback;
     }
-  protected:
-    virtual void ReceivePacketsLoop() = 0;
-    virtual void TransmitPacketsLoop() = 0;
 
-    void ParseRxPacketsLoop();
-    void ParseTxPacketsLoop();
+    typedef SamplesPacket<2> SamplesPacketType;
+protected:
+    virtual int RxSetup() { return 0; };
+    virtual void ReceivePacketsLoop() = 0;
+    virtual void RxTeardown() {};
+
+    virtual int TxSetup() { return 0;};
+    virtual void TransmitPacketsLoop() = 0;
+    virtual void TxTeardown() {};
 
     std::atomic<uint32_t> rxDataRate_Bps;
     std::atomic<uint32_t> txDataRate_Bps;
@@ -71,23 +73,6 @@ public:
     typedef DataBlock RawDataBlock;
     typedef DataBlock SamplesBlock;
 
-    typedef StagingPacket<lime::complex32f_t, 2> StagingPacketType;
-
-
-    PacketsFIFO<StagingPacketType*> rxOut;
-    PacketsFIFO<StagingPacketType*> txIn;
-
-    PacketsFIFO<StagingPacketType*> rxPacketsPool;
-    PacketsFIFO<StagingPacketType*> txPacketsPool;
-    // MemoryPool rxOutPool;
-    // MemoryPool txInPool;
-
-    std::thread rxParsingThread;
-    std::thread txParsingThread;
-
-    Profiler *rxProfiler;
-    Profiler *txProfiler;
-
     int mMaxBufferSize;
     std::atomic<int> mThreadsReady;
     std::chrono::time_point<std::chrono::steady_clock> steamClockStart;
@@ -100,9 +85,21 @@ public:
     std::condition_variable streamActive;
     std::mutex streamMutex;
     bool mStreamEnabled;
-private:
-    StagingPacketType *txStaging;
-    StagingPacketType *rxStaging;
+
+    struct Stream
+    {
+      MemoryPool *memPool;
+      SDRDevice::StreamStats stats;
+      PacketsFIFO<SamplesPacketType*> *fifo;
+      SamplesPacketType* stagingPacket;
+
+      Stream() : memPool(nullptr), fifo(nullptr), stagingPacket(nullptr)
+      {
+      }
+    };
+
+    Stream mRx;
+    Stream mTx;
 };
 
 } // namespace lime

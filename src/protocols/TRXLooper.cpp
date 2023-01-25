@@ -18,17 +18,16 @@ namespace lime {
 using namespace std::chrono;
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
-    : rxOut(512), txIn(1024),
-    rxPacketsPool(1024),
-    txPacketsPool(1024),
-    // rxOutPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "rxOutPool"),
-    // txInPool(1024, sizeof(PartialPacket<complex32f_t>)*8, 4096, "txInPool"),
+    :
     mMaxBufferSize(32768),
     mRxPacketsToBatch(4), mTxPacketsToBatch(4),
     mCallback_logMessage(nullptr),
-    mStreamEnabled(false),
-    txStaging(nullptr), rxStaging(nullptr)
+    mStreamEnabled(false)
 {
+    const int fifoLen = 512;
+    mRx.fifo = new PacketsFIFO<SamplesPacketType*>(fifoLen);
+    mTx.fifo = new PacketsFIFO<SamplesPacketType*>(fifoLen);
+
     lms = chip, fpga = f;
     chipId = id;
     mTimestampOffset = 0;
@@ -42,6 +41,7 @@ TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
 
 TRXLooper::~TRXLooper()
 {
+    Stop();
     terminateRx.store(true, std::memory_order_relaxed);
     terminateTx.store(true, std::memory_order_relaxed);
     if (txThread.joinable())
@@ -50,15 +50,15 @@ TRXLooper::~TRXLooper()
         rxThread.join();
 }
 
-float TRXLooper::GetDataRate(bool tx)
-{
-    return tx ? txDataRate_Bps.load() : rxDataRate_Bps.load();
-}
+// float TRXLooper::GetDataRate(bool tx)
+// {
+//     return tx ? txDataRate_Bps.load() : rxDataRate_Bps.load();
+// }
 
-int TRXLooper::GetStreamSize(bool tx)
-{
-    return samples12InPkt;
-}
+// int TRXLooper::GetStreamSize(bool tx)
+// {
+//     return samples12InPkt;
+// }
 
 uint64_t TRXLooper::GetHardwareTimestamp(void)
 {
@@ -509,9 +509,6 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     fpga->WriteRegister(0x0007, channelEnables);
     fpga->ResetTimestamp();
 
-    if (rxThread.joinable() || txThread.joinable())
-        throw std::logic_error("Samples streaming already running");
-
     assert(fpga);
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
@@ -527,10 +524,6 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     const auto schedulingPolicy = ThreadPolicy::REALTIME;
     if (needRx) {
         terminateRx.store(false, std::memory_order_relaxed);
-        // auto parsingFunction = std::bind(&TRXLooper::ParseRxPacketsLoop, this);
-        // rxParsingThread = std::thread(parsingFunction);
-        // SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &rxParsingThread);
-        // pthread_setname_np(rxParsingThread.native_handle(), "lime:RxParse");
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
         SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &rxThread);
@@ -538,10 +531,6 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     }
     if (needTx) {
         terminateTx.store(false, std::memory_order_relaxed);
-        // auto parsingFunction = std::bind(&TRXLooper::ParseTxPacketsLoop, this);
-        // txParsingThread = std::thread(parsingFunction);
-        // SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &txParsingThread);
-        // pthread_setname_np(txParsingThread.native_handle(), "lime:TxParse");
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
         SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &txThread);
@@ -551,13 +540,6 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     // if (cfg.alignPhase)
     //     TODO: AlignRxRF(true);
     //enable FPGA streaming
-    int threadsToWait = needTx ? 2 : 1;
-
-    // wait for all thread to be ready
-    while(mThreadsReady.load() < threadsToWait)
-    {
-        std::this_thread::sleep_for(milliseconds(2));
-    }
 }
 
 void TRXLooper::Start()
@@ -582,42 +564,25 @@ void TRXLooper::Stop()
     try {
         if (rxThread.joinable())
             rxThread.join();
-        if (rxParsingThread.joinable())
-            rxParsingThread.join();
 
         if (txThread.joinable())
             txThread.join();
-        if (txParsingThread.joinable())
-            txParsingThread.join();
     } catch (...)
     {
         printf("Failed to join TRXLooper threads\n");
     }
     fpga->StopStreaming();
-    // clear memory pools
-    while(rxStaging)
-    {
-        delete rxStaging;
-        rxStaging = nullptr;
-        rxPacketsPool.pop(&rxStaging, true, 100);
-    }
-    while(rxOut.pop(&rxStaging, true, 100))
-    {
-        delete rxStaging;
-        rxStaging = nullptr;
-    }
 
-    while(txStaging)
-    {
-        delete txStaging;
-        txStaging = nullptr;
-        txPacketsPool.pop(&txStaging, true, 100);
-    }
-    while(txIn.pop(&txStaging, true, 100))
-    {
-        delete txStaging;
-        txStaging = nullptr;
-    }
+    RxTeardown();
+    TxTeardown();
+    // clear memory pools
+    mRx.stagingPacket = nullptr;
+    mTx.stagingPacket = nullptr;
+
+    delete mRx.memPool;
+    mRx.memPool = nullptr;
+    delete mTx.memPool;
+    mTx.memPool = nullptr;
     mStreamEnabled = false;
 }
 
@@ -638,33 +603,32 @@ int TRXLooper::StreamRx(void **dest, uint32_t count, SDRDevice::StreamMeta *meta
 
     //auto start = high_resolution_clock::now();
     while (samplesProduced < count) {
-        if(!rxStaging && !rxOut.pop(&rxStaging, firstIteration, 250))
+        if(!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 250))
             return samplesProduced;
 
         //firstIteration = false;
 
         if(!timestampSet && meta)
         {
-            meta->timestamp = rxStaging->timestamp;
+            meta->timestamp = mRx.stagingPacket->timestamp;
             timestampSet = true;
         }
 
         int expectedCount = count-samplesProduced;
-        const int samplesToCopy = std::min(expectedCount, rxStaging->size());
+        const int samplesToCopy = std::min(expectedCount, mRx.stagingPacket->size());
 
-        lime::complex32f_t * const *f32_src = rxStaging->front();
+        lime::complex32f_t * const *f32_src = reinterpret_cast<lime::complex32f_t * const *>(mRx.stagingPacket->front());
 
         memcpy(&f32_dest[0][samplesProduced], f32_src[0], samplesToCopy*sizeof(complex32f_t));
         if (useChannelB)
             memcpy(&f32_dest[1][samplesProduced], f32_src[1], samplesToCopy*sizeof(complex32f_t));
-        rxStaging->pop(samplesToCopy);
+        mRx.stagingPacket->pop(samplesToCopy);
         samplesProduced += samplesToCopy;
 
-        if (rxStaging->empty())
+        if (mRx.stagingPacket->empty())
         {
-            rxPacketsPool.push(rxStaging, true, 100);
-            //delete rxStaging;
-            rxStaging = nullptr;
+            mRx.memPool->Free(mRx.stagingPacket);
+            mRx.stagingPacket = nullptr;
         }
 
         // int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
@@ -689,18 +653,25 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         useChannelB ? static_cast<const lime::complex32f_t *>(samples[1]) : nullptr
     };
 
+    const int chCount = std::max(config.txCount, config.rxCount);
+    const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
+    const int packetsToBatch = 4;
+    const int32_t outputPktSize = SamplesPacketType::headerSize
+        + packetsToBatch * samplesInPkt
+        * (mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t));
+
     while (samplesRemaining) {
-        if (!txStaging)
+        if (!mTx.stagingPacket)
         {
-            txPacketsPool.pop(&txStaging, true, 1000);
-            if(!txStaging)
+            mTx.stagingPacket = SamplesPacketType::ConstructSamplesPacket(mTx.memPool->Allocate(outputPktSize), samplesInPkt * packetsToBatch, sizeof(complex32f_t));
+            if(!mTx.stagingPacket)
                 break;
-            txStaging->Reset();
-            txStaging->timestamp = ts;
-            txStaging->useTimestamp = useTimestamp;
+            mTx.stagingPacket->Reset();
+            mTx.stagingPacket->timestamp = ts;
+            mTx.stagingPacket->useTimestamp = useTimestamp;
         }
 
-        int consumed = txStaging->push(floatSrc, samplesRemaining);
+        int consumed = mTx.stagingPacket->push(floatSrc, samplesRemaining);
         floatSrc[0] += consumed;
         if(useChannelB)
             floatSrc[1] += consumed;
@@ -708,14 +679,14 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         samplesRemaining -= consumed;
         ts += consumed;
 
-        if(txStaging->isFull() || flush)
+        if(mTx.stagingPacket->isFull() || flush)
         {
             if(samplesRemaining == 0)
-                txStaging->flush = flush;
+                mTx.stagingPacket->flush = flush;
 
-            if(!txIn.push(txStaging))
+            if(!mTx.fifo->push(mTx.stagingPacket))
                 break;
-            txStaging = nullptr;
+            mTx.stagingPacket = nullptr;
         }
     }
     return count - samplesRemaining;

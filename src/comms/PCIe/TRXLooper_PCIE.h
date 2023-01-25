@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "TRXLooper.h"
+#include "MemoryPool.h"
+
 
 namespace lime {
 
@@ -17,11 +19,29 @@ class TRXLooper_PCIE : public lime::TRXLooper
     virtual ~TRXLooper_PCIE();
     virtual void Setup(const lime::SDRDevice::StreamConfig &config);
     virtual void Start();
+
+    typedef SamplesPacket<2> SamplesPacketType;
+
+    struct TransferArgs
+    {
+      LitePCIe *port;
+      std::vector<uint8_t*> buffers;
+      int32_t bufferSize;
+      int16_t packetSize;
+      uint8_t packetsToBatch;
+      int32_t samplesInPacket;
+    };
   protected:
+    virtual int RxSetup() override;
     virtual void ReceivePacketsLoop() override;
+    virtual void RxTeardown() override;
+
+    virtual int TxSetup() override;
     virtual void TransmitPacketsLoop() override;
-    LitePCIe *rxPort;
-    LitePCIe *txPort;
+    virtual void TxTeardown() override;
+
+    TransferArgs mRxArgs;
+    TransferArgs mTxArgs;
 };
 
 } // namespace lime
