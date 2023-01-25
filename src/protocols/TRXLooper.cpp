@@ -655,7 +655,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
 
     const int chCount = std::max(config.txCount, config.rxCount);
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
-    const int packetsToBatch = 4;
+    const int packetsToBatch = mTxPacketsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize
         + packetsToBatch * samplesInPkt
         * (mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t));

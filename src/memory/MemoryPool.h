@@ -15,6 +15,7 @@ public:
 
     void* Allocate(int size);
     void Free(void* ptr);
+    int32_t MaxAllocSize() const { return mBlockSize; };
 
 private:
     std::string name;
