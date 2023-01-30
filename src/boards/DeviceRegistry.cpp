@@ -17,12 +17,14 @@ static std::mutex gRegistryMutex;
 static std::map<std::string, DeviceRegistryEntry *> registryEntries;
 
 void __loadLimeSDR_5GRadio();
+void __loadLimeSDR_XTRX();
 //void __loadLimeSDR();
 
 void __loadDevicesSupport()
 {
     //__loadLimeSDR();
     __loadLimeSDR_5GRadio();
+    __loadLimeSDR_XTRX();
 }
 
 /*******************************************************************

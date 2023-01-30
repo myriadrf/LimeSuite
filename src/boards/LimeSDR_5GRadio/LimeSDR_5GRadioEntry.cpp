@@ -33,7 +33,7 @@ std::vector<DeviceHandle> LimeSDR_5GRadioEntry::enumerate(const DeviceHandle &hi
 
     std::vector<std::string> LimePCIePorts;
     FILE *lsPipe;
-    lsPipe = popen("ls /dev/Lime*_control -d -1", "r");
+    lsPipe = popen("ls /dev/Lime5GRadio*_control -d -1", "r");
     char tempBuffer[512];
     while(fscanf(lsPipe, "%s", tempBuffer) == 1)
         LimePCIePorts.push_back(tempBuffer);
@@ -91,7 +91,7 @@ SDRDevice* LimeSDR_5GRadioEntry::make(const DeviceHandle &handle)
     {
         delete control;
         char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s)", handle.serialize().c_str());
+        sprintf(reason, "Unable to connect to device using handle(%s): %s", handle.serialize().c_str(), e.what());
         throw std::runtime_error(reason);
     }
 }

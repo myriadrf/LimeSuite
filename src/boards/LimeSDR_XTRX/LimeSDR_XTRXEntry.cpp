@@ -34,7 +34,7 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
 
     std::vector<std::string> LimePCIePorts;
     FILE *lsPipe;
-    lsPipe = popen("ls /dev/Lime*_control -d -1", "r");
+    lsPipe = popen("ls /dev/LimeXTRX*_control -d -1", "r");
     char tempBuffer[512];
     while(fscanf(lsPipe, "%s", tempBuffer) == 1)
         LimePCIePorts.push_back(tempBuffer);

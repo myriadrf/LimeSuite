@@ -34,6 +34,8 @@ public:
     void TxDMAEnable(bool enabled);
 
     struct DMAInfo {
+        DMAInfo() : rxMemory(nullptr), txMemory(nullptr),
+            bufferSize(0), bufferCount(0) {}
         uint8_t* rxMemory;
         uint8_t* txMemory;
         int bufferSize;
@@ -60,10 +62,9 @@ public:
 
 protected:
     std::string mFilePath;
+    DMAInfo mDMA;
     int mFileDescriptor;
     bool isConnected;
-
-    DMAInfo mDMA;
 };
 
 }
