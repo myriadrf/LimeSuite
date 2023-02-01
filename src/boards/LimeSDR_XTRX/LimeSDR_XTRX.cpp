@@ -41,6 +41,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     for ( auto iter : mLMSChips)
     {
         iter->SetConnection(this);
+        iter->SetReferenceClk_SX(false, 26e6);
         iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, 26e6, 0);
     }
 
@@ -68,7 +69,6 @@ static inline const std::string strFormat(const char *format, ...)
     return std::string(ctemp);
 }
 
-// Setup default register values specifically for onboard LMS1 chip
 static int InitLMS1(LMS7002M* lms, bool skipTune = false)
 {
     struct regVal
@@ -89,7 +89,10 @@ static int InitLMS1(LMS7002M* lms, bool skipTune = false)
         {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xE6C0}, {0x0121, 0x3638},
         {0x0122, 0x0514}, {0x0123, 0x200F}, {0x0200, 0x00E1}, {0x0208, 0x017B},
         {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
-        {0x040B, 0x1020}, {0x040C, 0x00FB}
+        {0x040B, 0x1020}, {0x040C, 0x00FB},
+
+        // LDOs
+        {0x0092, 0x0D15}, {0x00A6, 0x000F}
     };
 
     if (lms->ResetChip() != 0)
