@@ -22,7 +22,8 @@ using namespace std;
 SDRDevice *device = nullptr;
 
 static const double frequencyLO = 2e9;
-static uint8_t chipIndex = 1; // device might have several RF chips
+static uint8_t chipIndex = 0; // device might have several RF chips
+char* iniArg = nullptr;
 
 std::atomic<bool> runForever;
 void intHandler(int dummy) {
@@ -46,8 +47,8 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
         config.channel[i].txSampleRate = sampleRate;
         config.channel[i].rxOversample = 2;
         config.channel[i].txOversample = 2;
-        config.channel[i].rxLPF = 5e6;
-        config.channel[i].txLPF = 5e6;
+        config.channel[i].rxLPF = 0;//5e6;
+        config.channel[i].txLPF = 0;//5e6;
         config.channel[i].rxGFIR.enabled = false;
         config.channel[i].rxGFIR.bandwidth = config.channel[i].rxLPF;
         config.channel[i].rxPath = 2; // Loopback_1 // TODO: replace with string names
@@ -115,7 +116,7 @@ int TrySDRConfigure(SDRDevice::SDRConfig &config)
 bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
 {
     printf("Press CTRL+C to stop\n\n");
-    float sampleRate = 20e6;//30.72e6/4;
+    float sampleRate = 10e6;//30.72e6/4;
     chipIndex = 0;
     printf("----------TEST FullStreamTxRx, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
     auto configPair = generateTestConfig(MIMO, sampleRate);
@@ -124,25 +125,16 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    sampleRate = 122.88e6/4;
-    chipIndex = 1;
-    printf("----------TEST FullStreamTxRx, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
-    configPair = generateTestConfig(MIMO, sampleRate);
-    SDRDevice::StreamConfig &stream2 = configPair.second;
-
-    if (TrySDRConfigure(configPair.first) != 0)
-        return false;
-
-    /*if(chipIndex == 1)
+    if(iniArg)
     {
         LMS7002M* chip = static_cast<LMS7002M*>(dev.GetInternalChip(chipIndex));
-        const char* filename = "LMS2lb.ini";
+        const char* filename = iniArg;//"LMS2lb.ini";
         if (chip->LoadConfig(filename) != 0)
         {
             fprintf(stderr, "Error loading file: %s\n", filename);
             return -1;
         }
-    }*/
+    }
 
     const int channelCount = std::max(stream.rxCount, stream.txCount);
     const int samplesInPkt = 256;//(stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
@@ -188,7 +180,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     bool streamHadIssues = false;
     stream.statusCallback = OnStreamStatusChange;
     stream.userData = &streamHadIssues; // gets set to true if problems occour
-    device->StreamSetup(stream, 1);
+    device->StreamSetup(stream, chipIndex);
 
     //device->StreamSetup(stream2, 0);
 
@@ -196,7 +188,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     lime::complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
     lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
 
-    int testStreamIndex = 1;
+    int testStreamIndex = chipIndex;
 
     dev.StreamStart(testStreamIndex);
     //dev.StreamStart(0);
@@ -485,7 +477,7 @@ int main(int argc, char **argv)
     }
 
     //Open the first device
-    device = DeviceRegistry::makeDevice(handles[0]);
+    device = DeviceRegistry::makeDevice(handles[1]);
     device->Init();
 
     runForever.store(true);
@@ -494,7 +486,8 @@ int main(int argc, char **argv)
     // Run tests
     float millis = 10;
     if(argc > 1)
-        sscanf(argv[1], "%f", &millis);
+        //sscanf(argv[1], "%f", &millis);
+        iniArg = argv[1];
     //return TxTiming(*device, true, millis);
 
     bool okStreamSISO = FullStreamTxRx(*device, true);
