@@ -79,6 +79,7 @@ static bool HasWaitForDone(uint8_t targetDevice)
     {
         case LMS_DEV_LIMESDR_QPCIE:
         case LMS_DEV_LIMESDR_5GRADIO:
+        case LMS_DEV_LIMESDR_XTRX:
             return true;
         default:
             return false;
@@ -99,6 +100,7 @@ static bool HasFPGAClockPhaseSearch(uint8_t targetDevice, uint8_t version, uint8
         case LMS_DEV_LIMESDR_CORE_SDR:
         case LMS_DEV_LIMESDRMINI_V2:
         case LMS_DEV_LIMESDR_5GRADIO:
+        case LMS_DEV_LIMESDR_XTRX:
             return true;
         default:
             return false;
