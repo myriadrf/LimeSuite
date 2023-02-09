@@ -286,6 +286,7 @@ void LitePCIe::RxDMAEnable(bool enabled, uint32_t bufferSize, uint8_t irqPeriod)
     if (!IsOpen())
         return;
     litepcie_ioctl_dma_writer writer;
+    memset(&writer, 0, sizeof(litepcie_ioctl_dma_writer));
     writer.enable = enabled ? 1 : 0;
     writer.hw_count = 0;
     writer.sw_count = 0;
@@ -304,6 +305,7 @@ void LitePCIe::TxDMAEnable(bool enabled)
     if (!IsOpen())
         return;
     litepcie_ioctl_dma_reader reader;
+    memset(&reader, 0, sizeof(litepcie_ioctl_dma_reader));
     reader.enable = enabled ? 1 : 0;
     reader.hw_count = 0;
     reader.sw_count = 0;
@@ -315,6 +317,7 @@ void LitePCIe::TxDMAEnable(bool enabled)
 LitePCIe::DMAState LitePCIe::GetRxDMAState()
 {
     litepcie_ioctl_dma_writer dma;
+    memset(&dma, 0, sizeof(litepcie_ioctl_dma_writer));
     dma.enable = 1;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_DMA_WRITER, &dma);
     if (ret)
@@ -329,6 +332,7 @@ LitePCIe::DMAState LitePCIe::GetRxDMAState()
 LitePCIe::DMAState LitePCIe::GetTxDMAState()
 {
     litepcie_ioctl_dma_reader dma;
+    memset(&dma, 0, sizeof(litepcie_ioctl_dma_reader));
     dma.enable = 1;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_DMA_READER, &dma);
     if (ret)
@@ -389,6 +393,7 @@ bool LitePCIe::WaitTx()
 int LitePCIe::SetRxDMAState(DMAState s)
 {
     litepcie_ioctl_mmap_dma_update sub;
+    memset(&sub, 0, sizeof(litepcie_ioctl_mmap_dma_update));
     sub.sw_count = s.swIndex;
     sub.buffer_size = mDMA.bufferSize;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_MMAP_DMA_WRITER_UPDATE, &sub);
@@ -404,6 +409,7 @@ int LitePCIe::SetRxDMAState(DMAState s)
 int LitePCIe::SetTxDMAState(DMAState s)
 {
     litepcie_ioctl_mmap_dma_update sub;
+    memset(&sub, 0, sizeof(litepcie_ioctl_mmap_dma_update));
     sub.sw_count = s.swIndex;
     sub.buffer_size = s.bufferSize;
     sub.genIRQ = s.genIRQ;

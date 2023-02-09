@@ -238,7 +238,10 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     SamplesPacketType* srcPkt = nullptr;
 
     TxBufferManager<SamplesPacketType> output(mimo, compressed, mTxArgs.samplesInPacket);
-    output.Reset(dmaBuffers[0], usedBufferSize);
+
+    uint8_t tempBuffer[32768];
+    //output.Reset(dmaBuffers[0], usedBufferSize);
+    output.Reset(tempBuffer, usedBufferSize);
 
     bool outputReady = false;
 
@@ -322,7 +325,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             state.bufferSize = wrInfo.size;
             state.genIRQ = (wrInfo.id % irqPeriod) == 0;
 
-            msync(dmaBuffers[stagingBufferIndex % bufferCount], state.bufferSize, MS_SYNC);
+            //msync(dmaBuffers[stagingBufferIndex % bufferCount], state.bufferSize, MS_SYNC);
+
             TxDataPacket* pkt = reinterpret_cast<TxDataPacket*>(output.data());
             lastTS = pkt->counter;
             int64_t rxNow = rxLastTimestamp.load(std::memory_order_relaxed);
@@ -345,6 +349,9 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 // continue;
             }
 
+            // DMA memory is write only, so for now form buffer in local storage and copy to dma
+            // otherwise trying to read from the buffer will trigger Bus errors
+            memcpy(dmaBuffers[stagingBufferIndex % bufferCount], output.data(), output.size());
             int ret = mTxArgs.port->SetTxDMAState(state);
             if(ret)
             {
@@ -361,7 +368,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 ++stagingBufferIndex;
                 packetsSent += output.packetCount();
                 totalPacketSent += output.packetCount();
-                output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], bufferSize);
+                //output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], bufferSize);
+                output.Reset(tempBuffer, usedBufferSize);
             }
         }
 
@@ -624,6 +632,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             Bps = 0;
         }
 
+
         if (!buffersAvailable)
         {
             if(!mConfig.extraConfig || (mConfig.extraConfig && mConfig.extraConfig->usePoll))
@@ -640,19 +649,15 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         }
 
         uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
-        msync(buffer, readSize, MS_SYNC);
-
-        uint8_t probe[32768];
-        memcpy(probe, buffer, readSize);
-
-        const RxDataPacket *pkt = reinterpret_cast<const RxDataPacket*>(probe);
+        // msync(buffer, readSize, MS_SYNC);
+        const RxDataPacket *pkt = reinterpret_cast<const RxDataPacket*>(buffer);
         if(outputPkt)
             outputPkt->timestamp = pkt->counter;
 
         const int srcPktCount = mRxArgs.packetsToBatch;
         for (int i=0; i<srcPktCount; ++i)
         {
-            pkt = reinterpret_cast<const RxDataPacket*>(&probe[packetSize*i]);
+            pkt = reinterpret_cast<const RxDataPacket*>(&buffer[packetSize*i]);
             if (pkt->counter - expectedTS != 0)
                 ++stats.loss;
             if (pkt->txWasDropped())
