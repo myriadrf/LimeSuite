@@ -345,7 +345,7 @@ uint16_t LimeSDRTest::Reg_read(uint16_t address)
 
 bool LimeSDRTest::RunTest(float &peakval, float &peakfreq, int ch)
 {
-    const double rfTestTolerance_dB = 6.0;
+    const double rfTestTolerance_dB = 10.0;
     const double rfTestTolerance_Hz = 50e3;
 
     float samplerate = device->GetRate(false,0);

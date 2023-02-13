@@ -42,7 +42,7 @@ int LimeSDRTest_Mini::RFTest()
 	if	(limeversion == 1)
 		testinfo = {freq, freq+tx_offset, -14, tx_offset, 0};
 	else
-        	testinfo = {freq, freq+tx_offset, -30, tx_offset, 0};
+        	testinfo = {freq, freq+tx_offset, -20, tx_offset, 0};
         device->SetPath(false, 0, rxPath);
         device->SetPath(true, 0, rxPath==1? 1 : 2);
         if (device->GetConnection()->WriteRegister(0x17, rxPath==1? 0x2200:0x1100) != 0)
