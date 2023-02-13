@@ -352,17 +352,28 @@ bool LitePCIe::WaitRx()
 
     struct timespec timeout_ts;
     timeout_ts.tv_sec = 0;
-    timeout_ts.tv_nsec = 50e3;
+    timeout_ts.tv_nsec = 10e6;
     sigset_t origmask;
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
     {
         char msg[256];
         sprintf(msg, "DMA writer poll errno(%i) %s\n", errno, strerror(errno));
+        if (errno == EINTR)
+            return false;
         //throw std::runtime_error(msg);
     }
+    else if (ret == 0)
+    {
+        //printf("PollRx timeout\n");
+    }
+    else
+    {
+        if (desc.revents & POLLIN)
+            return true;
+    }
     auto state = GetRxDMAState();
-    if(state.hwIndex > state.swIndex)
+    if(state.hwIndex - state.swIndex != 0)
         return true;
     else
         return false;
@@ -376,7 +387,7 @@ bool LitePCIe::WaitTx()
 
     struct timespec timeout_ts;
     timeout_ts.tv_sec = 0;
-    timeout_ts.tv_nsec = 50e3;
+    timeout_ts.tv_nsec = 10e6;
     sigset_t origmask;
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
@@ -386,6 +397,15 @@ bool LitePCIe::WaitTx()
         char msg[256];
         sprintf(msg, "DMA reader poll errno(%i) %s\n", errno, strerror(errno));
         throw std::runtime_error(msg);
+    }
+    else if (ret == 0)
+    {
+        //printf("PollTx timeout\n");
+    }
+    else
+    {
+        if (desc.revents & POLLOUT)
+            return true;
     }
     return ret > 0;
 }

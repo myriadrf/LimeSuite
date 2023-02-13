@@ -30,6 +30,9 @@ class TRXLooper_PCIE : public lime::TRXLooper
       int16_t packetSize;
       uint8_t packetsToBatch;
       int32_t samplesInPacket;
+      int64_t cnt;
+      int64_t sw;
+      int64_t hw;
     };
   protected:
     virtual int RxSetup() override;

@@ -31,6 +31,14 @@ void intHandler(int dummy) {
     runForever.store(false);
 }
 
+static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::DEBUG;
+static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
+{
+    if (lvl > logVerbosity)
+        return;
+    printf("%s\n", msg);
+}
+
 typedef std::pair<SDRDevice::SDRConfig, SDRDevice::StreamConfig> TestConfigType;
 
 TestConfigType generateTestConfig(bool mimo, float sampleRate)
@@ -122,19 +130,20 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     auto configPair = generateTestConfig(MIMO, sampleRate);
     SDRDevice::StreamConfig &stream = configPair.second;
 
-    if (TrySDRConfigure(configPair.first) != 0)
-        return false;
-
     if(iniArg)
     {
         LMS7002M* chip = static_cast<LMS7002M*>(dev.GetInternalChip(chipIndex));
         const char* filename = iniArg;//"LMS2lb.ini";
+        printf("loading ini: %s\n", filename);
         if (chip->LoadConfig(filename) != 0)
         {
             fprintf(stderr, "Error loading file: %s\n", filename);
             return -1;
         }
     }
+
+    if (TrySDRConfigure(configPair.first) != 0)
+        return false;
 
     const int channelCount = std::max(stream.rxCount, stream.txCount);
     const int samplesInPkt = 256;//(stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
@@ -207,7 +216,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
 
     int badSignal = 0;
     while(runForever.load())
-    //while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(3100))
+    //while (chrono::high_resolution_clock::now() - start < chrono::milliseconds(10100) && runForever.load())
     {
 
         //Receive samples
@@ -248,7 +257,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
             int64_t rxNow = rxMeta.timestamp + samplesInPkt;
             txMeta.timestamp = rxNow + txDeltaTS;
             txMeta.useTimestamp = true;
-            txMeta.flush = true; // not really matters since only full packets are sent here
+            txMeta.flush = false; // not really matters because of continuous trasmitting
 
             auto tt1 = std::chrono::high_resolution_clock::now();
             int samplesSent = dev.StreamTx(testStreamIndex, (const void **)src, samplesInPkt*txPacketCount, &txMeta);
@@ -288,7 +297,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
                 sumi += i*i;
                 float q = dest[0][j*20].q;
                 sumq += q*q;
-                //float ampl = sqrt(pow(i, 2) + pow(q, 2));
+                float ampl = sqrt(pow(i, 2) + pow(q, 2));
             }
             float rmsI = sqrt(sumi/cnt);
             float rmsQ = sqrt(sumq/cnt);
@@ -305,7 +314,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
 
 bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
 {
-    chipIndex = 1;
+    chipIndex = 0;
     const float sampleRate = 122.88e6;
     printf("----------TEST TxTiming, sampleRate: %g MHz, MIMO:%s\n", sampleRate/1e6, MIMO ? "yes" : "no");
     auto configPair = generateTestConfig(true, sampleRate);
@@ -477,7 +486,8 @@ int main(int argc, char **argv)
     }
 
     //Open the first device
-    device = DeviceRegistry::makeDevice(handles[1]);
+    device = DeviceRegistry::makeDevice(handles.at(0));
+    device->SetMessageLogCallback(LogCallback);
     device->Init();
 
     runForever.store(true);

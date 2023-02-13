@@ -92,7 +92,9 @@ static int InitLMS1(LMS7002M* lms, bool skipTune = false)
         {0x040B, 0x1020}, {0x040C, 0x00FB},
 
         // LDOs
-        {0x0092, 0x0D15}, {0x00A6, 0x000F}
+        {0x0092, 0x0D15}, {0x00A6, 0x000F},
+        // XBUF
+        //{0x0085, 0x0019}
     };
 
     if (lms->ResetChip() != 0)
