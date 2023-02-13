@@ -205,6 +205,8 @@ public:
 
     double getMasterClockRate(void) const;
 
+    void setReferenceClockRate(const double rate);
+
     /*******************************************************************
      * Time API
      ******************************************************************/

@@ -592,6 +592,12 @@ double SoapyLMS7::getMasterClockRate(void) const
     return lms7Device->GetClockFreq(LMS_CLOCK_CGEN);
 }
 
+void SoapyLMS7::setReferenceClockRate(const double rate)
+{
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    lms7Device->SetClockFreq(LMS_CLOCK_EXTREF, rate);
+}
+
 /*******************************************************************
  * Time API
  ******************************************************************/
