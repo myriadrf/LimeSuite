@@ -685,7 +685,7 @@ void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
 
 void LimeSDR_XTRX::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
 {
-    TRXLooper *trx = mStreamers.at(moduleIndex);
+    // TRXLooper *trx = mStreamers.at(moduleIndex);
     // status.dataRate_Bps = trx->GetDataRate(false);
     // status.txDataRate_Bps = trx->GetDataRate(true);
 }
@@ -781,7 +781,7 @@ enum // TODO: replace
 
 void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
 {
-    uint16_t sw_addr = 0x00D1;
+    uint16_t sw_addr = 0x000A;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
     lime::LMS7002M* lms = mLMSChips.at(0);
 
@@ -795,11 +795,11 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             case ePathLMS1_Tx::BAND2 : path = LMS_PATH_TX2; break;
             default: throw std::logic_error("Invalid LMS1 Tx path");
         }
-
+        sw_val &= ~(1 << 4);
         if (path == LMS_PATH_TX1)
-            sw_val |= 1 << (13-chan);   // chan 0 = 13; chan 1 = 12
+            sw_val |= 1 << 4;
         else if (path == LMS_PATH_TX2)
-            sw_val &= ~(1 << (13-chan));
+            sw_val &= ~(1 << 4);
 
         mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetBandTRF(path);
@@ -816,12 +816,13 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             default: throw std::logic_error("Invalid LMS1 Rx path");
         }
 
+        sw_val &= ~(0x3 << 2);
         if(path == LMS_PATH_LNAW)
-            lime::warning("LNAW has no connection to RF ports");
+            sw_val &= ~(0x3 << 2);
         else if (path == LMS_PATH_LNAH)
-            sw_val |= 1 << (11-chan);
+            sw_val |= 2 << 2;
         else if(path == LMS_PATH_LNAL)
-            sw_val &= ~(1UL << (11-chan));
+            sw_val |= 1 << 2;
 
         mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetPathRFE(lime::LMS7002M::PathRFE(path));
