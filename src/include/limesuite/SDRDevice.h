@@ -1,23 +1,15 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
-#include "DeviceHandle.h"
-#include "IComms.h"
-#include "LMS7002M_parameters.h"
-#include "PacketsFIFO.h"
-#include "dataTypes.h"
-
 #include <vector>
 #include <unordered_map>
 #include <functional>
 #include <string.h>
-#include "commonTypes.h"
+
+#include "limesuite/config.h"
+#include "limesuite/IComms.h"
 
 namespace lime {
-
-class LMS7002M;
-class TRXLooper;
-class FPGA;
 
 /// SDRDevice can have multiple modules (RF chips), that can operate independently
 
@@ -76,7 +68,6 @@ class LIME_API SDRDevice : public IComms
         uint64_t serialNumber; /// A unique board serial number
 
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
-        //uint8_t rfSOC_count; // how many independent RF chips are on board
         std::vector<RFSOCDescripion> rfSOC;
     };
 
@@ -154,46 +145,6 @@ class LIME_API SDRDevice : public IComms
         bool flush; // submit data to hardware without waiting for full buffer
     };
 
-/*!
- * Information about the set of available hardware on a device.
- * This includes available ICs, streamers, and version info.
- *
- * This structure provides SPI slave addresses for one or more RFICs
- * and slave addresses or I2C addresses for commonly supported ICs.
- * A -1 for an address number indicates that it is not available.
- */
-    struct DeviceInfo
-    {
-        DeviceInfo(void) : boardSerialNumber(0){};
-
-        //! The displayable name for the device
-        std::string deviceName;
-
-        /*! The displayable name for the expansion card
-        * Ex: if the RFIC is on a daughter-card
-        */
-        std::string expansionName;
-
-        //! The firmware version as a string
-        std::string firmwareVersion;
-
-        //! Gateware version as a string
-        std::string gatewareVersion;
-        //! Gateware revision as a string
-        std::string gatewareRevision;
-        //! Which board should use this gateware
-        std::string gatewareTargetBoard;
-
-        //! The hardware version as a string
-        std::string hardwareVersion;
-
-        //! The protocol version as a string
-        std::string protocolVersion;
-
-        //! A unique board serial number
-        uint64_t boardSerialNumber;
-    };
-
     struct GFIRFilter
     {
         double bandwidth;
@@ -244,76 +195,30 @@ class LIME_API SDRDevice : public IComms
     };
 
 public:
-    SDRDevice();
-    virtual ~SDRDevice();
+    virtual ~SDRDevice(){};
 
     virtual void Configure(const SDRConfig config, uint8_t moduleIndex) = 0;
 
     /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
     virtual const Descriptor &GetDescriptor() const = 0;
 
-    //! Get the connection handle that was used to create this connection
-    const DeviceHandle &GetHandle(void) const;
-
     virtual int Init() = 0;
-    virtual void Reset();
-
-    //virtual double GetRate(Dir dir, uint8_t channel) const = 0;
+    virtual void Reset() = 0;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
-    virtual void Synchronize(bool toChip);
-    virtual void EnableCache(bool enable);
+    virtual void Synchronize(bool toChip) = 0;
+    virtual void EnableCache(bool enable) = 0;
 
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) = 0;
-    virtual void StreamStart(uint8_t moduleIndex);
-    virtual void StreamStop(uint8_t moduleIndex);
+    virtual void StreamStart(uint8_t moduleIndex) = 0;
+    virtual void StreamStop(uint8_t moduleIndex)= 0;
 
-    virtual int StreamRx(uint8_t channel, void **samples, uint32_t count, StreamMeta *meta);
-    virtual int StreamTx(uint8_t channel, const void **samples, uint32_t count,
-                         const StreamMeta *meta);
+    virtual int StreamRx(uint8_t channel, void **samples, uint32_t count, StreamMeta *meta) = 0;
+    virtual int StreamTx(uint8_t channel, const void **samples, uint32_t count, const StreamMeta *meta) = 0;
     virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) = 0;
 
-    /*!
-     * @brief Bulk SPI write/read transaction.
-     *
-     * The transactSPI function is capable of bulk writes and bulk reads
-     * of SPI registers in an arbitrary IC (up to 32-bits per transaction).
-     *
-     * MISO (Master input Slave output) may be NULL to indicate a write-only operation,
-     * the underlying implementation may be able to optimize out the readback.
-     *
-     * @param spiBusAddress SPI target chip address
-     * @param MOSI Master output Slave input, data to write
-     * @param [out] MISO Master input Slave output, buffer to fill with read data
-     * @param count Number of SPI transactions
-     * @return 0-success
-     */
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO,
-                     uint32_t count) override;
-
-    /*!
-     * Write to an available I2C slave.
-     * @param address I2C slave address
-     * @param data output buffer
-     * @param length output data length
-     * @return 0-success
-     */
-    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
-
-    /*!
-     * Read from an available I2C slave.
-     * The data parameter can be used to pass optional write data.
-     * Some implementations can combine a write + read transaction.
-     * If the device contains multiple I2C masters,
-     * the address bits can encode which master.
-     * \param addr the address of the slave
-     * \param [inout] dest buffer to store read data from the slave
-     * \param length Number of bytes to read
-     * @return 0-success
-     */
-    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     /***********************************************************************
      * GPIO API
@@ -324,28 +229,28 @@ public:
     @param bufLength buffer length
     @return the operation success state
     */
-    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) { return -1;};
 
     /**    @brief Reads GPIO values from device
     @param buffer destination for GPIO values LSB first, each bit represent GPIO state
     @param bufLength buffer length to read
     @return the operation success state
     */
-    virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) { return -1;};
 
     /**    @brief Write GPIO direction control values to device.
     @param buffer with GPIO direction configuration (0 input, 1 output)
     @param bufLength buffer length
     @return the operation success state
     */
-    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength);
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) { return -1;};
 
     /**    @brief Read GPIO direction configuration from device
     @param buffer to put GPIO direction configuration (0 input, 1 output)
     @param bufLength buffer length to read
     @return the operation success state
     */
-    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength);
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) { return -1;};
 
     /***********************************************************************
      * Aribtrary settings API
@@ -358,7 +263,7 @@ public:
     @param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
     @return the operation success state
     */
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) { return -1;};
 
     /** @brief Returns value of custom on board control
     @param ids indexes of controls to read
@@ -367,28 +272,14 @@ public:
     @param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
     @return the operation success state
     */
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) { return -1;};
 
     /// @brief Sets callback function which gets called each time data is sent or received
-    void SetDataLogCallback(DataCallbackType callback);
-    void SetMessageLogCallback(LogCallbackType callback);
+    virtual void SetDataLogCallback(DataCallbackType callback) {};
+    virtual void SetMessageLogCallback(LogCallbackType callback) {};
 
-    virtual void *GetInternalChip(uint32_t index);
-    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
-                                      double rxPhase) = 0;
-
-  protected:
-    DataCallbackType mCallback_logData;
-    LogCallbackType mCallback_logMessage;
-    std::vector<LMS7002M*> mLMSChips;
-    std::vector<TRXLooper*> mStreamers;
-
-    StreamConfig mStreamConfig;
-    FPGA *mFPGA;
-
-  private:
-    friend class DeviceRegistry;
-    DeviceHandle _handle;
+    virtual void *GetInternalChip(uint32_t index) { return nullptr; };
+    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase) = 0;
 };
 
 }

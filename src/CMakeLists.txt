@@ -4,42 +4,7 @@ set(GUI_EXECUTABLE_NAME LimeSuiteGUI2)
 ########################################################################
 ## public headers
 ########################################################################
-set(LIME_SUITE_PUBLIC_HEADERS
-    boards/DeviceExceptions.h
-    boards/DeviceRegistry.h
-    boards/DeviceHandle.h
-    boards/SDRDevice.h
-    boards/IComms.h
-    lime/LimeSuite.h
-    VersionInfo.h
-    Logger.h
-    SystemResources.h
-    LimeSuiteConfig.h
-    ADF4002/ADF4002.h
-    lms7002m_mcu/MCU_BD.h
-    lms7002m_mcu/MCU_File.h
-    ConnectionRegistry/IConnection.h
-    # ConnectionRegistry/ConnectionHandle.h
-    # ConnectionRegistry/ConnectionRegistry.h
-    lms7002m/LMS7002M.h
-    lms7002m/LMS7002M_RegistersMap.h
-    lime/LMS7002M_parameters.h
-    protocols/BufferInterleaving.h
-    protocols/ADCUnits.h
-    protocols/LMS64CCommands.h
-    protocols/LMS64CProtocol.h
-    protocols/LMSBoards.h
-    protocols/dataTypes.h
-    protocols/PacketsFIFO.h
-    Si5351C/Si5351C.h
-    FPGA_common/FPGA_common.h
-    API/lms7_device.h
-    API/commonTypes.h
-    limeRFE/limeRFE.h
-
-    CDCM6208/CDCM6208_Dev.h
-    include/Register.h
-)
+FILE(GLOB LIME_SUITE_PUBLIC_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include/limesuite/*.h")
 
 include(FeatureSummary)
 include(CMakeDependentOption)
@@ -48,7 +13,7 @@ add_feature_info(LimeSuiteHeaders ENABLE_HEADERS "The lime suite headers")
 if (ENABLE_HEADERS)
     install(
         FILES ${LIME_SUITE_PUBLIC_HEADERS}
-        DESTINATION include/lime/${MAIN_LIBRARY_NAME}
+        DESTINATION include/limesuite
     )
 endif()
 
@@ -58,14 +23,11 @@ endif()
 set(LIME_SUITE_SOURCES
     boards/DeviceRegistry.cpp
     boards/DeviceHandle.cpp
-    boards/SDRDevice.cpp
+    boards/LMS7002M_SDRDevice.cpp
     Logger.cpp
     ADF4002/ADF4002.cpp
-    lms7002m_mcu/MCU_BD.cpp
-    lms7002m_mcu/MCU_File.cpp
-    ConnectionRegistry/IConnection.cpp
-    ConnectionRegistry/ConnectionHandle.cpp
-    #ConnectionRegistry/ConnectionRegistry.cpp
+    lms7002m/MCU_BD.cpp
+    lms7002m/MCU_File.cpp
     lms7002m/LMS7002M_RegistersMap.cpp
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M.cpp
@@ -74,25 +36,11 @@ set(LIME_SUITE_SOURCES
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
-    #protocols/LMS64CProtocol.cpp
-    #protocols/Streamer.cpp
     protocols/TRXLooper.cpp
     protocols/BufferInterleaving.cpp
-    #protocols/ConnectionImages.cpp
     Si5351C/Si5351C.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
-    # API/lms7_api.cpp
-    # API/lms7_device.cpp
-    # API/LmsGeneric.cpp
-    # API/qLimeSDR.cpp
-    # API/LimeSDR_mini.cpp
-    # API/LimeSDR.cpp
-    # API/LimeNET_micro.cpp
-    # API/LimeSDR_PCIE.cpp
-    # API/LimeSDR_Core.cpp
     FPGA_common/FPGA_common.cpp
-    # FPGA_common/FPGA_Mini.cpp
-    # FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp
@@ -116,26 +64,14 @@ SET_SOURCE_FILES_PROPERTIES(
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
-    include
     boards
-    API
-    lime
-    GFIR
     protocols
-    ConnectionRegistry
-    lms7002m_mcu
-    ADF4002
-    Si5351C
     lms7002m
     FPGA_common
-    lms7002m_mcu
-    ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
-    ${PROJECT_SOURCE_DIR}/external/kissFFT/
-    limeRFE
+    ${PROJECT_SOURCE_DIR}/external
     threadHelper
     memory
 )
-#list(TRANSFORM ${LIME_SUITE_INCLUDES} PREPEND ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
@@ -167,7 +103,8 @@ if (ENABLE_LIBRARY)
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES VERSION ${LIME_SUITE_LIBVER})
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES DEFINE_SYMBOL "LIME_DLL_EXPORTS")
-    target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${LIME_SUITE_INCLUDES})
+    target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${LIME_SUITE_INCLUDES})
+    target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
     if(BUILD_SHARED_LIBS)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
@@ -192,14 +129,6 @@ endif()
 ########################################################################
 #include(comms/USB/CMakeLists.txt)
 include(comms/PCIe/CMakeLists.txt)
-
-
-#include(ConnectionEVB7COM/CMakeLists.txt)
-#include(ConnectionFX3/CMakeLists.txt)
-#include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-#include(ConnectionFTDI/CMakeLists.txt)
-#include(ConnectionXillybus/CMakeLists.txt)
-#include(ConnectionSPI/CMakeLists.txt)
 
 #include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_5GRadio/CMakeLists.txt)
@@ -295,7 +224,7 @@ set(LMS7SUITE_GUI_SOURCES
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_GUI "Enable build GUI" OFF "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
+cmake_dependent_option(ENABLE_GUI "Enable build GUI" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
 add_feature_info(${GUI_EXECUTABLE_NAME} ENABLE_GUI "GUI Application for LimeSuite")
 if (ENABLE_GUI)
 

@@ -1,7 +1,9 @@
-#pragma once
+#ifndef LIME_DEVICE_HANDLE_H
+#define LIME_DEVICE_HANDLE_H
 
-#include "LimeSuiteConfig.h"
 #include <string>
+
+#include "limesuite/config.h"
 
 namespace lime {
 /*!
@@ -66,3 +68,5 @@ public:
 }
 //! Check two connection handles for equality
 bool operator==(const lime::DeviceHandle &lhs, const lime::DeviceHandle &rhs);
+
+#endif

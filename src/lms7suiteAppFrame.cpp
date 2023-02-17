@@ -15,8 +15,8 @@
 #include "dlgConnectionSettings.h"
 #include "lms7suiteEvents.h"
 #include "fftviewer_frFFTviewer.h"
-#include "ADF4002_wxgui.h"
-#include "Si5351C_wxgui.h"
+#include "ADF4002/ADF4002_wxgui.h"
+#include "Si5351C/Si5351C_wxgui.h"
 //#include "LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
 #include "FPGAcontrols_wxgui.h"
@@ -34,8 +34,8 @@
 //#include "limeRFE_wxgui.h"
 #include "SPI_wxgui.h"
 
-#include "DeviceRegistry.h"
-#include "SDRDevice.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/SDRDevice.h"
 //#include "LimeSDR.h"
 using namespace std;
 using namespace lime;

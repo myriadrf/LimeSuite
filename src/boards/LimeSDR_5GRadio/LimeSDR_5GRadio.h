@@ -2,8 +2,8 @@
 #define	LIME_LIMESDR_5G_H
 
 #include "CDCM6208/CDCM6208_Dev.h"
-#include "SDRDevice.h"
-#include "DeviceRegistry.h"
+#include "LMS7002M_SDRDevice.h"
+#include "limesuite/DeviceRegistry.h"
 
 #include <vector>
 #include <array>
@@ -20,9 +20,10 @@ class FPGA;
 class Equalizer;
 class TRXLooper_PCIE;
 
-class LimeSDR_5GRadio : public SDRDevice
+class LimeSDR_5GRadio : public LMS7002M_SDRDevice
 {
 public:
+    LimeSDR_5GRadio() = delete;
     LimeSDR_5GRadio(lime::LitePCIe* control, std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams);
     virtual ~LimeSDR_5GRadio();
 
@@ -68,7 +69,6 @@ protected:
     void LMS3SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
-    SDRDevice::DeviceInfo GetDeviceInfo();
 
     enum class ePathLMS1_Rx {
         NONE = 0, LNAH = 1, LNAL = 2

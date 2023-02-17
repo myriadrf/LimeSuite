@@ -6,10 +6,10 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
-#include "LMS7002M_parameters.h"
+#include "limesuite/LMS7002M_parameters.h"
 #include <tuple>
 #include "wx/spinctrl.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 
 using namespace std;
 using namespace lime;

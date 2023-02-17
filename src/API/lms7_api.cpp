@@ -1,7 +1,7 @@
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "DeviceRegistry.h"
 #include "lime/LimeSuite.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "errno.h"
 #include <cmath>
 #include "VersionInfo.h"

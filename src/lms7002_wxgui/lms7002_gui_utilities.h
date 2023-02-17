@@ -6,7 +6,7 @@
 #include <map>
 #include <vector>
 
-#include "lime/LMS7002M_parameters.h"
+#include "limesuite/LMS7002M_parameters.h"
 
 class wxPanel;
 class wxWindow;

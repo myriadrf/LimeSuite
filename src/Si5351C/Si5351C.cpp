@@ -14,7 +14,8 @@
 #include <cstring>
 #include <cassert>
 #include <ciso646> // alternative operators for visual c++: not, and, or...
-#include "SDRDevice.h"
+#include <vector>
+#include "limesuite/IComms.h"
 
 using namespace std;
 using namespace lime;
@@ -342,7 +343,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
     @brief Sets connection manager to use for data transferring Si5351C
     @param mng connection manager for data transferring
 */
-void Si5351C::Initialize(SDRDevice *mng)
+void Si5351C::Initialize(IComms *mng)
 {
     device = mng;
     if (device != nullptr)

@@ -1,12 +1,12 @@
 #pragma once
 
 #include <stdint.h>
+#include "limesuite/config.h"
 
 namespace lime {
-class IComms
+class LIME_API IComms
 {
   public:
-    IComms(){};
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
 
     /*!

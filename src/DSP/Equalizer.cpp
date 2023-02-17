@@ -1,7 +1,7 @@
 #include "Equalizer.h"
 
 #include "Register.h"
-#include "IComms.h"
+#include "limesuite/IComms.h"
 
 #include <math.h>
 #include <assert.h>

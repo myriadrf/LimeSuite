@@ -2,12 +2,11 @@
 
 #include <wx/wx.h>
 #include <wx/stattext.h>
-#include "LMS7002M_parameters.h"
+#include "limesuite/LMS7002M_parameters.h"
 #include "lms7002_gui_utilities.h"
 #include <chrono>
 #include <thread>
 #include "mcu_programs.h"
-#include "device_constants.h"
 #include "LMS7002M.h"
 
 #include <vector>

@@ -41,7 +41,7 @@ set(LimeSuite_LIBRARIES ${LIMESUITE_LIBRARY})
 ## locate the includes
 ########################################################################
 find_path(
-  LIMESUITE_INCLUDE_DIR lime/lms7_device.h
+  LIMESUITE_INCLUDE_DIR limesuite/SDRDevice.h
   PATHS ${LIMESUITE_ROOT}/include
   NO_DEFAULT_PATH
 )

@@ -7,15 +7,13 @@
 #ifndef LMS7API_H
 #define LMS7API_H
 
-#include "LimeSuiteConfig.h"
-#include "LMS7002M_parameters.h"
+#include "limesuite/config.h"
+#include "limesuite/LMS7002M_parameters.h"
 #include <cstdint>
 #include <sstream>
 #include <stdarg.h>
 #include <functional>
 #include <vector>
-
-#include "commonTypes.h"
 
 namespace lime{
 class IComms;
@@ -23,6 +21,12 @@ class LMS7002M_RegistersMap;
 class MCU_BD;
 class BinSearchParam;
 class GridSearchParam;
+
+enum Dir
+{
+    Rx = 0,
+    Tx = 1
+};
 
 struct RSSI_measurements
 {

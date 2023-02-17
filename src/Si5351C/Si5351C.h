@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <string>
-#include "LimeSuiteConfig.h"
+#include "limesuite/config.h"
 //---------------------------------------------------------------------------
 namespace lime{
 
@@ -44,7 +44,7 @@ struct Si5351_PLL
     int CLK_SRC; //0-XTAL, 1-CLKIN
 };
 
-class SDRDevice;
+class IComms;
 
 class LIME_API Si5351C
 {
@@ -76,7 +76,7 @@ public:
 
 	Si5351C();
 	~Si5351C();
-    void Initialize(SDRDevice *mng);
+    void Initialize(IComms *mng);
     bool LoadRegValuesFromFile(std::string FName);
 
     void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
@@ -88,7 +88,7 @@ public:
 
 private:
     void FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned long Fmin, const unsigned long Fmax);
-    lime::SDRDevice *device;
+    lime::IComms *device;
     int addrSi5351;
 
     Si5351_PLL PLL[2];

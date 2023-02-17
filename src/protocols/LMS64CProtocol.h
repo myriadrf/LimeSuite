@@ -5,7 +5,6 @@
 */
 
 #pragma once
-#include <IConnection.h>
 #include <mutex>
 #include <LMS64CCommands.h>
 #include <LMSBoards.h>
@@ -19,32 +18,30 @@ namespace lime{
  * configuration and spi access over the LMS64C Protocol.
  * Connections using LMS64C may inherit from LMS64C.
  */
-class LIME_API LMS64CProtocol : public virtual IConnection
+class LIME_API LMS64CProtocol
 {
 public:
     LMS64CProtocol(void);
 
-    ~LMS64CProtocol(void) override;
-
-    DeviceInfo GetDeviceInfo(void) override;
+    ~LMS64CProtocol(void);
 
     //! DeviceReset implemented by LMS64C
     int DeviceReset(int ind=0);
 
     //! TransactSPI implemented by LMS64C
-    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
+    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     //! WriteI2C implemented by LMS64C
-    int WriteI2C(const int addr, const std::string &data) override;
+    int WriteI2C(const int addr, const std::string &data);
 
     //! ReadI2C implemented by LMS64C
-    int ReadI2C(const int addr, const size_t numBytes, std::string &data) override;
+    int ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
     //! WriteRegisters (BRDSPI) implemented by LMS64C
-    int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size) override;
+    int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
 
     //! ReadRegisters (BRDSPI) implemented by LMS64C
-    int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size) override;
+    int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
 
     /// Supported connection types.
     enum eConnectionType
@@ -146,7 +143,7 @@ public:
 
     FPGAinfo GetFPGAInfo();
     void VersionCheck();
-    int ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback) override;
+    //int ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback);
 
     //! implement in base class
     virtual eConnectionType GetType(void) = 0;
@@ -166,19 +163,19 @@ public:
         PROGRAM_WRITE_TARGET_COUNT
     };
 
-    int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr) override;
+    //int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr);
 
-    int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) override;
-    int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
+    int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
+    int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units);
 
-    int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
-    int GPIORead(uint8_t *buffer, const size_t bufLength) override;
-    int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
-    int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
+    int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
+    int GPIORead(uint8_t *buffer, const size_t bufLength);
+    int GPIODirWrite(const uint8_t *buffer, const size_t bufLength);
+    int GPIODirRead(uint8_t *buffer, const size_t bufLength);
 
-    int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
-    int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
-    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
+    //int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback);
+    int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0);
+    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0);
 protected:
 #ifdef REMOTE_CONTROL
     void InitRemote();

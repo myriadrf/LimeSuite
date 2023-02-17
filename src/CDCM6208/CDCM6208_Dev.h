@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "LimeSuiteConfig.h"
+#include "limesuite/config.h"
 #include "FPGA_common.h"
 
 #define CDCM_VCO_MIN_V1 2390*1e6

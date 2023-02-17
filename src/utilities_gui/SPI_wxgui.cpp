@@ -1,7 +1,7 @@
 #include "SPI_wxgui.h"
 #include <vector>
 
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 
 using namespace lime;
 

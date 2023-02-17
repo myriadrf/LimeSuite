@@ -35,7 +35,7 @@ static inline void ValidateChannel(uint8_t channel)
 // could read back it's state for debugging purposes
 LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
     std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
-    : mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
+    : LMS7002M_SDRDevice(), mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
 {
     mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
@@ -630,7 +630,7 @@ int LimeSDR_5GRadio::Init()
     InitLMS3(mLMSChips.at(2), skipTune);
     return 0;
 }
-
+/*
 SDRDevice::DeviceInfo LimeSDR_5GRadio::GetDeviceInfo()
 {
     assert(mControlPort);
@@ -691,7 +691,7 @@ SDRDevice::DeviceInfo LimeSDR_5GRadio::GetDeviceInfo()
         devInfo.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
     }
     return devInfo;
-}
+}*/
 
 void LimeSDR_5GRadio::Reset()
 {
@@ -1018,7 +1018,7 @@ void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
 
 void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
 {
-    SDRDevice::StreamStop(moduleIndex);
+    LMS7002M_SDRDevice::StreamStop(moduleIndex);
     LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();

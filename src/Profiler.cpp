@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "LimeSuiteConfig.h"
+#include "limesuite/config.h"
 
 using namespace std;
 

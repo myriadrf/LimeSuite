@@ -1,10 +1,11 @@
 #ifndef LIME_DEVICES_REGISTRY_H
 #define LIME_DEVICES_REGISTRY_H
 
-#include "LimeSuiteConfig.h"
-#include "DeviceHandle.h"
 #include <string>
 #include <vector>
+
+#include "limesuite/config.h"
+#include "limesuite/DeviceHandle.h"
 
 namespace lime {
 

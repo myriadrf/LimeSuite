@@ -5,7 +5,6 @@
 #include "dlgViewIRAM.h"
 #include "dlgViewSFR.h"
 #include "MCU_File.h"
-#include "device_constants.h"
 
 
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_STATUS_EVENT = wxNewId();

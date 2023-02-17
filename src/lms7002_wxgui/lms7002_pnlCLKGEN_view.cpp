@@ -5,7 +5,7 @@
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "LMS7002M.h"
 #include "FPGA_common.h"
 #include "Logger.h"

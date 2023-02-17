@@ -11,8 +11,8 @@
 #include "LMS7002M.h"
 #include <stdio.h>
 #include <set>
-#include "IComms.h"
-#include "INI.h"
+#include "limesuite/IComms.h"
+#include "cpp-feather-ini-parser/INI.h"
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -2076,7 +2076,7 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool toChip)
         MCU_BD* mcu = GetMCUControls();
         mcu->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
         if(mcu->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-            mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+            mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         SPI_write(0x002D, address);
         SPI_write(0x020C, data);
         mcu->RunProcedure(7);
@@ -2123,7 +2123,7 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
             MCU_BD* mcu = GetMCUControls();
             mcu->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
             if(mcu->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-                mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+                mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
             SPI_write(0x002D, address);
             mcu->RunProcedure(8);
             mcu->WaitForMCU(50);

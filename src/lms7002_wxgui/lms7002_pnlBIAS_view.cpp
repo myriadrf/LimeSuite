@@ -1,7 +1,7 @@
 #include "lms7002_pnlBIAS_view.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "LMS7002M.h"
 using namespace lime;
 

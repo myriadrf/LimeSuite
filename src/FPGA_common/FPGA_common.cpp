@@ -1,14 +1,14 @@
 #include "FPGA_common.h"
-#include "IComms.h"
+#include "limesuite/IComms.h"
 #include <vector>
 #include <math.h>
 #include <thread>
 #include "Logger.h"
 #include <algorithm>
 #include <unordered_set>
-#include "LMS64CProtocol.h"
 #include <assert.h>
 #include "Profiler.h"
+#include "LMSBoards.h"
 using namespace std;
 
 #ifndef NDEBUG

@@ -8,7 +8,7 @@
 #include "Logger.h"
 #include "FPGA_common.h"
 #include "TRXLooper_USB.h"
-#include "LMS7002M_parameters.h"
+#include "limesuite/LMS7002M_parameters.h"
 
 #include <assert.h>
 #include <memory>

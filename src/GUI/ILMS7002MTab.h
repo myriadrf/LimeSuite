@@ -4,7 +4,7 @@
 #include <map>
 
 #include "lms7002_gui_utilities.h"
-#include "LMS7002M_parameters.h"
+#include "limesuite/LMS7002M_parameters.h"
 
 #include "wx/combobox.h"
 #include "wx/checkbox.h"

@@ -2,7 +2,7 @@
 #include <wx/filedlg.h>
 #include <vector>
 #include <fstream>
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 
 using namespace std;
 using namespace lime;

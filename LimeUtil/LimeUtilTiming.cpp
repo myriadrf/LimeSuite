@@ -11,7 +11,7 @@
 #include <LMS7002M.h>
 #include <iostream>
 #include <chrono>
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 
 using namespace lime;
 

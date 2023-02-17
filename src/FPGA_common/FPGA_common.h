@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "dataTypes.h"
 #include <map>
-#include "SDRDevice.h"
 
 #include "SamplesPacket.h"
 #include "DataPacket.h"
@@ -29,7 +28,6 @@ public:
   int StartStreaming();
   int StopStreaming();
   int ResetTimestamp();
-  //virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, lime::SDRDevice::StreamConfig::StreamDataFormat format, int epIndex);
 
   struct FPGA_PLL_clock
   {

@@ -12,7 +12,7 @@
 #include <poll.h>
 
 #include "TRXLooper_PCIE.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "LitePCIe.h"
 #include "Profiler.h"
 #include "DataPacket.h"

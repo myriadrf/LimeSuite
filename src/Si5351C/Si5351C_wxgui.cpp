@@ -6,7 +6,7 @@
 
 #include "Si5351C_wxgui.h"
 #include "Si5351C.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include <LMSBoards.h>
 
 //(*InternalHeaders(Si5351C_wxgui)

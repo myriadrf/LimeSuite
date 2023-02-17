@@ -3,13 +3,13 @@
 #include <vector>
 #include "OpenGLGraph.h"
 #include <LMSBoards.h>
-#include "kiss_fft.h"
+#include "kissFFT/kiss_fft.h"
 #include "dataTypes.h"
 #include "LMS7002M.h"
 #include "windowFunction.h"
 #include <fstream>
 #include "lms7suiteEvents.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "Logger.h"
 
 using namespace std;

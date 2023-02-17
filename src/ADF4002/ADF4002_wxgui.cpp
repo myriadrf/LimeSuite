@@ -6,7 +6,7 @@
 
 #include "ADF4002_wxgui.h"
 #include "ADF4002.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 
 #include <vector>
 #include <wx/msgdlg.h>

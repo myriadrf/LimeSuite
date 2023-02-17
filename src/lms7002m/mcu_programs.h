@@ -1,7 +1,7 @@
 #ifndef LMS7_MCU_PROGRAMS_H
 #define LMS7_MCU_PROGRAMS_H
 
-#include "LimeSuiteConfig.h"
+#include "limesuite/config.h"
 #include <stdint.h>
 
 #define MCU_PROGRAM_SIZE 16384

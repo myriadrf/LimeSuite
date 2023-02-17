@@ -3,7 +3,7 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  RX example
  */
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "dataTypes.h"
 #include "LMS7002M.h"
 #include "DeviceRegistry.h"

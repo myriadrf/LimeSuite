@@ -9,7 +9,6 @@
 #include "Profiler.h"
 
 #include "TRXLooper.h"
-#include "SDRDevice.h"
 
 using namespace std;
 

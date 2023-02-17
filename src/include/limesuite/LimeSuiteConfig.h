@@ -1,5 +1,5 @@
 /**
-@file LimeSuiteConfig.h
+@file config.h
 @author Lime Microsystems
 @brief Configuration constants and macros for lime suite library.
 */

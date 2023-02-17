@@ -1,7 +1,7 @@
-#include "SDRDevice.h"
-#include "dataTypes.h"
-#include "LMS7002M.h"
-#include "DeviceRegistry.h"
+#include "limesuite/SDRDevice.h"
+//#include "limesuite/LMS7002M.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/complex.h"
 #include <iostream>
 #include <chrono>
 #include <math.h>
@@ -130,17 +130,17 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     auto configPair = generateTestConfig(MIMO, sampleRate);
     SDRDevice::StreamConfig &stream = configPair.second;
 
-    if(iniArg)
-    {
-        LMS7002M* chip = static_cast<LMS7002M*>(dev.GetInternalChip(chipIndex));
-        const char* filename = iniArg;//"LMS2lb.ini";
-        printf("loading ini: %s\n", filename);
-        if (chip->LoadConfig(filename) != 0)
-        {
-            fprintf(stderr, "Error loading file: %s\n", filename);
-            return -1;
-        }
-    }
+    // if(iniArg)
+    // {
+    //     LMS7002M* chip = static_cast<LMS7002M*>(dev.GetInternalChip(chipIndex));
+    //     const char* filename = iniArg;//"LMS2lb.ini";
+    //     printf("loading ini: %s\n", filename);
+    //     if (chip->LoadConfig(filename) != 0)
+    //     {
+    //         fprintf(stderr, "Error loading file: %s\n", filename);
+    //         return -1;
+    //     }
+    // }
 
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
@@ -320,16 +320,16 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
     auto configPair = generateTestConfig(true, sampleRate);
     SDRDevice::StreamConfig &stream = configPair.second;
 
-    if(chipIndex == 1)
-    {
-        LMS7002M* chip = static_cast<LMS7002M*>(dev.GetInternalChip(chipIndex));
-        const char* filename = "LMS2_5G_MIMO_TX1_RXH_EXT_100M.ini";
-        if (chip->LoadConfig(filename) != 0)
-        {
-            fprintf(stderr, "Error loading file: %s\n", filename);
-            return -1;
-        }
-    }
+    // if(chipIndex == 1)
+    // {
+    //     LMS7002M* chip = static_cast<LMS7002M*>(dev.GetInternalChip(chipIndex));
+    //     const char* filename = "LMS2_5G_MIMO_TX1_RXH_EXT_100M.ini";
+    //     if (chip->LoadConfig(filename) != 0)
+    //     {
+    //         fprintf(stderr, "Error loading file: %s\n", filename);
+    //         return -1;
+    //     }
+    // }
 
     if (TrySDRConfigure(configPair.first) != 0)
         return false;

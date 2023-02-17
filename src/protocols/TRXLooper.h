@@ -5,9 +5,8 @@
 #include <atomic>
 #include <thread>
 #include "dataTypes.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "PacketsFIFO.h"
-#include "Profiler.h"
 #include "MemoryPool.h"
 #include "SamplesPacket.h"
 

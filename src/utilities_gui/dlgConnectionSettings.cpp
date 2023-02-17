@@ -3,7 +3,7 @@
 #include <vector>
 #include "lms7suiteEvents.h"
 #include "ConnectionHandle.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 

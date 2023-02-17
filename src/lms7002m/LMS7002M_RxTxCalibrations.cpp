@@ -1,7 +1,6 @@
 #include "LMS7002M.h"
 #include <assert.h>
 #include "MCU_BD.h"
-#include "IConnection.h"
 #include "mcu_programs.h"
 #include <chrono>
 #include <thread>
@@ -229,7 +228,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         verbose_printf("Uploading DC/IQ calibration firmware\n");
-        status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+        status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         if(status != 0)
             return status;
     }
@@ -336,7 +335,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         verbose_printf("Uploading DC/IQ calibration firmware\n");
-        status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+        status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         if(status != 0)
             return status;
     }

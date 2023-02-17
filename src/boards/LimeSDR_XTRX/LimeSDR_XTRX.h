@@ -1,8 +1,8 @@
 #ifndef LIME_LIMESDR_XTRX_H
 #define	LIME_LIMESDR_XTRX_H
 
-#include "SDRDevice.h"
-#include "DeviceRegistry.h"
+#include "LMS7002M_SDRDevice.h"
+#include "limesuite/DeviceRegistry.h"
 
 #include <vector>
 #include <array>
@@ -19,9 +19,10 @@ class FPGA;
 class Equalizer;
 class TRXLooper_PCIE;
 
-class LimeSDR_XTRX : public SDRDevice
+class LimeSDR_XTRX : public LMS7002M_SDRDevice
 {
 public:
+    LimeSDR_XTRX() = delete;
     LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream);
     virtual ~LimeSDR_XTRX();
 
@@ -53,7 +54,6 @@ public:
 protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
-    SDRDevice::DeviceInfo GetDeviceInfo();
 
     enum class ePathLMS1_Rx {
         NONE = 0, LNAH = 1, LNAL = 2

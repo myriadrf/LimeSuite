@@ -1,7 +1,7 @@
 #ifndef MCU_FILE_H
 #define MCU_FILE_H
 
-#include "LimeSuiteConfig.h"
+#include "limesuite/config.h"
 
 #include <stdio.h>
 #include <string.h>

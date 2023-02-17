@@ -1,7 +1,7 @@
 #ifndef LIME_LIMESDR_H
 #define LIME_LIMESDR_H
 
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include "DeviceRegistry.h"
 #include "DeviceHandle.h"
 #include <vector>

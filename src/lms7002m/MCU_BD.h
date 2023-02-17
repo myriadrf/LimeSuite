@@ -9,17 +9,23 @@
 
 #include <atomic>
 #include <string>
-#include "IConnection.h"
+#include <functional>
 
 namespace lime{
 
-class LMS64CProtocol;
-class IConnection;
 class IComms;
+class LMS64CProtocol;
 
 class MCU_BD
 {
     public:
+        enum MCU_PROG_MODE
+        {
+            RESET = 0,
+            EEPROM_AND_SRAM,
+            SRAM,
+            BOOT_SRAM_FROM_EEPROM
+        };
         enum MCU_ERROR_CODES
         {
             MCU_NO_ERROR = 0,
@@ -74,6 +80,15 @@ class MCU_BD
 
         static const int cMaxFWSize = 1024 * 16;
 
+    /*!
+     * Callback from programming processes
+     * @param bsent number of bytes transferred
+     * @param btotal total number of bytes to send
+     * @param progressMsg string describing current progress state
+     * @return 0-continue programming, 1-abort operation
+     */
+    typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
+
     protected:
         std::string mLoadedProgramFilename;
         std::atomic_ushort stepsDone;
@@ -91,7 +106,7 @@ class MCU_BD
 
       public:
         uint8_t ReadMCUProgramID();
-        OperationStatus SetDebugMode(bool enabled, IConnection::MCU_PROG_MODE mode);
+        OperationStatus SetDebugMode(bool enabled, MCU_PROG_MODE mode);
         OperationStatus readIRAM(const uint8_t *addr, uint8_t* values, const uint8_t count);
         OperationStatus writeIRAM(const uint8_t *addr, const uint8_t* values, const uint8_t count);
 
@@ -113,7 +128,7 @@ class MCU_BD
         int Erase_IRAM();
         int Read_SFR();
         int Program_MCU(int m_iMode1, int m_iMode0);
-        int Program_MCU(const uint8_t* binArray, const IConnection::MCU_PROG_MODE mode);
+        int Program_MCU(const uint8_t* binArray, const MCU_PROG_MODE mode);
         void Reset_MCU();
         void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
         int RunProductionTest_MCU();
@@ -124,7 +139,7 @@ class MCU_BD
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
         void Initialize(IComms *pSerPort, unsigned chipID = 0, unsigned rom_size = 0);
-        lime::IConnection::ProgrammingCallback callback;
+        ProgrammingCallback callback;
 };
 }
 #endif // MCU_BD_H

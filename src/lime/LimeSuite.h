@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "LMS7002M_parameters.h"
+#include "limesuite/LMS7002M_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {

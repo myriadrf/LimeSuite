@@ -32,7 +32,7 @@ static inline void ValidateChannel(uint8_t channel)
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
-    : mControlPort(control), mStreamPort(stream)
+    : LMS7002M_SDRDevice(), mControlPort(control), mStreamPort(stream)
 {
     mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M);
     mFPGA->SetConnection(this);
@@ -355,7 +355,7 @@ int LimeSDR_XTRX::Init()
     InitLMS1(mLMSChips.at(0), skipTune);
     return 0;
 }
-
+/*
 SDRDevice::DeviceInfo LimeSDR_XTRX::GetDeviceInfo()
 {
     assert(mControlPort);
@@ -417,7 +417,7 @@ SDRDevice::DeviceInfo LimeSDR_XTRX::GetDeviceInfo()
     }
     return devInfo;
 }
-
+*/
 void LimeSDR_XTRX::Reset()
 {
     // TODO:
@@ -677,7 +677,7 @@ void LimeSDR_XTRX::StreamStart(uint8_t moduleIndex)
 
 void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
 {
-    SDRDevice::StreamStop(moduleIndex);
+    LMS7002M_SDRDevice::StreamStop(moduleIndex);
     LitePCIe* trxPort = mStreamPort;
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();

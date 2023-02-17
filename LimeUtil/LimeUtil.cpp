@@ -7,7 +7,7 @@
 #include <VersionInfo.h>
 #include <SystemResources.h>
 #include "DeviceRegistry.h"
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 
 #include <iostream>
 #include <cstdlib>

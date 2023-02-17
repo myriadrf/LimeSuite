@@ -1,6 +1,6 @@
 #include "SDRConfiguration_view.h"
 
-#include "SDRDevice.h"
+#include "limesuite/SDRDevice.h"
 #include <wx/msgdlg.h>
 
 using namespace std;

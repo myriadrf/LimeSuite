@@ -17,7 +17,7 @@ using namespace std;
 #include "LMS7002M.h"
 #include "Logger.h"
 
-#include "IComms.h"
+#include "limesuite/IComms.h"
 #include <functional>
 
 using namespace lime;
@@ -568,19 +568,19 @@ void MCU_BD::Wait_CLK_Cycles(int delay)
 */
 int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 {
-    IConnection::MCU_PROG_MODE mode;
+    MCU_BD::MCU_PROG_MODE mode;
     switch(m_iMode1 << 1 | m_iMode0)
     {
-    case 0: mode = IConnection::MCU_PROG_MODE::RESET; break;
-    case 1: mode = IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM; break;
-    case 2: mode = IConnection::MCU_PROG_MODE::SRAM; break;
-    case 3: mode = IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM; break;
-    default: mode = IConnection::MCU_PROG_MODE::RESET; break;
+    case 0: mode = MCU_BD::MCU_PROG_MODE::RESET; break;
+    case 1: mode = MCU_BD::MCU_PROG_MODE::EEPROM_AND_SRAM; break;
+    case 2: mode = MCU_BD::MCU_PROG_MODE::SRAM; break;
+    case 3: mode = MCU_BD::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM; break;
+    default: mode = MCU_BD::MCU_PROG_MODE::RESET; break;
     }
     return Program_MCU(byte_array,mode);
 }
 
-int MCU_BD::Program_MCU(const uint8_t* buffer, const IConnection::MCU_PROG_MODE mode)
+int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
 {
     if(!m_serPort)
         return ReportError(ENOLINK, "Device not connected");
@@ -1085,18 +1085,18 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
     @param mode MCU memory initialization mode
     @return Operation status
 */
-MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, IConnection::MCU_PROG_MODE mode)
+MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MCU_BD::MCU_PROG_MODE mode)
 {
     uint8_t regValue = 0;
     switch (mode)
     {
-    case IConnection::MCU_PROG_MODE::RESET:
+    case MCU_BD::MCU_PROG_MODE::RESET:
         break;
-    case IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM:
+    case MCU_BD::MCU_PROG_MODE::EEPROM_AND_SRAM:
         regValue |= 0x01; break;
-    case IConnection::MCU_PROG_MODE::SRAM:
+    case MCU_BD::MCU_PROG_MODE::SRAM:
         regValue |= 0x02; break;
-    case IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM:
+    case MCU_BD::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM:
         regValue |= 0x03; break;
     }
     if (enabled)

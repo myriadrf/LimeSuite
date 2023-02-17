@@ -7,7 +7,7 @@
 #ifndef ADF_MODULE_H
 #define ADF_MODULE_H
 
-#include "LimeSuiteConfig.h"
+#include "limesuite/config.h"
 
 namespace lime{
 
