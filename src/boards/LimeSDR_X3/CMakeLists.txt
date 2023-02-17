@@ -1,13 +1,13 @@
 ########################################################################
-## Support for LimeSDR_5GRadio board
+## Support for LimeSDR_X3 board
 ########################################################################
 
-set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boards/LimeSDR_5GRadio)
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boards/LimeSDR_X3)
 
-set(LIMESDR_5G_SOURCES
-    ${THIS_SOURCE_DIR}/LimeSDR_5GRadioEntry.cpp
-    ${THIS_SOURCE_DIR}/LimeSDR_5GRadio.cpp
-    ${THIS_SOURCE_DIR}/FPGA_5G.cpp
+set(LIMESDR_X3_SOURCES
+    ${THIS_SOURCE_DIR}/LimeSDR_X3Entry.cpp
+    ${THIS_SOURCE_DIR}/LimeSDR_X3.cpp
+    ${THIS_SOURCE_DIR}/FPGA_X3.cpp
 )
 
 
@@ -16,9 +16,9 @@ set(LIMESDR_5G_SOURCES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_LIMESDR_5G "Enable LimeSDR 5GRadio support" ON "ENABLE_LIBRARY" OFF)
-add_feature_info(BoardLimeSDR5G ENABLE_LIMESDR_5G "LimeSDR board support")
-if (NOT ENABLE_LIMESDR_5G)
+cmake_dependent_option(ENABLE_LIMESDR_X3 "Enable LimeSDR X3 board support" ON "ENABLE_LIBRARY" OFF)
+add_feature_info(ENABLE_LIMESDR_X3 ENABLE_LIMESDR_X3 "LimeSDR X3 board support")
+if (NOT ENABLE_LIMESDR_X3)
     return()
 endif()
 
@@ -26,4 +26,4 @@ endif()
 ## Add to library
 ########################################################################
 target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${THIS_SOURCE_DIR})
-target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${LIMESDR_5G_SOURCES})
+target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${LIMESDR_X3_SOURCES})

@@ -7,7 +7,7 @@
 #include "LMS7002M.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
-#include "FPGA_5G.h"
+#include "FPGA_X3.h"
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 
@@ -34,7 +34,7 @@ static inline void ValidateChannel(uint8_t channel)
 LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     : LMS7002M_SDRDevice(), mControlPort(control), mStreamPort(stream)
 {
-    mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M);
+    mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M);
     mFPGA->SetConnection(this);
 
     mLMSChips.push_back(new LMS7002M(spi_LMS7002M));

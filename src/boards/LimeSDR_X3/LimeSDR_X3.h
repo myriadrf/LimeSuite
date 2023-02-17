@@ -20,12 +20,12 @@ class FPGA;
 class Equalizer;
 class TRXLooper_PCIE;
 
-class LimeSDR_5GRadio : public LMS7002M_SDRDevice
+class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
 public:
-    LimeSDR_5GRadio() = delete;
-    LimeSDR_5GRadio(lime::LitePCIe* control, std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams);
-    virtual ~LimeSDR_5GRadio();
+    LimeSDR_X3() = delete;
+    LimeSDR_X3(lime::LitePCIe* control, std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams);
+    virtual ~LimeSDR_X3();
 
     virtual void Configure(const SDRConfig config, uint8_t socIndex) override;
 
@@ -92,11 +92,11 @@ private:
     std::mutex mCommsMutex;
 };
 
-class LimeSDR_5GRadioEntry : public DeviceRegistryEntry
+class LimeSDR_X3Entry : public DeviceRegistryEntry
 {
 public:
-    LimeSDR_5GRadioEntry();
-    virtual ~LimeSDR_5GRadioEntry();
+    LimeSDR_X3Entry();
+    virtual ~LimeSDR_X3Entry();
     std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
     SDRDevice* make(const DeviceHandle& handle) override;
 };

@@ -1,4 +1,4 @@
-#include "LimeSDR_5GRadio.h"
+#include "LimeSDR_X3.h"
 
 #include <fcntl.h>
 
@@ -7,7 +7,7 @@
 #include "LMS7002M.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
-#include "FPGA_5G.h"
+#include "FPGA_X3.h"
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 
@@ -33,11 +33,11 @@ static inline void ValidateChannel(uint8_t channel)
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
+LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
     : LMS7002M_SDRDevice(), mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
 {
-    mFPGA = new lime::FPGA_5G(spi_FPGA, spi_LMS7002M_1);
+    mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
 
     mEqualizer = new Equalizer(this, spi_FPGA);
@@ -59,7 +59,7 @@ LimeSDR_5GRadio::LimeSDR_5GRadio(lime::LitePCIe* control,
     mStreamers.resize(chipCount, nullptr);
 }
 
-LimeSDR_5GRadio::~LimeSDR_5GRadio()
+LimeSDR_X3::~LimeSDR_X3()
 {
     delete cdcm[0];
     delete mEqualizer;
@@ -308,7 +308,7 @@ static int InitLMS3(LMS7002M* lms, bool skipTune)
     return -1;
 }
 
-void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
+void LimeSDR_X3::Configure(const SDRConfig cfg, uint8_t socIndex)
 {
     try {
         // only 2 channels is available on LMS7002M
@@ -555,7 +555,7 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
         }
     } //try
     catch (std::logic_error &e) {
-        printf("LimeSDR_5GRadio config: %s\n", e.what());
+        printf("LimeSDR_X3 config: %s\n", e.what());
         throw;
     }
     catch (std::runtime_error &e) {
@@ -563,7 +563,7 @@ void LimeSDR_5GRadio::Configure(const SDRConfig cfg, uint8_t socIndex)
     }
 }
 
-const SDRDevice::Descriptor &LimeSDR_5GRadio::GetDescriptor() const
+const SDRDevice::Descriptor &LimeSDR_X3::GetDescriptor() const
 {
     static SDRDevice::Descriptor d;
     d.spiSlaveIds = {
@@ -596,7 +596,7 @@ const SDRDevice::Descriptor &LimeSDR_5GRadio::GetDescriptor() const
     return d;
 }
 
-int LimeSDR_5GRadio::Init()
+int LimeSDR_X3::Init()
 {
     struct regVal
     {
@@ -631,7 +631,7 @@ int LimeSDR_5GRadio::Init()
     return 0;
 }
 /*
-SDRDevice::DeviceInfo LimeSDR_5GRadio::GetDeviceInfo()
+SDRDevice::DeviceInfo LimeSDR_X3::GetDeviceInfo()
 {
     assert(mControlPort);
     SDRDevice::DeviceInfo devInfo;
@@ -693,7 +693,7 @@ SDRDevice::DeviceInfo LimeSDR_5GRadio::GetDeviceInfo()
     return devInfo;
 }*/
 
-void LimeSDR_5GRadio::Reset()
+void LimeSDR_X3::Reset()
 {
     // TODO:
     // for(auto iter : mLMSChips)
@@ -701,7 +701,7 @@ void LimeSDR_5GRadio::Reset()
 }
 
 /*
-int LimeSDR_5GRadio::EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool enabled)
+int LimeSDR_X3::EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool enabled)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
@@ -713,7 +713,7 @@ int LimeSDR_5GRadio::EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool ena
 }
 */
 
-/*double LimeSDR_5GRadio::GetRate(Dir dir, uint8_t channel) const
+/*double LimeSDR_X3::GetRate(Dir dir, uint8_t channel) const
 {
     if(channel >= 2)
         throw std::logic_error("Invalid channel");
@@ -721,7 +721,7 @@ int LimeSDR_5GRadio::EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool ena
     return chip->GetSampleRate(dir, (channel&1) ? LMS7002M::ChB : LMS7002M::ChA);
 }
 
-std::vector<std::string> LimeSDR_5GRadio::GetPathNames(SDRDevice::Dir dir, uint8_t channel) const
+std::vector<std::string> LimeSDR_X3::GetPathNames(SDRDevice::Dir dir, uint8_t channel) const
 {
     if(channel == 0 || channel == 1) // LMS1
     {
@@ -746,7 +746,7 @@ std::vector<std::string> LimeSDR_5GRadio::GetPathNames(SDRDevice::Dir dir, uint8
     return {};
 }
 
-uint8_t LimeSDR_5GRadio::GetPath(SDRDevice::Dir dir, uint8_t channel) const
+uint8_t LimeSDR_X3::GetPath(SDRDevice::Dir dir, uint8_t channel) const
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
@@ -756,21 +756,21 @@ uint8_t LimeSDR_5GRadio::GetPath(SDRDevice::Dir dir, uint8_t channel) const
     return chip->GetPathRFE();
 }*/
 
-double LimeSDR_5GRadio::GetClockFreq(uint8_t clk_id, uint8_t channel)
+double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
     return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel&1);
 }
 
-void LimeSDR_5GRadio::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
+void LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
     chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel&1);
 }
 
-void LimeSDR_5GRadio::Synchronize(bool toChip)
+void LimeSDR_X3::Synchronize(bool toChip)
 {
     for (auto iter : mLMSChips)
     {
@@ -804,7 +804,7 @@ static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSi
     printf("\n");
 }
 
-void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     assert(mControlPort);
     assert(MOSI);
@@ -839,7 +839,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
                     rdPrint = 0;
                     break;
                 default:
-                    throw std::logic_error("LimeSDR_5GRadio SPI invalid SPI chip select");
+                    throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
                 }
                 int payloadOffset = pkt.blockCount * 4;
                 pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 24;
@@ -862,7 +862,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
                     rdPrint = 4;
                     break;
                 default:
-                    throw std::logic_error("LimeSDR_5GRadio SPI invalid SPI chip select");
+                    throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
                 }
                 int payloadOffset = pkt.blockCount * 2;
                 pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 8;
@@ -911,7 +911,7 @@ void LimeSDR_5GRadio::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *M
     }
 }
 
-int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, uint32_t length)
+int LimeSDR_X3::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;
@@ -938,7 +938,7 @@ int LimeSDR_5GRadio::I2CWrite(int address, const uint8_t *data, uint32_t length)
     return 0;
 }
 
-int LimeSDR_5GRadio::I2CRead(int address, uint8_t *data, uint32_t length)
+int LimeSDR_X3::I2CRead(int address, uint8_t *data, uint32_t length)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;
@@ -967,7 +967,7 @@ int LimeSDR_5GRadio::I2CRead(int address, uint8_t *data, uint32_t length)
     return 0;
 }
 
-int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
+int LimeSDR_X3::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
 {
     if (mStreamers.at(moduleIndex))
         return -1; // already running
@@ -1002,21 +1002,21 @@ int LimeSDR_5GRadio::StreamSetup(const StreamConfig &config, uint8_t moduleIndex
         return 0;
     }
     catch (std::logic_error &e) {
-        printf("LimeSDR_5GRadio::StreamSetup logic_error %s\n", e.what());
+        printf("LimeSDR_X3::StreamSetup logic_error %s\n", e.what());
         throw;
     }
     catch (std::runtime_error &e) {
-        printf("LimeSDR_5GRadio::StreamSetup runtime_error %s\n", e.what());
+        printf("LimeSDR_X3::StreamSetup runtime_error %s\n", e.what());
         throw;
     }
 }
 
-void LimeSDR_5GRadio::StreamStart(uint8_t moduleIndex)
+void LimeSDR_X3::StreamStart(uint8_t moduleIndex)
 {
     mStreamers.at(moduleIndex)->Start();
 }
 
-void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
+void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
 {
     LMS7002M_SDRDevice::StreamStop(moduleIndex);
     LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
@@ -1024,14 +1024,14 @@ void LimeSDR_5GRadio::StreamStop(uint8_t moduleIndex)
         trxPort->Close();
 }
 
-void LimeSDR_5GRadio::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
+void LimeSDR_X3::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
 {
     TRXLooper *trx = mStreamers.at(moduleIndex);
     //status.dataRate_Bps = trx->GetDataRate(false);
     //status.txDataRate_Bps = trx->GetDataRate(true);
 }
 
-void LimeSDR_5GRadio::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
+void LimeSDR_X3::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
 {
     assert(mFPGA);
     LMS7002M* mLMSChip = mLMSChips[0];
@@ -1057,7 +1057,7 @@ void LimeSDR_5GRadio::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double t
     mLMSChips[0]->ResetLogicregisters();
 }
 
-void LimeSDR_5GRadio::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
+void LimeSDR_X3::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
     if(txInterpolation/rxDecimation > 4)
         throw std::logic_error(strFormat("TxInterpolation(%i)/RxDecimation(%i) should not be more than 4", txInterpolation, rxDecimation));
@@ -1120,7 +1120,7 @@ enum // TODO: replace
     LMS_PATH_AUTO = 255, ///<Automatically select port (if supported)
 };
 
-void LimeSDR_5GRadio::LMS1_PA_Enable(uint8_t chan, bool enabled)
+void LimeSDR_X3::LMS1_PA_Enable(uint8_t chan, bool enabled)
 {
     uint16_t pa_addr = 0x00D2;
     uint16_t pa_val = mFPGA->ReadRegister(pa_addr);
@@ -1133,7 +1133,7 @@ void LimeSDR_5GRadio::LMS1_PA_Enable(uint8_t chan, bool enabled)
     mFPGA->WriteRegister(pa_addr, pa_val);
 }
 
-void LimeSDR_5GRadio::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
+void LimeSDR_X3::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
 {
     uint16_t sw_addr = 0x00D1;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
@@ -1182,7 +1182,7 @@ void LimeSDR_5GRadio::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
     }
 }
 
-void LimeSDR_5GRadio::LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled)
+void LimeSDR_X3::LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled)
 {
     uint16_t pa_addr = 0x00D2;
     struct RegPA
@@ -1219,7 +1219,7 @@ void LimeSDR_5GRadio::LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAe
     mFPGA->WriteRegister(pa_addr, pa.Value());
 }
 
-void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
+void LimeSDR_X3::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
 {
     uint16_t sw_addr = 0x00D1;
     /*struct RegSW
@@ -1291,7 +1291,7 @@ void LimeSDR_5GRadio::LMS2SetPath(bool tx, uint8_t chan, uint8_t path)
     lms->SetPathRFE(lime::LMS7002M::PathRFE(LMS7002M::PATH_RFE_LNAH)); // LMS2 only uses LNAH
 }
 
-void LimeSDR_5GRadio::LMS3SetPath(bool tx, uint8_t chan, uint8_t path)
+void LimeSDR_X3::LMS3SetPath(bool tx, uint8_t chan, uint8_t path)
 {
     uint16_t sw_addr = 0x00D1;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
@@ -1319,7 +1319,7 @@ void LimeSDR_5GRadio::LMS3SetPath(bool tx, uint8_t chan, uint8_t path)
     }
 }
 
-void LimeSDR_5GRadio::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
+void LimeSDR_X3::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
 {
     assert(cdcm[0]);
     double txClock = f_Hz;
@@ -1342,7 +1342,7 @@ void LimeSDR_5GRadio::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
         throw std::runtime_error("CDCM is not locked");
 }
 
-int LimeSDR_5GRadio::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
+int LimeSDR_X3::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;

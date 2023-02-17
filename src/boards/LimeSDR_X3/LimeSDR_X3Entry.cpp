@@ -3,7 +3,7 @@
 #endif
 
 #include "LitePCIe.h"
-#include "LimeSDR_5GRadio.h"
+#include "LimeSDR_X3.h"
 
 #include <fstream>
 #include <map>
@@ -12,35 +12,35 @@
 
 using namespace lime;
 
-void __loadLimeSDR_5GRadio(void) //TODO fixme replace with LoadLibrary/dlopen
+void __loadLimeSDR_X3(void) //TODO fixme replace with LoadLibrary/dlopen
 {
-    static LimeSDR_5GRadioEntry limesdr_5GRadioSupport; // self register on initialization
+    static LimeSDR_X3Entry limesdr_X3Support; // self register on initialization
 }
 
-LimeSDR_5GRadioEntry::LimeSDR_5GRadioEntry() : DeviceRegistryEntry("LimeSDR_5GRadio")
-{
-}
-
-LimeSDR_5GRadioEntry::~LimeSDR_5GRadioEntry()
+LimeSDR_X3Entry::LimeSDR_X3Entry() : DeviceRegistryEntry("LimeSDR_X3")
 {
 }
 
-std::vector<DeviceHandle> LimeSDR_5GRadioEntry::enumerate(const DeviceHandle &hint)
+LimeSDR_X3Entry::~LimeSDR_X3Entry()
+{
+}
+
+std::vector<DeviceHandle> LimeSDR_X3Entry::enumerate(const DeviceHandle &hint)
 {
     std::vector<DeviceHandle> handles;
     DeviceHandle handle;
-    handle.media = "PCI-E";
+    handle.media = "PCIe";
 
     std::vector<std::string> LimePCIePorts;
     FILE *lsPipe;
-    lsPipe = popen("ls /dev/Lime5GRadio*_control -d -1", "r");
+    lsPipe = popen("ls /dev/LimeX3*_control -d -1", "r");
     char tempBuffer[512];
     while(fscanf(lsPipe, "%s", tempBuffer) == 1)
         LimePCIePorts.push_back(tempBuffer);
     pclose(lsPipe);
 
     std::map<std::string, std::string> port_name_map = {
-        {"Lime5GRadio", "LimeSDR-5GRadio"}
+        {"LimeX3", "LimeSDR-X3"}
     };
 
     for(auto port:LimePCIePorts)
@@ -64,7 +64,7 @@ std::vector<DeviceHandle> LimeSDR_5GRadioEntry::enumerate(const DeviceHandle &hi
     return handles;
 }
 
-SDRDevice* LimeSDR_5GRadioEntry::make(const DeviceHandle &handle)
+SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle &handle)
 {
     LitePCIe* control = new LitePCIe();
     std::vector<LitePCIe*> txStreams(3);
@@ -85,7 +85,7 @@ SDRDevice* LimeSDR_5GRadioEntry::make(const DeviceHandle &handle)
             txStreams[i] = new LitePCIe();
             txStreams[i]->SetPathName(portName);
         }
-        return new LimeSDR_5GRadio(control, std::move(rxStreams), std::move(txStreams));
+        return new LimeSDR_X3(control, std::move(rxStreams), std::move(txStreams));
     }
     catch ( std::runtime_error &e )
     {
