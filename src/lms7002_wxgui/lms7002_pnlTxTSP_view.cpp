@@ -3,7 +3,7 @@
 #include "numericSlider.h"
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include "lms7suiteAppFrame.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;

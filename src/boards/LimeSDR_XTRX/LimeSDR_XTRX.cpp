@@ -1,10 +1,10 @@
 #include "LimeSDR_XTRX.h"
 
 #include <fcntl.h>
+#include "math.h"
 
 #include "Logger.h"
 #include "LitePCIe.h"
-#include "LMS7002M.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
 #include "FPGA_X3.h"
@@ -15,7 +15,7 @@
 #include "mcu_program/common_src/lms7002m_filters.h"
 #include "MCU_BD.h"
 
-#include "math.h"
+#include "limesuite/LMS7002M.h"
 
 namespace lime
 {

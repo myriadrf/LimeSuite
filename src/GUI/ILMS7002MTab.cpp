@@ -2,7 +2,7 @@
 
 #include "lms7002_gui_utilities.h"
 
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 
 using namespace lime;
 

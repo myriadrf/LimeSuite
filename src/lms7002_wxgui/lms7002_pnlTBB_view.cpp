@@ -5,7 +5,7 @@
 #include "lms7suiteEvents.h"
 #include "limesuite/SDRDevice.h"
 #include "lms7suiteAppFrame.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 
 using namespace lime;
 

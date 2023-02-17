@@ -1,6 +1,6 @@
 #include <ciso646>
 #include <stdint.h>
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 static lime::LMS7002M* serPort;
 
 extern float bandwidthRF;

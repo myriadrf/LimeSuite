@@ -1,4 +1,4 @@
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include <assert.h>
 #include "MCU_BD.h"
 #include "mcu_programs.h"

@@ -5,7 +5,7 @@
 #include <LMSBoards.h>
 #include "kissFFT/kiss_fft.h"
 #include "dataTypes.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "windowFunction.h"
 #include <fstream>
 #include "lms7suiteEvents.h"

@@ -5,7 +5,7 @@
 #include "lms7suiteEvents.h"
 #include <wx/busyinfo.h>
 #include "lms7suiteAppFrame.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 using namespace lime;
 
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow *parent, wxWindowID id,

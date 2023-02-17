@@ -27,7 +27,7 @@
 #include "lms7002_pnlR3.h"
 
 #include "limesuite/SDRDevice.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 using namespace std;
 using namespace lime;
 

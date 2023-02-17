@@ -2,7 +2,7 @@
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "limesuite/SDRDevice.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 using namespace lime;
 
 lms7002_pnlBIAS_view::lms7002_pnlBIAS_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,

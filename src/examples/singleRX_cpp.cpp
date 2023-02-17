@@ -5,7 +5,7 @@
  */
 #include "limesuite/SDRDevice.h"
 #include "dataTypes.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "DeviceRegistry.h"
 #include <iostream>
 #include <chrono>

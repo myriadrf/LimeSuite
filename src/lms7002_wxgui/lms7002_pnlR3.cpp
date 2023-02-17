@@ -7,7 +7,7 @@
 #include <chrono>
 #include <thread>
 #include "mcu_programs.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 
 #include <vector>
 using namespace lime;

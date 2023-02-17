@@ -1,7 +1,7 @@
 /**
-@file	LMS7002M.h
+@file   LMS7002M.h
 @author Lime Microsystems (www.limemicro.com)
-@brief	LMS7002M transceiver configuration interface
+@brief  LMS7002M transceiver configuration interface
 */
 
 #ifndef LMS7API_H
@@ -159,8 +159,8 @@ public:
     int SoftReset();
     int ResetLogicregisters();
 
-	int LoadConfig(const char* filename);
-	int SaveConfig(const char* filename);
+    int LoadConfig(const char* filename);
+    int SaveConfig(const char* filename);
     ///@}
 
     ///@name Registers writing and reading
@@ -180,10 +180,10 @@ public:
     ///@}
 
     ///@name Filters tuning
-	int TuneTxFilter(const float_type bandwidth);
-	int TuneRxFilter(const float_type rx_lpf_freq_RF);
-	int TuneTxFilterWithCaching(const float_type bandwidth);
-	int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
+    int TuneTxFilter(const float_type bandwidth);
+    int TuneRxFilter(const float_type rx_lpf_freq_RF);
+    int TuneTxFilterWithCaching(const float_type bandwidth);
+    int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
     ///@}
 
     ///@name Internal calibrations
@@ -298,12 +298,12 @@ public:
     ///@}
 
     ///@name CGEN and PLL
-	int SetReferenceClk_SX(bool tx, float_type freq_Hz);
-	float_type GetReferenceClk_SX(bool tx);
-	float_type GetFrequencyCGEN();
+    int SetReferenceClk_SX(bool tx, float_type freq_Hz);
+    float_type GetReferenceClk_SX(bool tx);
+    float_type GetFrequencyCGEN();
     int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
-	bool GetCGENLocked(void);
-	float_type GetFrequencySX(bool tx);
+    bool GetCGENLocked(void);
+    float_type GetFrequencySX(bool tx);
     int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
     int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
     bool GetSXLocked(bool tx);
@@ -317,14 +317,14 @@ public:
     ///@}
 
     ///@name TSP
-	int LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
-	int SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz);
-	float_type GetNCOFrequency(bool tx, uint8_t index, bool fromChip = true);
+    int LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
+    int SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz);
+    float_type GetNCOFrequency(bool tx, uint8_t index, bool fromChip = true);
     int SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
-	int SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
-	float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
-	int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *coef, uint8_t coefCount);
-	int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount);
+    int SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
+    float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
+    int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *coef, uint8_t coefCount);
+    int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount);
     float_type GetReferenceClk_TSP(bool tx);
 
     int WriteGFIRCoefficients(bool tx, uint8_t gfirIndex, const float_type *coef, uint8_t coefCount);

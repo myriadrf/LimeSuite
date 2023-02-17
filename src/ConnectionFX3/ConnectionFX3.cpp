@@ -8,7 +8,7 @@
 #include <cstring>
 #include "Si5351C.h"
 #include "FPGA_common.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "Logger.h"
 #include <ciso646>
 #include <fstream>

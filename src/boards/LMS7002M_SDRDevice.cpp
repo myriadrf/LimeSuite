@@ -4,7 +4,7 @@
 #include "LMSBoards.h"
 #include "TRXLooper.h"
 #include "FPGA_common.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 
 namespace lime {
 

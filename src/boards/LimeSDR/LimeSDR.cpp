@@ -2,7 +2,7 @@
 
 #include "USBGeneric.h"
 #include "LMSBoards.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "Si5351C.h"
 #include "LMS64CProtocol.h"
 #include "Logger.h"

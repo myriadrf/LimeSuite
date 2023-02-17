@@ -8,7 +8,7 @@
 #include <cmath>
 #include <ciso646>
 
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include <stdio.h>
 #include <set>
 #include "limesuite/IComms.h"

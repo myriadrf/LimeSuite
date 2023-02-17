@@ -6,7 +6,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
 #include "limesuite/SDRDevice.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "FPGA_common.h"
 #include "Logger.h"
 using namespace lime;

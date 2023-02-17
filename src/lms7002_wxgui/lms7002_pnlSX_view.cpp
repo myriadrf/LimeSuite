@@ -11,7 +11,7 @@
 #include "lms7002_dlgVCOfrequencies.h"
 #include <string>
 #include "limesuite/SDRDevice.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "Logger.h"
 using namespace std;
 using namespace lime;

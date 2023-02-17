@@ -15,7 +15,7 @@
 #include <wx/spinctrl.h>
 #include <wx/object.h>
 #include <wx/tooltip.h>
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 
 using namespace lime;
 

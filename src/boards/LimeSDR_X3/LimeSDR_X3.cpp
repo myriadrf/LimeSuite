@@ -4,7 +4,7 @@
 
 #include "Logger.h"
 #include "LitePCIe.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
 #include "FPGA_X3.h"

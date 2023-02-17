@@ -1,6 +1,6 @@
 #include <assert.h>
 #include "FPGA_common.h"
-#include "LMS7002M.h"
+#include "limesuite/LMS7002M.h"
 #include <ciso646>
 #include "Logger.h"
 #include <complex>
