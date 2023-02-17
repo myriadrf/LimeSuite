@@ -1497,10 +1497,8 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
 void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
 {
     lms7002_dlgGFIR_Coefficients *dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR1 Coefficients"));
-    std::vector<double> coefficients;
     const int maxCoefCount = 40;
-    coefficients.resize(maxCoefCount, 0);
-
+    std::vector<double> coefficients(maxCoefCount, 0.0);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     ch = (ch == 2) ? 1 : 0;
@@ -1526,9 +1524,8 @@ void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
 void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
 {
     lms7002_dlgGFIR_Coefficients *dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR2 Coefficients"));
-    std::vector<double> coefficients;
     const int maxCoefCount = 40;
-    coefficients.resize(maxCoefCount, 0);
+    std::vector<double> coefficients(maxCoefCount, 0.0);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     ch = (ch == 2) ? 1 : 0;
@@ -1554,9 +1551,8 @@ void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
 void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
 {
     lms7002_dlgGFIR_Coefficients *dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR3 Coefficients"));
-    std::vector<double> coefficients;
     const int maxCoefCount = 120;
-    coefficients.resize(maxCoefCount, 0);
+    std::vector<double> coefficients(maxCoefCount, 0.0);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     ch = (ch == 2) ? 1 : 0;
