@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <functional>
 #include <string.h>
+#include <string>
 
 #include "limesuite/config.h"
 #include "limesuite/IComms.h"
