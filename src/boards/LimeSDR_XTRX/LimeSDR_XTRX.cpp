@@ -223,7 +223,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig cfg, uint8_t socIndex)
 
             LMS1SetPath(false, i, ch.rxPath);
             LMS1SetPath(true, i, ch.txPath);
-
+            
             // enabled DAC is required for FPGA to work
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rxTestSignal ? 1 : 0);
@@ -781,6 +781,10 @@ enum // TODO: replace
 
 void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
 {
+    // RF switch controls are toggled for both channels, use channel 0 as the deciding source.
+    if(chan != 0)
+        return;
+
     uint16_t sw_addr = 0x000A;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
     lime::LMS7002M* lms = mLMSChips.at(0);
