@@ -291,7 +291,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig cfg, uint8_t socIndex)
                     throw std::runtime_error(strFormat("Tx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
             }
 
-            LMS1(false, i, ch.rxPath);
+            LMS1SetPath(false, i, ch.rxPath);
             LMS1SetPath(true, i, ch.txPath);
         }
         chip->SetActiveChannel(LMS7002M::ChA);
