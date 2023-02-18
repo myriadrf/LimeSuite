@@ -221,9 +221,6 @@ void LimeSDR_XTRX::Configure(const SDRConfig cfg, uint8_t socIndex)
             chip->EnableChannel(Rx, i, ch.rxEnabled);
             chip->EnableChannel(Tx, i, ch.txEnabled);
 
-            LMS1SetPath(false, i, ch.rxPath);
-            LMS1SetPath(true, i, ch.txPath);
-            
             // enabled DAC is required for FPGA to work
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rxTestSignal ? 1 : 0);
@@ -293,6 +290,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig cfg, uint8_t socIndex)
                 if(status != MCU_BD::MCU_NO_ERROR)
                     throw std::runtime_error(strFormat("Tx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
             }
+
+            LMS1(false, i, ch.rxPath);
+            LMS1SetPath(true, i, ch.txPath);
         }
         chip->SetActiveChannel(LMS7002M::ChA);
 
@@ -827,7 +827,6 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             sw_val |= 2 << 2;
         else if(path == LMS_PATH_LNAL)
             sw_val |= 1 << 2;
-
         mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetPathRFE(lime::LMS7002M::PathRFE(path));
     }
