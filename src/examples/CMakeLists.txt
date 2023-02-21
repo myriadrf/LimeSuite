@@ -30,7 +30,7 @@ add_executable(rfTest rfTest.cpp)
 set_target_properties(rfTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(rfTest PUBLIC ${LIME_SUITE_INCLUDES})
 
-target_link_libraries(rfTest ${MAIN_LIBRARY_NAME})
+target_link_libraries(rfTest PUBLIC ${MAIN_LIBRARY_NAME})
 
 # add_executable(dualRXTX dualRXTX.cpp)
 # set_target_properties(dualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

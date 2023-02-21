@@ -13,6 +13,7 @@
 #include "SamplesPacket.h"
 #include "DataPacket.h"
 #include "TRXLooper.h"
+#include "limesuite/complex.h"
 
 namespace lime
 {

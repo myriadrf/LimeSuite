@@ -270,10 +270,10 @@ static int trx_lms7002m_get_sample_rate(TRXState *s1, TRXFraction *psample_rate,
     LimeState *s = static_cast<LimeState*>(s1->opaque);
     // multipliers that can be made using 2^n1*3^n2*5^n3, n1 >= 1
     const uint8_t multipliers[] = {
-        // 2, 4, 6, 8, 10, 12, 16, 18, 20, 24,
-        // 30, 32, 36, 40, 48, 50, 54, 60, 64, 72, 80
-        8, 10, 12, 16, 24,
-        32, 40, 48, 50, 64
+        2, 4, 6, 8, 10, 12, 16, 18, 20, 24,
+        30, 32, 36, 40, 48, 50, 54, 60, 64
+        // 8, 10, 12, 16, 24,
+        // 32, 40, 48, 50, 64
     };
 
     // trx_lms7002m_get_sample_rate seems to be called for each Port, but the API does not provide index.
@@ -554,7 +554,7 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
 
         stream.extraConfig = lime->streamExtras[p] ? lime->streamExtras[p] : nullptr;
 
-        lime->samplesInPacket[p] = (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / std::max(stream.rxCount, stream.txCount);
+        lime->samplesInPacket[p] = 512;
         Log(LogLevel::DEBUG, "Port[%i] Stream samples format: %s , link: %s\n", p, stream.format == SDRDevice::StreamConfig::DataFormat::F32 ? "F32" : "I16", stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? "I12" : "I16");
         if (portDevice->StreamSetup(stream, lime->chipIndex[p]) != 0)
         {

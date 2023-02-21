@@ -88,6 +88,12 @@ struct litepcie_ioctl_mmap_dma_update {
 	bool genIRQ;
 };
 
+struct litepcie_cache_flush {
+	uint16_t bufferIndex;
+	bool isTx;
+	bool toDevice;
+};
+
 #define LITEPCIE_IOCTL 'S'
 
 #define LITEPCIE_IOCTL_REG               _IOWR(LITEPCIE_IOCTL,  0, struct litepcie_ioctl_reg)
@@ -101,5 +107,6 @@ struct litepcie_ioctl_mmap_dma_update {
 #define LITEPCIE_IOCTL_LOCK                      _IOWR(LITEPCIE_IOCTL, 25, struct litepcie_ioctl_lock)
 #define LITEPCIE_IOCTL_MMAP_DMA_WRITER_UPDATE    _IOW(LITEPCIE_IOCTL,  26, struct litepcie_ioctl_mmap_dma_update)
 #define LITEPCIE_IOCTL_MMAP_DMA_READER_UPDATE    _IOW(LITEPCIE_IOCTL,  27, struct litepcie_ioctl_mmap_dma_update)
+#define LITEPCIE_IOCTL_CACHE_FLUSH    _IOW(LITEPCIE_IOCTL,  28, struct litepcie_cache_flush)
 
 #endif /* _LINUX_LITEPCIE_H */

@@ -72,7 +72,7 @@ public:
     inline void SetSize(uint32_t sz) {
         length = sz;
         for(uint8_t i = 0; i<chCount; ++i)
-            tail[i] = channel[i] + sz*frameSize;
+            tail[i] = (uint8_t*)channel[i] + sz*frameSize;
     }
 private:
     void* head[chCount];

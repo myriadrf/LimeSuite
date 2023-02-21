@@ -90,7 +90,6 @@ inline static T clamp(T value, T low, T high)
 TRXLooper_PCIE::TRXLooper_PCIE(LitePCIe *rxPort, LitePCIe *txPort, FPGA *f, LMS7002M *chip, uint8_t moduleIndex)
     : TRXLooper(f, chip, moduleIndex)
 {
-    mMaxBufferSize = 256;
     mRxPacketsToBatch = 1;
     mTxPacketsToBatch = 1;
     mRxArgs.port = rxPort;
@@ -121,7 +120,8 @@ void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig &config)
         mRxPacketsToBatch = 2*config.hintSampleRate/30.72e6;
     else
         mRxPacketsToBatch = 4;
-    mTxPacketsToBatch = 4;
+    mTxPacketsToBatch = 6;
+    mRxPacketsToBatch = 6;
     //printf("Batch size %i\n", batchSize);
 
     fpga->WriteRegister(0xFFFF, 1 << chipId);
@@ -153,8 +153,8 @@ int TRXLooper_PCIE::TxSetup()
     const bool usePoll = mConfig.extraConfig ? mConfig.extraConfig->usePoll : true;
     const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
-    const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
-    const int packetSize = sizeof(TxDataPacket);
+    const int samplesInPkt = 256;//(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
+    const int packetSize = sizeof(TxHeader) + samplesInPkt * sampleSize * chCount;
 
     LitePCIe::DMAInfo dma = mTxArgs.port->GetDMAInfo();
 
@@ -184,10 +184,106 @@ int TRXLooper_PCIE::TxSetup()
 
     char name[64];
     sprintf(name, "Tx%i_memPool", chipId);
-    const int upperAllocationLimit = sizeof(complex32f_t) * mTxPacketsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
+    const int upperAllocationLimit = 65536;//sizeof(complex32f_t) * mTxPacketsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
     return 0;
 }
+
+template<class T>
+class TxBufferManager
+{
+public:
+    TxBufferManager(bool mimo, bool compressed, uint32_t maxSamplesInPkt, uint32_t maxPacketsInBatch) : header(nullptr), mData(nullptr),
+        bytesUsed(0), mCapacity(0), mimo(mimo), compressed(compressed), maxSamplesInPkt(maxSamplesInPkt), payloadSize(0), payloadPtr(nullptr), maxPacketsInBatch(maxPacketsInBatch)
+    {
+        maxPayloadSize = 4096;
+        bytesForFrame = (compressed ? 3 : 4) * (mimo ? 2: 1);
+        conversion.srcFormat = SDRDevice::StreamConfig::DataFormat::F32;
+        conversion.destFormat = compressed ? SDRDevice::StreamConfig::DataFormat::I12 : SDRDevice::StreamConfig::DataFormat::I16;
+        conversion.channelCount = mimo ? 2 : 1;
+    }
+
+    void Reset(uint8_t* memPtr, uint32_t capacity)
+    {
+        packetsCreated = 0;
+        bytesUsed = 0;
+        mData = memPtr;
+        mCapacity = capacity;
+        memset(mData, 0, capacity);
+        payloadSize = 0;
+        header = reinterpret_cast<TxHeader*>(mData);
+        payloadPtr = (uint8_t*)header + sizeof(TxHeader);
+    }
+
+    inline bool hasSpace() const {
+        const bool packetNotFull = payloadSize < maxPayloadSize;
+        const int spaceAvailable = mCapacity-bytesUsed > sizeof(TxHeader);
+        return packetNotFull && spaceAvailable;
+    }
+
+    inline bool consume(T* src)
+    {
+        while(!src->empty())
+        {
+            payloadSize = 0;
+            header->Clear();
+            //header->ignoreTimestamp(false);
+            header->header0 = 0 << 4;
+            header->counter = src->timestamp;
+            const int payloadFreeSpace = std::min(maxPayloadSize, mCapacity - bytesUsed - 16);
+            int transferCount = std::min(payloadFreeSpace/bytesForFrame, src->size());
+
+            transferCount = std::min(transferCount, maxSamplesInPkt);
+
+            ++packetsCreated;
+            payloadSize = Interleave(src, transferCount, conversion, payloadPtr);
+            bytesUsed += sizeof(TxHeader) + payloadSize;
+
+            header->SetPayloadSize(payloadSize);
+            assert(payloadSize > 0);
+            assert(payloadSize <= maxPayloadSize);
+
+            if (packetsCreated >= maxPacketsInBatch)
+                return true;
+
+            if (bytesUsed >= mCapacity - sizeof(TxHeader))
+            {
+                return true; // not enough space for more packets, need to flush
+            }
+            if ((uint64_t)payloadPtr & 0xF)
+            {
+                printf("Misaligned addr %p\n", payloadPtr);
+                return true; // next packets payload memory is not suitably aligned for vectorized filling
+            }
+            else
+            {
+                header = reinterpret_cast<TxHeader*>(mData+bytesUsed);
+                payloadPtr = (uint8_t*)header + sizeof(TxHeader);
+            }
+        }
+        return src->flush;
+    }
+
+    inline int size() const { return bytesUsed; };
+    inline uint8_t* data() const { return mData; };
+    inline int packetCount() const { return packetsCreated; };
+private:
+    DataConversion conversion;
+    TxHeader* header;
+    uint8_t* payloadPtr;
+
+    uint8_t* mData;
+    uint32_t bytesUsed;
+    uint32_t mCapacity;
+    uint16_t packetsCreated;
+    int16_t payloadSize;
+    uint8_t bytesForFrame;
+    uint32_t maxPacketsInBatch;
+    int maxSamplesInPkt;
+    uint32_t maxPayloadSize;
+    bool mimo;
+    bool compressed;
+};
 
 void TRXLooper_PCIE::TransmitPacketsLoop()
 {
@@ -196,7 +292,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
     const int usedBufferSize = mTxArgs.packetsToBatch * mTxArgs.packetSize;
     assert(usedBufferSize <= mTxArgs.bufferSize);
-    const int irqPeriod = 8;
+    const int irqPeriod = 16;
 
     const int32_t samplesInPkt = mTxArgs.samplesInPacket;
     const int32_t bufferCount = mTxArgs.buffers.size();
@@ -226,21 +322,16 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     };
     std::queue<PendingWrite> pendingWrites;
 
-    // std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
-    // for(uint32_t i=0; i<dmaBuffers.size();++i)
-    //     dmaBuffers[i] = dmaMem+dma.bufferSize*i;
-
     uint32_t stagingBufferIndex = 0;
     int underrun = 0;
     float packetsIn = 0;
 
     SamplesPacketType* srcPkt = nullptr;
 
-    TxBufferManager<SamplesPacketType> output(mimo, compressed, mTxArgs.samplesInPacket);
+    TxBufferManager<SamplesPacketType> output(mimo, compressed, mTxArgs.samplesInPacket, mTxArgs.packetsToBatch);
 
-    uint8_t tempBuffer[32768];
-    //output.Reset(dmaBuffers[0], usedBufferSize);
-    output.Reset(tempBuffer, usedBufferSize);
+    mTxArgs.port->CacheFlush(true, false, 0);
+    output.Reset(dmaBuffers[0], mTxArgs.bufferSize);
 
     bool outputReady = false;
 
@@ -292,7 +383,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
 
             const bool doFlush = output.consume(srcPkt);
-            stats.packets += output.packetCount();
+            
             if(srcPkt->empty())
             {
                 mTx.memPool->Free(srcPkt);
@@ -300,6 +391,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
             if(doFlush)
             {
+                stats.packets += output.packetCount();
                 outputReady = true;
                 break;
             }
@@ -325,7 +417,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             state.bufferSize = wrInfo.size;
             state.genIRQ = (wrInfo.id % irqPeriod) == 0;
 
-            TxDataPacket* pkt = reinterpret_cast<TxDataPacket*>(output.data());
+            TxHeader* pkt = reinterpret_cast<TxHeader*>(output.data());
             lastTS = pkt->counter;
             int64_t rxNow = rxLastTimestamp.load(std::memory_order_relaxed);
             const int64_t txAdvance = pkt->counter-rxNow;
@@ -347,15 +439,18 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 // continue;
             }
 
-            // DMA memory is write only, so for now form buffer in local storage and copy to dma
-            // otherwise trying to read from the buffer will trigger Bus errors
-            memcpy(dmaBuffers[stagingBufferIndex % bufferCount], output.data(), output.size());
+            // DMA memory is write only, to read from the buffer will trigger Bus errors
+            mTxArgs.port->CacheFlush(true, true, stagingBufferIndex % bufferCount);
             int ret = mTxArgs.port->SetTxDMAState(state);
             if(ret)
             {
-                //printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
+                if (errno == EINVAL)
+                {
+                    printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
+                    return;
+                }
+                printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
                 ++stats.overrun;
-                continue;
             }
             else
             {
@@ -367,8 +462,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 stagingBufferIndex &= 0xFFFF;
                 packetsSent += output.packetCount();
                 totalPacketSent += output.packetCount();
-                //output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], bufferSize);
-                output.Reset(tempBuffer, usedBufferSize);
+                mTxArgs.port->CacheFlush(true, false, stagingBufferIndex % bufferCount);
+                output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], mTxArgs.bufferSize);
             }
         }
 
@@ -492,7 +587,7 @@ int TRXLooper_PCIE::RxSetup()
         mRxPacketsToBatch = mConfig.extraConfig->rxPacketsInBatch;
     mRxPacketsToBatch = clamp((int)mRxPacketsToBatch, 1, (int)(dma.bufferSize/packetSize));
 
-    int irqPeriod = 8;
+    int irqPeriod = 16;
     float bufferTimeDuration = 0;
     if (mConfig.hintSampleRate > 0)
     {
@@ -500,6 +595,7 @@ int TRXLooper_PCIE::RxSetup()
         irqPeriod = 80e-6 / bufferTimeDuration;
     }
     irqPeriod = clamp(irqPeriod, 1, 16);
+    irqPeriod = 16;
 
     if(mCallback_logMessage)
     {
@@ -527,6 +623,10 @@ int TRXLooper_PCIE::RxSetup()
     sprintf(name, "Rx%i_memPool", chipId);
     const int upperAllocationLimit = sizeof(complex32f_t) * mRxPacketsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mRx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
+
+    const uint16_t overrunLimit = std::max(dma.bufferCount-2*irqPeriod, dma.bufferCount/2);
+    const int32_t readSize = mRxArgs.packetSize * mRxArgs.packetsToBatch;
+    mRxArgs.port->RxDMAEnable(true, readSize, irqPeriod);
     return 0;
 }
 
@@ -599,7 +699,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     // Avoid situations where CPU and device is at the same buffer index
     // CPU reading while device writing creates coherency issues.
     const uint16_t overrunLimit = std::max(bufferCount-2*irqPeriod, bufferCount/2);
-    mRxArgs.port->RxDMAEnable(true, readSize, irqPeriod);
+//    mRxArgs.port->RxDMAEnable(true, readSize, irqPeriod);
     mRxArgs.cnt = 0;
     mRxArgs.sw = 0;
     mRxArgs.hw = 0;
@@ -654,10 +754,13 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         if (!buffersAvailable)
         {
             if(!mConfig.extraConfig || (mConfig.extraConfig && mConfig.extraConfig->usePoll))
+            {
                 mRxArgs.port->WaitRx();
+            }
             continue;
         }
 
+        mRxArgs.port->CacheFlush(false, false, dma.swIndex % bufferCount);
         uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
         const RxDataPacket *pkt = reinterpret_cast<const RxDataPacket*>(buffer);
         if(outputPkt)
@@ -667,6 +770,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         for (int i=0; i<srcPktCount; ++i)
         {
             pkt = reinterpret_cast<const RxDataPacket*>(&buffer[packetSize*i]);
+            //printf("TS: %li, @%i\n", pkt->counter, dma.swIndex % bufferCount);
             if (pkt->counter - expectedTS != 0)
             {
                 //printf("Loss: pkt:%i exp: %li, got: %li, diff: %li\n", stats.packets+i, expectedTS, pkt->counter, pkt->counter-expectedTS);
@@ -694,6 +798,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             if(outputPkt)
                 outputPkt->Reset();
         }
+        mRxArgs.port->CacheFlush(false, true, dma.swIndex % bufferCount);
 
         ++dma.swIndex;
         mRxArgs.port->SetRxDMAState(dma);

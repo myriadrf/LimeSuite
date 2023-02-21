@@ -64,13 +64,15 @@ SET_SOURCE_FILES_PROPERTIES(
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
-    boards
-    protocols
-    lms7002m
-    FPGA_common
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/boards
+    ${CMAKE_CURRENT_SOURCE_DIR}/protocols
+    ${CMAKE_CURRENT_SOURCE_DIR}/lms7002m
+    ${CMAKE_CURRENT_SOURCE_DIR}/FPGA_common
     ${PROJECT_SOURCE_DIR}/external
-    threadHelper
-    memory
+    ${CMAKE_CURRENT_SOURCE_DIR}/threadHelper
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory
+    ${CMAKE_CURRENT_SOURCE_DIR}/vectorization
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
@@ -94,11 +96,13 @@ endif()
 include(FeatureSummary)
 include(CMakeDependentOption)
 
+add_subdirectory(vectorization)
+
 option(ENABLE_LIBRARY "Enable build library" ON)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(${MAIN_LIBRARY_NAME} ${LIME_SUITE_SOURCES})
-    target_link_libraries(${MAIN_LIBRARY_NAME} ${LIME_SUITE_LIBRARIES})
+    target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIME_SUITE_LIBRARIES} samplesConversion)
     set_property(TARGET ${MAIN_LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES VERSION ${LIME_SUITE_LIBVER})

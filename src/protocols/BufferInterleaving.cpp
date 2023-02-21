@@ -1,6 +1,7 @@
 #include "BufferInterleaving.h"
 
 #include "FPGA_common.h"
+#include "samplesConversion.h"
 
 namespace lime 
 {
@@ -59,17 +60,26 @@ int Deinterleave(const DataConversion &fmt, const uint8_t* buffer, uint32_t leng
 {
     const bool mimo = fmt.channelCount > 1;
     const bool compressed = fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    int frameSize;
     int samplesProduced;
     if (fmt.destFormat == SDRDevice::StreamConfig::DataFormat::F32)
     {
-        frameSize = sizeof(complex32f_t);
         complex32f_t** dest = reinterpret_cast<complex32f_t**>(output->back());
-        samplesProduced = FPGA::FPGAPacketPayload2SamplesFloat(buffer, length, mimo, compressed, dest);
+        if(!compressed)
+        {
+            samplesProduced = length/sizeof(complex16_t);
+            if(!mimo)
+                complex16_to_complex32f(dest[0], (const complex16_t*)buffer, length/sizeof(complex16_t));
+            else
+            {
+                complex16_to_complex32f_unzip(dest[0], dest[1], (const complex16_t*)buffer, length/sizeof(complex16_t));
+                samplesProduced /= 2;
+            }
+        }
+        else
+            samplesProduced = FPGA::FPGAPacketPayload2SamplesFloat(buffer, length, mimo, compressed, dest);
     }
     else
     {
-        frameSize = sizeof(complex16_t);
         complex16_t** dest = reinterpret_cast<complex16_t**>(output->back());
         samplesProduced = FPGA::FPGAPacketPayload2Samples(buffer, length, mimo, compressed, dest);
     }
@@ -81,17 +91,26 @@ int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataCo
 {
     const bool mimo = fmt.channelCount > 1;
     const bool compressed = fmt.destFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    int frameSize;
     int bytesProduced;
     if (fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::F32)
     {
-        frameSize = sizeof(complex32f_t);
         const complex32f_t* const * src = reinterpret_cast<const complex32f_t* const *>(input->front());
-        bytesProduced = FPGA::Samples2FPGAPacketPayloadFloat(src, count, mimo, compressed, buffer);
+        if (!compressed)
+        {
+            bytesProduced = count * sizeof(complex16_t);
+            if (!mimo)
+                complex32f_to_complex16((complex16_t*)buffer, src[0], count);
+            else
+            {
+                complex32f_to_complex16_zip((complex16_t*)buffer, src[0], src[1], count/2);
+                bytesProduced *= 2;
+            }
+        }
+        else
+            bytesProduced = FPGA::Samples2FPGAPacketPayloadFloat(src, count, mimo, compressed, buffer);
     }
     else
     {
-        frameSize = sizeof(complex16_t);
         const complex16_t* const * src = reinterpret_cast<const complex16_t* const *>(input->front());
         bytesProduced = FPGA::Samples2FPGAPacketPayload(src, count, mimo, compressed, buffer);
     }

@@ -59,6 +59,7 @@ public:
     bool WaitRx();
     bool WaitTx();
 
+    void CacheFlush(bool isTx, bool toDevice, uint16_t index);
 
 protected:
     std::string mFilePath;

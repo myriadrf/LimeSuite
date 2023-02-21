@@ -153,18 +153,6 @@ struct FPGA_DataPacket
     uint8_t data[4080];
 };
 
-struct complex16_t
-{
-    int16_t i;
-    int16_t q;
-};
-
-struct complex32f_t
-{
-    float i;
-    float q;
-};
-
 }// namespace lime
 
 #endif

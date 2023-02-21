@@ -443,6 +443,21 @@ int LitePCIe::SetTxDMAState(DMAState s)
     return ret;
 }
 
+void LitePCIe::CacheFlush(bool isTx, bool toDevice, uint16_t index)
+{
+    litepcie_cache_flush sub;
+    memset(&sub, 0, sizeof(litepcie_cache_flush));
+    sub.isTx = isTx;
+    sub.toDevice = toDevice;
+    sub.bufferIndex = index;
+    int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_CACHE_FLUSH, &sub);
+    if (ret < 0)
+    {
+        char msg[256];
+        sprintf(msg, "DMA reader failed update");
+    }
+}
+
 /*
 // B.J.
 int LitePCIe::ReadDPDBuffer(char *buffer, unsigned length)

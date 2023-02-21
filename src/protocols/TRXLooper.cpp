@@ -18,7 +18,6 @@ using namespace std::chrono;
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     :
-    mMaxBufferSize(32768),
     mRxPacketsToBatch(4), mTxPacketsToBatch(4),
     mCallback_logMessage(nullptr),
     mStreamEnabled(false)
@@ -653,7 +652,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
     };
 
     const int chCount = std::max(config.txCount, config.rxCount);
-    const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
+    const int samplesInPkt = 256;//(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
     const int packetsToBatch = mTxPacketsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize
         + packetsToBatch * samplesInPkt

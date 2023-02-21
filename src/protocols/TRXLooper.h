@@ -72,7 +72,6 @@ protected:
     typedef DataBlock RawDataBlock;
     typedef DataBlock SamplesBlock;
 
-    int mMaxBufferSize;
     std::atomic<int> mThreadsReady;
     std::chrono::time_point<std::chrono::steady_clock> steamClockStart;
 
