@@ -10,6 +10,7 @@
 #include <fstream>
 #include "lms7suiteEvents.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/complex.h"
 #include "Logger.h"
 
 using namespace std;
