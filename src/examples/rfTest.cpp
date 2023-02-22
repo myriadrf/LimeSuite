@@ -68,10 +68,10 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
     }
 
     SDRDevice::StreamConfig stream;
-    stream.rxCount = channelCount;
+    stream.rxCount = 1;//channelCount;
     stream.rxChannels[0] = 0;
     stream.rxChannels[1] = 1;
-    stream.txCount = channelCount;
+    stream.txCount = 1;//channelCount;
     stream.txChannels[0] = 0;
     stream.txChannels[1] = 1;
     stream.format = SDRDevice::StreamConfig::DataFormat::F32;

@@ -42,8 +42,10 @@ public:
   PacketsFIFO(uint32_t fixedSize) : RingBufferSize(fixedSize + 1)
   {
     m_ringBuffer.resize(RingBufferSize);
+#ifndef NDEBUG
     std::atomic<size_t> test;
     assert(test.is_lock_free());
+#endif
   }
  
   PacketsFIFO(const PacketsFIFO& src) = delete;

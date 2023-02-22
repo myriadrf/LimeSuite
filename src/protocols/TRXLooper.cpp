@@ -16,9 +16,12 @@ namespace lime {
 
 using namespace std::chrono;
 
+static constexpr uint16_t defaultSamplesInPkt = 256;
+
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     :
     mRxPacketsToBatch(4), mTxPacketsToBatch(4),
+    mTxSamplesInPkt(defaultSamplesInPkt), mRxSamplesInPkt(defaultSamplesInPkt),
     mCallback_logMessage(nullptr),
     mStreamEnabled(false)
 {
@@ -526,13 +529,33 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
         rxThread = std::thread(RxLoopFunction);
         SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &rxThread);
         pthread_setname_np(rxThread.native_handle(), "lime:RxLoop");
+
+        // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
+        // only CPU i as set.
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(2, &cpuset);
+        int rc = pthread_setaffinity_np(rxThread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        if (rc != 0) {
+          printf("Error calling pthread_setaffinity_np: %i\n", rc);
+        }
     }
     if (needTx) {
         terminateTx.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::NORMAL, schedulingPolicy, &txThread);
+        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &txThread);
         pthread_setname_np(txThread.native_handle(), "lime:TxLoop");
+
+        // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
+        // only CPU i as set.
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(3, &cpuset);
+        int rc = pthread_setaffinity_np(txThread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        if (rc != 0) {
+          printf("Error calling pthread_setaffinity_np: %i\n", rc);
+        }
     }
 
     // if (cfg.alignPhase)
@@ -651,8 +674,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         useChannelB ? static_cast<const lime::complex32f_t *>(samples[1]) : nullptr
     };
 
-    const int chCount = std::max(config.txCount, config.rxCount);
-    const int samplesInPkt = 256;//(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
+    const int samplesInPkt = mTxSamplesInPkt;
     const int packetsToBatch = mTxPacketsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize
         + packetsToBatch * samplesInPkt

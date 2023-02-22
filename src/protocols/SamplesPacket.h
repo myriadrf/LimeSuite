@@ -10,8 +10,9 @@ class SamplesPacket
 {
 public:
     static constexpr int headerSize = sizeof(SamplesPacket);
-    static SamplesPacket* ConstructSamplesPacket(void* ptr, uint32_t samplesCount, uint8_t frameSize)
+    static SamplesPacket* ConstructSamplesPacket(void* vptr, uint32_t samplesCount, uint8_t frameSize)
     {
+        uint8_t* ptr = reinterpret_cast<uint8_t*>(vptr);
         SamplesPacket* pkt = reinterpret_cast<SamplesPacket*>(ptr);
         pkt->offset = 0;
         pkt->length = 0;
@@ -60,8 +61,8 @@ public:
         timestamp += toPop; // also offset timestamp
         return toPop;
     }
-    inline void* const * front() const { return head; }
-    inline void** back() { return tail; }
+    inline void* const * front() const { return reinterpret_cast<void* const*>(head); }
+    inline void** back() { return reinterpret_cast<void**>(tail); }
     inline void Reset() {
         offset = 0;
         length = 0;
@@ -72,12 +73,12 @@ public:
     inline void SetSize(uint32_t sz) {
         length = sz;
         for(uint8_t i = 0; i<chCount; ++i)
-            tail[i] = (uint8_t*)channel[i] + sz*frameSize;
+            tail[i] = channel[i] + sz*frameSize;
     }
 private:
-    void* head[chCount];
-    void* tail[chCount];
-    void* channel[chCount];
+    uint8_t* head[chCount];
+    uint8_t* tail[chCount];
+    uint8_t* channel[chCount];
 public:
     int64_t timestamp;
     uint16_t offset;

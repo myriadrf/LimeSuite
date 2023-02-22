@@ -554,7 +554,7 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
 
         stream.extraConfig = lime->streamExtras[p] ? lime->streamExtras[p] : nullptr;
 
-        lime->samplesInPacket[p] = 512;
+        lime->samplesInPacket[p] = 256;
         Log(LogLevel::DEBUG, "Port[%i] Stream samples format: %s , link: %s\n", p, stream.format == SDRDevice::StreamConfig::DataFormat::F32 ? "F32" : "I16", stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? "I12" : "I16");
         if (portDevice->StreamSetup(stream, lime->chipIndex[p]) != 0)
         {

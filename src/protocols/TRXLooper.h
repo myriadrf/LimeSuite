@@ -79,6 +79,8 @@ protected:
     // lower count will give better latency, but can cause problems with really high data rates
     uint8_t mRxPacketsToBatch;
     uint8_t mTxPacketsToBatch;
+    uint16_t mTxSamplesInPkt;
+    uint16_t mRxSamplesInPkt;
     SDRDevice::LogCallbackType mCallback_logMessage;
     std::condition_variable streamActive;
     std::mutex streamMutex;

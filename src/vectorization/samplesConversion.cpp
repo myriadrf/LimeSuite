@@ -8,7 +8,6 @@ namespace lime {
 void complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src, uint32_t srcCount)
 {
     assert((srcCount & 0x3) == 0); // count should be multiple of 4
-
     const float scale = 1.0f/32768.0f;
     for(uint32_t i=0; i<(srcCount); i+=4)
     {

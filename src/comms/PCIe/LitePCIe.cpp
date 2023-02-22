@@ -388,7 +388,7 @@ bool LitePCIe::WaitTx()
 
     struct timespec timeout_ts;
     timeout_ts.tv_sec = 0;
-    timeout_ts.tv_nsec = 10e6;
+    timeout_ts.tv_nsec = 1e8;
     sigset_t origmask;
     int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
     if (ret < 0)
@@ -405,8 +405,7 @@ bool LitePCIe::WaitTx()
     }
     else
     {
-        if (desc.revents & POLLOUT)
-            return true;
+        return desc.revents & POLLOUT;
     }
     return ret > 0;
 }
