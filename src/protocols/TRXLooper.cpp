@@ -530,15 +530,13 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
         SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &rxThread);
         pthread_setname_np(rxThread.native_handle(), "lime:RxLoop");
 
-        // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
-        // only CPU i as set.
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(2, &cpuset);
-        int rc = pthread_setaffinity_np(rxThread.native_handle(), sizeof(cpu_set_t), &cpuset);
-        if (rc != 0) {
-          printf("Error calling pthread_setaffinity_np: %i\n", rc);
-        }
+        //int rc = pthread_setaffinity_np(rxThread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        // if (rc != 0) {
+        //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
+        // }
     }
     if (needTx) {
         terminateTx.store(false, std::memory_order_relaxed);
@@ -547,15 +545,13 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
         SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &txThread);
         pthread_setname_np(txThread.native_handle(), "lime:TxLoop");
 
-        // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
-        // only CPU i as set.
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(3, &cpuset);
-        int rc = pthread_setaffinity_np(txThread.native_handle(), sizeof(cpu_set_t), &cpuset);
-        if (rc != 0) {
-          printf("Error calling pthread_setaffinity_np: %i\n", rc);
-        }
+        //int rc = pthread_setaffinity_np(txThread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        // if (rc != 0) {
+        //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
+        // }
     }
 
     // if (cfg.alignPhase)
@@ -666,7 +662,7 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
 
     const bool useTimestamp = meta ? meta->useTimestamp : false;
     const bool flush = meta && meta->flush;
-    int64_t ts = useTimestamp ? meta->timestamp : 0;
+    int64_t ts = meta ? meta->timestamp : 0;
 
     int samplesRemaining = count;
     const lime::complex32f_t* floatSrc[2] = {
@@ -679,6 +675,13 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
     const int32_t outputPktSize = SamplesPacketType::headerSize
         + packetsToBatch * samplesInPkt
         * (mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t));
+
+    if (mTx.stagingPacket && mTx.stagingPacket->timestamp + mTx.stagingPacket->size() != meta->timestamp)
+    {
+        if(!mTx.fifo->push(mTx.stagingPacket))
+            return 0;
+        mTx.stagingPacket = nullptr;
+    }
 
     while (samplesRemaining) {
         if (!mTx.stagingPacket)
