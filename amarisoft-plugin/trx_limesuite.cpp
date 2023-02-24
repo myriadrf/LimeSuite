@@ -344,6 +344,10 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState *s1)
 {
     LimeState *lime = (LimeState*)s1->opaque;
     int txExpectedSamples = lime->samplesInPacket[0];
+    if (lime->streamExtras[0] && lime->streamExtras[0]->txSamplesInPacket > 0)
+    {
+        txExpectedSamples = lime->streamExtras[0]->txSamplesInPacket;
+    }
     Log(LogLevel::DEBUG, "Hardware expected samples count in Tx packet : %i\n", txExpectedSamples);
     return txExpectedSamples;
 }
@@ -946,6 +950,12 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
         if (trx_get_param_double(hostState, &val, varname) == 0)
         {
             extra->txMaxPacketsInBatch = val;
+            s->streamExtras[p] = extra;
+        }
+        sprintf(varname, "port%i_txSamplesInPacket", p);
+        if (trx_get_param_double(hostState, &val, varname) == 0)
+        {
+            extra->txSamplesInPacket = val;
             s->streamExtras[p] = extra;
         }
     }

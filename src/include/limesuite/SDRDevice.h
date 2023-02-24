@@ -102,6 +102,7 @@ class LIME_API SDRDevice : public IComms
             uint16_t rxSamplesInPacket;
             uint32_t rxPacketsInBatch;
             uint32_t txMaxPacketsInBatch;
+            uint16_t txSamplesInPacket;
         };
         typedef bool (*StatusCallbackFunc)(const StreamStats*, void*);
         enum DataFormat

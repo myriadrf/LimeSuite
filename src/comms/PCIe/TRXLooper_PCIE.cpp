@@ -168,8 +168,17 @@ int TRXLooper_PCIE::TxSetup()
     txLastTimestamp.store(0, std::memory_order_relaxed);
     const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
-    const int samplesInPkt = 256;//(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
+
+    int samplesInPkt = 256;//(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
     const int packetSize = sizeof(TxHeader) + samplesInPkt * sampleSize * chCount;
+
+    if(mConfig.extraConfig && mConfig.extraConfig->txSamplesInPacket != 0)
+    {
+        samplesInPkt = mConfig.extraConfig->txSamplesInPacket;
+        printf("Tx samples overide %i\n", samplesInPkt);
+    }
+
+    mTxSamplesInPkt = samplesInPkt;
 
     LitePCIe::DMAInfo dma = mTxArgs.port->GetDMAInfo();
 
