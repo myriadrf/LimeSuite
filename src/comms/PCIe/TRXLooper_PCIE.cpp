@@ -243,8 +243,17 @@ public:
 
     inline bool consume(T* src)
     {
+        bool sendBuffer = false;
         while(!src->empty())
         {
+            if (payloadSize >= maxPayloadSize || payloadSize == maxSamplesInPkt*bytesForFrame)
+            {
+                header = reinterpret_cast<TxHeader*>(mData+bytesUsed);
+                header->Clear();
+                payloadPtr = (uint8_t*)header + sizeof(TxHeader);
+                payloadSize = 0;
+            }
+
             header->ignoreTimestamp(!src->useTimestamp);
             if(payloadSize == 0)
             {
@@ -266,26 +275,37 @@ public:
                 assert(payloadSize <= maxPayloadSize);
             }
             else
-                return true;
+                sendBuffer = true;
 
             if (packetsCreated >= maxPacketsInBatch && !hasSpace())
-                return true;
+                sendBuffer = true;
 
             if (bytesUsed >= mCapacity - sizeof(TxHeader))
-                return true; // not enough space for more packets, need to flush
+                sendBuffer = true; // not enough space for more packets, need to flush
             if ((uint64_t)payloadPtr & 0xF)
-                return true; // next packets payload memory is not suitably aligned for vectorized filling
-            if (payloadSize >= maxPayloadSize || payloadSize == maxSamplesInPkt*bytesForFrame)
+                sendBuffer = true; // next packets payload memory is not suitably aligned for vectorized filling
+
+            if (sendBuffer)
             {
-                header = reinterpret_cast<TxHeader*>(mData+bytesUsed);
-                header->Clear();
-                payloadPtr = (uint8_t*)header + sizeof(TxHeader);
-                payloadSize = 0;
+                const int busWidthBytes = 16;
+                int extraBytes = bytesUsed % busWidthBytes;
+                if (extraBytes != 0)
+                {
+                    //printf("Patch buffer, bytes %i, extra: %i, last payload: %i\n", bytesUsed, extraBytes, payloadSize);
+                    // patch last packet so that whole buffer size would be multiple of bus width
+                    int padding = busWidthBytes-extraBytes;
+                    memset(payloadPtr, 0, padding);
+                    payloadSize += padding;
+                    bytesUsed += padding;
+                    header->SetPayloadSize(payloadSize);
+                    //printf("Patch buffer, bytes %i, last payload: %i\n", bytesUsed, payloadSize);
+                }
+                break;
             }
         }
         if (!hasSpace())
             return true;
-        return src->flush;
+        return src->flush || sendBuffer;
     }
 
     inline int size() const { return bytesUsed; };
