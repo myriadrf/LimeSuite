@@ -271,9 +271,9 @@ static int trx_lms7002m_get_sample_rate(TRXState *s1, TRXFraction *psample_rate,
     // multipliers that can be made using 2^n1*3^n2*5^n3, n1 >= 1
     const uint8_t multipliers[] = {
         2, 4, 6, 8, 10, 12, 16, 18, 20, 24,
-        30, 32, 36, 40, 48, 50, 54, 60, 64
+        //30, 32, 36, 40, 48, 50, 54, 60, 64
         // 8, 10, 12, 16, 24,
-        // 32, 40, 48, 50, 64
+        32, 40, 48, 50, 64
     };
 
     // trx_lms7002m_get_sample_rate seems to be called for each Port, but the API does not provide index.
@@ -288,7 +288,7 @@ static int trx_lms7002m_get_sample_rate(TRXState *s1, TRXFraction *psample_rate,
     //printf ("Required bandwidth:[%u], current sample_rate [%u]\n", bandwidth, s->sample_rate);
     if (rate <= 0) // sample rate not specified, align on 1.92Mhz
     {
-        Log(LogLevel::VERBOSE, "Port[%i] Trying sample rates which are bandwidth(%u) * 1.536\n", p, bandwidth);
+        Log(LogLevel::VERBOSE, "Port[%i] Trying sample rates which are bandwidth(%u) * 1.536 = %f\n", p, bandwidth, desiredSamplingRate);
         for(uint32_t i = 0; i < sizeof(multipliers)/sizeof(uint8_t); ++i)
         {
             int n = multipliers[i];

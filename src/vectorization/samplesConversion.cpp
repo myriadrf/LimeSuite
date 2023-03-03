@@ -4,98 +4,157 @@
 
 namespace lime {
 
-// generated vectorized assembly would be better if loop count would be compile time const.
-void complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src, uint32_t srcCount)
+// templates with fixed iteration count allow to produce more efficient instructions
+
+template<uint32_t srcCount>
+static void fastPath_complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src)
 {
-    assert((srcCount & 0x3) == 0); // count should be multiple of 4
-    const float scale = 1.0f/32768.0f;
-    for(uint32_t i=0; i<(srcCount); i+=4)
+    constexpr float scale = 1.0f/32768.0f;
+    for(uint16_t i=0; i<srcCount; i+=2)
     {
         dest[i].i = src[i].i * scale;
         dest[i].q = src[i].q * scale;
+
         dest[i+1].i = src[i+1].i * scale;
         dest[i+1].q = src[i+1].q * scale;
-        dest[i+2].i = src[i+2].i * scale;
-        dest[i+2].q = src[i+2].q * scale;
-        dest[i+3].i = src[i+3].i * scale;
-        dest[i+3].q = src[i+3].q * scale;
+    }
+}
+
+static void slowPath_complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src, uint32_t srcCount)
+{
+    constexpr float scale = 1.0f/32768.0f;
+    for(uint16_t i=0; i<srcCount; i+=2)
+    {
+        dest[i].i = src[i].i * scale;
+        dest[i].q = src[i].q * scale;
+
+        dest[i+1].i = src[i+1].i * scale;
+        dest[i+1].q = src[i+1].q * scale;
+    }
+}
+
+void complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src, uint32_t srcCount)
+{
+    switch(srcCount)
+    {
+    case 512: fastPath_complex16_to_complex32f<512>(dest, src); break;
+    case 256: fastPath_complex16_to_complex32f<256>(dest, src); break;
+    case 128: fastPath_complex16_to_complex32f<128>(dest, src); break;
+    case  64: fastPath_complex16_to_complex32f<64>(dest, src); break;
+    default: slowPath_complex16_to_complex32f(dest, src, srcCount); break;
+    }
+}
+
+template<uint32_t srcCount>
+static void fastPath_complex16_to_complex32f_unzip(complex32f_t* __restrict__ destA, complex32f_t* __restrict__ destB, const complex16_t* __restrict__ src)
+{
+    constexpr float scale = 1.0f/32768.0f;
+    for(uint32_t i=0; i<srcCount/2; i++)
+    {
+        const uint16_t srcPos = 2*i;
+        destA[i].i = src[srcPos].i * scale;
+        destA[i].q = src[srcPos].q * scale;
+
+        destB[i].i = src[srcPos+1].i * scale;
+        destB[i].q = src[srcPos+1].q * scale;
+    }
+}
+
+static void slowPath_complex16_to_complex32f_unzip(complex32f_t* __restrict__ destA, complex32f_t* __restrict__ destB, const complex16_t* __restrict__ src, uint32_t srcCount)
+{
+    constexpr float scale = 1.0f/32768.0f;
+    for(uint32_t i=0; i<srcCount/2; i++)
+    {
+        const uint16_t srcPos = 2*i;
+        destA[i].i = src[srcPos].i * scale;
+        destA[i].q = src[srcPos].q * scale;
+
+        destB[i].i = src[srcPos+1].i * scale;
+        destB[i].q = src[srcPos+1].q * scale;
     }
 }
 
 void complex16_to_complex32f_unzip(complex32f_t* __restrict__ destA, complex32f_t* __restrict__ destB, const complex16_t* __restrict__ src, uint32_t srcCount)
 {
-    assert(srcCount > 0);
-    assert((srcCount & 0x7) == 0); // count should be multiple of 8
-    // loop increment needs to be 8 for the Arm compiler to auto vectorize to Neon instructions
-    const float scale = 1.0f/32768.0f;
-    for(uint32_t i=0; i<srcCount; i+=8)
+    switch(srcCount)
     {
-        destA->i = src[i].i * scale;
-        destA->q = src[i].q * scale;
-        ++destA;
+    case 512: fastPath_complex16_to_complex32f_unzip<512>(destA, destB, src); break;
+    case 256: fastPath_complex16_to_complex32f_unzip<256>(destA, destB, src); break;
+    case 128: fastPath_complex16_to_complex32f_unzip<128>(destA, destB, src); break;
+    case  64: fastPath_complex16_to_complex32f_unzip<64>(destA, destB, src); break;
+    default:  slowPath_complex16_to_complex32f_unzip(destA, destB, src, srcCount); break;
+    }
+}
 
-        destB->i = src[i+1].i * scale;
-        destB->q = src[i+1].q * scale;
-        ++destB;
+template<uint32_t srcCount>
+static void fastPath_complex32f_to_complex16(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ src)
+{
+    const int16_t scale = 32767;
+    for(uint32_t i=0; i<srcCount; i++)
+    {
+        dest[i].i = src[i].i * scale;
+        dest[i].q = src[i].q * scale;
+    }
+}
 
-        destA->i = src[i+2].i * scale;
-        destA->q = src[i+2].q * scale;
-        ++destA;
-
-        destB->i = src[i+3].i * scale;
-        destB->q = src[i+3].q * scale;
-        ++destB;
-
-        destA->i = src[i+4].i * scale;
-        destA->q = src[i+4].q * scale;
-        ++destA;
-
-        destB->i = src[i+5].i * scale;
-        destB->q = src[i+5].q * scale;
-        ++destB;
-
-        destA->i = src[i+6].i * scale;
-        destA->q = src[i+6].q * scale;
-        ++destA;
-
-        destB->i = src[i+7].i * scale;
-        destB->q = src[i+7].q * scale;
-        ++destB;
+static void slowPath_complex32f_to_complex16(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ src, uint32_t srcCount)
+{
+    const int16_t scale = 32767;
+    for(uint32_t i=0; i<srcCount; i++)
+    {
+        dest[i].i = src[i].i * scale;
+        dest[i].q = src[i].q * scale;
     }
 }
 
 void complex32f_to_complex16(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ src, uint32_t srcCount)
 {
-    assert((srcCount & 0x3) == 0); // count should be multiple of 4
-    const int16_t scale = 32767;
-    for(uint32_t i=0; i<srcCount; i+=4)
+    switch(srcCount)
     {
-        dest[i].i = src[i].i * scale;
-        dest[i].q = src[i].q * scale;
-        dest[i+1].i = src[i+1].i * scale;
-        dest[i+1].q = src[i+1].q * scale;
-        dest[i+2].i = src[i+2].i * scale;
-        dest[i+2].q = src[i+2].q * scale;
-        dest[i+3].i = src[i+3].i * scale;
-        dest[i+3].q = src[i+3].q * scale;
+    case 512: fastPath_complex32f_to_complex16<512>(dest, src); break;
+    case 256: fastPath_complex32f_to_complex16<256>(dest, src); break;
+    case 128: fastPath_complex32f_to_complex16<128>(dest, src); break;
+    case  64: fastPath_complex32f_to_complex16<64>(dest, src); break;
+    default:  slowPath_complex32f_to_complex16(dest, src, srcCount); break;
+    }
+}
+
+template<uint32_t srcCount>
+static void fastPath_complex32f_to_complex16_zip(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ srcA, const complex32f_t* __restrict__ srcB)
+{
+    constexpr int16_t scale = 32767;
+    for(uint32_t i=0; i<srcCount; i++)
+    {
+        const uint32_t destPos = 2*i;
+        dest[destPos].i = srcA[i].i * scale;
+        dest[destPos].q = srcA[i].q * scale;
+        dest[destPos+1].i = srcB[i].i * scale;
+        dest[destPos+1].q = srcB[i].q * scale;
+    }
+}
+
+static void slowPath_complex32f_to_complex16_zip(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ srcA, const complex32f_t* __restrict__ srcB, uint32_t srcCount)
+{
+    constexpr int16_t scale = 32767;
+    for(uint32_t i=0; i<srcCount; i++)
+    {
+        const uint32_t destPos = 2*i;
+        dest[destPos].i = srcA[i].i * scale;
+        dest[destPos].q = srcA[i].q * scale;
+        dest[destPos+1].i = srcB[i].i * scale;
+        dest[destPos+1].q = srcB[i].q * scale;
     }
 }
 
 void complex32f_to_complex16_zip(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ srcA, const complex32f_t* __restrict__ srcB, uint32_t srcCount)
 {
-    assert(srcCount > 0);
-    assert((srcCount & 0x7) == 0); // count should be multiple of 8
-    // loop increment needs to be 8 for the Arm compiler to auto vectorize to Neon instructions
-    srcCount *= 2;
-    const float* A = reinterpret_cast<const float*>(srcA);
-    const float* B = reinterpret_cast<const float*>(srcB);
-    int16_t* d = reinterpret_cast<int16_t*>(dest);
-
-    const int16_t scale = 32767;
-    for(uint32_t i=0; i<(srcCount & (~0x7)); ++i)
+    switch(srcCount)
     {
-        *d++ = A[i] * scale;
-        *d++ = B[i] * scale;
+    case 512: fastPath_complex32f_to_complex16_zip<512>(dest, srcA, srcB); break;
+    case 256: fastPath_complex32f_to_complex16_zip<256>(dest, srcA, srcB); break;
+    case 128: fastPath_complex32f_to_complex16_zip<128>(dest, srcA, srcB); break;
+    case 64:  fastPath_complex32f_to_complex16_zip<64>(dest, srcA, srcB); break;
+    default:  slowPath_complex32f_to_complex16_zip(dest, srcA, srcB, srcCount); break;
     }
 }
 

@@ -102,7 +102,7 @@ int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataCo
                 complex32f_to_complex16((complex16_t*)buffer, src[0], count);
             else
             {
-                complex32f_to_complex16_zip((complex16_t*)buffer, src[0], src[1], count/2);
+                complex32f_to_complex16_zip((complex16_t*)buffer, src[0], src[1], count);
                 bytesProduced *= 2;
             }
         }
