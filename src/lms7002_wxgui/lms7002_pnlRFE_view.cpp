@@ -195,8 +195,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     SizerAddTextAndControl(fgSizer45, wxT("Mixer LO signal"), cmbICT_LODC_RFE);
     
     fgSizer45->Add( 0, 0, 1, wxEXPAND, 5 );
-    wxCheckBox* chkEN_DCOFF_RXFE_RFE = new wxCheckBox( sbSizerDC->GetStaticBox(), ID_EN_DCOFF_RXFE_RFE, wxT("Enable DC offset"), wxDefaultPosition, wxDefaultSize, 0 );
-    chkEN_DCOFF_RXFE_RFE->SetToolTip( wxT("Enables the DCOFFSET block for the RXFE") );
+    wxCheckBox* chkEN_DCOFF_RXFE_RFE = NewCheckBox(sbSizerDC->GetStaticBox(), LMS7param(EN_DCOFF_RXFE_RFE), wxT("Enable DC offset"), wxT("Enables the DCOFFSET block for the RXFE"));
     fgSizer45->Add( chkEN_DCOFF_RXFE_RFE, 0, wxEXPAND|wxLEFT, 5 );
     
     
