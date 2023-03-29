@@ -253,14 +253,14 @@ void lms7002_mainPanel::Initialize(SDRDevice *pControl)
     sdrDevice = pControl;
     if (sdrDevice == nullptr)
     {
-        coarseConfigTab->Initialize(sdrDevice);
+        coarseConfigTab->Setup(nullptr);
         for (auto &tab : mTabs)
             tab.second->Initialize(nullptr);
         return;
     }
     cmbLmsDevice->SetSelection(0);
 
-    coarseConfigTab->Initialize(sdrDevice);
+    coarseConfigTab->Setup(sdrDevice);
     const int socCount = sdrDevice->GetDescriptor().rfSOC.size();
     if (socCount > 1)
     {

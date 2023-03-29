@@ -127,7 +127,8 @@ bool SPI_wxgui::Initialize(SDRDevice *pCtrPort)
     // by default for first SPI section select LMS chip
     if (mSPIselection[0]) {
         bool found = mSPIselection[0]->SetStringSelection(_("LMS7002M"));
-        printf("SPI tab found lms %i\n", found);
+        if (!found)
+            found = mSPIselection[0]->SetStringSelection(_("LMS7002M_1"));
     }
 
     // by default for second SPI section select FPGA
@@ -155,8 +156,11 @@ void SPI_wxgui::onSPIwrite(wxCommandEvent &event)
         strValue.ToLong(&value, 16);
 
         uint32_t devAddr = 0;
+        int listSelection = fields.devSelection->GetSelection();
+        if (listSelection < 0)
+            return;
         const wxString strDevAddr =
-            fields.devSelection->GetString(fields.devSelection->GetSelection());
+            fields.devSelection->GetString(listSelection);
         const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
         auto iter = desc.spiSlaveIds.find(std::string(strDevAddr.mb_str()));
         if (iter == desc.spiSlaveIds.end()) {
@@ -197,9 +201,13 @@ void SPI_wxgui::onSPIread(wxCommandEvent &event)
         long value = 0;
         strValue.ToLong(&value, 16);
 
+
         uint32_t devAddr = 0;
+        int listSelection = fields.devSelection->GetSelection();
+        if (listSelection < 0)
+            return;
         const wxString strDevAddr =
-            fields.devSelection->GetString(fields.devSelection->GetSelection());
+            fields.devSelection->GetString(listSelection);
         const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
         auto iter = desc.spiSlaveIds.find(std::string(strDevAddr.mb_str()));
         if (iter == desc.spiSlaveIds.end()) {

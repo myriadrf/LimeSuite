@@ -6,16 +6,17 @@
 using namespace std;
 using namespace lime;
 
-wxPanel* SDRConfiguration_view::CreateChannelPanel(SDRConfigGUI &config ,wxWindow *parent, wxWindowID id)
-{ 
-    wxPanel *basePanel = new wxPanel(parent, id);
-
-    wxStaticBoxSizer* sbSizer = new wxStaticBoxSizer( new wxStaticBox( basePanel, wxID_ANY, wxT("Channel A") ), wxHORIZONTAL);
-        
+SOCConfig_view::SOCConfig_view(
+    wxWindow* parent, wxWindowID id,
+    const wxPoint& pos, const wxSize& size, long style)
+    : wxPanel(parent, id, pos, size, style)
+    , socIndex(0)
+{
+    gui.titledBox = new wxStaticBox( this, wxID_ANY, wxT("RF SOC") );
+    wxStaticBoxSizer* sbSizer = new wxStaticBoxSizer(gui.titledBox , wxHORIZONTAL);
     wxWindow* base = sbSizer->GetStaticBox();
 
-    //wxSizerFlags columnFlags = wxALIGN_CENTER_VERTICAL;
-    wxSizerFlags titleFlags(0); 
+    wxSizerFlags titleFlags(0);
     titleFlags = titleFlags.Center();
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Center();
@@ -23,37 +24,28 @@ wxPanel* SDRConfiguration_view::CreateChannelPanel(SDRConfigGUI &config ,wxWindo
     wxFlexGridSizer *rxGrid = new wxFlexGridSizer(5, 4, 4);
     {
         const vector<string> titles = {"Enable", "Antenna", "Gain", "LPF (MHz)", "NCO (MHz)"};
-        for (auto name : titles)
+        for (const auto& name : titles)
             rxGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
         for (int i=0; i<2; ++i)
         {
-            wxCheckBox *chkEnable = new wxCheckBox(base, wxNewId(), (i == 0) ? "RxA" : "RxB");
-            config.rx[i].enable = chkEnable;
-            rxGrid->Add(chkEnable, ctrlFlags);
+            ChannelConfigGUI& fields = gui.rx[i];
+            fields.enable = new wxCheckBox(base, wxNewId(), (i == 0) ? "RxA" : "RxB");
+            fields.enable->SetValue(true);
+            rxGrid->Add(fields.enable, ctrlFlags);
 
-            wxArrayString pathNames;
-            pathNames.Add("LNA_L");
-            pathNames.Add("LNA_W");
-            pathNames.Add("LNA_H");
-            wxChoice* cmbRxPath = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, pathNames);
-            config.rx[i].path = cmbRxPath;
-            rxGrid->Add(cmbRxPath, ctrlFlags);
+            fields.path = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            rxGrid->Add(fields.path, ctrlFlags);
 
-            wxArrayString gains;
-            gains.Add("0db");
-            gains.Add("-1db");
-            wxChoice* cmbRxGain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, gains);
-            config.rx[i].gain = cmbRxGain;
-            rxGrid->Add(cmbRxGain, ctrlFlags);
+            fields.gain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            fields.gain->Hide(); // not implemented yet
+            rxGrid->Add(fields.gain, ctrlFlags);
 
-            wxTextCtrl* txtRxLPF = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            config.rx[i].lpf = txtRxLPF;
-            rxGrid->Add(txtRxLPF, ctrlFlags);
+            fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));
+            rxGrid->Add(fields.lpf, ctrlFlags);
 
-            wxTextCtrl* txtRxNCO = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            config.rx[i].nco = txtRxNCO;
-            rxGrid->Add(txtRxNCO, ctrlFlags);
+            fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));;
+            rxGrid->Add(fields.nco, ctrlFlags);
         }
     }
 
@@ -64,37 +56,39 @@ wxPanel* SDRConfiguration_view::CreateChannelPanel(SDRConfigGUI &config ,wxWindo
         LOgrid->Add(new wxStaticText(base, wxID_ANY, ""), titleFlags);
         LOgrid->Add(new wxStaticText(base, wxID_ANY, "TxLO (MHz)"), titleFlags);
 
-        wxTextCtrl* txtRxLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));
-        config.rxLO = txtRxLO;
-        LOgrid->Add(txtRxLO, ctrlFlags);
+        gui.rxLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));;
+        LOgrid->Add(gui.rxLO, ctrlFlags);
 
-        wxCheckBox* chkTDD = new wxCheckBox(base, wxNewId(), wxT("TDD"));
-        config.tdd = chkTDD;
-        LOgrid->Add(chkTDD, ctrlFlags);
+        gui.tdd = new wxCheckBox(base, wxNewId(), wxT("TDD"));
+        LOgrid->Add(gui.tdd, ctrlFlags);
 
-        wxTextCtrl* txtTxLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));
-        config.txLO = txtTxLO;
-        LOgrid->Add(txtTxLO, ctrlFlags);
+        gui.txLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));;
+        LOgrid->Add(gui.txLO, ctrlFlags);
         centerGrid->Add(LOgrid);
 
         wxFlexGridSizer *samplingGrid = new wxFlexGridSizer(2, 0, 0);
 
-        samplingGrid->Add(new wxStaticText(base, wxID_ANY, "Nyquist (MHz):"), titleFlags);
-        wxTextCtrl* txtSampleRate = new wxTextCtrl(base, wxNewId(), wxT("10"));
-        config.nyquist = txtSampleRate;
-        samplingGrid->Add(txtSampleRate, ctrlFlags);
+        samplingGrid->Add(new wxStaticText(base, wxID_ANY, wxT("Nyquist (MHz):")), titleFlags);
+        gui.nyquist = new wxTextCtrl(base, wxNewId(), wxT("10"));
+        samplingGrid->Add(gui.nyquist, ctrlFlags);
+        centerGrid->Add(samplingGrid, wxSizerFlags().Center());
 
-        samplingGrid->Add(new wxStaticText(base, wxID_ANY, "Oversample:"), titleFlags);
+        wxFlexGridSizer *oversamplingGrid = new wxFlexGridSizer(4, 0, 0);
+        oversamplingGrid->Add(new wxStaticText(base, wxID_ANY, "Decimate:"), titleFlags);
         wxArrayString oversampleNames;
         oversampleNames.Add(wxT("max"));
         for(int i=0; i<5; ++i)
             oversampleNames.Add(wxString::Format("%i", 1 << i));
-        wxChoice* cmbOversample = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, oversampleNames);
-        cmbOversample->SetSelection(0);
-        config.oversample = cmbOversample;
-        samplingGrid->Add(cmbOversample, ctrlFlags);
+        gui.decimation = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, oversampleNames);
+        gui.decimation->SetSelection(2);
+        oversamplingGrid->Add(gui.decimation, ctrlFlags);
 
-        centerGrid->Add(samplingGrid, wxSizerFlags().Center());
+        oversamplingGrid->Add(new wxStaticText(base, wxID_ANY, "Interpolate:"), titleFlags);
+        gui.interpolation = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, oversampleNames);
+        gui.interpolation->SetSelection(2);
+        oversamplingGrid->Add(gui.interpolation, ctrlFlags);
+
+        centerGrid->Add(oversamplingGrid, wxSizerFlags().Center());
     }
 
     wxFlexGridSizer *txGrid = new wxFlexGridSizer(5, 4, 4);
@@ -105,33 +99,23 @@ wxPanel* SDRConfiguration_view::CreateChannelPanel(SDRConfigGUI &config ,wxWindo
 
         for (int i=0; i<2; ++i)
         {
-            wxTextCtrl* txtTxNCO = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            config.tx[i].nco = txtTxNCO;
-            txGrid->Add(txtTxNCO, ctrlFlags);
+            ChannelConfigGUI& fields = gui.tx[i];
+            fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));;
+            txGrid->Add(fields.nco, ctrlFlags);
 
-            wxTextCtrl* txtTxLPF = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            config.tx[i].lpf = txtTxLPF;
-            txGrid->Add(txtTxLPF, ctrlFlags);
+            fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));;
+            txGrid->Add(fields.lpf, ctrlFlags);
 
-            wxArrayString gains;
-            gains.Add("0db");
-            gains.Add("-1db");
-            wxChoice* cmbTxGain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, gains);
-            cmbTxGain->SetSelection(0);
-            config.tx[i].gain = cmbTxGain;
-            txGrid->Add(cmbTxGain, ctrlFlags);
+            fields.gain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            txGrid->Add(fields.gain, ctrlFlags);
+            fields.gain->Hide(); // not implemented yet
 
-            wxArrayString pathNames;
-            pathNames.Add("BAND_1");
-            pathNames.Add("BAND_2");
-            wxChoice* cmbTxPath = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, pathNames);
-            cmbTxPath->SetSelection(0);
-            config.tx[i].path = cmbTxPath;
-            txGrid->Add(cmbTxPath, ctrlFlags);
+            fields.path = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            txGrid->Add(fields.path, ctrlFlags);
 
-            wxCheckBox* chkEnable = new wxCheckBox(base, wxNewId(), (i == 0) ? "TxA" : "TxB");
-            config.tx[i].enable = chkEnable;
-            txGrid->Add(chkEnable, ctrlFlags);
+            fields.enable = new wxCheckBox(base, wxNewId(), (i == 0) ? "TxA" : "TxB");
+            fields.enable->SetValue(true);
+            txGrid->Add(fields.enable, ctrlFlags);
         }
     }
 
@@ -139,48 +123,43 @@ wxPanel* SDRConfiguration_view::CreateChannelPanel(SDRConfigGUI &config ,wxWindo
     sbSizer->Add(centerGrid, wxSizerFlags().Border(wxALL, 5));
     sbSizer->Add(txGrid);
     wxButton* btnSubmit = new wxButton(base, id, wxT("Submit"));
-    btnSubmit->Bind(wxEVT_BUTTON, &SDRConfiguration_view::SubmitConfiguration, this);
+    btnSubmit->Bind(wxEVT_BUTTON, &SOCConfig_view::SubmitConfig, this);
     sbSizer->Add(btnSubmit, ctrlFlags);
-    basePanel->SetSizerAndFit(sbSizer);
-    return basePanel;
+    SetSizerAndFit(sbSizer);
 }
 
-SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
-                                     const wxSize &size, long style)
-    : wxPanel(parent, id, pos, size, style), sdrDevice(nullptr)
-{
-    wxFlexGridSizer *mainSizer;
-    mainSizer = new wxFlexGridSizer(3, 1, 0, 0);
-    mainSizer->AddGrowableCol(0);
-    mainSizer->AddGrowableRow(1);
-    mainSizer->SetFlexibleDirection(wxBOTH);
-    mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
-
-
-    const int rowCount = 1;//sdrDevice->GetDescriptor().rfSOC_count;
-    for (int i=0; i<rowCount; ++i)
-    {
-        wxWindowID cfgId = wxNewId();
-        mConfigControls[cfgId] = SDRConfigGUI();
-        wxPanel *cfgRow = CreateChannelPanel(mConfigControls[cfgId], this, cfgId);
-        mainSizer->Add(cfgRow);
-    }
-
-   this->SetSizerAndFit(mainSizer);
-}
-
-void SDRConfiguration_view::Initialize(lime::SDRDevice *device)
+void SOCConfig_view::Setup(SDRDevice *device, int index)
 {
     sdrDevice = device;
+    const SDRDevice::RFSOCDescripion &descriptor = device->GetDescriptor().rfSOC.at(index);
+    socIndex = index;
+    gui.titledBox->SetLabel(descriptor.name.c_str());
+    wxArrayString rxPathNames;
+    for (const auto& name : descriptor.rxPathNames)
+        rxPathNames.Add(name.c_str());
+    wxArrayString txPathNames;
+    for (const auto& name : descriptor.txPathNames)
+        txPathNames.Add(name.c_str());
+    for (int i=0; i<descriptor.channelCount; ++i)
+    {
+        gui.rx[i].path->Set(rxPathNames);
+        gui.rx[i].path->SetSelection(rxPathNames.size() > 0 ? 1 : 0);
+
+        gui.tx[i].path->Set(txPathNames);
+        gui.tx[i].path->SetSelection(txPathNames.size() > 0 ? 1 : 0);
+    }
 }
 
-void SDRConfiguration_view::SubmitConfiguration(wxCommandEvent &event)
+void SOCConfig_view::UpdateGUI(const lime::SDRDevice::SDRConfig &config)
+{
+
+}
+
+void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
 {
     if (!sdrDevice)
         return;
 
-    int id = event.GetId();
-    const SDRConfigGUI &gui = mConfigControls[id];
     SDRDevice::SDRConfig config;
 
     config.referenceClockFreq = 30.72e6;
@@ -197,25 +176,27 @@ void SDRConfiguration_view::SubmitConfiguration(wxCommandEvent &event)
         const double multiplier = 1e6; // convert from GUI MHz to Hz
         SDRDevice::ChannelConfig &ch = config.channel[i];
 
-        ch.rxCenterFrequency = parseGuiValue(gui.rxLO->GetValue())*multiplier;
-        ch.txCenterFrequency = parseGuiValue(gui.txLO->GetValue())*multiplier;
+        ch.rxCenterFrequency = parseGuiValue(gui.rxLO->GetValue()) * multiplier;
+        ch.txCenterFrequency = parseGuiValue(gui.txLO->GetValue()) * multiplier;
 
         if(gui.tdd->IsChecked())
             ch.rxCenterFrequency = ch.txCenterFrequency;
 
-        ch.rxNCOoffset = parseGuiValue(gui.rx[i].nco->GetValue())*multiplier;
-        ch.txNCOoffset = parseGuiValue(gui.tx[i].nco->GetValue())*multiplier;
-        ch.rxSampleRate = parseGuiValue(gui.nyquist->GetValue())*multiplier;
+        ch.rxNCOoffset = parseGuiValue(gui.rx[i].nco->GetValue()) * multiplier;
+        ch.txNCOoffset = parseGuiValue(gui.tx[i].nco->GetValue()) * multiplier;
+        ch.rxSampleRate = parseGuiValue(gui.nyquist->GetValue()) * multiplier;
         ch.txSampleRate = ch.rxSampleRate;
         // ch.rxGain = parseGuiValue(gui.rx[i].gain->GetSelection());
         // ch.txGain = parseGuiValue(gui.tx[i].gain->GetSelection());
         ch.rxPath = gui.rx[i].path->GetSelection();
         ch.txPath = gui.tx[i].path->GetSelection();
-        ch.rxLPF = parseGuiValue(gui.rx[i].lpf->GetValue())*multiplier;
-        ch.txLPF = parseGuiValue(gui.tx[i].lpf->GetValue())*multiplier;
-        const int oversampleIndex = gui.oversample->GetSelection();
+        ch.rxLPF = parseGuiValue(gui.rx[i].lpf->GetValue()) * multiplier;
+        ch.txLPF = parseGuiValue(gui.tx[i].lpf->GetValue()) * multiplier;
+        int oversampleIndex = gui.decimation->GetSelection();
         ch.rxOversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
-        ch.txOversample = ch.rxOversample;
+
+        oversampleIndex = gui.interpolation->GetSelection();
+        ch.txOversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
         ch.rxEnabled = gui.rx[i].enable->IsChecked();
         ch.txEnabled = gui.tx[i].enable->IsChecked();
         // ch.rxCalibrate;
@@ -225,7 +206,8 @@ void SDRConfiguration_view::SubmitConfiguration(wxCommandEvent &event)
     }
 
     try {
-        sdrDevice->Configure(config, 0);
+        sdrDevice->Init();
+        sdrDevice->Configure(config, socIndex);
     }
     catch (std::logic_error &e) // settings problem
     {
@@ -237,4 +219,50 @@ void SDRConfiguration_view::SubmitConfiguration(wxCommandEvent &event)
         wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
         return;
     }
+}
+
+SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
+                                     const wxSize &size, long style)
+    : wxPanel(parent, id, pos, size, style), sdrDevice(nullptr)
+{
+    wxFlexGridSizer *mainSizer;
+    mainSizer = new wxFlexGridSizer(4, 1, 0, 0);
+    mainSizer->AddGrowableCol(0);
+    mainSizer->SetFlexibleDirection(wxBOTH);
+    mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
+
+    wxSizerFlags ctrlFlags(0);
+    ctrlFlags = ctrlFlags.Left().Top();
+
+    const int rowCount = 4;
+    for (int i=0; i<rowCount; ++i)
+    {
+        SOCConfig_view* row = new SOCConfig_view(this, wxNewId());
+        mainSizer->Add(row, ctrlFlags);
+        socGUI.push_back(row);
+        if (i>0)
+            row->Hide();
+    }
+
+   this->SetSizerAndFit(mainSizer);
+}
+
+void SDRConfiguration_view::Setup(lime::SDRDevice *device)
+{
+    sdrDevice = device;
+    if (!sdrDevice)
+        return;
+    const SDRDevice::Descriptor &desc = device->GetDescriptor();
+    for (size_t i=0; i<socGUI.size(); ++i)
+    {
+        if (i < desc.rfSOC.size())
+        {
+            socGUI[i]->Setup(sdrDevice, i);
+            socGUI[i]->Show();
+
+        }
+        else
+            socGUI[i]->Hide();
+    }
+    Fit();
 }

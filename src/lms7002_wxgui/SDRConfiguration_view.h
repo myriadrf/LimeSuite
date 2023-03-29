@@ -12,9 +12,7 @@
 
 #include <map>
 
-namespace lime{
-class SDRDevice;
-}
+#include "limesuite/SDRDevice.h"
 
 struct ChannelConfigGUI
 {
@@ -27,32 +25,40 @@ struct ChannelConfigGUI
 
 struct SDRConfigGUI
 {
+  wxStaticBox* titledBox;
   wxTextCtrl* rxLO;
   wxTextCtrl* txLO;
   wxCheckBox* tdd;
   wxTextCtrl* nyquist;
-  wxChoice* oversample;
+  wxChoice* decimation;
+  wxChoice* interpolation;
   ChannelConfigGUI rx[2];
   ChannelConfigGUI tx[2];
 };
 
+class SOCConfig_view : public wxPanel
+{
+public:
+  SOCConfig_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
+  void Setup(lime::SDRDevice *sdrDevice, int index);
+  void UpdateGUI(const lime::SDRDevice::SDRConfig &config);
+
+  void SubmitConfig(wxCommandEvent &event);
+protected:
+  SDRConfigGUI gui;
+  lime::SDRDevice *sdrDevice;
+  int socIndex;
+};
+
 class SDRConfiguration_view : public wxPanel
 {
-  protected:
-        
   public:
     SDRConfiguration_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
-    void UpdateVisiblePanel();
-    void UpdateGUI();
-    void Initialize(lime::SDRDevice *device);
+    void Setup(lime::SDRDevice *device);
 
   protected:
-    void SubmitConfiguration(wxCommandEvent &event);
-
-    wxPanel* CreateChannelPanel(SDRConfigGUI &config ,wxWindow *parent, wxWindowID id);
+    std::vector<SOCConfig_view*> socGUI;
     lime::SDRDevice *sdrDevice;
-
-    std::map<wxWindowID, SDRConfigGUI> mConfigControls;
 };
 
 #endif // LIME_SDR_CONFIGURATION_VIEW

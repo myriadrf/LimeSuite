@@ -578,17 +578,20 @@ const SDRDevice::Descriptor &LimeSDR_X3::GetDescriptor() const
 
     RFSOCDescripion soc;
     // LMS#1
+    soc.name = "LMS 1";
     soc.channelCount = 2;
     soc.rxPathNames = {"None", "LNAH", "LNAL"};
     soc.txPathNames = {"None", "Band1", "Band2"};
     d.rfSOC.push_back(soc);
 
     // LMS#2
+    soc.name = "LMS 2";
     soc.rxPathNames = {"None", "TDD", "FDD", "Calibration (LMS3)"};
     soc.txPathNames = {"None", "TDD", "FDD"};
     d.rfSOC.push_back(soc);
 
     // LMS#3
+    soc.name = "LMS 3";
     soc.rxPathNames = {"None", "LNAH", "Calibration (LMS2)"};
     soc.txPathNames = {"None", "Band1"};
     d.rfSOC.push_back(soc);

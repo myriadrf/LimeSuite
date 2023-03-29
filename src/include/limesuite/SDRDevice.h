@@ -47,6 +47,7 @@ class LIME_API SDRDevice : public IComms
 
     struct RFSOCDescripion
     {
+        std::string name;
         uint8_t channelCount;
         std::vector<std::string> rxPathNames;
         std::vector<std::string> txPathNames;

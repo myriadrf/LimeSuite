@@ -99,7 +99,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     const int mainCollumns = 1;
     mainSizer = new wxFlexGridSizer(mainCollumns, 0, 0);
     mainSizer->AddGrowableCol(0);
-    mainSizer->AddGrowableRow(0);
+    mainSizer->AddGrowableRow(1);
     mainSizer->SetFlexibleDirection(wxBOTH);
     mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
