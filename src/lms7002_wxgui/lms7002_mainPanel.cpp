@@ -380,9 +380,9 @@ void lms7002_mainPanel::OnChannelOrSOCChange(wxCommandEvent &event)
 
     LMS7002M* chip = GetSelectedChip();
     for (auto iter : mTabs) {
+        iter.second->Initialize(chip);
         if (iter.first == ID_TAB_SXR || iter.first == ID_TAB_SXT)
             continue; // do not change assigned channel for SXR/SXT tabs
-        iter.second->Initialize(chip);
         iter.second->SetChannel(channel);
     }
     UpdateVisiblePanel();
