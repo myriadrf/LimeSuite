@@ -23,7 +23,7 @@ SOCConfig_view::SOCConfig_view(
 
     wxFlexGridSizer *rxGrid = new wxFlexGridSizer(5, 4, 4);
     {
-        const vector<string> titles = {"Enable", "Antenna", "Gain", "LPF (MHz)", "NCO (MHz)"};
+        const vector<string> titles = {"Enable", "RxAntenna", "RxGain", "RxLPF (MHz)", "RxNCO (MHz)"};
         for (const auto& name : titles)
             rxGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
@@ -93,7 +93,7 @@ SOCConfig_view::SOCConfig_view(
 
     wxFlexGridSizer *txGrid = new wxFlexGridSizer(5, 4, 4);
     {
-        const vector<string> titles = {"NCO (MHz)", "LPF (MHz)", "Gain", "Antenna", "Enable"};
+        const vector<string> titles = {"TxNCO (MHz)", "TxLPF (MHz)", "TxGain", "TxAntenna", "Enable"};
         for (auto name : titles)
             txGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
