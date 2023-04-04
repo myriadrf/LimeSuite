@@ -213,7 +213,8 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
-    # boards_wxgui/pnlBoardControls.cpp
+    boards_wxgui/pnlBoardControls.cpp
+    boards_wxgui/pnlX3.cpp
     # boards_wxgui/pnlQSpark.cpp
     # boards_wxgui/pnluLimeSDR.cpp
     # boards_wxgui/pnlUltimateEVB.cpp

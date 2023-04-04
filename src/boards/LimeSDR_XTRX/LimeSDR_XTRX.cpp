@@ -321,7 +321,7 @@ const SDRDevice::Descriptor &LimeSDR_XTRX::GetDescriptor() const
     if (d.rfSOC.size() != 0) // fill only once
         return d;
 
-    RFSOCDescripion soc;
+    RFSOCDescriptor soc;
     // LMS#1
     soc.channelCount = 2;
     soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
@@ -832,7 +832,7 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
     }
 }
 
-int LimeSDR_XTRX::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
+int LimeSDR_XTRX::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;

@@ -22,7 +22,10 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include <wx/dialog.h>
 #include <LMSBoards.h>
+
+#include "IModuleFrame.h"
 
 namespace lime{
 class SDRDevice;
@@ -30,7 +33,7 @@ class SDRDevice;
 
 class wxTextCtrl;
 
-class pnlBoardControls : public wxFrame
+class pnlBoardControls : public IModuleFrame
 {
 	public:
         struct ADC_DAC
@@ -38,7 +41,7 @@ class pnlBoardControls : public wxFrame
             std::string name;
             bool writable;
             double value;
-            uint8_t channel;
+            int32_t channel;
             std::string units;
             int8_t powerOf10;
             int minValue;
@@ -66,12 +69,11 @@ class pnlBoardControls : public wxFrame
             wxSpinCtrl* wValue;
         };
 
-        pnlBoardControls(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
+        pnlBoardControls(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
         ~pnlBoardControls();
 
-        void UpdatePanel();
-        void Initialize(lime::SDRDevice *controlPort);
-        lime::SDRDevice *lmsControl;
+        bool Initialize(lime::SDRDevice *device) override;
+        void Update() override;
 
         void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);

@@ -890,7 +890,7 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
             if (trx_get_param_double(hostState, &dac, varname) == 0)
             {
                 // TODO: this is board specific, need general API
-                uint8_t paramId = 2+ch;
+                int32_t paramId = 2+ch;
                 std::string units = "";
                 s->device[p]->CustomParameterWrite(&paramId, &dac, 1, units);
             }

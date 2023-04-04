@@ -45,12 +45,21 @@ class LIME_API SDRDevice : public IComms
 
     typedef std::unordered_map<std::string, uint32_t> SlaveNameIds_t;
 
-    struct RFSOCDescripion
+    struct RFSOCDescriptor
     {
         std::string name;
         uint8_t channelCount;
         std::vector<std::string> rxPathNames;
         std::vector<std::string> txPathNames;
+    };
+
+    struct CustomParameter
+    {
+        std::string name;
+        int32_t id;
+        int32_t minValue;
+        int32_t maxValue;
+        bool readOnly;
     };
 
     // General information about device internals, static capabilities
@@ -70,7 +79,8 @@ class LIME_API SDRDevice : public IComms
         uint64_t serialNumber; /// A unique board serial number
 
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
-        std::vector<RFSOCDescripion> rfSOC;
+        std::vector<RFSOCDescriptor> rfSOC;
+        std::vector<CustomParameter> customParameters;
     };
 
     struct StreamStats
@@ -266,7 +276,7 @@ public:
     @param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
     @return the operation success state
     */
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) { return -1;};
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) { return -1;};
 
     /** @brief Returns value of custom on board control
     @param ids indexes of controls to read
@@ -275,7 +285,7 @@ public:
     @param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
     @return the operation success state
     */
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) { return -1;};
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) { return -1;};
 
     /// @brief Sets callback function which gets called each time data is sent or received
     virtual void SetDataLogCallback(DataCallbackType callback) {};

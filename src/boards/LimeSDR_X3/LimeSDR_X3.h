@@ -60,7 +60,8 @@ public:
 
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
                                       double rxPhase) override;
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
 protected:
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);

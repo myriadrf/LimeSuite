@@ -30,6 +30,7 @@
 
 #include <map>
 #include "IModuleFrame.h"
+#include "pnlBoardControls.h"
 
 class pnlMiniLog;
 class lms7002_mainPanel;
@@ -119,7 +120,7 @@ class LMS7SuiteAppFrame : public wxFrame
         //       FPGAcontrols_wxgui* fpgaControls;
         //       dlgDeviceInfo* deviceInfo;
         //       SPI_wxgui* spi;
-        //       pnlBoardControls* boardControlsGui;
+        pnlBoardControls* boardControlsGui;
         //       pnlAPI* api;
         // limeRFE_wxgui* limeRFEwin;
 };

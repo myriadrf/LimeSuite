@@ -58,8 +58,8 @@ public:
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
     virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength);
     virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength);
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units);
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units);
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units);
 
     virtual void SetDataLogCallback(DataCallbackType callback) override;
     virtual void SetMessageLogCallback(LogCallbackType callback) override;

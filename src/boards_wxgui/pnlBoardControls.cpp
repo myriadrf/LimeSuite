@@ -8,20 +8,17 @@
 #include <wx/wx.h>
 #endif //WX_PRECOMP
 
-// #include "pnlUltimateEVB.h"
 #include "pnluLimeSDR.h"
-// #include "pnlCoreSDR.h"
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
-// #include "RFSpark_wxgui.h"
-// #include "pnlQSpark.h"
+#include "pnlX3.h"
 
 #include <ADCUnits.h>
 #include <assert.h>
 #include <wx/spinctrl.h>
 #include <vector>
 #include "lms7suiteEvents.h"
-// #include "pnlLimeNetMicro.h"
+#include "limesuite/SDRDevice.h"
 
 using namespace std;
 using namespace lime;
@@ -67,22 +64,44 @@ static wxString power2unitsString(int powerx3)
     }
 }
 
+static int ReadCustomBoardParam(SDRDevice *device, int32_t param_id, float_type *val, std::string& units)
+{
+    if (device == nullptr)
+        return -1;
+    try {
+        int ret=device->CustomParameterRead(&param_id,val,1, &units);
+        return ret;
+    }
+    catch (...) {
+        return -1;
+    }
+}
+
+static int WriteCustomBoardParam(SDRDevice *device, int32_t param_id, float_type val, const std::string& units = std::string())
+{
+    if (device == nullptr)
+        return -1;
+
+    try {
+        return device->CustomParameterWrite(&param_id, &val, 1, units);
+    }
+    catch (...) {
+        return -1;
+    }
+}
+
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::mParameters;
 const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
-                                                LMS_DEV_EVB7,
-                                                LMS_DEV_RFESPARK,
                                                 LMS_DEV_LIMESDR,
                                                 LMS_DEV_LIMESDR_PCIE,
                                                 LMS_DEV_LIMESDR_QPCIE,
                                                 LMS_DEV_LIMESDRMINI,
                                                 LMS_DEV_LIMESDRMINI_V2,
-                                                LMS_DEV_LIMENET_MICRO,
-                                                LMS_DEV_LMS7002M_ULTIMATE_EVB,
-                                                LMS_DEV_LIMESDR_CORE_SDR};
+                                                LMS_DEV_LIMESDR_X3
+                                            };
 
 pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) :
-    wxFrame(parent, id, title, pos, size, style),
-    lmsControl(nullptr),
+    IModuleFrame(parent, id, title, pos, size, style),
     additionalControls(nullptr),
     txtDACTitle(nullptr),
     txtDACValue(nullptr),
@@ -237,8 +256,8 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
     for (size_t i = 0; i < mParameters.size(); ++i)
     {
         float_type value;
-        lms_name_t units;
-        int status = LMS_ReadCustomBoardParam(lmsControl,mParameters[i].channel,&value,units);
+        std::string units;
+        int status = ReadCustomBoardParam(mDevice, mParameters[i].channel, &value, units);
         if (status != 0)
         {
             wxMessageBox(_("Error reading board parameters"), _("Warning"));
@@ -257,12 +276,12 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
     }
     if (txtDACValue)
     {
-        uint16_t val;
-        LMS_VCTCXORead(lmsControl, &val);
-        txtDACValue->SetValue(wxString::Format("%d", val));
+        // uint16_t val;
+        // TODO: LMS_VCTCXORead(mDevice, &val);
+        // txtDACValue->SetValue(wxString::Format("%d", val));
     }
 
-    UpdatePanel();
+    Update();
 }
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
@@ -276,7 +295,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
             continue;
         ids.push_back(mParameters[i].channel);
         values.push_back(mParameters[i].value);
-        int status = LMS_WriteCustomBoardParam(lmsControl,mParameters[i].channel,mParameters[i].value,NULL);
+        int status = WriteCustomBoardParam(mDevice,mParameters[i].channel,mParameters[i].value,NULL);
         if (status != 0)
         {
             wxMessageBox(_("Failed to write values"), _("Warning"));
@@ -293,20 +312,21 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
     }
 }
 
-void pnlBoardControls::Initialize(SDRDevice *controlPort)
+bool pnlBoardControls::Initialize(lime::SDRDevice *device)
 {
-    lmsControl = controlPort;
-    const lms_dev_info_t* info;
-    if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
-    {
-        SetupControls(info->deviceName);
-        wxCommandEvent evt;
-        if (strlen(info->deviceName))
-            OnReadAll(evt);
-    }
+    mDevice = device;
+    if (mDevice == nullptr)
+        return false;
+
+    const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+
+    SetupControls(desc.name);
+    wxCommandEvent evt;
+    OnReadAll(evt);
+    return true;
 }
 
-void pnlBoardControls::UpdatePanel()
+void pnlBoardControls::Update()
 {
     assert(mParameters.size() == mGUI_widgets.size());
     for (size_t i = 0; i < mParameters.size(); ++i)
@@ -331,28 +351,13 @@ void pnlBoardControls::UpdatePanel()
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
-        || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR)
-        || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
-    {
-        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
-         || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR)
-         || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
-        else if (boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 1023 });
-        else
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
-        if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI))
-            paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE), 0, 0, 65535});
+    if (!mDevice)
+        return paramList;
 
-    }
+    const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+
+    for (const auto& param : desc.customParameters)
+        paramList.push_back(ADC_DAC{param.name, !param.readOnly, 0, param.id, adcUnits2string(RAW), 0, param.minValue, param.maxValue});
     return paramList;
 }
 
@@ -360,7 +365,7 @@ void pnlBoardControls::OnDACWrite(wxCommandEvent &event)
 {
     long val;
     txtDACValue->GetValue().ToLong(&val);
-    LMS_VCTCXOWrite(lmsControl, val);
+    // TODO: LMS_VCTCXOWrite(mDevice, val);
     OnReadAll(event);
 }
 
@@ -462,65 +467,29 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
 
     sizerAnalogRd->Layout();
 
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI) || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
+    // if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI) || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
+    // {
+    //     pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
+    //     pnl->Initialize(mDevice);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    // else if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
+    //      || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE))
+    // {
+    //     pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
+    //     pnl->Initialize(mDevice);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    if (boardID == GetDeviceName(LMS_DEV_LIMESDR_X3))
     {
-        pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
-        pnl->Initialize(lmsControl);
+        pnlX3* pnl = new pnlX3(this, wxNewId());
+        pnl->Initialize(mDevice);
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
+
     }
-    else if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
-         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE))
-    {
-        pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    // else if(boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
-    // {
-    //     pnlUltimateEVB* pnl = new pnlUltimateEVB(this, wxNewId());
-    //     pnl->Initialize(lmsControl);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
-    // else if(boardID == GetDeviceName(LMS_DEV_RFSPARK)
-    //      || boardID == GetDeviceName(LMS_DEV_EVB7)
-    //      || boardID == GetDeviceName(LMS_DEV_EVB7V2))
-    // {
-    //     pnlBuffers* pnl = new pnlBuffers(this, wxNewId());
-    //     pnl->Initialize(lmsControl);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
-    // else if (boardID == GetDeviceName(LMS_DEV_RFESPARK))
-    // {
-    //     RFSpark_wxgui* pnl = new RFSpark_wxgui(this, wxNewId());
-    //     pnl->Initialize(lmsControl);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
-    // else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
-    // {
-    //     pnlQSpark* pnl = new pnlQSpark(this, wxNewId());
-    //     pnl->Initialize(lmsControl);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
-    // else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
-    // {
-    //     pnlCoreSDR* pnl = new pnlCoreSDR(this, wxNewId());
-    //     pnl->Initialize(lmsControl);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
-    // else if (boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
-    // {
-    //     pnlLimeNetMicro* pnl = new pnlLimeNetMicro(this, wxNewId());
-    //     pnl->Initialize(lmsControl);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
     Layout();
     Fit();
 }
@@ -540,13 +509,12 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
         {
             mParameters[i].value = mGUI_widgets[i]->wValue->GetValue();
             //write to chip
-            lms_name_t units;
-            strncpy(units,mParameters[i].units.c_str(),sizeof(lms_name_t)-1);
+            std::string units;
 
-            if (lmsControl == nullptr)
+            if (mDevice == nullptr)
                 return;
 
-            int status = LMS_WriteCustomBoardParam(lmsControl,mParameters[i].channel,mParameters[i].value,units);
+            int status = WriteCustomBoardParam(mDevice, mParameters[i].channel, mParameters[i].value, units);
             if (status != 0)
                 wxMessageBox(_("Failed to set value"), _("Warning"));
             return;
@@ -563,31 +531,27 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 {
     uint8_t id = spinCustomChannelRd->GetValue();
     double value = 0;
-    lms_name_t units;
+    std::string units;
 
-    int status = LMS_ReadCustomBoardParam(lmsControl,id,&value,units);
+    int status = ReadCustomBoardParam(mDevice, id, &value, units);
     if (status != 0)
     {
         wxMessageBox(_("Failed to read value"), _("Warning"));
         return;
     }
 
-    txtCustomUnitsRd->SetLabel(units);
+    txtCustomUnitsRd->SetLabel(units.c_str());
     txtCustomValueRd->SetLabel(wxString::Format(_("%1.1f"), value));
-
 }
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 {
     uint8_t id = spinCustomChannelWr->GetValue();
     int powerOf10 = (cmbCustomPowerOf10Wr->GetSelection()-8)*3;
-    lms_name_t units;
-    strncpy(units,adcUnits2string(cmbCustomUnitsWr->GetSelection()),sizeof(units)-1);
 
     double value = spinCustomValueWr->GetValue()*pow(10, powerOf10);
 
-
-    int status = LMS_WriteCustomBoardParam(lmsControl,id,value,units);
+    int status = WriteCustomBoardParam(mDevice, id, value, adcUnits2string(cmbCustomUnitsWr->GetSelection()));
     if (status != 0)
     {
         wxMessageBox(_("Failed to write value"), _("Warning"));

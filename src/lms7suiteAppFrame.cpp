@@ -148,14 +148,13 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
 #endif
 
     fftviewer = new fftviewer_frFFTviewer(this, wxNewId());
-    fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose),
-                       NULL, this);
     AddModule(fftviewer, "fftviewer");
 
     SPI_wxgui *spigui = new SPI_wxgui(this, wxNewId());
-    spigui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose), NULL,
-                    this);
     AddModule(spigui, "SPI");
+
+    boardControlsGui = new pnlBoardControls(this, wxNewId());
+    AddModule(boardControlsGui, "Board controls");
 
     //Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     int x,y1,y2;
@@ -324,6 +323,8 @@ void LMS7SuiteAppFrame::AddModule(IModuleFrame *module, const char *title)
     mnuModules->Append(item);
 
     mModules[moduleId] = module;
+    module->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose),
+                       NULL, this);
     this->Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED,
                   wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
 }

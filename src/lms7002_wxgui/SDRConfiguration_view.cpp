@@ -131,7 +131,7 @@ SOCConfig_view::SOCConfig_view(
 void SOCConfig_view::Setup(SDRDevice *device, int index)
 {
     sdrDevice = device;
-    const SDRDevice::RFSOCDescripion &descriptor = device->GetDescriptor().rfSOC.at(index);
+    const SDRDevice::RFSOCDescriptor &descriptor = device->GetDescriptor().rfSOC.at(index);
     socIndex = index;
     gui.titledBox->SetLabel(descriptor.name.c_str());
     wxArrayString rxPathNames;

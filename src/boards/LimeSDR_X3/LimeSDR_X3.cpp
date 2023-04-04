@@ -10,6 +10,7 @@
 #include "FPGA_X3.h"
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
+#include "protocols/ADCUnits.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -24,6 +25,12 @@ static constexpr uint8_t spi_LMS7002M_1 = 0;
 static constexpr uint8_t spi_LMS7002M_2 = 1;
 static constexpr uint8_t spi_LMS7002M_3 = 2;
 static constexpr uint8_t spi_FPGA = 3;
+
+static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
+static SDRDevice::CustomParameter cp_temperature = {"Board Temperature", 1, 0, 65535, true};
+
+static SDRDevice::CustomParameter cp_lms1_tx1dac = {"LMS1 TX1DAC", 2, 0, 65535, false};
+static SDRDevice::CustomParameter cp_lms1_tx2dac = {"LMS1 TX2DAC", 3, 0, 65535, false};
 
 static inline void ValidateChannel(uint8_t channel)
 {
@@ -566,6 +573,7 @@ void LimeSDR_X3::Configure(const SDRConfig cfg, uint8_t socIndex)
 const SDRDevice::Descriptor &LimeSDR_X3::GetDescriptor() const
 {
     static SDRDevice::Descriptor d;
+    d.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
     d.spiSlaveIds = {
         {"LMS7002M_1", spi_LMS7002M_1},
         {"LMS7002M_2", spi_LMS7002M_2},
@@ -576,7 +584,10 @@ const SDRDevice::Descriptor &LimeSDR_X3::GetDescriptor() const
     if (d.rfSOC.size() != 0) // fill only once
         return d;
 
-    RFSOCDescripion soc;
+    d.customParameters.push_back(cp_vctcxo_dac);
+    d.customParameters.push_back(cp_temperature);
+
+    RFSOCDescriptor soc;
     // LMS#1
     soc.name = "LMS 1";
     soc.channelCount = 2;
@@ -621,9 +632,9 @@ int LimeSDR_X3::Init()
 
     uint8_t paramId = 2;
     double dacVal = 65535;
-    CustomParameterWrite(&paramId,&dacVal,1,"");
+    CustomParameterWrite(&cp_lms1_tx1dac.id, &dacVal, 1, "");
     paramId = 3;
-    CustomParameterWrite(&paramId,&dacVal,1,"");
+    CustomParameterWrite(&cp_lms1_tx2dac.id, &dacVal, 1, "");
 
     // TODO:
     cdcm[0]->Reset(30.72e6, 25e6);
@@ -1029,7 +1040,7 @@ void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
 
 void LimeSDR_X3::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
 {
-    TRXLooper *trx = mStreamers.at(moduleIndex);
+    //TRXLooper *trx = mStreamers.at(moduleIndex);
     //status.dataRate_Bps = trx->GetDataRate(false);
     //status.txDataRate_Bps = trx->GetDataRate(true);
 }
@@ -1345,7 +1356,7 @@ void LimeSDR_X3::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
         throw std::runtime_error("CDCM is not locked");
 }
 
-int LimeSDR_X3::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
+int LimeSDR_X3::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
     assert(mControlPort);
     LMS64CProtocol::LMS64CPacket pkt;
@@ -1375,6 +1386,57 @@ int LimeSDR_X3::CustomParameterWrite(const uint8_t *ids, const double *values, c
     int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
     if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
         throw std::runtime_error("CustomParameterWrite write failed");
+    return 0;
+}
+
+int LimeSDR_X3::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
+{
+    assert(mControlPort);
+    LMS64CProtocol::LMS64CPacket pkt;
+    pkt.cmd = CMD_ANALOG_VAL_RD;
+    pkt.status = STATUS_UNDEFINED;
+    pkt.blockCount = count;
+    pkt.periphID = 0;
+    int byteIndex = 0;
+    std::lock_guard<std::mutex> lock(mCommsMutex);
+    for (size_t i = 0; i < count; ++i)
+        pkt.payload[byteIndex++] = ids[i];
+
+    int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
+    if (sent != sizeof(pkt))
+        throw std::runtime_error("CustomParameterRead write failed");
+    int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
+    if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+        throw std::runtime_error("CustomParameterRead read failed");
+
+    assert(pkt.blockCount == count);
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        int unitsIndex = pkt.payload[i * 4 + 1];
+        if(units)
+        {
+            if (unitsIndex & 0x0F)
+            {
+                const char adc_units_prefix[] = {
+                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
+                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
+                units[i] = adc_units_prefix[unitsIndex&0x0F]+adcUnits2string((unitsIndex & 0xF0)>>4);
+            }
+            else
+                units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
+        }
+        if((unitsIndex & 0xF0)>>4 == RAW)
+        {
+            values[i] = (uint16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+        }
+        else
+        {
+            values[i] = (int16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+            if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
+                values[i] /= 10;
+        }
+    }
     return 0;
 }
 
