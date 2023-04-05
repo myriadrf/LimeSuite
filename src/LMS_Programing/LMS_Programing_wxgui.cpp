@@ -26,10 +26,13 @@ const long LMS_Programing_wxgui::ID_GAUGE1 = wxNewId();
 const long LMS_Programing_wxgui::ID_CHOICE2 = wxNewId();
 const long LMS_Programing_wxgui::ID_CHOICE1 = wxNewId();
 
+using namespace lime;
+
 BEGIN_EVENT_TABLE(LMS_Programing_wxgui, wxFrame)
 END_EVENT_TABLE()
 
 LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
+    : IModuleFrame(parent, id, title, pos, size, styles)
 {
     mProgrammingInProgress.store(false);
     mAbortProgramming.store(false);
@@ -40,7 +43,6 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     wxFlexGridSizer* FlexGridSizer6;
     wxFlexGridSizer* FlexGridSizer1;
 
-    wxFrame::Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, _T("id"));
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 0);
     FlexGridSizer2 = new wxFlexGridSizer(0, 2, 5, 5);
@@ -93,25 +95,47 @@ LMS_Programing_wxgui::~LMS_Programing_wxgui()
     }
 }
 
+bool LMS_Programing_wxgui::Initialize(lime::SDRDevice *device)
+{
+    mDevice = device;
+    if (mDevice)
+    {
+        cmbDevice->Clear();
+        const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+        for(const SDRDevice::DataStorage &mem : desc.memoryDevices)
+            cmbDevice->Append(wxString(mem.name));
+        cmbDevice->SetSelection(0);
+        wxCommandEvent evt;
+        OncmbDeviceSelect(evt);
+        Layout();
+    }
+    return true;
+}
+
+void LMS_Programing_wxgui::Update()
+{
+
+}
+
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
     wxString wildcards;
     wxString deviceSelection = cmbDevice->GetStringSelection();
-    const auto info = lmsControl->GetDescriptor();
-    if (info)
+    if (mDevice)
     {
-        if (strstr(info->name, lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
+        const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+        if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
         {
             if (deviceSelection.find("FPGA") != wxString::npos)
                 wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
             else
                 wildcards = "img(*.img)|*.img|All files(*.*)|*.*";
         }
-        else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)))
+        else if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)))
             wildcards = "bit(*.bit)|*.bit|All files(*.*)|*.*";
-        else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
+        else if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
             wildcards = "rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
-        else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE)))
+        else if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE)))
             wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
     }
     else if (deviceSelection.find("FPGA") != wxString::npos)
@@ -200,26 +224,8 @@ void LMS_Programing_wxgui::OnAbortProgramming(wxCommandEvent& event)
     mAbortProgramming.store(true);
 }
 
-void LMS_Programing_wxgui::SetConnection(lms_device_t* port)
-{
-    lmsControl = port;
-    if (lmsControl)
-    {
-        cmbDevice->Clear();
-        lms_name_t modes[16];
-        int count = LMS_GetProgramModes(lmsControl, modes);
-        for (int i = 0; i < count; i ++)
-            if (strstr(modes[i],"MCU") == nullptr)
-                cmbDevice->Append(wxString(modes[i]));
-        cmbDevice->SetSelection(0);
-        wxCommandEvent evt;
-        OncmbDeviceSelect(evt);
-        Layout();
-    }
-}
-
 LMS_Programing_wxgui* LMS_Programing_wxgui::obj_ptr=nullptr;
-bool LMS_Programing_wxgui::OnProgrammingCallback(int bsent, int btotal, const char* progressMsg)
+bool LMS_Programing_wxgui::OnProgrammingCallback(size_t bsent, size_t btotal, const char* progressMsg)
 {
     wxCommandEvent evt;
     evt.SetEventObject(obj_ptr);
@@ -231,13 +237,25 @@ bool LMS_Programing_wxgui::OnProgrammingCallback(int bsent, int btotal, const ch
     return obj_ptr->mAbortProgramming.load();
 }
 
-
 void LMS_Programing_wxgui::DoProgramming()
 {
+    if (!mDevice)
+        return;
+
     mProgrammingInProgress.store(true);
     obj_ptr = this;
-    wxString device = cmbDevice->GetStringSelection();
-    int status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), device.c_str(), OnProgrammingCallback);
+    int device = cmbDevice->GetSelection();
+
+    const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+    int status;
+    try {
+        status = mDevice->UploadMemory(desc.memoryDevices[device].id, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
+    }
+    catch (...)
+    {
+        status = -1;
+    }
+
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);

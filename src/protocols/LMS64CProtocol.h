@@ -12,189 +12,53 @@
 
 namespace lime{
 
-/*!
- * Implement the LMS64CProtocol.
- * The LMS64CProtocol is an IConnection that implements
- * configuration and spi access over the LMS64C Protocol.
- * Connections using LMS64C may inherit from LMS64C.
- */
-class LIME_API LMS64CProtocol
+struct LMS64CPacket
+{
+    static constexpr int size = 64;
+    static constexpr int payloadSize = 56;
+    static constexpr int headerSize = size - payloadSize;
+    LMS64CPacket();
+    uint8_t cmd;
+    uint8_t status;
+    uint8_t blockCount;
+    uint8_t periphID;
+    uint8_t reserved[4];
+    uint8_t payload[payloadSize];
+};
+
+class ISerialPort
 {
 public:
-    LMS64CProtocol(void);
-
-    ~LMS64CProtocol(void);
-
-    //! DeviceReset implemented by LMS64C
-    int DeviceReset(int ind=0);
-
-    //! TransactSPI implemented by LMS64C
-    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
-
-    //! WriteI2C implemented by LMS64C
-    int WriteI2C(const int addr, const std::string &data);
-
-    //! ReadI2C implemented by LMS64C
-    int ReadI2C(const int addr, const size_t numBytes, std::string &data);
-
-    //! WriteRegisters (BRDSPI) implemented by LMS64C
-    int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
-
-    //! ReadRegisters (BRDSPI) implemented by LMS64C
-    int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
-
-    /// Supported connection types.
-    enum eConnectionType
-    {
-        CONNECTION_UNDEFINED = -1,
-        COM_PORT = 0,
-        USB_PORT = 1,
-        SPI_PORT = 2,
-        PCIE_PORT = 3,
-        //insert new types here
-        CONNECTION_TYPES_COUNT //used only for memory allocation
-    };
-
-    struct GenericPacket
-    {
-        GenericPacket()
-        {
-            cmd = CMD_GET_INFO;
-            status = STATUS_UNDEFINED;
-            periphID = 0;
-        }
-
-        eCMD_LMS cmd;
-        eCMD_STATUS status;
-        unsigned periphID;
-        std::vector<unsigned char> outBuffer;
-        std::vector<unsigned char> inBuffer;
-    };
-
-    struct LMS64CPacket
-    {
-        static const int pktLength = 64;
-        static const int maxDataLength = 56;
-        static const int headerSize = pktLength - maxDataLength;
-        LMS64CPacket()
-        {
-             memset(this, 0, sizeof(LMS64CPacket));
-        };
-        uint8_t cmd;
-        uint8_t status;
-        uint8_t blockCount;
-        uint8_t periphID;
-        uint8_t reserved[4];
-        uint8_t payload[maxDataLength];
-    };
-
-    struct ProtocolLMS64C
-    {
-        static const int pktLength = 64;
-        static const int maxDataLength = 56;
-        ProtocolLMS64C() :cmd(0),status(STATUS_UNDEFINED),blockCount(0)
-        {
-             memset(reserved, 0, 4);
-        };
-        unsigned char cmd;
-        unsigned char status;
-        unsigned char blockCount;
-        unsigned char periphID;
-        unsigned char reserved[4];
-        unsigned char data[maxDataLength];
-    };
-
-    /*!
-     * Transfer a packet over the underlying transport layer.
-     * TransferPacket performs a request/response
-     * using the GenericPacket data structure.
-     * Some implementations will cast to LMS64CProtocol
-     * and directly use the TransferPacket() API call.
-     */
-    virtual int TransferPacket(GenericPacket &pkt);
-
-    struct LMSinfo
-    {
-        LMSinfo()
-        {
-            memset(this, 0, sizeof(LMSinfo));
-        }
-        eLMS_DEV device;
-        eEXP_BOARD expansion;
-        uint8_t firmware;
-        uint8_t hardware;
-        uint8_t protocol;
-        uint64_t boardSerialNumber;
-    };
-
-    LMSinfo GetInfo();
-
-    struct FPGAinfo
-    {
-        FPGAinfo()
-        {
-            memset(this, 0, sizeof(FPGAinfo));
-        }
-        eLMS_DEV boardID;
-        int gatewareVersion;
-        int gatewareRevision;
-        int hwVersion;
-    };
-
-    FPGAinfo GetFPGAInfo();
-    void VersionCheck();
-    //int ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback);
-
-    //! implement in base class
-    virtual eConnectionType GetType(void) = 0;
-
-    //! virtual write function to be implemented by the base class
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) = 0;
-
-    //! virtual read function to be implemented by the base class
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) = 0;
-
-    enum ProgramWriteTarget
-    {
-        HPM,
-        FX3, //
-        FPGA, // prog_modes: 0-bitstream to FPGA, 1-to FLASH, 2-bitstream from FLASH
-
-        PROGRAM_WRITE_TARGET_COUNT
-    };
-
-    //int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr);
-
-    int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
-    int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units);
-
-    int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
-    int GPIORead(uint8_t *buffer, const size_t bufLength);
-    int GPIODirWrite(const uint8_t *buffer, const size_t bufLength);
-    int GPIODirRead(uint8_t *buffer, const size_t bufLength);
-
-    //int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback);
-    int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0);
-    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0);
-protected:
-#ifdef REMOTE_CONTROL
-    void InitRemote();
-    void CloseRemote();
-    void ProcessConnections();
-    bool remoteOpen;
-    int socketFd;
-    std::thread remoteThread;
-#endif
-private:
-    int WriteSi5351I2C(const std::string &data);
-    int ReadSi5351I2C(const size_t numBytes, std::string &data);
-
-    int WriteADF4002SPI(const uint32_t *writeData, const size_t size);
-    int ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
-
-    unsigned char* PreparePacket(const GenericPacket &pkt, int &length);
-    int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length);
-    std::mutex mControlPortLock;
-    double _cachedRefClockRate;
+    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
+    virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
 };
+
+namespace LMS64CProtocol
+{
+
+enum ProgramWriteTarget
+{
+    HPM,
+    FX3, //
+    FPGA, // prog_modes: 0-bitstream to FPGA, 1-to FLASH, 2-bitstream from FLASH
+
+    PROGRAM_WRITE_TARGET_COUNT
+};
+
+int LMS7002M_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count);
+int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count);
+
+int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
+int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
+
+int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *values, const size_t count, const std::string& units);
+int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, const size_t count, std::string* units);
+
+typedef bool(*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
+int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mode, ProgramWriteTarget device, ProgressCallback callback = nullptr);
+
+int DeviceReset(ISerialPort& port, uint32_t socIndex);
+
+}
+
 }

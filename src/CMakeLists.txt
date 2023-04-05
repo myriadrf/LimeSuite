@@ -36,6 +36,7 @@ set(LIME_SUITE_SOURCES
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
+    protocols/LMS64CProtocol.cpp
     protocols/TRXLooper.cpp
     protocols/BufferInterleaving.cpp
     Si5351C/Si5351C.cpp
@@ -194,7 +195,7 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/lms7002_dlgGFIR_Coefficients.cpp
     lms7002_wxgui/lms7002_pnlTxTSP_view.cpp
     lms7002_wxgui/lms7002_pnlR3.cpp
-    # LMS_Programing/LMS_Programing_wxgui.cpp
+    LMS_Programing/LMS_Programing_wxgui.cpp
     # utilities_gui/dlgConnectionSettings.cpp
     utilities_gui/pnlMiniLog.cpp
     # utilities_gui/pnlAPI.cpp

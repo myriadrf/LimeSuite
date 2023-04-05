@@ -17,13 +17,16 @@ class wxChoice;
 #include <atomic>
 #include <vector>
 #include "limesuite/SDRDevice.h"
+#include "IModuleFrame.h"
 
-class LMS_Programing_wxgui : public wxFrame
+class LMS_Programing_wxgui : public IModuleFrame
 {
 public:
-    LMS_Programing_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY,const wxString& title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=0, wxString name = wxEmptyString);
-    virtual void SetConnection(lms_device_t* port);
+    LMS_Programing_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY,const wxString& title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=wxDEFAULT_DIALOG_STYLE, wxString name = wxEmptyString);
     virtual ~LMS_Programing_wxgui();
+
+    virtual bool Initialize(lime::SDRDevice *device) override;
+    virtual void Update() override;
 
 protected:
     wxChoice* cmbDevice;
@@ -38,7 +41,7 @@ protected:
     bool btnOpenEnb;
 
     void DoProgramming();
-    static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
+    static bool OnProgrammingCallback(size_t bsent, size_t btotal, const char* progressMsg);
     static bool test(int bsent, int btotal, const char* progressMsg);
     std::vector<char> mProgramData;
     lime::SDRDevice* lmsControl;

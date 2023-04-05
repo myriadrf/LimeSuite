@@ -10,7 +10,6 @@ using namespace std;
 #include "MCU_File.h"
 #include <sstream>
 #include <fstream>
-#include "LMS64CProtocol.h"
 #include <assert.h>
 #include <thread>
 #include <list>

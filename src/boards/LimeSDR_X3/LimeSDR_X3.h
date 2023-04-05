@@ -5,6 +5,8 @@
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
 
+#include "protocols/LMS64CProtocol.h"
+
 #include <vector>
 #include <array>
 
@@ -62,6 +64,8 @@ public:
                                       double rxPhase) override;
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
+
+    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback);
 protected:
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
@@ -82,6 +86,12 @@ protected:
     };
     enum class ePathLMS2_Tx {
         NONE = 0, TDD = 1, FDD = 2
+    };
+
+    enum class eMemoryDevice {
+        FPGA_RAM = 0,
+        FPGA_FLASH,
+        COUNT
     };
 
 private:

@@ -201,4 +201,9 @@ int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
+bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
+{
+    throw(OperationNotSupported("UploadMemory not implemented"));
+}
+
 } // namespace lime

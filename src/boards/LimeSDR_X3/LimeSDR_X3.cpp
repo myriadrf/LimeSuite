@@ -21,6 +21,22 @@
 namespace lime
 {
 
+class PCIE_CSR_Pipe : public ISerialPort
+{
+public:
+    explicit PCIE_CSR_Pipe(LitePCIe& port) : port(port) {};
+    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
+    {
+        return port.WriteControl(data, length, timeout_ms);
+    }
+    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
+    {
+        return port.ReadControl(data, length, timeout_ms);
+    }
+protected:
+    LitePCIe& port;
+};
+
 static constexpr uint8_t spi_LMS7002M_1 = 0;
 static constexpr uint8_t spi_LMS7002M_2 = 1;
 static constexpr uint8_t spi_LMS7002M_3 = 2;
@@ -581,6 +597,11 @@ const SDRDevice::Descriptor &LimeSDR_X3::GetDescriptor() const
         {"FPGA", spi_FPGA}
     };
 
+    d.memoryDevices = {
+        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
+        {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
+    };
+
     if (d.rfSOC.size() != 0) // fill only once
         return d;
 
@@ -630,10 +651,8 @@ int LimeSDR_X3::Init()
     for (auto i : mFPGAInitVals)
         mFPGA->WriteRegister(i.adr, i.val);
 
-    uint8_t paramId = 2;
     double dacVal = 65535;
     CustomParameterWrite(&cp_lms1_tx1dac.id, &dacVal, 1, "");
-    paramId = 3;
     CustomParameterWrite(&cp_lms1_tx2dac.id, &dacVal, 1, "");
 
     // TODO:
@@ -709,9 +728,10 @@ SDRDevice::DeviceInfo LimeSDR_X3::GetDeviceInfo()
 
 void LimeSDR_X3::Reset()
 {
-    // TODO:
-    // for(auto iter : mLMSChips)
-    //     iter->Reset();
+    PCIE_CSR_Pipe pipe(*mControlPort);
+
+    for(uint32_t i=0; i<mLMSChips.size(); ++i)
+        LMS64CProtocol::DeviceReset(pipe, i);
 }
 
 /*
@@ -798,187 +818,33 @@ void LimeSDR_X3::Synchronize(bool toChip)
     }
 }
 
-static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSize,
-                        const char *prefix)
-{
-    return;
-    printf("%s", prefix);
-    int i = 0;
-    for (; i < 8; ++i)
-        printf("%02X ", ((uint8_t *)&pkt)[i]);
-    for (; i < 8 + pkt.blockCount * blockSize; i += blockSize) {
-        int j = 0;
-        for (; j < blockSize / 2; ++j)
-            printf("%02X", ((uint8_t *)&pkt)[i + j]);
-        printf(" ");
-        for (; j < blockSize; ++j)
-            printf("%02X", ((uint8_t *)&pkt)[i + j]);
-        printf(" ");
-    }
-    printf("\n");
-}
-
 void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
-    assert(mControlPort);
-    assert(MOSI);
-    LMS64CProtocol::LMS64CPacket pkt;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = chipSelect;
-
-    size_t srcIndex = 0;
-    size_t destIndex = 0;
-    const int maxBlocks = 14;
-    int wrPrint = 4;
-    int rdPrint = 4;
-    while (srcIndex < count) {
-        // fill packet with same direction operations
-        const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
-        for (int i = 0; i < maxBlocks && srcIndex < count; ++i) {
-            const bool isWrite = MOSI[srcIndex] & (1 << 31);
-            if (isWrite != willDoWrite)
-                break; // change between write/read, flush packet
-
-            if (isWrite) {
-                switch (chipSelect) {
-                case spi_LMS7002M_1:
-                case spi_LMS7002M_2:
-                case spi_LMS7002M_3:
-                    pkt.cmd = CMD_LMS7002_WR;
-                    rdPrint = 0;
-                    break;
-                case spi_FPGA:
-                    pkt.cmd = CMD_BRDSPI_WR;
-                    rdPrint = 0;
-                    break;
-                default:
-                    throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
-                }
-                int payloadOffset = pkt.blockCount * 4;
-                pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 24;
-                pkt.payload[payloadOffset + 1] = MOSI[srcIndex] >> 16;
-                pkt.payload[payloadOffset + 2] = MOSI[srcIndex] >> 8;
-                pkt.payload[payloadOffset + 3] = MOSI[srcIndex];
-            }
-            else {
-                switch (chipSelect) {
-                case spi_LMS7002M_1:
-                case spi_LMS7002M_2:
-                case spi_LMS7002M_3:
-                    pkt.cmd = CMD_LMS7002_RD;
-                    wrPrint = 2;
-                    rdPrint = 4;
-                    break;
-                case spi_FPGA:
-                    pkt.cmd = CMD_BRDSPI_RD;
-                    wrPrint = 2;
-                    rdPrint = 4;
-                    break;
-                default:
-                    throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
-                }
-                int payloadOffset = pkt.blockCount * 2;
-                pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 8;
-                pkt.payload[payloadOffset + 1] = MOSI[srcIndex];
-            }
-            ++pkt.blockCount;
-            ++srcIndex;
-        }
-
-        // flush packet
-        printPacket(pkt, wrPrint, "Wr:");
-        int sent = 0;
-        int recv = 0;
-        auto t1 = std::chrono::high_resolution_clock::now();
-        {
-        std::lock_guard<std::mutex> lock(mCommsMutex);
-        sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
-        if (mCallback_logData)
-            mCallback_logData(true, (uint8_t*)&pkt, sizeof(pkt));
-        if (sent != sizeof(pkt))
-            throw std::runtime_error("SPI failed");
-        t1 = std::chrono::high_resolution_clock::now();
-        recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 1000);
-        }
-        if (mCallback_logData)
-            mCallback_logData(false, (uint8_t*)&pkt, recv);
-
-        if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == STATUS_COMPLETED_CMD) {
-            for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i) {
-                //MISO[destIndex] = 0;
-                //MISO[destIndex] = pkt.payload[0] << 24;
-                //MISO[destIndex] |= pkt.payload[1] << 16;
-                MISO[destIndex] = (pkt.payload[i * 4 + 2] << 8) | pkt.payload[i * 4 + 3];
-                ++destIndex;
-            }
-        }
-        else
-            throw std::runtime_error("SPI failed");
-        auto t2 = std::chrono::high_resolution_clock::now();
-        int duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        if(duration > 100)
-            printf("=======SPI read blocked for %ims\n", duration);
-        printPacket(pkt, rdPrint, "Rd:");
-        pkt.blockCount = 0;
-        pkt.status = STATUS_UNDEFINED;
+    PCIE_CSR_Pipe pipe(*mControlPort);
+    switch (chipSelect) {
+        case spi_LMS7002M_1:
+        case spi_LMS7002M_2:
+        case spi_LMS7002M_3:
+            LMS64CProtocol::LMS7002M_SPI(pipe, MOSI, MISO, count);
+            return;
+        case spi_FPGA:
+            LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+            return;
+        default:
+            throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
     }
 }
 
 int LimeSDR_X3::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
-    assert(mControlPort);
-    LMS64CProtocol::LMS64CPacket pkt;
-    int remainingBytes = length;
-    const uint8_t* src = data;
-    std::lock_guard<std::mutex> lock(mCommsMutex);
-    while (remainingBytes > 0)
-    {
-        pkt.cmd = CMD_I2C_WR;
-        pkt.status = STATUS_UNDEFINED;
-        pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
-        pkt.periphID = address;
-        memcpy(pkt.payload, src, pkt.blockCount);
-        src += pkt.blockCount;
-        remainingBytes -= pkt.blockCount;
-        int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
-        if (sent != sizeof(pkt))
-            throw std::runtime_error("I2C write failed");
-        int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
-
-        if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-            throw std::runtime_error("I2C write failed");
-    }
-    return 0;
+    PCIE_CSR_Pipe pipe(*mControlPort);
+    return LMS64CProtocol::I2C_Write(pipe, address, data, length);
 }
 
 int LimeSDR_X3::I2CRead(int address, uint8_t *data, uint32_t length)
 {
-    assert(mControlPort);
-    LMS64CProtocol::LMS64CPacket pkt;
-    int remainingBytes = length;
-    uint8_t* dest = data;
-    std::lock_guard<std::mutex> lock(mCommsMutex);
-    while (remainingBytes > 0)
-    {
-        pkt.cmd = CMD_I2C_RD;
-        pkt.status = STATUS_UNDEFINED;
-        pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
-        pkt.periphID = address;
-
-        int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
-        if (sent != sizeof(pkt))
-            throw std::runtime_error("I2C read failed");
-        int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
-
-        memcpy(dest, pkt.payload, pkt.blockCount);
-        dest += pkt.blockCount;
-        remainingBytes -= pkt.blockCount;
-
-        if (recv <= pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-            throw std::runtime_error("I2C read failed");
-    }
-    return 0;
+    PCIE_CSR_Pipe pipe(*mControlPort);
+    return LMS64CProtocol::I2C_Read(pipe, address, data, length);
 }
 
 int LimeSDR_X3::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
@@ -1358,86 +1224,29 @@ void LimeSDR_X3::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
 
 int LimeSDR_X3::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
-    assert(mControlPort);
-    LMS64CProtocol::LMS64CPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_WR;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = count;
-    pkt.periphID = 0;
-    int byteIndex = 0;
-    std::lock_guard<std::mutex> lock(mCommsMutex);
-    for (size_t i = 0; i < count; ++i)
-    {
-        pkt.payload[byteIndex++] = ids[i];
-        int powerOf10 = 0;
-        if(values[i] > 65535.0 && (units != ""))
-            powerOf10 = log10(values[i]/65.536)/3;
-        if (values[i] < 65.536 && (units != ""))
-            powerOf10 = log10(values[i]/65535.0) / 3;
-        int unitsId = 0; // need to convert given units to their enum
-        pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
-        int value = values[i] / pow(10, 3*powerOf10);
-        pkt.payload[byteIndex++] = (value >> 8);
-        pkt.payload[byteIndex++] = (value & 0xFF);
-    }
-    int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
-    if (sent != sizeof(pkt))
-        throw std::runtime_error("CustomParameterWrite write failed");
-    int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
-    if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-        throw std::runtime_error("CustomParameterWrite write failed");
-    return 0;
+    PCIE_CSR_Pipe pipe(*mControlPort);
+    return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
 }
 
 int LimeSDR_X3::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
 {
-    assert(mControlPort);
-    LMS64CProtocol::LMS64CPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_RD;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = count;
-    pkt.periphID = 0;
-    int byteIndex = 0;
-    std::lock_guard<std::mutex> lock(mCommsMutex);
-    for (size_t i = 0; i < count; ++i)
-        pkt.payload[byteIndex++] = ids[i];
+    PCIE_CSR_Pipe pipe(*mControlPort);
+    return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
+}
 
-    int sent = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 100);
-    if (sent != sizeof(pkt))
-        throw std::runtime_error("CustomParameterRead write failed");
-    int recv = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 100);
-    if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-        throw std::runtime_error("CustomParameterRead read failed");
-
-    assert(pkt.blockCount == count);
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        int unitsIndex = pkt.payload[i * 4 + 1];
-        if(units)
-        {
-            if (unitsIndex & 0x0F)
-            {
-                const char adc_units_prefix[] = {
-                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
-                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
-                units[i] = adc_units_prefix[unitsIndex&0x0F]+adcUnits2string((unitsIndex & 0xF0)>>4);
-            }
-            else
-                units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
-        }
-        if((unitsIndex & 0xF0)>>4 == RAW)
-        {
-            values[i] = (uint16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
-        }
-        else
-        {
-            values[i] = (int16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
-            if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
-                values[i] /= 10;
-        }
-    }
-    return 0;
+bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
+{
+    PCIE_CSR_Pipe pipe(*mControlPort);
+    int progMode;
+    LMS64CProtocol::ProgramWriteTarget target;
+    target = LMS64CProtocol::ProgramWriteTarget::FPGA;
+    if (id == (int)eMemoryDevice::FPGA_RAM)
+        progMode = 0;
+    if (id == (int)eMemoryDevice::FPGA_FLASH)
+        progMode = 1;
+    else
+        return false;
+    return LMS64CProtocol::ProgramWrite(pipe, data, length, progMode, target, callback);
 }
 
 } //namespace lime

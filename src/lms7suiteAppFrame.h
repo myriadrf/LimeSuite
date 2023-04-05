@@ -35,6 +35,7 @@
 class pnlMiniLog;
 class lms7002_mainPanel;
 class fftviewer_frFFTviewer;
+class LMS_Programing_wxgui;
 
 class LMS7SuiteAppFrame : public wxFrame
 {
@@ -116,7 +117,7 @@ class LMS7SuiteAppFrame : public wxFrame
 
         //       Si5351C_wxgui* si5351gui;
 
-        //       LMS_Programing_wxgui* programmer;
+        LMS_Programing_wxgui* programmer;
         //       FPGAcontrols_wxgui* fpgaControls;
         //       dlgDeviceInfo* deviceInfo;
         //       SPI_wxgui* spi;

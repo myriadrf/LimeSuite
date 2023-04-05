@@ -17,7 +17,7 @@
 #include "fftviewer_frFFTviewer.h"
 #include "ADF4002/ADF4002_wxgui.h"
 #include "Si5351C/Si5351C_wxgui.h"
-//#include "LMS_Programing_wxgui.h"
+#include "LMS_Programing/LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
 #include "FPGAcontrols_wxgui.h"
 #include "SPI_wxgui.h"
@@ -155,6 +155,9 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
 
     boardControlsGui = new pnlBoardControls(this, wxNewId());
     AddModule(boardControlsGui, "Board controls");
+
+    programmer = new LMS_Programing_wxgui(this, wxNewId());
+    AddModule(programmer, "Programming");
 
     //Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     int x,y1,y2;

@@ -62,6 +62,12 @@ class LIME_API SDRDevice : public IComms
         bool readOnly;
     };
 
+    struct DataStorage
+    {
+        std::string name;
+        uint32_t id;
+    };
+
     // General information about device internals, static capabilities
     struct Descriptor
     {
@@ -81,6 +87,7 @@ class LIME_API SDRDevice : public IComms
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
+        std::vector<DataStorage> memoryDevices;
     };
 
     struct StreamStats
@@ -293,6 +300,9 @@ public:
 
     virtual void *GetInternalChip(uint32_t index) { return nullptr; };
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase) = 0;
+
+    typedef bool(*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
+    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) { return -1; };
 };
 
 }

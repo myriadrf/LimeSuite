@@ -51,6 +51,9 @@ public:
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
                                       double rxPhase) override;
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
+
+    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback);
 protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
@@ -66,6 +69,12 @@ protected:
     };
     enum class ePathLMS2_Tx {
         NONE = 0, TDD = 1, FDD = 2
+    };
+
+    enum class eMemoryDevice {
+        FPGA_RAM = 0,
+        FPGA_FLASH,
+        COUNT
     };
 
 private:

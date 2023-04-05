@@ -14,7 +14,6 @@
 namespace lime{
 
 class IComms;
-class LMS64CProtocol;
 
 class MCU_BD
 {
