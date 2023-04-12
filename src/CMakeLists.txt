@@ -139,10 +139,6 @@ include(comms/PCIe/CMakeLists.txt)
 include(boards/LimeSDR_X3/CMakeLists.txt)
 include(boards/LimeSDR_XTRX/CMakeLists.txt)
 
-## Remote connection is not safe or efficient, it should not be in releases (github #263)
-## it's only for debugging purposes when USB device cannot be used by multiple applications simultaneously.
-#include(ConnectionRemote/CMakeLists.txt)
-
 # configure_file(
 #     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
 #     ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
@@ -196,7 +192,6 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/lms7002_pnlTxTSP_view.cpp
     lms7002_wxgui/lms7002_pnlR3.cpp
     LMS_Programing/LMS_Programing_wxgui.cpp
-    # utilities_gui/dlgConnectionSettings.cpp
     utilities_gui/pnlMiniLog.cpp
     # utilities_gui/pnlAPI.cpp
     utilities_gui/SPI_wxgui.cpp
@@ -235,7 +230,6 @@ add_feature_info(${GUI_EXECUTABLE_NAME} ENABLE_GUI "GUI Application for LimeSuit
 if (ENABLE_GUI)
 
     include_directories(lms7002_wxgui)
-    #include_directories(LMS_Programing)
     include_directories(utilities_gui)
     # include_directories(RFSpark)
     include_directories(FPGAcontrols_wxgui)

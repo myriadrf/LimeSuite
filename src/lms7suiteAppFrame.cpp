@@ -12,7 +12,6 @@
 
 #include "lms7suiteAppFrame.h"
 #include "dlgAbout.h"
-#include "dlgConnectionSettings.h"
 #include "lms7suiteEvents.h"
 #include "fftviewer_frFFTviewer.h"
 #include "ADF4002/ADF4002_wxgui.h"

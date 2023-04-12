@@ -38,6 +38,7 @@ protected:
 
 static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
+static constexpr float xtrxDefaultRefClk = 26e6;
 
 static inline void ValidateChannel(uint8_t channel)
 {
@@ -57,8 +58,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     for ( auto iter : mLMSChips)
     {
         iter->SetConnection(this);
-        iter->SetReferenceClk_SX(false, 26e6);
-        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, 26e6, 0);
+        iter->SetReferenceClk_SX(false, xtrxDefaultRefClk);
+        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, xtrxDefaultRefClk, 0);
     }
 
     const int chipCount = mLMSChips.size();
@@ -376,75 +377,6 @@ int LimeSDR_XTRX::Init()
     InitLMS1(mLMSChips.at(0), skipTune);
     return 0;
 }
-/*
-SDRDevice::DeviceInfo LimeSDR_XTRX::GetDeviceInfo()
-{
-    assert(mControlPort);
-    SDRDevice::DeviceInfo devInfo;
-    try
-    {
-        LMS64CProtocol::LMS64CPacket pkt;
-        pkt.cmd = CMD_GET_INFO;
-        int sentBytes = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (sentBytes != sizeof(pkt))
-            throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
-        int gotBytes = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (gotBytes != sizeof(pkt))
-            throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
-
-        LMS64CProtocol::LMSinfo info;
-        if (pkt.status == STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
-        {
-            info.firmware = pkt.payload[0];
-            info.device = pkt.payload[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.payload[1] : LMS_DEV_UNKNOWN;
-            info.protocol = pkt.payload[2];
-            info.hardware = pkt.payload[3];
-            info.expansion = pkt.payload[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.payload[4] : EXP_BOARD_UNKNOWN;
-            info.boardSerialNumber = 0;
-            for (int i = 10; i < 18; i++)
-            {
-                info.boardSerialNumber <<= 8;
-                info.boardSerialNumber |= pkt.payload[i];
-            }
-        }
-        else
-            return devInfo;
-        devInfo.deviceName = GetDeviceName(info.device);
-        devInfo.expansionName = GetExpansionBoardName(info.expansion);
-        devInfo.firmwareVersion = std::to_string(int(info.firmware));
-        devInfo.hardwareVersion = std::to_string(int(info.hardware));
-        devInfo.protocolVersion = std::to_string(int(info.protocol));
-        devInfo.boardSerialNumber = info.boardSerialNumber;
-
-        LMS64CProtocol::FPGAinfo gatewareInfo;
-        const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
-        uint32_t data[4];
-        SPI(spi_FPGA, addrs, data, 4);
-        gatewareInfo.boardID = (eLMS_DEV)data[0];
-        gatewareInfo.gatewareVersion = data[1];
-        gatewareInfo.gatewareRevision = data[2];
-        gatewareInfo.hwVersion = data[3] & 0x7F;
-
-        devInfo.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gatewareInfo.boardID));
-        devInfo.gatewareVersion = std::to_string(int(gatewareInfo.gatewareVersion));
-        devInfo.gatewareRevision = std::to_string(int(gatewareInfo.gatewareRevision));
-        devInfo.hardwareVersion = std::to_string(int(gatewareInfo.hwVersion));
-        return devInfo;
-    }
-    catch (...)
-    {
-        devInfo.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
-        devInfo.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
-    }
-    return devInfo;
-}
-*/
-void LimeSDR_XTRX::Reset()
-{
-    // TODO:
-    // for(auto iter : mLMSChips)
-    //     iter->Reset();
-}
 
 double LimeSDR_XTRX::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
@@ -458,40 +390,6 @@ void LimeSDR_XTRX::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
     chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel&1);
-}
-
-void LimeSDR_XTRX::Synchronize(bool toChip)
-{
-    for (auto iter : mLMSChips)
-    {
-        if (toChip) {
-            if (iter->UploadAll() == 0)
-                iter->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
-            //ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000); // TODO: implement
-        }
-        else
-            iter->DownloadAll();
-    }
-}
-
-static void printPacket(const LMS64CPacket &pkt, uint8_t blockSize,
-                        const char *prefix)
-{
-    return;
-    printf("%s", prefix);
-    int i = 0;
-    for (; i < 8; ++i)
-        printf("%02X ", ((uint8_t *)&pkt)[i]);
-    for (; i < 8 + pkt.blockCount * blockSize; i += blockSize) {
-        int j = 0;
-        for (; j < blockSize / 2; ++j)
-            printf("%02X", ((uint8_t *)&pkt)[i + j]);
-        printf(" ");
-        for (; j < blockSize; ++j)
-            printf("%02X", ((uint8_t *)&pkt)[i + j]);
-        printf(" ");
-    }
-    printf("\n");
 }
 
 void LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
@@ -563,11 +461,6 @@ int LimeSDR_XTRX::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
         printf("LimeSDR_XTRX::StreamSetup runtime_error %s\n", e.what());
         throw;
     }
-}
-
-void LimeSDR_XTRX::StreamStart(uint8_t moduleIndex)
-{
-    mStreamers.at(moduleIndex)->Start();
 }
 
 void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
