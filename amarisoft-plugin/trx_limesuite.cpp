@@ -131,17 +131,17 @@ struct StreamStatus
 static std::array<StreamStatus, TRX_MAX_RF_PORT> portStreamStates;
 
 static auto lastStreamUpdate = std::chrono::steady_clock::now();
-static bool OnStreamStatusChange(const SDRDevice::StreamStats *s, void* userData)
+static bool OnStreamStatusChange(bool isTx, const SDRDevice::StreamStats *s, void* userData)
 {
     StreamStatus &status = *static_cast<StreamStatus*>(userData);
-    SDRDevice::StreamStats &dest = s->isTx ? status.tx : status.rx;
+    SDRDevice::StreamStats &dest = isTx ? status.tx : status.rx;
 
     dest.FIFO_filled = s->FIFO_filled;
     dest.dataRate_Bps = s->dataRate_Bps;
     dest.overrun = s->overrun;
     dest.underrun = s->underrun;
     dest.loss = s->loss;
-    if(!s->isTx) // Tx dropped packets are reported from Rx received packet flags
+    if(!isTx) // Tx dropped packets are reported from Rx received packet flags
         status.tx.late = s->late;
 
     // reporting every dropped packet can be quite spammy, so print info only periodically
@@ -180,10 +180,11 @@ static void trx_lms7002m_dump_info(TRXState *s, trx_printf_cb cb, void *opaque)
         SDRDevice* dev = lime->device[p];
         StreamStatus &stats = portStreamStates[p];
 
-        SDRDevice::StreamStats data;
-        dev->StreamStatus(lime->chipIndex[p], data);
-        stats.rx.dataRate_Bps = data.dataRate_Bps;
-        stats.tx.dataRate_Bps = data.txDataRate_Bps;
+        SDRDevice::StreamStats rx;
+        SDRDevice::StreamStats tx;
+        dev->StreamStatus(lime->chipIndex[p], &rx, &tx);
+        stats.rx.dataRate_Bps = rx.dataRate_Bps;
+        stats.tx.dataRate_Bps = tx.dataRate_Bps;
 
         ss << "\nPort" << p << " [Rx| Loss: " << stats.rx.loss << " overrun: " << stats.rx.overrun
          << " rate: " << stats.rx.dataRate_Bps/1e6 << " MB/s]"

@@ -37,6 +37,8 @@ public:
       mCallback_logMessage = callback;
     }
 
+    SDRDevice::StreamStats GetStats(bool tx);
+
     typedef SamplesPacket<2> SamplesPacketType;
 protected:
     virtual int RxSetup() { return 0; };
@@ -47,17 +49,7 @@ protected:
     virtual void TransmitPacketsLoop() = 0;
     virtual void TxTeardown() {};
 
-    std::atomic<uint32_t> rxDataRate_Bps;
-    std::atomic<uint32_t> txDataRate_Bps;
-    std::thread rxThread;
-    std::thread txThread;
-    std::atomic<bool> terminateRx;
-    std::atomic<bool> terminateTx;
-
-    std::atomic<uint64_t> rxLastTimestamp;
-    std::atomic<uint64_t> txLastTimestamp;
     uint64_t mTimestampOffset;
-
     lime::SDRDevice::StreamConfig mConfig;
 
     // void AlignRxTSP();
@@ -75,12 +67,6 @@ protected:
     std::atomic<int> mThreadsReady;
     std::chrono::time_point<std::chrono::steady_clock> steamClockStart;
 
-    // how many packets to batch in data transaction
-    // lower count will give better latency, but can cause problems with really high data rates
-    uint8_t mRxPacketsToBatch;
-    uint8_t mTxPacketsToBatch;
-    uint16_t mTxSamplesInPkt;
-    uint16_t mRxSamplesInPkt;
     SDRDevice::LogCallbackType mCallback_logMessage;
     std::condition_variable streamActive;
     std::mutex streamMutex;
@@ -92,6 +78,13 @@ protected:
       SDRDevice::StreamStats stats;
       PacketsFIFO<SamplesPacketType*> *fifo;
       SamplesPacketType* stagingPacket;
+      std::thread thread;
+      std::atomic<uint64_t> lastTimestamp;
+      std::atomic<bool> terminate;
+      // how many packets to batch in data transaction
+      // lower count will give better latency, but can cause problems with really high data rates
+      uint16_t samplesInPkt;
+      uint8_t packetsToBatch;
 
       Stream() : memPool(nullptr), fifo(nullptr), stagingPacket(nullptr)
       {

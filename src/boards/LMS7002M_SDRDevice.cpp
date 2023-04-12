@@ -201,6 +201,15 @@ int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const void **samples, uint
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
+void LMS7002M_SDRDevice::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
+{
+    TRXLooper *trx = mStreamers.at(moduleIndex);
+    if (rx)
+        *rx = trx->GetStats(false);
+    if (tx)
+        *tx = trx->GetStats(true);
+}
+
 bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
 {
     throw(OperationNotSupported("UploadMemory not implemented"));

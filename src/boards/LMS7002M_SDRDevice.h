@@ -44,10 +44,10 @@ public:
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int StreamRx(uint8_t channel, void **samples, uint32_t count, StreamMeta *meta) override;
-    virtual int StreamTx(uint8_t channel, const void **samples, uint32_t count,
+    virtual int StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, StreamMeta *meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const void **samples, uint32_t count,
                          const StreamMeta *meta) override;
-    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) = 0;
+    virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO,
                      uint32_t count) override;

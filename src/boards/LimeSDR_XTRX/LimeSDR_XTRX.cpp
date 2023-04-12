@@ -578,13 +578,6 @@ void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
         trxPort->Close();
 }
 
-void LimeSDR_XTRX::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
-{
-    // TRXLooper *trx = mStreamers.at(moduleIndex);
-    // status.dataRate_Bps = trx->GetDataRate(false);
-    // status.txDataRate_Bps = trx->GetDataRate(true);
-}
-
 void LimeSDR_XTRX::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
 {
     assert(mFPGA);

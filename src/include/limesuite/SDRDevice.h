@@ -100,12 +100,10 @@ class LIME_API SDRDevice : public IComms
         int64_t packets;
         float FIFO_filled;
         float dataRate_Bps;
-        float txDataRate_Bps;
         uint32_t overrun;
         uint32_t underrun;
         uint32_t loss;
         uint32_t late;
-        bool isTx;
     };
 
     // channels order and data transmission formats setup
@@ -122,7 +120,7 @@ class LIME_API SDRDevice : public IComms
             uint32_t txMaxPacketsInBatch;
             uint16_t txSamplesInPacket;
         };
-        typedef bool (*StatusCallbackFunc)(const StreamStats*, void*);
+        typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
         enum DataFormat
         {
             I16,
@@ -235,9 +233,9 @@ public:
     virtual void StreamStart(uint8_t moduleIndex) = 0;
     virtual void StreamStop(uint8_t moduleIndex)= 0;
 
-    virtual int StreamRx(uint8_t channel, void **samples, uint32_t count, StreamMeta *meta) = 0;
-    virtual int StreamTx(uint8_t channel, const void **samples, uint32_t count, const StreamMeta *meta) = 0;
-    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) = 0;
+    virtual int StreamRx(uint8_t moduleIndex, void **samples, uint32_t count, StreamMeta *meta) = 0;
+    virtual int StreamTx(uint8_t moduleIndex, const void **samples, uint32_t count, const StreamMeta *meta) = 0;
+    virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
 
 
     /***********************************************************************

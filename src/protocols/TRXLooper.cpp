@@ -20,11 +20,13 @@ static constexpr uint16_t defaultSamplesInPkt = 256;
 
 TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     :
-    mRxPacketsToBatch(4), mTxPacketsToBatch(4),
-    mTxSamplesInPkt(defaultSamplesInPkt), mRxSamplesInPkt(defaultSamplesInPkt),
     mCallback_logMessage(nullptr),
     mStreamEnabled(false)
 {
+    mRx.packetsToBatch = 4;
+    mTx.packetsToBatch = 4;
+    mTx.samplesInPkt = defaultSamplesInPkt;
+    mRx.samplesInPkt = defaultSamplesInPkt;
     const int fifoLen = 512;
     mRx.fifo = new PacketsFIFO<SamplesPacketType*>(fifoLen);
     mTx.fifo = new PacketsFIFO<SamplesPacketType*>(fifoLen);
@@ -32,43 +34,31 @@ TRXLooper::TRXLooper(FPGA *f, LMS7002M *chip, int id)
     lms = chip, fpga = f;
     chipId = id;
     mTimestampOffset = 0;
-    rxLastTimestamp.store(0, std::memory_order_relaxed);
-    terminateRx.store(false, std::memory_order_relaxed);
-    terminateTx.store(false, std::memory_order_relaxed);
-    rxDataRate_Bps.store(0, std::memory_order_relaxed);
-    txDataRate_Bps.store(0, std::memory_order_relaxed);
+    mRx.lastTimestamp.store(0, std::memory_order_relaxed);
+    mRx.terminate.store(false, std::memory_order_relaxed);
+    mTx.terminate.store(false, std::memory_order_relaxed);
     mThreadsReady.store(0);
 }
 
 TRXLooper::~TRXLooper()
 {
     Stop();
-    terminateRx.store(true, std::memory_order_relaxed);
-    terminateTx.store(true, std::memory_order_relaxed);
-    if (txThread.joinable())
-        txThread.join();
-    if (rxThread.joinable())
-        rxThread.join();
+    mRx.terminate.store(true, std::memory_order_relaxed);
+    mTx.terminate.store(true, std::memory_order_relaxed);
+    if (mTx.thread.joinable())
+        mTx.thread.join();
+    if (mRx.thread.joinable())
+        mRx.thread.join();
 }
-
-// float TRXLooper::GetDataRate(bool tx)
-// {
-//     return tx ? txDataRate_Bps.load() : rxDataRate_Bps.load();
-// }
-
-// int TRXLooper::GetStreamSize(bool tx)
-// {
-//     return samples12InPkt;
-// }
 
 uint64_t TRXLooper::GetHardwareTimestamp(void)
 {
-    return rxLastTimestamp.load(std::memory_order_relaxed) + mTimestampOffset;
+    return mRx.lastTimestamp.load(std::memory_order_relaxed) + mTimestampOffset;
 }
 
 void TRXLooper::SetHardwareTimestamp(const uint64_t now)
 {
-    mTimestampOffset = now - rxLastTimestamp.load(std::memory_order_relaxed);
+    mTimestampOffset = now - mRx.lastTimestamp.load(std::memory_order_relaxed);
 }
 /*
 void TRXLooper::RstRxIQGen()
@@ -356,19 +346,19 @@ int TRXLooper::UpdateThreads(bool stopAll)
     }
 
     //stop threads if not needed
-    if((!needTx) && txThread.joinable())
+    if((!needTx) && mTx.thread.joinable())
     {
-        terminateTx.store(true, std::memory_order_relaxed);
-        txThread.join();
+        mTx.terminate.store(true, std::memory_order_relaxed);
+        mTx.thread.join();
     }
-    if((!needRx) && rxThread.joinable())
+    if((!needRx) && mRx.thread.joinable())
     {
-        terminateRx.store(true, std::memory_order_relaxed);
-        rxThread.join();
+        mRx.terminate.store(true, std::memory_order_relaxed);
+        mRx.thread.join();
     }
 
     //configure FPGA on first start, or disable FPGA when not streaming
-    if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
+    if((needTx || needRx) && (!mTx.thread.joinable()) && (!mRx.thread.joinable()))
     {
         ResizeChannelBuffers();
         fpga->WriteRegister(0xFFFF, 1 << chipId);
@@ -378,7 +368,7 @@ int TRXLooper::UpdateThreads(bool stopAll)
         //enable FPGA streaming
         fpga->StopStreaming();
         fpga->ResetTimestamp();
-        rxLastTimestamp.store(0, std::memory_order_relaxed);
+        mRx.lastTimestamp.store(0, std::memory_order_relaxed);
         //Clear device stream buffers
         dataPort->ResetStreamBuffers();
 
@@ -429,21 +419,21 @@ int TRXLooper::UpdateThreads(bool stopAll)
     }
 
     //FPGA should be configured and activated, start needed threads
-    if(needRx && (!rxThread.joinable()))
+    if(needRx && (!mRx.thread.joinable()))
     {
-        terminateRx.store(false, std::memory_order_relaxed);
+        mRx.terminate.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
-        rxThread = std::thread(RxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &rxThread);
+        mRx.thread = std::thread(RxLoopFunction);
+        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &mRx.thread);
     }
-    if(needTx && (!txThread.joinable()))
+    if(needTx && (!mTx.thread.joinable()))
     {
         fpga->WriteRegister(0xFFFF, 1 << chipId);
         fpga->WriteRegister(0xD, 0); //stop WFM
-        terminateTx.store(false, std::memory_order_relaxed);
+        mTx.terminate.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
-        txThread = std::thread(TxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &txThread);
+        mTx.thread = std::thread(TxLoopFunction);
+        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &mTx.thread);
     }
     return 0;
 }
@@ -456,7 +446,7 @@ int TRXLooper::UpdateThreads(bool stopAll)
 
 void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
 {
-    if (rxThread.joinable() || txThread.joinable())
+    if (mRx.thread.joinable() || mTx.thread.joinable())
         throw std::logic_error("Samples streaming already running");
 
     bool needTx = cfg.txCount > 0;
@@ -487,7 +477,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     assert(fpga);
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
-    rxLastTimestamp.store(0, std::memory_order_relaxed);
+    mRx.lastTimestamp.store(0, std::memory_order_relaxed);
 
     // const uint16_t MIMO_EN = needMIMO << 8;
     // const uint16_t TRIQ_PULSE = lms->Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE)) << 7; // 0-OFF, 1-ON
@@ -524,31 +514,31 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     // issues.
     const auto schedulingPolicy = ThreadPolicy::REALTIME;
     if (needRx) {
-        terminateRx.store(false, std::memory_order_relaxed);
+        mRx.terminate.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
-        rxThread = std::thread(RxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &rxThread);
-        pthread_setname_np(rxThread.native_handle(), "lime:RxLoop");
+        mRx.thread = std::thread(RxLoopFunction);
+        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &mRx.thread);
+        pthread_setname_np(mRx.thread.native_handle(), "lime:RxLoop");
 
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(2, &cpuset);
-        //int rc = pthread_setaffinity_np(rxThread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        //int rc = pthread_setaffinity_np(mRx.thread.native_handle(), sizeof(cpu_set_t), &cpuset);
         // if (rc != 0) {
         //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
         // }
     }
     if (needTx) {
-        terminateTx.store(false, std::memory_order_relaxed);
+        mTx.terminate.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
-        txThread = std::thread(TxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &txThread);
-        pthread_setname_np(txThread.native_handle(), "lime:TxLoop");
+        mTx.thread = std::thread(TxLoopFunction);
+        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &mTx.thread);
+        pthread_setname_np(mTx.thread.native_handle(), "lime:TxLoop");
 
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(3, &cpuset);
-        //int rc = pthread_setaffinity_np(txThread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        //int rc = pthread_setaffinity_np(mTx.thread.native_handle(), sizeof(cpu_set_t), &cpuset);
         // if (rc != 0) {
         //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
         // }
@@ -576,14 +566,14 @@ void TRXLooper::Start()
 
 void TRXLooper::Stop()
 {
-    terminateTx.store(true, std::memory_order_relaxed);
-    terminateRx.store(true, std::memory_order_relaxed);
+    mTx.terminate.store(true, std::memory_order_relaxed);
+    mRx.terminate.store(true, std::memory_order_relaxed);
     try {
-        if (rxThread.joinable())
-            rxThread.join();
+        if (mRx.thread.joinable())
+            mRx.thread.join();
 
-        if (txThread.joinable())
-            txThread.join();
+        if (mTx.thread.joinable())
+            mTx.thread.join();
     } catch (...)
     {
         printf("Failed to join TRXLooper threads\n");
@@ -670,8 +660,8 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         useChannelB ? static_cast<const lime::complex32f_t *>(samples[1]) : nullptr
     };
 
-    const int samplesInPkt = mTxSamplesInPkt;
-    const int packetsToBatch = mTxPacketsToBatch;
+    const int samplesInPkt = mTx.samplesInPkt;
+    const int packetsToBatch = mTx.packetsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize
         + packetsToBatch * samplesInPkt
         * (mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t));
@@ -713,6 +703,11 @@ int TRXLooper::StreamTx(const void **samples, uint32_t count, const SDRDevice::S
         }
     }
     return count - samplesRemaining;
+}
+
+SDRDevice::StreamStats TRXLooper::GetStats(bool tx)
+{
+    return tx ? mTx.stats : mRx.stats;
 }
 
 } // namespace lime

@@ -81,7 +81,7 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
     return TestConfigType(config, stream);
 }
 
-bool OnStreamStatusChange(const SDRDevice::StreamStats *s, void* userData)
+bool OnStreamStatusChange(bool isTx, const SDRDevice::StreamStats *s, void* userData)
 {
     // TODO: quite spammy if every packet has problems
     // TODO: report first problem instantly and accumulate following ones, report periodically

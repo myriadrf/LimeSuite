@@ -221,18 +221,19 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
     if (mStreamRunning.load() == false)
         return;
     // TODO:
-    SDRDevice::StreamStats stats;
+    SDRDevice::StreamStats rxStats;
+    SDRDevice::StreamStats txStats;
     const uint8_t chipIndex = this->lmsIndex;
-    lmsControl->StreamStatus(chipIndex, stats);
+    lmsControl->StreamStatus(chipIndex, &rxStats, &txStats);
 
     // TODO:
     // float RxFilled = 100 * (float)stats.rxFIFO_filled;
     // gaugeRxBuffer->SetValue((int)RxFilled);
-    lblRxDataRate->SetLabel(printDataRate(stats.dataRate_Bps));
+    lblRxDataRate->SetLabel(printDataRate(rxStats.dataRate_Bps));
 
     // float TxFilled = 100 * (float)stats.txFIFO_filled;
     // gaugeTxBuffer->SetValue((int)TxFilled);
-    lblTxDataRate->SetLabel(printDataRate(stats.txDataRate_Bps));
+    lblTxDataRate->SetLabel(printDataRate(txStats.dataRate_Bps));
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)

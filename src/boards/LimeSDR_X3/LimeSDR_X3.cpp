@@ -804,20 +804,6 @@ void LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel&1);
 }
 
-void LimeSDR_X3::Synchronize(bool toChip)
-{
-    for (auto iter : mLMSChips)
-    {
-        if (toChip) {
-            if (iter->UploadAll() == 0)
-                iter->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
-            //ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000); // TODO: implement
-        }
-        else
-            iter->DownloadAll();
-    }
-}
-
 void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     PCIE_CSR_Pipe pipe(*mControlPort);
@@ -891,24 +877,12 @@ int LimeSDR_X3::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
     }
 }
 
-void LimeSDR_X3::StreamStart(uint8_t moduleIndex)
-{
-    mStreamers.at(moduleIndex)->Start();
-}
-
 void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
 {
     LMS7002M_SDRDevice::StreamStop(moduleIndex);
     LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();
-}
-
-void LimeSDR_X3::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats &status)
-{
-    //TRXLooper *trx = mStreamers.at(moduleIndex);
-    //status.dataRate_Bps = trx->GetDataRate(false);
-    //status.txDataRate_Bps = trx->GetDataRate(true);
 }
 
 void LimeSDR_X3::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)

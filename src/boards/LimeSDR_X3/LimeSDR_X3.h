@@ -42,30 +42,19 @@ public:
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    //virtual std::vector<std::string> GetPathNames(SDRDevice::Dir dir, uint8_t channel) const;
-
-    virtual void Synchronize(bool toChip) override;
-
-    // virtual uint16_t ReadParam(const LMS7Parameter &param, uint8_t channel = 0,
-    //                            bool forceReadFromChip = false) const override;
-    // virtual int WriteParam(const LMS7Parameter &param, uint16_t val, uint8_t channel) override;
-
     virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
     virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
     virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
-    virtual void StreamStart(uint8_t moduleIndex) override;
-
-    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) override;
 
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
                                       double rxPhase) override;
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
 
-    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback);
+    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 protected:
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);

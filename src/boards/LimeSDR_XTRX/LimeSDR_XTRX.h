@@ -46,8 +46,6 @@ public:
     virtual void StreamStop(uint8_t moduleIndex) override;
     virtual void StreamStart(uint8_t moduleIndex) override;
 
-    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) override;
-
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
                                       double rxPhase) override;
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
