@@ -23,30 +23,21 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     StopStreaming();
     lmsControl = pDataPort;
     if (!lmsControl)
+    {
+        btnStartStop->Disable();
         return true;
+    }
+    btnStartStop->Enable();
 
     lmsIndex = 0;
-    cmbStreamType->Clear();
-    const int num_ch = lmsControl->GetDescriptor().rfSOC.size() * 2;
-    if (num_ch>2)
-    {
-        cmbStreamType->Append(_T("LMS1 SISO"));
-        cmbStreamType->Append(_T("LMS1 MIMO"));
-        cmbStreamType->Append(_T("LMS2 SISO"));
-        cmbStreamType->Append(_T("LMS2 MIMO"));
-        cmbStreamType->Append(_T("Ext. ADC/DAC"));
-    }
-    else if (num_ch == 2)
-    {
-        cmbStreamType->Append(_T("LMS SISO"));
-        cmbStreamType->Append(_T("LMS MIMO"));
-    }
-    else
-    {
-        cmbStreamType->Append(_T("LMS SISO"));
-    }
-    cmbStreamType->SetSelection(0);
+    cmbRFSOC->Clear();
+    const SDRDevice::Descriptor &desc = lmsControl->GetDescriptor();
+    for (size_t i=0; i<desc.rfSOC.size(); ++i)
+        cmbRFSOC->Append(desc.rfSOC[i].name.c_str());
+    cmbRFSOC->SetSelection(0);
     SetNyquistFrequency();
+
+    sbStreamConfig->Layout();
     return true;
 }
 
@@ -142,11 +133,9 @@ void fftviewer_frFFTviewer::StartStreaming()
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
     }
-
     txtNyquistFreqMHz->Disable();
-    cmbStreamType->Disable();
     spinFFTsize->Disable();
-    chkEnSync->Disable();
+    sbStreamConfig->GetStaticBox()->Disable();
 
     stopProcessing.store(false);
     updateGUI.store(true);
@@ -175,16 +164,13 @@ void fftviewer_frFFTviewer::StartStreaming()
         captureSamples.store(false);
     chkCaptureToFile->Disable();
     spinCaptureCount->Disable();
-    cmbFmt->Disable();
-    chkEnTx->Disable();
-    lmsIndex = cmbStreamType->GetSelection()/2;
+    lmsIndex = cmbRFSOC->GetSelection();
     if (mStreamRunning.load() == true)
         return;
-    switch (cmbStreamType->GetSelection()%2)
+    switch (cmbMode->GetSelection()%2)
     {
     case 0: //SISO
-        if (cmbChannelVisibility->GetSelection() > 1)
-            cmbChannelVisibility->SetSelection(0);
+        cmbChannelVisibility->SetSelection(0);
         cmbChannelVisibility->Disable();
         threadProcessing = std::thread(StreamingLoop, this, fftSize, 1, 0);
         break;
@@ -199,6 +185,7 @@ void fftviewer_frFFTviewer::StartStreaming()
 
 void fftviewer_frFFTviewer::StopStreaming()
 {
+    sbStreamConfig->GetStaticBox()->Enable();
     txtNyquistFreqMHz->Enable();
     mGUIupdater->Stop();
     if (mStreamRunning.load() == false)
@@ -206,33 +193,28 @@ void fftviewer_frFFTviewer::StopStreaming()
     stopProcessing.store(true);
     threadProcessing.join();
     btnStartStop->SetLabel(_("START"));
-    cmbStreamType->Enable();
     spinFFTsize->Enable();
     chkCaptureToFile->Enable();
     spinCaptureCount->Enable();
-    chkEnSync->Enable();
-    cmbFmt->Enable();
     cmbChannelVisibility->Enable();
-    chkEnTx->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
 {
     if (mStreamRunning.load() == false)
         return;
-    // TODO:
+
     SDRDevice::StreamStats rxStats;
     SDRDevice::StreamStats txStats;
     const uint8_t chipIndex = this->lmsIndex;
     lmsControl->StreamStatus(chipIndex, &rxStats, &txStats);
 
-    // TODO:
-    // float RxFilled = 100 * (float)stats.rxFIFO_filled;
-    // gaugeRxBuffer->SetValue((int)RxFilled);
+    float RxFilled = 100.0 * rxStats.FIFO_filled;
+    gaugeRxBuffer->SetValue((int)RxFilled);
     lblRxDataRate->SetLabel(printDataRate(rxStats.dataRate_Bps));
 
-    // float TxFilled = 100 * (float)stats.txFIFO_filled;
-    // gaugeTxBuffer->SetValue((int)TxFilled);
+    float TxFilled = 100.0 * (float)txStats.FIFO_filled;
+    gaugeTxBuffer->SetValue((int)TxFilled);
     lblTxDataRate->SetLabel(printDataRate(txStats.dataRate_Bps));
 }
 
@@ -611,7 +593,7 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 void fftviewer_frFFTviewer::SetNyquistFrequency()
 {
     double freqHz = 20e6;
-    // TODO: LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbStreamType->GetSelection()/2*2,&freqHz,nullptr);
+    // TODO: LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbRFSOC->GetSelection()/2*2,&freqHz,nullptr);
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
     mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
 }
@@ -625,7 +607,7 @@ void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
     cmbChannelVisibility->Clear();
     cmbChannelVisibility->Append(_T("A"));
     cmbChannelVisibility->Append(_T("B"));
-    if (cmbStreamType->GetSelection()%2==1)
+    if (cmbRFSOC->GetSelection()%2==1)
         cmbChannelVisibility->Append(_T("A&B"));
     else if (tmp > 1)
         tmp = 0;
@@ -642,11 +624,6 @@ void fftviewer_frFFTviewer::OnFmtChange(wxCommandEvent& event)
     mConstelationPanel->SetInitialDisplayArea(-max, max, -max, max);
 }
 
-void fftviewer_frFFTviewer::OnEnTx(wxCommandEvent& event)
-{
-    chkEnSync->Enable(event.GetInt());
-}
-
 void fftviewer_frFFTviewer::OnEnPwr(wxCommandEvent& event)
 {
     bool en = event.GetInt();
@@ -656,38 +633,30 @@ void fftviewer_frFFTviewer::OnEnPwr(wxCommandEvent& event)
     txtBW2->Enable(en);
 }
 
-
 void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
 {
     bool visibilities[cMaxChCount];
 
-    if (cmbStreamType->GetSelection()%2)
+    switch (event.GetInt())
     {
-        switch (event.GetInt())
-        {
-        case 0:
-            visibilities[0] = true;
-            visibilities[1] = false;
-            break;
-        case 1:
-            visibilities[0] = false;
-            visibilities[1] = true;
-            break;
-        case 2:
-            visibilities[0] = true;
-            visibilities[1] = true;
-            break;
-        default:
-            visibilities[0] = false;
-            visibilities[1] = false;
-            break;
-        }
-    }
-    else
-    {
+    case 0:
         visibilities[0] = true;
         visibilities[1] = false;
+        break;
+    case 1:
+        visibilities[0] = false;
+        visibilities[1] = true;
+        break;
+    case 2:
+        visibilities[0] = true;
+        visibilities[1] = true;
+        break;
+    default:
+        visibilities[0] = false;
+        visibilities[1] = false;
+        break;
     }
+
     mTimeDomainPanel->series[0]->visible = visibilities[0];
     mTimeDomainPanel->series[1]->visible = visibilities[0];
     mTimeDomainPanel->series[2]->visible = visibilities[1];

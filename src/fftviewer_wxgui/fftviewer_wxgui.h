@@ -52,7 +52,9 @@ class frFFTviewer : public IModuleFrame
 		wxTextCtrl* txtNyquistFreqMHz;
 		wxStaticText* m_staticText7;
 		wxSpinCtrl* spinFFTsize;
-		wxChoice* cmbStreamType;
+		wxStaticBoxSizer* sbStreamConfig;
+		wxChoice* cmbRFSOC;
+		wxChoice* cmbMode;
 		wxChoice* cmbFmt;
 		wxCheckBox* chkEnTx;
 		wxCheckBox* chkEnSync;

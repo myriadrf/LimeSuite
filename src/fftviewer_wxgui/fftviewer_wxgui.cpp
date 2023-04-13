@@ -103,39 +103,48 @@ frFFTviewer::frFFTviewer(wxWindow *parent, wxWindowID id, const wxString &title,
 	
 	fgSizer10->Add( sbSizer1, 1, wxEXPAND, 5 );
 	
-	wxStaticBoxSizer* sbSizer2;
-	sbSizer2 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Data reading") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer12;
-	fgSizer12 = new wxFlexGridSizer( 0, 2, 5, 5 );
+	wxStaticBoxSizer* sbSizer2 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Data reading") ), wxVERTICAL );
+
+	sbStreamConfig = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Stream config") ), wxVERTICAL );
+	wxFlexGridSizer* fgSizer12 = new wxFlexGridSizer( 0, 1, 5, 5 );
 	fgSizer12->SetFlexibleDirection( wxBOTH );
 	fgSizer12->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxBoxSizer* sizerSourceFormat = new wxBoxSizer(wxHORIZONTAL);
 	
-	wxString cmbStreamTypeChoices[] = { wxT("LMS#1 SISO"), wxT("LMS#1 MIMO"), wxT("LMS#2 SISO"), wxT("LMS#2 MIMO"), wxT("Ext. ADC/DAC") };
-	int cmbStreamTypeNChoices = sizeof( cmbStreamTypeChoices ) / sizeof( wxString );
-	cmbStreamType = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbStreamTypeNChoices, cmbStreamTypeChoices, 0 );
-	cmbStreamType->SetSelection( 0 );
-	fgSizer12->Add( cmbStreamType, 0, wxEXPAND, 5 );
-	
-	wxString cmbFmtChoices[] = { wxT("12 bit format"), wxT("16 bit format") };
-	int cmbFmtNChoices = sizeof( cmbFmtChoices ) / sizeof( wxString );
-	cmbFmt = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbFmtNChoices, cmbFmtChoices, 0 );
+	wxString cmbStreamTypeChoices[] = { wxT("None")};
+	cmbRFSOC = new wxChoice( sbStreamConfig->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 1, cmbStreamTypeChoices, 0 );
+	cmbRFSOC->SetSelection( 0 );
+	sizerSourceFormat->Add( cmbRFSOC, 0, wxEXPAND, 5 );
+
+	wxString cmbModeChoices[] = { wxT("SISO"), wxT("MIMO")};
+	cmbMode = new wxChoice( sbStreamConfig->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 2, cmbModeChoices, 0 );
+	cmbMode->SetSelection( 0 );
+	sizerSourceFormat->Add( cmbMode, 0, wxEXPAND, 5 );
+
+	wxString cmbFmtChoices[] = { wxT("12bit"), wxT("16bit") };
+	cmbFmt = new wxChoice( sbStreamConfig->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 2, cmbFmtChoices, 0 );
 	cmbFmt->SetSelection( 0 );
-	fgSizer12->Add( cmbFmt, 0, wxEXPAND, 5 );
+	sizerSourceFormat->Add( cmbFmt, 0, wxEXPAND, 5 );
+
+	sbStreamConfig->Add(sizerSourceFormat, 0, wxEXPAND, 0);
+	fgSizer12->Add(sbStreamConfig, 0, wxEXPAND, 0);
+
+	wxBoxSizer* sizerStreamFlags = new wxBoxSizer(wxHORIZONTAL);
 	
-	chkEnTx = new wxCheckBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Loopback RX to TX"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnTx = new wxCheckBox( sbStreamConfig->GetStaticBox(), wxID_ANY, wxT("Loopback RX to TX"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkEnTx->SetToolTip( wxT("Freezes FFT plot") );
+	sizerStreamFlags->Add( chkEnTx, 0, wxALL, 2 );
 	
-	fgSizer12->Add( chkEnTx, 0, wxALL, 2 );
-	
-	chkEnSync = new wxCheckBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Sync timestamp"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkEnSync->Enable( false );
+	chkEnSync = new wxCheckBox( sbStreamConfig->GetStaticBox(), wxID_ANY, wxT("Sync timestamp"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkEnSync->SetToolTip( wxT("Freezes FFT plot") );
-	
-	fgSizer12->Add( chkEnSync, 0, wxALL, 2 );
-	
+	sizerStreamFlags->Add( chkEnSync, 0, wxALL, 2 );
+
+	sbStreamConfig->Add(sizerStreamFlags, 0, 0, 0);
+
+	wxBoxSizer* sizerControlInfoGroup = new wxBoxSizer(wxHORIZONTAL);
 	btnStartStop = new wxButton( sbSizer2->GetStaticBox(), wxID_ANY, wxT("START"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer12->Add( btnStartStop, 1, wxEXPAND, 5 );
+	sizerControlInfoGroup->Add( btnStartStop, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer13;
 	fgSizer13 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -158,9 +167,8 @@ frFFTviewer::frFFTviewer(wxWindow *parent, wxWindowID id, const wxString &title,
 	lblTxDataRate->Wrap( -1 );
 	fgSizer13->Add( lblTxDataRate, 0, 0, 5 );
 	
-	
-	fgSizer12->Add( fgSizer13, 1, wxEXPAND, 5 );
-	
+	sizerControlInfoGroup->Add( fgSizer13, 1, wxEXPAND, 5 );
+	fgSizer12->Add(sizerControlInfoGroup, 0, 0, 0);
 	
 	sbSizer2->Add( fgSizer12, 1, wxEXPAND, 5 );
 	
@@ -419,7 +427,7 @@ frFFTviewer::frFFTviewer(wxWindow *parent, wxWindowID id, const wxString &title,
 	
 	// Connect Events
 	spinFFTsize->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
-	cmbStreamType->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
+	cmbRFSOC->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
 	cmbFmt->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnFmtChange ), NULL, this );
 	chkEnTx->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( frFFTviewer::OnEnTx ), NULL, this );
 	btnStartStop->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
@@ -434,7 +442,7 @@ frFFTviewer::~frFFTviewer()
 {
 	// Disconnect Events
 	spinFFTsize->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
-	cmbStreamType->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
+	cmbRFSOC->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
 	cmbFmt->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnFmtChange ), NULL, this );
 	chkEnTx->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( frFFTviewer::OnEnTx ), NULL, this );
 	btnStartStop->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
