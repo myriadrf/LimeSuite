@@ -416,14 +416,14 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
         lime->rx_channel_count[p] = hostState->rx_port_channel_count[p];
 
         const double samplingRate = (float)hostState->sample_rate[p].num / hostState->sample_rate[p].den;
-        config.channel[0].rxSampleRate = samplingRate;
-        config.channel[0].txSampleRate = samplingRate;
-        config.channel[0].rxOversample = lime->rxOversample[p];
-        config.channel[0].txOversample = lime->txOversample[p];
-        config.channel[1].rxSampleRate = samplingRate;
-        config.channel[1].txSampleRate = samplingRate;
-        config.channel[1].rxOversample = lime->rxOversample[p];
-        config.channel[1].txOversample = lime->txOversample[p];
+        config.channel[0].rx.sampleRate = samplingRate;
+        config.channel[0].tx.sampleRate = samplingRate;
+        config.channel[0].rx.oversample = lime->rxOversample[p];
+        config.channel[0].tx.oversample = lime->txOversample[p];
+        config.channel[1].rx.sampleRate = samplingRate;
+        config.channel[1].tx.sampleRate = samplingRate;
+        config.channel[1].rx.oversample = lime->rxOversample[p];
+        config.channel[1].tx.oversample = lime->txOversample[p];
 
         Log(LogLevel::DEBUG, "Port[%i] sampleRate: %.3f MHz, rxOversample x%i, txOversample x%i (0 is 'auto' max available)\n", p, samplingRate/1e6, lime->rxOversample[p], lime->txOversample[p]);
         Log(LogLevel::DEBUG, "Port[%i] required channel count, Rx[%i], Tx[%i]\n", p, hostState->rx_port_channel_count[p], hostState->tx_port_channel_count[p]);
@@ -452,23 +452,23 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
                 hostState->rx_bandwidth[rxChannelOffset+ch]/1e6, lime->chipIndex[p],
                 lime->rxPath[p], paths[lime->rxPath[p]].c_str()
             );
-            config.channel[ch].rxEnabled = true;
-            config.channel[ch].rxCenterFrequency = freq;
-            config.channel[ch].rxPath = lime->rxPath[p];
+            config.channel[ch].rx.enabled = true;
+            config.channel[ch].rx.centerFrequency = freq;
+            config.channel[ch].rx.path = lime->rxPath[p];
             // if (lime->rxGainNorm[p] >= 0 )
             //     config.channel[ch].rxGainNormalized = lime->rxGainNorm[p];
-            config.channel[ch].rxGFIR.enabled = lime->rx_gfir_enable[p];
+            config.channel[ch].rx.gfir.enabled = lime->rx_gfir_enable[p];
             if (lime->rx_gfir_bandwidth[p] > 0)
-                config.channel[ch].rxGFIR.bandwidth = lime->rx_gfir_bandwidth[p];
+                config.channel[ch].rx.gfir.bandwidth = lime->rx_gfir_bandwidth[p];
             else
-                config.channel[ch].rxGFIR.bandwidth = hostState->rx_bandwidth[rxChannelOffset+ch];
+                config.channel[ch].rx.gfir.bandwidth = hostState->rx_bandwidth[rxChannelOffset+ch];
 
             if (lime->calibrate[p] & DCIQ)
-                config.channel[ch].rxCalibrate = true;
+                config.channel[ch].rx.calibrate = true;
             if (lime->calibrate[p] & Filter)
             {
-                config.channel[ch].rxLPF = hostState->rx_bandwidth[rxChannelOffset+ch];
-                Log(LogLevel::DEBUG, "Port[%i][%i] rxLPF:%.3f MHz\n", p, ch, config.channel[ch].rxLPF/1e6);
+                config.channel[ch].rx.lpf = hostState->rx_bandwidth[rxChannelOffset+ch];
+                Log(LogLevel::DEBUG, "Port[%i][%i] rxLPF:%.3f MHz\n", p, ch, config.channel[ch].rx.lpf/1e6);
             }
         }
 
@@ -483,24 +483,24 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
                 hostState->tx_bandwidth[txChannelOffset+ch]/1e6, lime->chipIndex[p],
                 lime->txPath[p], paths[lime->txPath[p]].c_str()
             );
-            config.channel[ch].txEnabled = true;
-            config.channel[ch].txCenterFrequency = freq;
-            config.channel[ch].txPath = lime->txPath[p];
+            config.channel[ch].rx.enabled = true;
+            config.channel[ch].tx.centerFrequency = freq;
+            config.channel[ch].tx.path = lime->txPath[p];
 
-            config.channel[ch].txGFIR.enabled = lime->tx_gfir_enable[p];
+            config.channel[ch].tx.gfir.enabled = lime->tx_gfir_enable[p];
             if (lime->tx_gfir_bandwidth[p] > 0)
-                config.channel[ch].txGFIR.bandwidth = lime->tx_gfir_bandwidth[p];
+                config.channel[ch].tx.gfir.bandwidth = lime->tx_gfir_bandwidth[p];
             else
-                config.channel[ch].txGFIR.bandwidth = hostState->tx_bandwidth[txChannelOffset+ch];
+                config.channel[ch].tx.gfir.bandwidth = hostState->tx_bandwidth[txChannelOffset+ch];
             // if (lime->txGainNorm[p] >= 0 )
             //     config.channel[ch].txGainNormalized = lime->txGainNorm[p];
 
             if (lime->calibrate[p] & DCIQ)
-                config.channel[ch].txCalibrate = true;
+                config.channel[ch].tx.calibrate = true;
             if (lime->calibrate[p] & Filter)
             {
-                config.channel[ch].txLPF = hostState->tx_bandwidth[rxChannelOffset+ch];
-                Log(LogLevel::DEBUG, "Port[%i][%i] txLPF:%.3f MHz\n", p, ch, config.channel[ch].txLPF/1e6);
+                config.channel[ch].tx.lpf = hostState->tx_bandwidth[rxChannelOffset+ch];
+                Log(LogLevel::DEBUG, "Port[%i][%i] txLPF:%.3f MHz\n", p, ch, config.channel[ch].tx.lpf/1e6);
             }
         }
 

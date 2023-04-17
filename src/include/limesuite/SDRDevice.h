@@ -175,32 +175,22 @@ class LIME_API SDRDevice : public IComms
         {
             memset(this, 0, sizeof(ChannelConfig));
         }
-        double rxCenterFrequency;
-        double txCenterFrequency;
-        double rxNCOoffset;
-        double txNCOoffset;
-        double rxSampleRate;
-        double txSampleRate;
-        double rxGain;
-        double txGain;
-        uint8_t rxPath;
-        uint8_t txPath;
-        double rxLPF;
-        double txLPF;
-        uint8_t rxOversample;
-        uint8_t txOversample;
-        GFIRFilter rxGFIR;
-        GFIRFilter txGFIR;
-        bool rxEnabled;
-        bool txEnabled;
-        bool rxCalibrate;
-        bool txCalibrate;
-        bool rxTestSignal;
-        bool txTestSignal;
-
-        // TODO:
-        // TestSignal
-        // NCOs
+        struct Direction
+        {
+            double centerFrequency;
+            double NCOoffset;
+            double sampleRate;
+            double gain;
+            double lpf;
+            uint8_t path;
+            uint8_t oversample;
+            GFIRFilter gfir;
+            bool enabled;
+            bool calibrate;
+            bool testSignal;
+        };
+        Direction rx;
+        Direction tx;
     };
 
     struct SDRConfig
@@ -215,7 +205,7 @@ class LIME_API SDRDevice : public IComms
 public:
     virtual ~SDRDevice(){};
 
-    virtual void Configure(const SDRConfig config, uint8_t moduleIndex) = 0;
+    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
     virtual const Descriptor &GetDescriptor() const = 0;

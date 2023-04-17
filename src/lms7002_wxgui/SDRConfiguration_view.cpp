@@ -176,29 +176,29 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
         const double multiplier = 1e6; // convert from GUI MHz to Hz
         SDRDevice::ChannelConfig &ch = config.channel[i];
 
-        ch.rxCenterFrequency = parseGuiValue(gui.rxLO->GetValue()) * multiplier;
-        ch.txCenterFrequency = parseGuiValue(gui.txLO->GetValue()) * multiplier;
+        ch.rx.centerFrequency = parseGuiValue(gui.rxLO->GetValue()) * multiplier;
+        ch.tx.centerFrequency = parseGuiValue(gui.txLO->GetValue()) * multiplier;
 
         if(gui.tdd->IsChecked())
-            ch.rxCenterFrequency = ch.txCenterFrequency;
+            ch.rx.centerFrequency = ch.tx.centerFrequency;
 
-        ch.rxNCOoffset = parseGuiValue(gui.rx[i].nco->GetValue()) * multiplier;
-        ch.txNCOoffset = parseGuiValue(gui.tx[i].nco->GetValue()) * multiplier;
-        ch.rxSampleRate = parseGuiValue(gui.nyquist->GetValue()) * multiplier;
-        ch.txSampleRate = ch.rxSampleRate;
+        ch.rx.NCOoffset = parseGuiValue(gui.rx[i].nco->GetValue()) * multiplier;
+        ch.tx.NCOoffset = parseGuiValue(gui.tx[i].nco->GetValue()) * multiplier;
+        ch.rx.sampleRate = parseGuiValue(gui.nyquist->GetValue()) * multiplier;
+        ch.tx.sampleRate = ch.rx.sampleRate;
         // ch.rxGain = parseGuiValue(gui.rx[i].gain->GetSelection());
         // ch.txGain = parseGuiValue(gui.tx[i].gain->GetSelection());
-        ch.rxPath = gui.rx[i].path->GetSelection();
-        ch.txPath = gui.tx[i].path->GetSelection();
-        ch.rxLPF = parseGuiValue(gui.rx[i].lpf->GetValue()) * multiplier;
-        ch.txLPF = parseGuiValue(gui.tx[i].lpf->GetValue()) * multiplier;
+        ch.rx.path = gui.rx[i].path->GetSelection();
+        ch.tx.path = gui.tx[i].path->GetSelection();
+        ch.rx.lpf = parseGuiValue(gui.rx[i].lpf->GetValue()) * multiplier;
+        ch.tx.lpf = parseGuiValue(gui.tx[i].lpf->GetValue()) * multiplier;
         int oversampleIndex = gui.decimation->GetSelection();
-        ch.rxOversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
+        ch.rx.oversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
 
         oversampleIndex = gui.interpolation->GetSelection();
-        ch.txOversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
-        ch.rxEnabled = gui.rx[i].enable->IsChecked();
-        ch.txEnabled = gui.tx[i].enable->IsChecked();
+        ch.tx.oversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
+        ch.rx.enabled = gui.rx[i].enable->IsChecked();
+        ch.tx.enabled = gui.tx[i].enable->IsChecked();
         // ch.rxCalibrate;
         // ch.txCalibrate;
         // ch.rxTestSignal;

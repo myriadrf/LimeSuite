@@ -26,7 +26,7 @@ public:
     LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream);
     virtual ~LimeSDR_XTRX();
 
-    virtual void Configure(const SDRConfig config, uint8_t socIndex) override;
+    virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
 
     virtual const SDRDevice::Descriptor &GetDescriptor() const override;
 

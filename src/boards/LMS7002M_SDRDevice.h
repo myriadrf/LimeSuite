@@ -24,7 +24,7 @@ public:
     LMS7002M_SDRDevice();
     virtual ~LMS7002M_SDRDevice();
 
-    virtual void Configure(const SDRConfig config, uint8_t moduleIndex) = 0;
+    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
     virtual const Descriptor &GetDescriptor() const = 0;

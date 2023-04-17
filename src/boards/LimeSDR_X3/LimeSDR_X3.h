@@ -29,7 +29,7 @@ public:
     LimeSDR_X3(lime::LitePCIe* control, std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams);
     virtual ~LimeSDR_X3();
 
-    virtual void Configure(const SDRConfig config, uint8_t socIndex) override;
+    virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
 
     virtual const SDRDevice::Descriptor &GetDescriptor() const override;
 
@@ -56,6 +56,8 @@ public:
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 protected:
+    void PreConfigure(const SDRConfig& cfg, uint8_t socIndex);
+    void PostConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS2SetPath(bool tx, uint8_t chan, uint8_t path);

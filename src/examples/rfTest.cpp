@@ -47,24 +47,24 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
     config.skipDefaults = true; // defaults are already initialized once at the startup
     const uint8_t channelCount = mimo ? 2 : 1;
     for (int i = 0; i < channelCount; ++i) {
-        config.channel[i].rxEnabled = true;
-        config.channel[i].txEnabled = true;
-        config.channel[i].rxCenterFrequency = frequencyLO;
-        config.channel[i].txCenterFrequency = frequencyLO;
-        config.channel[i].rxSampleRate = sampleRate;
-        config.channel[i].txSampleRate = sampleRate;
-        config.channel[i].rxOversample = 2;
-        config.channel[i].txOversample = 2;
-        config.channel[i].rxLPF = 0;//5e6;
-        config.channel[i].txLPF = 0;//5e6;
-        config.channel[i].rxGFIR.enabled = false;
-        config.channel[i].rxGFIR.bandwidth = config.channel[i].rxLPF;
-        config.channel[i].rxPath = 2; // Loopback_1 // TODO: replace with string names
-        config.channel[i].txPath = 2; // band1 // TODO: replace with string names
-        config.channel[i].rxCalibrate = false;
-        config.channel[i].txCalibrate = false;
-        config.channel[i].rxTestSignal = false;
-        config.channel[i].txTestSignal = false;
+        config.channel[i].rx.enabled = true;
+        config.channel[i].tx.enabled = true;
+        config.channel[i].rx.centerFrequency = frequencyLO;
+        config.channel[i].tx.centerFrequency = frequencyLO;
+        config.channel[i].rx.sampleRate = sampleRate;
+        config.channel[i].tx.sampleRate = sampleRate;
+        config.channel[i].rx.oversample = 2;
+        config.channel[i].tx.oversample = 2;
+        config.channel[i].rx.lpf = 0;//5e6;
+        config.channel[i].tx.lpf = 0;//5e6;
+        config.channel[i].rx.gfir.enabled = false;
+        config.channel[i].rx.gfir.bandwidth = config.channel[i].rx.lpf;
+        config.channel[i].rx.path = 2; // Loopback_1 // TODO: replace with string names
+        config.channel[i].tx.path = 2; // band1 // TODO: replace with string names
+        config.channel[i].rx.calibrate = false;
+        config.channel[i].tx.calibrate = false;
+        config.channel[i].rx.testSignal = false;
+        config.channel[i].tx.testSignal = false;
     }
 
     SDRDevice::StreamConfig stream;

@@ -1,10 +1,12 @@
 #include "LimeSDR_X3.h"
 
 #include <fcntl.h>
+#include <sstream>
 
 #include "Logger.h"
 #include "LitePCIe.h"
 #include "limesuite/LMS7002M.h"
+#include "lms7002m/LMS7002M_validation.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
 #include "FPGA_X3.h"
@@ -331,82 +333,64 @@ static int InitLMS3(LMS7002M* lms, bool skipTune)
     return -1;
 }
 
-void LimeSDR_X3::Configure(const SDRConfig cfg, uint8_t socIndex)
+void LimeSDR_X3::PreConfigure(const SDRConfig& cfg, uint8_t socIndex)
 {
-    try {
-        // only 2 channels is available on LMS7002M
-        for (int i = 2; i < SDRDevice::MAX_CHANNEL_COUNT; ++i)
-            if (cfg.channel[i].rxEnabled || cfg.channel[i].txEnabled)
-                throw std::logic_error("too many channels enabled, LMS7002M has only 2");
+    if (socIndex == 0)
+    {
+        // Turn off PAs before configuring chip to avoid unexpectedly strong signal input
+        LMS1_PA_Enable(0, false);
+        LMS1_PA_Enable(1, false);
+    }
+    else if (socIndex == 1)
+    {
+        LMS2_PA_LNA_Enable(0, false, false);
+        LMS2_PA_LNA_Enable(1, false, false);
+    }
+}
 
-        // MIMO necessary checks
-        {
-            const ChannelConfig &chA = cfg.channel[0];
-            const ChannelConfig &chB = cfg.channel[1];
-            const bool rxMIMO = chA.rxEnabled && chB.rxEnabled;
-            const bool txMIMO = chA.txEnabled && chB.txEnabled;
-            if (rxMIMO || txMIMO) {
-                // MIMO sample rates have to match
-                if (rxMIMO && chA.rxSampleRate != chB.rxSampleRate)
-                    throw std::logic_error("Non matching Rx MIMO channels sampling rate");
-                if (txMIMO && chA.txSampleRate != chB.txSampleRate)
-                    throw std::logic_error("Non matching Tx MIMO channels sampling rate");
-
-                // LMS7002M MIMO A&B channels share LO, but can be offset by NCO
-                // TODO: check if they are withing NCO range
-                const double rxLOdiff = chA.rxCenterFrequency - chB.rxCenterFrequency;
-                if (rxMIMO && rxLOdiff > 0)
-                    throw std::logic_error("MIMO: channels Rx LO too far apart");
-                const double txLOdiff = chA.txCenterFrequency - chB.txCenterFrequency;
-                if (txMIMO && txLOdiff > 0)
-                    throw std::logic_error("MIMO: channels Rx LO too far apart");
-            }
-        }
-        bool rxUsed = false;
-        bool txUsed = false;
-
-        // individual channel validation
-        const double minLO = 30e6; // LO can be lowest 30e6, 100e3 could be achieved using NCO
-        const double maxLO = 3.8e9;
-        for (int i = 0; i < 2; ++i) {
-            const ChannelConfig &ch = cfg.channel[i];
-            rxUsed |= ch.rxEnabled;
-            txUsed |= ch.txEnabled;
-            if (ch.rxEnabled && not InRange(ch.rxCenterFrequency, minLO, maxLO))
-                throw std::logic_error(strFormat("Rx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.rxCenterFrequency, minLO, maxLO));
-            if (ch.txEnabled && not InRange(ch.txCenterFrequency, minLO, maxLO))
-                throw std::logic_error(strFormat("Tx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.txCenterFrequency, minLO, maxLO));
-
-            if (ch.rxEnabled && not InRange(ch.rxPath, 0, 5))
-                throw std::logic_error(strFormat("Rx ch%i invalid path", i));
-            if(socIndex == 1)
-            {
-                if (ch.txEnabled && not InRange(ch.txPath, 0, 4))
-                    throw std::logic_error(strFormat("Tx ch%i invalid path", i));
-            }
-            else
-            {
-                if (ch.txEnabled && not InRange(ch.txPath, 0, 2))
-                    throw std::logic_error(strFormat("Tx ch%i invalid path", i));
-            }
-        }
-
-        // config validation complete, now do the actual configuration
+void LimeSDR_X3::PostConfigure(const SDRConfig& cfg, uint8_t socIndex)
+{
+    // Turn on needed PAs
+    for (int c = 0; c < 2; ++c) {
+        const ChannelConfig &ch = cfg.channel[c];
         switch(socIndex)
         {
             case 0:
-                // Turn off PAs before configuring chip to avoid unexpectedly strong signal input
-                LMS1_PA_Enable(0, false);
-                LMS1_PA_Enable(1, false);
+                LMS1_PA_Enable(c, ch.tx.enabled);
                 break;
             case 1:
-                LMS2_PA_LNA_Enable(0, false, false);
-                LMS2_PA_LNA_Enable(1, false, false);
+                LMS2_PA_LNA_Enable(c, ch.tx.enabled, ch.rx.enabled);
                 break;
         }
+    }
+}
 
+void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
+{
+    std::vector<std::string> errors;
+    bool isValidConfig = LMS7002M_Validate(cfg, errors);
+
+    if (!isValidConfig)
+    {
+        std::stringstream ss;
+        for (const auto& err : errors)
+            ss << err << std::endl;
+        throw std::logic_error(ss.str());
+    }
+
+    bool rxUsed = false;
+    bool txUsed = false;
+    for (int i = 0; i < 2; ++i) {
+        const ChannelConfig &ch = cfg.channel[i];
+        rxUsed |= ch.rx.enabled;
+        txUsed |= ch.tx.enabled;
+    }
+
+    try
+    {
+        PreConfigure(cfg, socIndex);
+
+        // config validation complete, now do the actual configuration
         LMS7002M* chip = mLMSChips.at(socIndex);
         if (!cfg.skipDefaults)
         {
@@ -422,81 +406,26 @@ void LimeSDR_X3::Configure(const SDRConfig cfg, uint8_t socIndex)
         if (cfg.referenceClockFreq != 0)
             chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
-        const bool tddMode = cfg.channel[0].rxCenterFrequency == cfg.channel[0].txCenterFrequency;
+        const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
         if (rxUsed)
-            chip->SetFrequencySX(false, cfg.channel[0].rxCenterFrequency);
+            chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
         if (txUsed)
-            chip->SetFrequencySX(true, cfg.channel[0].txCenterFrequency);
+            chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
         if(tddMode)
             chip->EnableSXTDD(true);
 
-        for (int i = 0; i < 2; ++i) {
-            const ChannelConfig &ch = cfg.channel[i];
-            chip->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
-            if ( socIndex == 1 ) // LMS2 uses external ADC/DAC
-            {
-                EnableChannelLMS2(chip, Rx, i, ch.rxEnabled);
-                EnableChannelLMS2(chip, Tx, i, ch.txEnabled);
-            }
-            else
-            {
-                chip->EnableChannel(Rx, i, ch.rxEnabled);
-                chip->EnableChannel(Tx, i, ch.txEnabled);
-            }
-            if(socIndex == 0)
-                LMS1SetPath(false, i, ch.rxPath);
-            else if(socIndex == 1)
-            {
-                uint8_t path = ch.rxEnabled ? ch.rxPath : uint8_t(ePathLMS2_Rx::NONE);
-                LMS2SetPath(false, i, path);
-            }
+        if(socIndex == 0)
+            chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0); // enabled DAC is required for FPGA to work
 
-            // if(ch.rxPath == 4)
-            //     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
-
-            if(socIndex == 0)
-                LMS1SetPath(true, i, ch.txPath);
-            else if(socIndex == 1)
-            {
-                uint8_t path = ch.txEnabled ? ch.txPath : uint8_t(ePathLMS2_Tx::NONE);
-                LMS2SetPath(true, i, path);
-            }
-
-            if(socIndex == 0) {
-                // enabled DAC is required for FPGA to work
-                chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
-                chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rxTestSignal ? 1 : 0);
-                if(i == 0 && ch.rxTestSignal)
-                {
-                    chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                    chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 1);
-                    chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
-                    // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
-                }
-                else if (i==1 && ch.rxTestSignal)
-                {
-                    chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                    chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 1);
-                    chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
-                    // chip->LoadDC_REG_IQ(false, 0x789A, 0xABC0); // gets reset by starting stream
-                }
-                chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.txTestSignal ? 1 : 0);
-            }
-            // TODO: set gains, filters...
-        }
         chip->SetActiveChannel(LMS7002M::ChA);
-
         double sampleRate;
         if (rxUsed)
-        {
-            sampleRate = cfg.channel[0].rxSampleRate;
-        }
+            sampleRate = cfg.channel[0].rx.sampleRate;
         else
+            sampleRate = cfg.channel[0].tx.sampleRate;
+        if(socIndex == 0)
         {
-            sampleRate = cfg.channel[0].txSampleRate;
-        }
-        if(socIndex == 0) {
-            LMS1_SetSampleRate(sampleRate, cfg.channel[0].rxOversample, cfg.channel[0].txOversample);
+            LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
         }
         else if(socIndex == 1) {
             Equalizer::Config eqCfg;
@@ -507,53 +436,78 @@ void LimeSDR_X3::Configure(const SDRConfig cfg, uint8_t socIndex)
                 eqCfg.cfr[i].bypass = true;
                 eqCfg.cfr[i].sleep = true;
                 eqCfg.cfr[i].bypassGain = true;
-                eqCfg.cfr[i].interpolation = cfg.channel[0].txOversample;
+                eqCfg.cfr[i].interpolation = cfg.channel[0].tx.oversample;
                 eqCfg.fir[i].sleep = true;
                 eqCfg.fir[i].bypass = true;
             }
             mEqualizer->Configure(eqCfg);
-            LMS2_SetSampleRate(sampleRate, cfg.channel[0].txOversample);
+            LMS2_SetSampleRate(sampleRate, cfg.channel[0].tx.oversample);
         }
 
-        for (int i = 0; i < 2; ++i) {
-            chip->SetActiveChannel(i==0 ? LMS7002M::ChA : LMS7002M::ChB);
-            const ChannelConfig &ch = cfg.channel[i];
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            chip->SetActiveChannel((ch & 1) ? LMS7002M::ChB : LMS7002M::ChA);
 
-            if (socIndex == 0)
+            if(cfg.channel[ch].rx.testSignal)
             {
-                if (ch.rxEnabled && chip->SetGFIRFilter(false, i, ch.rxGFIR.enabled, ch.rxGFIR.bandwidth) != 0)
-                    throw std::logic_error(strFormat("Rx ch%i GFIR config failed", i));
-                if (ch.txEnabled && chip->SetGFIRFilter(true,  i, ch.txGFIR.enabled, ch.txGFIR.bandwidth) != 0)
-                    throw std::logic_error(strFormat("Tx ch%i GFIR config failed", i));
+                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
+                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 1);
+                chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
+                // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal ? 1 : 0);
 
-            if (ch.rxCalibrate && ch.rxEnabled)
+            for (int dir = 0; dir < 2; ++dir)
             {
-                SetupCalibrations(chip, ch.rxSampleRate);
-                int status = CalibrateRx(false, false);
-                if(status != MCU_BD::MCU_NO_ERROR)
-                    throw std::runtime_error(strFormat("Rx ch%i DC/IQ calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
-            }
-            if (ch.txCalibrate && ch.txEnabled)
-            {
-                SetupCalibrations(chip, ch.txSampleRate);
-                int status = CalibrateTx(false);
-                if(status != MCU_BD::MCU_NO_ERROR)
-                    throw std::runtime_error(strFormat("Rx ch%i DC/IQ calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
-            }
-            if (ch.rxLPF > 0 && ch.rxEnabled)
-            {
-                SetupCalibrations(chip, ch.rxSampleRate);
-                int status = TuneRxFilter(ch.rxLPF);
-                if(status != MCU_BD::MCU_NO_ERROR)
-                    throw std::runtime_error(strFormat("Rx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
-            }
-            if (ch.txLPF > 0 && ch.txEnabled)
-            {
-                SetupCalibrations(chip, ch.txSampleRate);
-                int status = TuneTxFilter(ch.txLPF);
-                if(status != MCU_BD::MCU_NO_ERROR)
-                    throw std::runtime_error(strFormat("Tx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status)));
+                const char* dirName = (dir==Rx) ? "Rx" : "Tx";
+                const SDRDevice::ChannelConfig::Direction& trx = (dir == 0) ? cfg.channel[ch].rx : cfg.channel[ch].tx;
+                if ( socIndex == 1 ) // LMS2 uses external ADC/DAC
+                    EnableChannelLMS2(chip, (Dir)dir, ch, trx.enabled);
+                else
+                    chip->EnableChannel((Dir)dir, ch, trx.enabled);
+
+                if(socIndex == 0)
+                    LMS1SetPath(dir, ch, trx.path);
+                else if(socIndex == 1)
+                {
+                    uint8_t path;
+                    if (trx.enabled)
+                        path = trx.path;
+                    else
+                        path = (dir == Rx) ? uint8_t(ePathLMS2_Rx::NONE) : uint8_t(ePathLMS2_Tx::NONE);
+                    LMS2SetPath(dir, ch, path);
+                }
+
+                if (socIndex == 0)
+                {
+                    if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
+                        throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
+                }
+
+                if (trx.calibrate && trx.enabled)
+                {
+                    SetupCalibrations(chip, trx.sampleRate);
+                    int status;
+                    if (dir==Rx)
+                        status = CalibrateRx(false, false);
+                    else
+                        status = CalibrateTx(false);
+                    if(status != MCU_BD::MCU_NO_ERROR)
+                        throw std::runtime_error(strFormat("%s ch%i DC/IQ calibration failed: %s", dirName, ch, MCU_BD::MCUStatusMessage(status)));
+                }
+
+                if (trx.lpf > 0 && trx.enabled)
+                {
+                    SetupCalibrations(chip, trx.sampleRate);
+                    int status;
+                    if (dir == Rx)
+                        status = TuneRxFilter(trx.lpf);
+                    else
+                        status = TuneTxFilter(trx.lpf);
+
+                    if(status != MCU_BD::MCU_NO_ERROR)
+                        throw std::runtime_error(strFormat("%s ch%i filter calibration failed: %s", dirName, ch, MCU_BD::MCUStatusMessage(status)));
+                }
             }
         }
         chip->SetActiveChannel(LMS7002M::ChA);
@@ -563,19 +517,7 @@ void LimeSDR_X3::Configure(const SDRConfig cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), 2);
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
-        // Turn on needed PAs
-        for (int c = 0; c < 2; ++c) {
-            const ChannelConfig &ch = cfg.channel[c];
-            switch(socIndex)
-            {
-                case 0:
-                    LMS1_PA_Enable(c, ch.txEnabled);
-                    break;
-                case 1:
-                    LMS2_PA_LNA_Enable(c, ch.txEnabled, ch.rxEnabled);
-                    break;
-            }
-        }
+        PostConfigure(cfg, socIndex);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_X3 config: %s\n", e.what());
