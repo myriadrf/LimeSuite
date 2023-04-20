@@ -2,6 +2,7 @@
 #include <string>
 #include <mutex>
 #include <atomic>
+#include <vector>
 
 #include "software/kernel/litepcie.h"
 
@@ -10,6 +11,7 @@ namespace lime{
 class LitePCIe
 {
 public:
+    static std::vector<std::string> GetDevicesWithPattern(const std::string& regex);
     LitePCIe();
     ~LitePCIe();
 

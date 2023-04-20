@@ -30,37 +30,23 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
 {
     std::vector<DeviceHandle> handles;
     DeviceHandle handle;
-    handle.media = "PCI-E";
+    handle.media = "PCIe";
 
-    std::vector<std::string> LimePCIePorts;
-    FILE *lsPipe;
-    lsPipe = popen("ls /dev/LimeXTRX*_control -d -1", "r");
-    char tempBuffer[512];
-    while(fscanf(lsPipe, "%s", tempBuffer) == 1)
-        LimePCIePorts.push_back(tempBuffer);
-    pclose(lsPipe);
+    const std::string searchDevName("LimeXTRX");
+    const std::string pattern(searchDevName + "[0-9]*_control");
+    const std::vector<std::string> devices = LitePCIe::GetDevicesWithPattern(pattern);
 
-    std::map<std::string, std::string> port_name_map = {
-        {"LimeXTRX", GetDeviceName(LMS_DEV_LIMESDR_XTRX)}
-    };
-
-    for(auto port:LimePCIePorts)
+    for(const auto& port : devices)
     {
-        if(access(port.c_str(), F_OK ) != -1 )
-        {
-            for (auto port_name:port_name_map)
-            {
-                size_t pos = port.find(port_name.first);
-                if(pos != std::string::npos)
-                {
-                    std::string dev_nr(&port[pos+port_name.first.length()], &port[port.find("_")]);
-                    handle.name = port_name.second + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
-                }
-            }
-            //handle.index++;
-            handle.addr = port.substr(0, port.find("_"));
-            handles.push_back(handle);
-        }
+        size_t pos = port.find(searchDevName);
+        if(pos == std::string::npos)
+            continue;
+
+        std::string dev_nr(&port[pos+searchDevName.length()], &port[port.find("_")]);
+        handle.name = GetDeviceName(LMS_DEV_LIMESDR_XTRX) + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
+
+        handle.addr = port.substr(0, port.find("_"));
+        handles.push_back(handle);
     }
     return handles;
 }
