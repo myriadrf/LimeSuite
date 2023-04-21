@@ -131,6 +131,8 @@ SOCConfig_view::SOCConfig_view(
 void SOCConfig_view::Setup(SDRDevice *device, int index)
 {
     sdrDevice = device;
+    if(!device)
+        return;
     const SDRDevice::RFSOCDescriptor &descriptor = device->GetDescriptor().rfSOC.at(index);
     socIndex = index;
     gui.titledBox->SetLabel(descriptor.name.c_str());
@@ -251,7 +253,11 @@ void SDRConfiguration_view::Setup(lime::SDRDevice *device)
 {
     sdrDevice = device;
     if (!sdrDevice)
+    {
+        for (auto& panel : socGUI)
+            panel->Hide();
         return;
+    }
     const SDRDevice::Descriptor &desc = device->GetDescriptor();
     for (size_t i=0; i<socGUI.size(); ++i)
     {

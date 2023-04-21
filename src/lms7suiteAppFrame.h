@@ -32,6 +32,8 @@
 #include "IModuleFrame.h"
 #include "pnlBoardControls.h"
 
+#include "GUI/DeviceConnectionPanel.h"
+
 class pnlMiniLog;
 class lms7002_mainPanel;
 class fftviewer_frFFTviewer;
@@ -47,7 +49,7 @@ class LMS7SuiteAppFrame : public wxFrame
       void OnQuit(wxCommandEvent &event);
       // void OnShowConnectionSettings( wxCommandEvent& event );
       void OnAbout(wxCommandEvent &event);
-      void OnDeviceConnect(wxCommandEvent &event);
+      void OnDeviceHandleChange(wxCommandEvent &event);
       void HandleLMSevent(wxCommandEvent &event);
       void OnModuleClose(wxCloseEvent &event);
       void OnShowModule(wxCommandEvent &event);
@@ -70,6 +72,7 @@ class LMS7SuiteAppFrame : public wxFrame
       // void OnLmsChanged(wxCommandEvent& event);
       // void OnShowAPICalls( wxCommandEvent& event );
       // void OnShowLimeRFE(wxCommandEvent& event);
+      void OnDeviceDisconnect();
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
@@ -111,8 +114,6 @@ class LMS7SuiteAppFrame : public wxFrame
         wxScrolledWindow *m_scrolledWindow1;
         wxFlexGridSizer *contentSizer;
         lms7002_mainPanel *mContent;
-
-        wxChoice *mDeviceChoice;
         //       ADF4002_wxgui* adfGUI;
 
         //       Si5351C_wxgui* si5351gui;
@@ -124,6 +125,7 @@ class LMS7SuiteAppFrame : public wxFrame
         pnlBoardControls* boardControlsGui;
         //       pnlAPI* api;
         // limeRFE_wxgui* limeRFEwin;
+        lime::DeviceConnectionPanel* pnlDeviceConnection;
 };
 
 

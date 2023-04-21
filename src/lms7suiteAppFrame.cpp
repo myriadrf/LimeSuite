@@ -7,6 +7,7 @@
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
 #endif //WX_PRECOMP
+#include <wx/msgdlg.h>
 
 #include "lms7002_mainPanel.h"
 
@@ -32,6 +33,7 @@
 #include "pnlAPI.h"
 //#include "limeRFE_wxgui.h"
 #include "SPI_wxgui.h"
+#include "GUI/events.h"
 
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
@@ -39,7 +41,7 @@
 using namespace std;
 using namespace lime;
 
-///////////////////////////////////////////////////////////////////////////
+static constexpr int controlCollumn = 1;
 
 LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr=nullptr;
 
@@ -54,20 +56,6 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char 
     evt.SetEventType(LOG_MESSAGE);
     evt.SetInt(int(level));
     wxPostEvent(obj_ptr, evt);
-}
-
-static void EnumerateDevicesToChoice(wxChoice *choise)
-{
-    choise->Clear();
-    try {
-        std::vector<lime::DeviceHandle> handles;
-        handles = lime::DeviceRegistry::enumerate();
-
-        for (size_t i = 0; i < handles.size(); i++)
-            choise->Append(handles[i].serialize().c_str());
-    }
-    catch (std::runtime_error &e) {
-    }
 }
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
@@ -102,20 +90,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     mainSizer->SetFlexibleDirection(wxBOTH);
     mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
-    { // Device connection selection
-        wxPanel *container = new wxPanel(this, wxID_ANY);
-        wxBoxSizer *szBox = new wxBoxSizer(wxHORIZONTAL);
-
-        mDeviceChoice = new wxChoice(container, wxNewId());
-        mDeviceChoice->Append(_("No devices connected"));
-        mDeviceChoice->SetSelection(0);
-        szBox->Add(new wxStaticText(container, wxID_ANY, _("Device:")), 0, wxALIGN_CENTER_VERTICAL,
-                   0);
-        szBox->Add(mDeviceChoice, 0, wxEXPAND, 0);
-        // TODO: add disconnect button
-        container->SetSizerAndFit(szBox);
-        mainSizer->Add(container, 0, wxEXPAND, 0);
-    }
+    pnlDeviceConnection = new DeviceConnectionPanel(this, wxNewId());
+    mainSizer->Add(pnlDeviceConnection, 0, wxEXPAND, 0);
 
     m_scrolledWindow1 = new wxScrolledWindow(this, wxNewId(), wxDefaultPosition, wxDefaultSize,
                                              wxHSCROLL | wxVSCROLL);
@@ -173,25 +149,20 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     statusBar->SetStatusWidths(3, statusWidths);
     //Bind(LMS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::OnLmsChanged), this);
 
-    Bind(wxEVT_CHOICE, wxCommandEventHandler(LMS7SuiteAppFrame::OnDeviceConnect), this,
-         mDeviceChoice->GetId());
+    Bind(limeEVT_SDR_HANDLE_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDeviceHandleChange), this);
     // #ifndef LIMERFE
     // 	mnuModules->Delete(ID_MENUITEM_LIMERFE);
     // #endif
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
-
-    EnumerateDevicesToChoice(mDeviceChoice);
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
 {
-    wxCloseEvent evt;
     for (auto iter : mModules)
         iter.second->Destroy();
-    //Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    if (lmsControl)
-        DeviceRegistry::freeDevice(lmsControl);
+
+    OnDeviceDisconnect();
 }
 
 void LMS7SuiteAppFrame::OnClose( wxCloseEvent& event )
@@ -212,71 +183,71 @@ void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
 
 void LMS7SuiteAppFrame::UpdateConnections(SDRDevice *device)
 {
-    mContent->Initialize(lmsControl);
+    mContent->Initialize(device);
     for (auto iter : mModules) {
         iter.second->Initialize(device);
     }
 }
 
-void LMS7SuiteAppFrame::OnDeviceConnect(wxCommandEvent &event)
+void LMS7SuiteAppFrame::OnDeviceDisconnect()
 {
-    DeviceHandle handle(event.GetString().ToStdString());
-
-    try {
-        if (fftviewer)
-            fftviewer->StopStreaming();
-        if (lmsControl)
-            lime::DeviceRegistry::freeDevice(lmsControl);
-
-        lmsControl = lime::DeviceRegistry::makeDevice(handle);
-
-        if (lmsControl)
-        {
-            //bind callback for spi data logging
-            const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
-            lmsControl->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
-            wxString controlDev = _("Device: ");
-            controlDev.Append(info.name);
-            double refClk = lmsControl->GetClockFreq(LMS_CLOCK_REF,
-                                                     0); // use reference clock of the 0th channel
-            controlDev.Append(wxString::Format(
-                _(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info.firmwareVersion,
-                info.hardwareVersion, info.protocolVersion, info.gatewareVersion, refClk / 1e6));
-            const int controlCollumn = 1;
-            statusBar->SetStatusText(controlDev, controlCollumn);
-
-            //LMS_EnableCache(lmsControl, mnuCacheValues->IsChecked());
-
-            wxCommandEvent evt;
-            evt.SetEventType(LOG_MESSAGE);
-            evt.SetInt(lime::LOG_LEVEL_INFO);
-            evt.SetString(_("Connected ") + controlDev);
-            wxPostEvent(this, evt);
-            // if (si5351gui)
-            //     si5351gui->ModifyClocksGUI(info->deviceName);
-            // if (boardControlsGui)
-            //     boardControlsGui->SetupControls(info->deviceName);
-            UpdateConnections(lmsControl);
-        }
-    }
-    catch (std::runtime_error &e) {
-        printf("Failed to connect %s\n", e.what());
-    }
-    /*else // TODO:
+    if (fftviewer)
+        fftviewer->StopStreaming();
+    if (lmsControl)
     {
+        const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(lime::LOG_LEVEL_INFO);
-        evt.SetString(_("Disconnected control port"));
+        evt.SetString(wxString::Format("Disconnected: %s", info.name.c_str()));
         wxPostEvent(this, evt);
-    }*/
+        UpdateConnections(nullptr);
+        lime::DeviceRegistry::freeDevice(lmsControl);
+        lmsControl = nullptr;
+    }
 }
 
-// void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
-// {
-//     m_lmsSelection = event.GetInt();
-// }
+void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
+{
+    OnDeviceDisconnect();
+    // event.GetString() is the target device handle text
+    try {
+        if (event.GetString().length() == 0)
+            return;
+
+        DeviceHandle handle(event.GetString().ToStdString());
+        lmsControl = lime::DeviceRegistry::makeDevice(handle);
+
+        if (!lmsControl)
+        {
+            wxMessageBox( wxString::Format("Failed to connect to: %s", event.GetString()), wxT("Connection error"), wxICON_ERROR);
+            return;
+        }
+
+        //bind callback for spi data logging
+        const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
+        lmsControl->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
+        wxString controlDev = _("Device: ");
+        controlDev.Append(handle.ToString());
+        double refClk = lmsControl->GetClockFreq(LMS_CLOCK_REF,
+                                                 0); // use reference clock of the 0th channel
+        controlDev.Append(wxString::Format(
+            _(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info.firmwareVersion,
+            info.hardwareVersion, info.protocolVersion, info.gatewareVersion, refClk / 1e6));
+        statusBar->SetStatusText(controlDev, controlCollumn);
+
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
+        evt.SetString(_("Connected ") + controlDev);
+        wxPostEvent(this, evt);
+        UpdateConnections(lmsControl);
+    }
+    catch (std::runtime_error &e) {
+        printf("Failed to connect %s\n", e.what());
+    }
+}
 
 void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
 {
