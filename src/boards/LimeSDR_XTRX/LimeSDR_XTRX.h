@@ -28,8 +28,6 @@ public:
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
 
-    virtual const SDRDevice::Descriptor &GetDescriptor() const override;
-
     virtual int Init() override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;

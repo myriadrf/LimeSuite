@@ -31,20 +31,27 @@ LMS64CPacket::LMS64CPacket()
      memset(this, 0, sizeof(LMS64CPacket));
 }
 
-static int convertStatus(const int &status, const LMS64CPacket &pkt)
-{
-    if (status != 0) return -1;
-    switch (pkt.status)
-    {
-    case STATUS_COMPLETED_CMD: return 0;
-    case STATUS_UNKNOWN_CMD:
-        return ReportError(EPROTONOSUPPORT, "Command not supported");
-    default: break;
-    }
-    return ReportError(EPROTO, status2string(pkt.status));
-}
-
 namespace LMS64CProtocol {
+
+static const char cmd_status_text[][32]=
+{
+    "Undefined/Failure",
+    "Completed",
+    "Unknown command",
+    "Busy",
+    "Too many blocks",
+    "Error",
+    "Wrong order",
+    "Resource denied"
+};
+
+static inline const char* status2string(const int status)
+{
+    if(status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
+        return cmd_status_text[status];
+    else
+        return "Unknown status";
+}
 
 static int SPI16(ISerialPort& port, eCMD_LMS writeCmd, const uint32_t *MOSI, eCMD_LMS readCmd, uint32_t *MISO, size_t count)
 {
@@ -105,6 +112,66 @@ static int SPI16(ISerialPort& port, eCMD_LMS writeCmd, const uint32_t *MOSI, eCM
         pkt.status = STATUS_UNDEFINED;
     }
     return 0;
+}
+
+int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info)
+{
+    info.deviceId = LMS_DEV_UNKNOWN;
+    info.expansionBoardId = EXP_BOARD_UNKNOWN;
+    info.firmware = 0;
+    info.hardware = 0;
+    info.protocol = 0;
+    info.boardSerialNumber = 0;
+
+    LMS64CPacket pkt;
+    pkt.cmd = CMD_GET_INFO;
+    int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    if (sent != sizeof(pkt))
+        return -1;
+
+    int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
+        return -1;
+
+    if (pkt.status == STATUS_COMPLETED_CMD)
+    {
+        info.firmware = pkt.payload[0];
+        info.deviceId = pkt.payload[1];
+        info.protocol = pkt.payload[2];
+        info.hardware = pkt.payload[3];
+        info.expansionBoardId = pkt.payload[4];
+        info.boardSerialNumber = 0;
+        for (int i = 10; i < 18; i++)
+        {
+            info.boardSerialNumber <<= 8;
+            info.boardSerialNumber |= pkt.payload[i];
+        }
+    }
+    return 0;
+}
+
+void FirmwareToDescriptor(const FirmwareInfo& fw, SDRDevice::Descriptor& descriptor)
+{
+    if (fw.deviceId >= eLMS_DEV::LMS_DEV_COUNT)
+    {
+        char strTemp[64];
+        sprintf(strTemp, "Unknown (0x%X)", fw.deviceId);
+        descriptor.name = std::string(strTemp);
+    }
+    else
+        descriptor.name = GetDeviceName(static_cast<eLMS_DEV>(fw.deviceId));
+    if (fw.expansionBoardId >= eEXP_BOARD::EXP_BOARD_COUNT)
+    {
+        char strTemp[64];
+        sprintf(strTemp, "Unknown (0x%X)", fw.expansionBoardId);
+        descriptor.name = std::string(strTemp);
+    }
+    else
+        descriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(fw.expansionBoardId));
+    descriptor.firmwareVersion = std::to_string(int(fw.firmware));
+    descriptor.hardwareVersion = std::to_string(int(fw.hardware));
+    descriptor.protocolVersion = std::to_string(int(fw.protocol));
+    descriptor.serialNumber = fw.boardSerialNumber;
 }
 
 int LMS7002M_SPI(ISerialPort& port, const uint32_t* MOSI, uint32_t* MISO, size_t count)

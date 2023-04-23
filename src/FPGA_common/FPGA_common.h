@@ -63,6 +63,16 @@ public:
     int WriteLMS7002MSPI(const uint32_t *addr, uint32_t length);
     int ReadLMS7002MSPI(const uint32_t *addr, uint32_t *values, uint32_t length);
 
+    struct GatewareInfo
+    {
+        int boardID;
+        int version;
+        int revision;
+        int hardwareVersion;
+    };
+    GatewareInfo GetGatewareInfo();
+    static void GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc);
+
   protected:
     int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title = nullptr);
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);

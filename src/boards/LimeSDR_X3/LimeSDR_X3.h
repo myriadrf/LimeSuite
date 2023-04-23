@@ -31,8 +31,6 @@ public:
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
 
-    virtual const SDRDevice::Descriptor &GetDescriptor() const override;
-
     virtual int Init() override;
     virtual void Reset() override;
     //virtual int EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool enabled) override;

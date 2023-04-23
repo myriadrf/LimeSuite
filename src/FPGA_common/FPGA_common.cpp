@@ -168,7 +168,7 @@ int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned c
 int FPGA::WriteLMS7002MSPI(const uint32_t *data, uint32_t length)
 {
 #ifndef NDEBUG
-    for (int i = 0; i < length; ++i)
+    for (uint32_t i = 0; i < length; ++i)
         assert(data[i] & (1 << 31));
 #endif
     connection->SPI(mLMSSlaveId, data, nullptr, length);
@@ -1130,6 +1130,33 @@ double FPGA::DetectRefClk(double fx3Clk)
         return -1;
     lime::info("Reference clock %1.2f MHz", clkTbl[i - 1] / 1e6);
     return clkTbl[i - 1];
+}
+
+FPGA::GatewareInfo FPGA::GetGatewareInfo()
+{
+    GatewareInfo info;
+    info.boardID = 0;
+    info.version = 0;
+    info.revision = 0;
+
+    const uint32_t addrs[4] = {0x0000, 0x0001, 0x0002, 0x0003};
+    uint32_t data[4];
+    if (ReadRegisters(addrs, data, 4) != 0)
+        return info;
+
+    info.boardID = data[0];
+    info.version = data[1];
+    info.revision = data[2];
+    info.hardwareVersion = data[3] & 0x7F;
+    return info;
+}
+
+void FPGA::GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc)
+{
+    desc.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gw.boardID));
+    desc.gatewareVersion = std::to_string(int(gw.version));
+    desc.gatewareRevision = std::to_string(int(gw.revision));
+    desc.hardwareVersion = std::to_string(int(gw.hardwareVersion));
 }
 
 } //namespace lime

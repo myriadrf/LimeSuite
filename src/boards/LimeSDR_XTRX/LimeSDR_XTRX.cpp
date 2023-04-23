@@ -52,9 +52,26 @@ static inline void ValidateChannel(uint8_t channel)
 LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     : LMS7002M_SDRDevice(), mControlPort(control), mStreamPort(stream)
 {
+    SDRDevice::Descriptor& desc = mDeviceDescriptor;
+    desc.spiSlaveIds = {
+        {"LMS7002M", spi_LMS7002M},
+        {"FPGA", spi_FPGA}
+    };
+
+    desc.memoryDevices = {
+        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
+        {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
+    };
+
     mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M);
     mFPGA->SetConnection(this);
 
+    RFSOCDescriptor soc;
+    // LMS#1
+    soc.channelCount = 2;
+    soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
+    soc.txPathNames = {"None", "Band1", "Band2"};
+    desc.rfSOC.push_back(soc);
     mLMSChips.push_back(new LMS7002M(spi_LMS7002M));
     for ( auto iter : mLMSChips)
     {
@@ -279,31 +296,6 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
     catch (std::runtime_error &e) {
         throw;
     }
-}
-
-const SDRDevice::Descriptor &LimeSDR_XTRX::GetDescriptor() const
-{
-    static SDRDevice::Descriptor d;
-    d.spiSlaveIds = {
-        {"LMS7002M", spi_LMS7002M},
-        {"FPGA", spi_FPGA}
-    };
-
-    d.memoryDevices = {
-        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
-        {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
-    };
-
-    if (d.rfSOC.size() != 0) // fill only once
-        return d;
-
-    RFSOCDescriptor soc;
-    // LMS#1
-    soc.channelCount = 2;
-    soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
-    soc.txPathNames = {"None", "Band1", "Band2"};
-    d.rfSOC.push_back(soc);
-    return d;
 }
 
 int LimeSDR_XTRX::Init()

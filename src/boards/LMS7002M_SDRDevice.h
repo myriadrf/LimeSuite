@@ -27,7 +27,7 @@ public:
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
-    virtual const Descriptor &GetDescriptor() const = 0;
+    virtual const Descriptor &GetDescriptor();
 
     virtual int Init() = 0;
     virtual void Reset() override;
@@ -75,6 +75,7 @@ protected:
     std::vector<LMS7002M*> mLMSChips;
     std::vector<TRXLooper*> mStreamers;
 
+    Descriptor mDeviceDescriptor;
     StreamConfig mStreamConfig;
     FPGA *mFPGA;
 

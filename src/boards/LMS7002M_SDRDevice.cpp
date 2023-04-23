@@ -140,6 +140,11 @@ void LMS7002M_SDRDevice::SetMessageLogCallback(LogCallbackType callback)
 //     SPI(slaves.at("FPGA"), &mosi, nullptr, 1);
 // }
 
+const SDRDevice::Descriptor& LMS7002M_SDRDevice::GetDescriptor()
+{
+    return mDeviceDescriptor;
+}
+
 void LMS7002M_SDRDevice::Reset()
 {
     for(auto iter : mLMSChips)

@@ -62,8 +62,33 @@ LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
     : LMS7002M_SDRDevice(), mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
 {
+    SDRDevice::Descriptor &desc = mDeviceDescriptor;
+    desc.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
+
+    PCIE_CSR_Pipe controlPipe(*mControlPort);
+    LMS64CProtocol::FirmwareInfo fw;
+    LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
+    LMS64CProtocol::FirmwareToDescriptor(fw, desc);
+
+    desc.spiSlaveIds = {
+        {"LMS7002M_1", spi_LMS7002M_1},
+        {"LMS7002M_2", spi_LMS7002M_2},
+        {"LMS7002M_3", spi_LMS7002M_3},
+        {"FPGA", spi_FPGA}
+    };
+
+    desc.memoryDevices = {
+        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
+        {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
+    };
+
+    desc.customParameters.push_back(cp_vctcxo_dac);
+    desc.customParameters.push_back(cp_temperature);
+
     mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M_1);
     mFPGA->SetConnection(this);
+    FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
+    FPGA::GatewareToDescriptor(gw, desc);
 
     mEqualizer = new Equalizer(this, spi_FPGA);
 
@@ -71,9 +96,29 @@ LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     // TODO: read back cdcm values or cdcm[0]->Reset(30.72e6, 25e6);
     // cdcm[1] = new CDCM_Dev(mFPGA, CDCM2_BASE_ADDR);
 
+    RFSOCDescriptor soc;
+    // LMS#1
+    soc.name = "LMS 1";
+    soc.channelCount = 2;
+    soc.rxPathNames = {"None", "LNAH", "LNAL"};
+    soc.txPathNames = {"None", "Band1", "Band2"};
+    desc.rfSOC.push_back(soc);
     mLMSChips.push_back(new LMS7002M(spi_LMS7002M_1));
+
+    // LMS#2
+    soc.name = "LMS 2";
+    soc.rxPathNames = {"None", "TDD", "FDD", "Calibration (LMS3)"};
+    soc.txPathNames = {"None", "TDD", "FDD"};
+    desc.rfSOC.push_back(soc);
     mLMSChips.push_back(new LMS7002M(spi_LMS7002M_2));
+
+    // LMS#3
+    soc.name = "LMS 3";
+    soc.rxPathNames = {"None", "LNAH", "Calibration (LMS2)"};
+    soc.txPathNames = {"None", "Band1"};
+    desc.rfSOC.push_back(soc);
     mLMSChips.push_back(new LMS7002M(spi_LMS7002M_3));
+
     for ( auto iter : mLMSChips)
     {
         iter->SetConnection(this);
@@ -526,51 +571,6 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
     catch (std::runtime_error &e) {
         throw;
     }
-}
-
-const SDRDevice::Descriptor &LimeSDR_X3::GetDescriptor() const
-{
-    static SDRDevice::Descriptor d;
-    d.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
-    d.spiSlaveIds = {
-        {"LMS7002M_1", spi_LMS7002M_1},
-        {"LMS7002M_2", spi_LMS7002M_2},
-        {"LMS7002M_3", spi_LMS7002M_3},
-        {"FPGA", spi_FPGA}
-    };
-
-    d.memoryDevices = {
-        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
-        {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
-    };
-
-    if (d.rfSOC.size() != 0) // fill only once
-        return d;
-
-    d.customParameters.push_back(cp_vctcxo_dac);
-    d.customParameters.push_back(cp_temperature);
-
-    RFSOCDescriptor soc;
-    // LMS#1
-    soc.name = "LMS 1";
-    soc.channelCount = 2;
-    soc.rxPathNames = {"None", "LNAH", "LNAL"};
-    soc.txPathNames = {"None", "Band1", "Band2"};
-    d.rfSOC.push_back(soc);
-
-    // LMS#2
-    soc.name = "LMS 2";
-    soc.rxPathNames = {"None", "TDD", "FDD", "Calibration (LMS3)"};
-    soc.txPathNames = {"None", "TDD", "FDD"};
-    d.rfSOC.push_back(soc);
-
-    // LMS#3
-    soc.name = "LMS 3";
-    soc.rxPathNames = {"None", "LNAH", "Calibration (LMS2)"};
-    soc.txPathNames = {"None", "Band1"};
-    d.rfSOC.push_back(soc);
-
-    return d;
 }
 
 int LimeSDR_X3::Init()
