@@ -43,14 +43,28 @@ static constexpr float xtrxDefaultRefClk = 26e6;
 
 static inline void ValidateChannel(uint8_t channel)
 {
-    if (channel > 5)
+    if (channel > 2)
         throw std::logic_error("invalid channel index");
+}
+
+// Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
+void LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
+{
+    constexpr int chipIndex = 0;
+    assert(userData != nullptr);
+    LimeSDR_XTRX* pthis = static_cast<LimeSDR_XTRX*>(userData);
+    // don't care about cgen changes while doing Config(), to avoid unnecessary fpga updates
+    if (pthis->mConfigInProgress)
+        return;
+    LMS7002M* soc = pthis->mLMSChips[chipIndex];
+    UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     : LMS7002M_SDRDevice(), mControlPort(control), mStreamPort(stream)
+    , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
     desc.spiSlaveIds = {
@@ -72,7 +86,9 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
     soc.txPathNames = {"None", "Band1", "Band2"};
     desc.rfSOC.push_back(soc);
-    mLMSChips.push_back(new LMS7002M(spi_LMS7002M));
+    LMS7002M* chip = new LMS7002M(spi_LMS7002M);
+    chip->SetOnCGENChangeCallback(LMS1_UpdateFPGAInterface, this);
+    mLMSChips.push_back(chip);
     for ( auto iter : mLMSChips)
     {
         iter->SetConnection(this);
@@ -191,6 +207,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
     }
 
     try {
+        mConfigInProgress = true;
         LMS7002M* chip = mLMSChips.at(socIndex);
         if (!cfg.skipDefaults)
         {
@@ -288,6 +305,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         uint16_t txMux = chip->Get_SPI_Reg_bits(LMS7param(TX_MUX));
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), 2);
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
+
+        mConfigInProgress = false;
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_XTRX config: %s\n", e.what());

@@ -463,7 +463,13 @@ public:
     double GetSampleRate(bool tx, double *rf_rate_Hz = nullptr);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
+
+    typedef void(*CGENChangeCallbackType)(void* userData);
+    void SetOnCGENChangeCallback(CGENChangeCallbackType callback, void* userData = nullptr);
 protected:
+    CGENChangeCallbackType mCallback_onCGENChange;
+    void* mCallback_onCGENChange_userData;
+
     const uint32_t mSlaveID;
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;

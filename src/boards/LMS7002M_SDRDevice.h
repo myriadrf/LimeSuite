@@ -70,6 +70,7 @@ public:
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 
 protected:
+    static void UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;
     std::vector<LMS7002M*> mLMSChips;

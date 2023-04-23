@@ -56,11 +56,25 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
+// Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
+void LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
+{
+    constexpr int chipIndex = 0;
+    assert(userData != nullptr);
+    LimeSDR_X3* pthis = static_cast<LimeSDR_X3*>(userData);
+    // don't care about cgen changes while doing Config(), to avoid unnecessary fpga updates
+    if (pthis->mConfigInProgress)
+        return;
+    LMS7002M* soc = pthis->mLMSChips[chipIndex];
+    UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
+}
+
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
     : LMS7002M_SDRDevice(), mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
+    , mConfigInProgress(false)
 {
     SDRDevice::Descriptor &desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
@@ -103,7 +117,10 @@ LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     soc.rxPathNames = {"None", "LNAH", "LNAL"};
     soc.txPathNames = {"None", "Band1", "Band2"};
     desc.rfSOC.push_back(soc);
-    mLMSChips.push_back(new LMS7002M(spi_LMS7002M_1));
+    LMS7002M* lms1 = new LMS7002M(spi_LMS7002M_1);
+    lms1->SetOnCGENChangeCallback(LMS1_UpdateFPGAInterface, this);
+    mLMSChips.push_back(lms1);
+
 
     // LMS#2
     soc.name = "LMS 2";
@@ -433,6 +450,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
     try
     {
+        mConfigInProgress = true;
         PreConfigure(cfg, socIndex);
 
         // config validation complete, now do the actual configuration
@@ -563,6 +581,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
         PostConfigure(cfg, socIndex);
+        mConfigInProgress = false;
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_X3 config: %s\n", e.what());
@@ -605,68 +624,6 @@ int LimeSDR_X3::Init()
     InitLMS3(mLMSChips.at(2), skipTune);
     return 0;
 }
-/*
-SDRDevice::DeviceInfo LimeSDR_X3::GetDeviceInfo()
-{
-    assert(mControlPort);
-    SDRDevice::DeviceInfo devInfo;
-    try
-    {
-        LMS64CProtocol::LMS64CPacket pkt;
-        pkt.cmd = CMD_GET_INFO;
-        int sentBytes = mControlPort->WriteControl((uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (sentBytes != sizeof(pkt))
-            throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
-        int gotBytes = mControlPort->ReadControl((uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (gotBytes != sizeof(pkt))
-            throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
-
-        LMS64CProtocol::LMSinfo info;
-        if (pkt.status == STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
-        {
-            info.firmware = pkt.payload[0];
-            info.device = pkt.payload[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.payload[1] : LMS_DEV_UNKNOWN;
-            info.protocol = pkt.payload[2];
-            info.hardware = pkt.payload[3];
-            info.expansion = pkt.payload[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.payload[4] : EXP_BOARD_UNKNOWN;
-            info.boardSerialNumber = 0;
-            for (int i = 10; i < 18; i++)
-            {
-                info.boardSerialNumber <<= 8;
-                info.boardSerialNumber |= pkt.payload[i];
-            }
-        }
-        else
-            return devInfo;
-        devInfo.deviceName = GetDeviceName(info.device);
-        devInfo.expansionName = GetExpansionBoardName(info.expansion);
-        devInfo.firmwareVersion = std::to_string(int(info.firmware));
-        devInfo.hardwareVersion = std::to_string(int(info.hardware));
-        devInfo.protocolVersion = std::to_string(int(info.protocol));
-        devInfo.boardSerialNumber = info.boardSerialNumber;
-
-        LMS64CProtocol::FPGAinfo gatewareInfo;
-        const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
-        uint32_t data[4];
-        SPI(spi_FPGA, addrs, data, 4);
-        gatewareInfo.boardID = (eLMS_DEV)data[0];
-        gatewareInfo.gatewareVersion = data[1];
-        gatewareInfo.gatewareRevision = data[2];
-        gatewareInfo.hwVersion = data[3] & 0x7F;
-
-        devInfo.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gatewareInfo.boardID));
-        devInfo.gatewareVersion = std::to_string(int(gatewareInfo.gatewareVersion));
-        devInfo.gatewareRevision = std::to_string(int(gatewareInfo.gatewareRevision));
-        devInfo.hardwareVersion = std::to_string(int(gatewareInfo.hwVersion));
-        return devInfo;
-    }
-    catch (...)
-    {
-        devInfo.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
-        devInfo.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
-    }
-    return devInfo;
-}*/
 
 void LimeSDR_X3::Reset()
 {

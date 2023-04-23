@@ -62,6 +62,8 @@ protected:
     void LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled);
     void LMS3SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
+    static void LMS1_UpdateFPGAInterface(void* userData);
+
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
 
     enum class ePathLMS1_Rx {
@@ -90,6 +92,7 @@ private:
     std::vector<LitePCIe*> mRXStreamPorts;
     std::vector<LitePCIe*> mTXStreamPorts;
     std::mutex mCommsMutex;
+    bool mConfigInProgress;
 };
 
 class LimeSDR_X3Entry : public DeviceRegistryEntry

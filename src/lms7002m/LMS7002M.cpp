@@ -160,6 +160,8 @@ void LMS7002M::SetConnection(IComms *port, const size_t devIndex)
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
 LMS7002M::LMS7002M(uint32_t slaveID) :
+    mCallback_onCGENChange(nullptr),
+    mCallback_onCGENChange_userData(nullptr),
     mSlaveID(slaveID),
     useCache(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
@@ -1253,6 +1255,9 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     }
     if (output)
         output->csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO_CGEN));
+
+    if (mCallback_onCGENChange)
+        mCallback_onCGENChange(mCallback_onCGENChange_userData);
     return 0;
 }
 
@@ -3144,4 +3149,10 @@ int LMS7002M::SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth
     printf("%s", ss.str().c_str());
 
     return ResetLogicregisters();
+}
+
+void LMS7002M::SetOnCGENChangeCallback(CGENChangeCallbackType callback, void* userData)
+{
+    mCallback_onCGENChange = callback;
+    mCallback_onCGENChange_userData = userData;
 }

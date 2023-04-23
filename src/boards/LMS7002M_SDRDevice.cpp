@@ -14,6 +14,11 @@ LMS7002M_SDRDevice::LMS7002M_SDRDevice() : mCallback_logData(nullptr), mCallback
 
 LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
 {
+    for (LMS7002M* soc : mLMSChips)
+    {
+        if (soc)
+            delete soc;
+    }
 }
 
 /*
@@ -80,65 +85,6 @@ void LMS7002M_SDRDevice::SetMessageLogCallback(LogCallbackType callback)
 {
     mCallback_logMessage = callback;
 }
-
-// int LMS7002M_SDRDevice::ReadLMSReg(uint16_t address, int ind)
-// {
-//     uint32_t mosi = address;
-//     uint32_t miso = 0;
-//     const auto slaves = GetDescriptor().spiSlaveIds;
-
-//     uint32_t slaveAddr = 0;
-//     auto iter = slaves.find("LMS7002M");
-//     if (iter != slaves.end())
-//         slaveAddr = iter->second;
-//     else
-//     {
-//         char ctemp[128];
-//         sprintf(ctemp, "LMS7002M_%i", ind+1);
-//         iter = slaves.find(ctemp);
-//         if (iter != slaves.end())
-//             slaveAddr = iter->second;
-//         else
-//             throw std::runtime_error("LMS7002M spi slave address not found");
-//     }
-
-//     SPI(slaveAddr, &mosi, &miso, 1);
-//     return miso & 0xFFFF;
-// }
-// void LMS7002M_SDRDevice::WriteLMSReg(uint16_t address, uint16_t val, int ind)
-// {
-//     const uint32_t mosi = ((address | 0x8000) << 16) | val;
-//     const auto slaves = GetDescriptor().spiSlaveIds;
-//     uint32_t slaveAddr = 0;
-//     auto iter = slaves.find("LMS7002M");
-//     if (iter != slaves.end())
-//         slaveAddr = iter->second;
-//     else
-//     {
-//         char ctemp[128];
-//         sprintf(ctemp, "LMS7002M_%i", ind+1);
-//         iter = slaves.find(ctemp);
-//         if (iter != slaves.end())
-//             slaveAddr = iter->second;
-//         else
-//             throw std::runtime_error("LMS7002M spi slave address not found");
-//     }
-//     SPI(slaveAddr, &mosi, nullptr, 1);
-// }
-// int LMS7002M_SDRDevice::ReadFPGAReg(uint16_t address)
-// {
-//     uint32_t mosi = address;
-//     uint32_t miso = 0;
-//     const auto slaves = GetDescriptor().spiSlaveIds;
-//     SPI(slaves.at("FPGA"), &mosi, &miso, 1);
-//     return miso & 0xFFFF;
-// }
-// void LMS7002M_SDRDevice::WriteFPGAReg(uint16_t address, uint16_t val)
-// {
-//     const uint32_t mosi = ((address | 0x8000) << 16) | val;
-//     const auto slaves = GetDescriptor().spiSlaveIds;
-//     SPI(slaves.at("FPGA"), &mosi, nullptr, 1);
-// }
 
 const SDRDevice::Descriptor& LMS7002M_SDRDevice::GetDescriptor()
 {
@@ -218,6 +164,26 @@ void LMS7002M_SDRDevice::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStat
 bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
 {
     throw(OperationNotSupported("UploadMemory not implemented"));
+}
+
+void LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex)
+{
+    double fpgaTxPLL = soc.GetReferenceClk_TSP(Tx);
+    int interp = soc.Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    if (interp != 7) {
+        uint8_t siso = soc.Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        fpgaTxPLL /= std::pow(2, interp + siso);
+    }
+    double fpgaRxPLL = soc.GetReferenceClk_TSP(Rx);
+    int dec = soc.Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    if (dec != 7) {
+        uint8_t siso = soc.Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
+        fpgaRxPLL /= std::pow(2, dec + siso);
+    }
+
+    if(fpga.SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipIndex) != 0)
+        throw std::runtime_error("Failed to configure FPGA interface");
+    soc.ResetLogicregisters();
 }
 
 } // namespace lime
