@@ -21,8 +21,8 @@ void fftviewer_frFFTviewer::Update() {}
 bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 {
     StopStreaming();
-    lmsControl = pDataPort;
-    if (!lmsControl)
+    device = pDataPort;
+    if (!device)
     {
         btnStartStop->Disable();
         return true;
@@ -31,7 +31,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 
     lmsIndex = 0;
     cmbRFSOC->Clear();
-    const SDRDevice::Descriptor &desc = lmsControl->GetDescriptor();
+    const SDRDevice::Descriptor &desc = device->GetDescriptor();
     for (size_t i=0; i<desc.rfSOC.size(); ++i)
         cmbRFSOC->Append(desc.rfSOC[i].name.c_str());
     cmbRFSOC->SetSelection(0);
@@ -42,7 +42,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 }
 
 fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow *parent, wxWindowID id)
-    : frFFTviewer(parent, id), mStreamRunning(false), lmsControl(nullptr)
+    : frFFTviewer(parent, id), mStreamRunning(false), device(nullptr)
 {
     captureSamples.store(false);
     averageCount.store(50);
@@ -129,7 +129,7 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
-    if (!lmsControl) {
+    if (!device) {
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
     }
@@ -207,7 +207,7 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
     SDRDevice::StreamStats rxStats;
     SDRDevice::StreamStats txStats;
     const uint8_t chipIndex = this->lmsIndex;
-    lmsControl->StreamStatus(chipIndex, &rxStats, &txStats);
+    device->StreamStatus(chipIndex, &rxStats, &txStats);
 
     float RxFilled = 100.0 * rxStats.FIFO_filled;
     gaugeRxBuffer->SetValue((int)RxFilled);
@@ -395,8 +395,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     try
     {
-        pthis->lmsControl->StreamSetup(config, chipIndex);
-        pthis->lmsControl->StreamStart(chipIndex);
+        pthis->device->StreamSetup(config, chipIndex);
+        pthis->device->StreamStart(chipIndex);
     }
     catch (std::logic_error &e) {
         printf("%s\n", e.what());
@@ -407,7 +407,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     // uint16_t regVal = 0;
     // TODO:
-    // if (LMS_ReadFPGAReg(pthis->lmsControl, 0x0008, &regVal) == 0)
+    // if (LMS_ReadFPGAReg(pthis->device, 0x0008, &regVal) == 0)
     // {
     //     wxCommandEvent* e = new wxCommandEvent(wxEVT_COMMAND_CHOICE_SELECTED);
     //     e->SetInt((regVal&2) ? 0 : 1);
@@ -427,7 +427,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         do
         {
             uint32_t samplesPopped;
-            samplesPopped = pthis->lmsControl->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
+            samplesPopped = pthis->device->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
             if(samplesPopped <= 0)
                 continue;
 
@@ -435,7 +435,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
             if (runTx) {
                 txMeta.timestamp = rxTS + 1020*128;
-                pthis->lmsControl->StreamTx(chipIndex, (const void **)src, fftSize, &txMeta);
+                pthis->device->StreamTx(chipIndex, (const void **)src, fftSize, &txMeta);
             }
 
             if(pthis->captureSamples.load())
@@ -570,7 +570,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
-    pthis->lmsControl->StreamStop(chipIndex);
+    pthis->device->StreamStop(chipIndex);
 
     for (int i = 0; i < channelsCount; ++i)
         delete [] buffers[i];
@@ -593,7 +593,8 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 void fftviewer_frFFTviewer::SetNyquistFrequency()
 {
     double freqHz = 20e6;
-    // TODO: LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbRFSOC->GetSelection()/2*2,&freqHz,nullptr);
+    if (device)
+        freqHz = device->GetSampleRate(cmbRFSOC->GetSelection(), TRXDir::Rx);
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
     mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
 }
@@ -607,7 +608,7 @@ void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
     cmbChannelVisibility->Clear();
     cmbChannelVisibility->Append(_T("A"));
     cmbChannelVisibility->Append(_T("B"));
-    if (cmbRFSOC->GetSelection()%2==1)
+    if (cmbMode->GetSelection()%2==1)
         cmbChannelVisibility->Append(_T("A&B"));
     else if (tmp > 1)
         tmp = 0;

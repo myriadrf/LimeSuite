@@ -90,7 +90,7 @@ protected:
     std::thread threadProcessing;
     wxString printDataRate(float dataRate);
 
-    lime::SDRDevice *lmsControl;
+    lime::SDRDevice *device;
     wxTimer* mGUIupdater;
     unsigned lmsIndex;
 };

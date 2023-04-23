@@ -33,9 +33,8 @@ public:
 
     virtual int Init() override;
     virtual void Reset() override;
-    //virtual int EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool enabled) override;
 
-    //virtual double GetRate(Dir dir, uint8_t channel) const override;
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;

@@ -68,9 +68,9 @@ SOCConfig_view::SOCConfig_view(
 
         wxFlexGridSizer *samplingGrid = new wxFlexGridSizer(2, 0, 0);
 
-        samplingGrid->Add(new wxStaticText(base, wxID_ANY, wxT("Nyquist (MHz):")), titleFlags);
-        gui.nyquist = new wxTextCtrl(base, wxNewId(), wxT("10"));
-        samplingGrid->Add(gui.nyquist, ctrlFlags);
+        samplingGrid->Add(new wxStaticText(base, wxID_ANY, wxT("Sample rate (MHz):")), titleFlags);
+        gui.sampleRate = new wxTextCtrl(base, wxNewId(), wxT("10"));
+        samplingGrid->Add(gui.sampleRate, ctrlFlags);
         centerGrid->Add(samplingGrid, wxSizerFlags().Center());
 
         wxFlexGridSizer *oversamplingGrid = new wxFlexGridSizer(4, 0, 0);
@@ -186,7 +186,7 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
 
         ch.rx.NCOoffset = parseGuiValue(gui.rx[i].nco->GetValue()) * multiplier;
         ch.tx.NCOoffset = parseGuiValue(gui.tx[i].nco->GetValue()) * multiplier;
-        ch.rx.sampleRate = parseGuiValue(gui.nyquist->GetValue()) * multiplier;
+        ch.rx.sampleRate = parseGuiValue(gui.sampleRate->GetValue()) * multiplier;
         ch.tx.sampleRate = ch.rx.sampleRate;
         // ch.rxGain = parseGuiValue(gui.rx[i].gain->GetSelection());
         // ch.txGain = parseGuiValue(gui.tx[i].gain->GetSelection());

@@ -32,7 +32,7 @@ public:
     virtual int Init() = 0;
     virtual void Reset() override;
 
-    //virtual double GetRate(Dir dir, uint8_t channel) const = 0;
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;

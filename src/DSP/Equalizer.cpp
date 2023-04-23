@@ -334,3 +334,13 @@ void Equalizer::SetOversample(uint8_t oversample)
         WriteRegister(TX_HB_DEL, useOversample);
     }
 }
+
+uint8_t Equalizer::GetOversample()
+{
+    const int ch = 0;
+    WriteRegister(MAC, ch+1);
+    int bypass = ReadRegister(TX_HB_BYP);
+    int delay = ReadRegister(TX_HB_DEL);
+// TODO: Warn if bypass and delay are incompatible
+    return (delay && !bypass) ? 2 : 1;
+}

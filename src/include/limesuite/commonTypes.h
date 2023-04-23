@@ -2,7 +2,7 @@
 
 namespace lime {
 
-enum Dir
+enum class TRXDir
 {
     Rx = 0,
     Tx = 1

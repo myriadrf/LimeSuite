@@ -633,61 +633,21 @@ void LimeSDR_X3::Reset()
         LMS64CProtocol::DeviceReset(pipe, i);
 }
 
-/*
-int LimeSDR_X3::EnableChannel(SDRDevice::Dir dir, uint8_t channel, bool enabled)
+double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
 {
-    ValidateChannel(channel);
-    LMS7002M* chip = mLMSChips[channel / 2];
-    int ret = chip->EnableChannel(dir == SDRDevice::Dir::Tx ? LMS7002M::Tx : LMS7002M::Rx,
-                                      channel & 1, enabled);
-    // if (dir == SDRDevice::Dir::Tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
-    //     chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
-    return ret;
-}
-*/
-
-/*double LimeSDR_X3::GetRate(Dir dir, uint8_t channel) const
-{
-    if(channel >= 2)
-        throw std::logic_error("Invalid channel");
-    LMS7002M* chip = mLMSChips[channel / 2];
-    return chip->GetSampleRate(dir, (channel&1) ? LMS7002M::ChB : LMS7002M::ChA);
-}
-
-std::vector<std::string> LimeSDR_X3::GetPathNames(SDRDevice::Dir dir, uint8_t channel) const
-{
-    if(channel == 0 || channel == 1) // LMS1
+    if(moduleIndex == 1)
     {
-        if (dir == SDRDevice::Dir::Tx)
-            return {"NONE", "BAND1", "BAND2"};
+        if (trx == TRXDir::Rx)
+            return cdcm[0]->GetFrequency(CDCM_Y4); // Rx Ch. A
         else
-            return {"NONE", "LNAH", "LNAL", "LNAW_NC"};
+        {
+            const int oversample = mEqualizer->GetOversample();
+            return cdcm[0]->GetFrequency(CDCM_Y0Y1) / oversample; // Tx Ch. A&B
+        }
     }
-
-    if(channel == 2 || channel == 3) // LMS2
-    {
-        return {"NONE", "TDD_TX", "TDD_RX", "FDD", "Cal"};
-    }
-
-    if(channel == 4 || channel == 5) // LMS3
-    {
-        if (dir == SDRDevice::Dir::Tx)
-            return {"NONE"};
-        else
-            return {"NONE", "LNAH", "Cal"};
-    }
-    return {};
+    else
+        return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, trx);
 }
-
-uint8_t LimeSDR_X3::GetPath(SDRDevice::Dir dir, uint8_t channel) const
-{
-    ValidateChannel(channel);
-    LMS7002M* chip = mLMSChips[channel / 2];
-    chip->SetActiveChannel((channel & 1) ? LMS7002M::ChB : LMS7002M::ChA);
-    if (dir == SDRDevice::Dir::Tx)
-        return chip->GetBandTRF();
-    return chip->GetPathRFE();
-}*/
 
 double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {

@@ -43,6 +43,7 @@ public:
     void Configure(const Equalizer::Config &cfg);
 
     void SetOversample(uint8_t oversample);
+    uint8_t GetOversample();
 private:
     IComms *m_Comms;
     uint32_t mSPIbusAddr;

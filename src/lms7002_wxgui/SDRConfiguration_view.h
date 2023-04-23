@@ -29,7 +29,7 @@ struct SDRConfigGUI
   wxTextCtrl* rxLO;
   wxTextCtrl* txLO;
   wxCheckBox* tdd;
-  wxTextCtrl* nyquist;
+  wxTextCtrl* sampleRate;
   wxChoice* decimation;
   wxChoice* interpolation;
   ChannelConfigGUI rx[2];

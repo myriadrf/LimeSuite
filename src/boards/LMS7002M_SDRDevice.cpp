@@ -97,6 +97,13 @@ void LMS7002M_SDRDevice::Reset()
         iter->ResetChip();
 }
 
+double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
+{
+    if(moduleIndex >= mLMSChips.size())
+        throw std::logic_error("Invalid module index");
+    return mLMSChips[moduleIndex]->GetSampleRate(trx == TRXDir::Tx ? true : false, LMS7002M::Channel::ChA);
+}
+
 void LMS7002M_SDRDevice::Synchronize(bool toChip)
 {
     for (auto iter : mLMSChips)
