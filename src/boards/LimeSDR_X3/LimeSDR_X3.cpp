@@ -217,8 +217,15 @@ static inline const std::string strFormat(const char *format, ...)
 }
 
 // Setup default register values specifically for onboard LMS1 chip
-static int InitLMS1(LMS7002M* lms, bool skipTune = false)
+int LimeSDR_X3::InitLMS1(bool skipTune)
 {
+    LMS1_PA_Enable(0, false);
+    LMS1_PA_Enable(1, false);
+
+    double dacVal = 65535;
+    CustomParameterWrite(&cp_lms1_tx1dac.id, &dacVal, 1, "");
+    CustomParameterWrite(&cp_lms1_tx2dac.id, &dacVal, 1, "");
+
     struct regVal
     {
         uint16_t adr;
@@ -240,6 +247,7 @@ static int InitLMS1(LMS7002M* lms, bool skipTune = false)
         {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
+    LMS7002M* lms = mLMSChips[0];
     if (lms->ResetChip() != 0)
         return -1;
 
@@ -384,8 +392,11 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
 }
 
 // Setup default register values specifically for onboard LMS2 chip
-static int InitLMS2(LMS7002M* lms, bool skipTune = false)
+int LimeSDR_X3::InitLMS2(bool skipTune)
 {
+    LMS2_PA_LNA_Enable(0, false, false);
+    LMS2_PA_LNA_Enable(1, false, false);
+
     struct regVal
     {
         uint16_t adr;
@@ -407,6 +418,7 @@ static int InitLMS2(LMS7002M* lms, bool skipTune = false)
         {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
+    LMS7002M* lms = mLMSChips[1];
     if (lms->ResetChip() != 0)
         return -1;
 
@@ -414,8 +426,7 @@ static int InitLMS2(LMS7002M* lms, bool skipTune = false)
     for (auto i : initVals)
         lms->SPI_write(i.adr, i.val, true);
 
-    //lms->SPI_write(0x0082, 0x803E); // Power down AFE ADCs/DACs
-
+    lms->SPI_write(0x0082, 0x803E); // Power down AFE ADCs/DACs
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
@@ -438,9 +449,48 @@ static int InitLMS2(LMS7002M* lms, bool skipTune = false)
 }
 
 // TODO: Setup default register values specifically for onboard LMS3 chip
-static int InitLMS3(LMS7002M* lms, bool skipTune)
+int LimeSDR_X3::InitLMS3(bool skipTune)
 {
-    return -1;
+    struct regVal
+    {
+        uint16_t adr;
+        uint16_t val;
+    };
+
+    const std::vector<regVal> initVals = {
+        {0x0022, 0x0FFF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
+        {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x0525},
+        {0x0089, 0x1078}, {0x008B, 0x218C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
+        {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x218C}, {0x0109, 0x57C1},
+        {0x010A, 0xD54C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010D, 0x011A},
+        {0x010E, 0x0000}, {0x010F, 0x3142}, {0x0110, 0x2B14}, {0x0111, 0x0000},
+        {0x0112, 0x000C}, {0x0113, 0x03C2}, {0x0114, 0x01F0}, {0x0115, 0x000D},
+        {0x0118, 0x418C}, {0x0119, 0xD292}, {0x011A, 0x3001}, {0x011C, 0x8941},
+        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xE6C0}, {0x0121, 0x3638},
+        {0x0122, 0x0514}, {0x0123, 0x200F}, {0x0200, 0x00E1}, {0x0208, 0x017B},
+        {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
+        {0x040B, 0x1020}, {0x040C, 0x00FB}
+    };
+
+    LMS7002M* lms = mLMSChips[2];
+    if (lms->ResetChip() != 0)
+        return -1;
+
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 3);
+    for (auto i : initVals)
+        lms->SPI_write(i.adr, i.val, true);
+
+    lms->SPI_write(0x0082, 0x803E); // Power down AFE ADCs/DACs
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+
+    if(skipTune)
+        return 0;
+
+    if(lms->SetFrequencySX(true, lms->GetFrequencySX(true))!=0)
+        return -1;
+    if(lms->SetFrequencySX(false, lms->GetFrequencySX(false))!=0)
+        return -1;
+    return 0;
 }
 
 void LimeSDR_X3::PreConfigure(const SDRConfig& cfg, uint8_t socIndex)
@@ -508,9 +558,9 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             const bool skipTune = true;
             switch(socIndex)
             {
-                case 0: InitLMS1(chip, skipTune); break;
-                case 1: InitLMS2(chip, skipTune); break;
-                case 2: InitLMS3(chip, skipTune); break;
+                case 0: InitLMS1(skipTune); break;
+                case 1: InitLMS2(skipTune); break;
+                case 2: InitLMS3(skipTune); break;
             }
         }
 
@@ -657,23 +707,15 @@ int LimeSDR_X3::Init()
         {0x00D1, 0x3357}, // RF Switches
         //{0x00D2, 0x003C} // PA controls
     };
-    LMS1_PA_Enable(0, false);
-    LMS1_PA_Enable(1, false);
-    LMS2_PA_LNA_Enable(0, false, false);
-    LMS2_PA_LNA_Enable(1, false, false);
 
     for (auto i : mFPGAInitVals)
         mFPGA->WriteRegister(i.adr, i.val);
 
-    double dacVal = 65535;
-    CustomParameterWrite(&cp_lms1_tx1dac.id, &dacVal, 1, "");
-    CustomParameterWrite(&cp_lms1_tx2dac.id, &dacVal, 1, "");
-
     mClockGeneratorCDCM->Reset(30.72e6, 25e6);
     const bool skipTune = true;
-    InitLMS1(mLMSChips.at(0), skipTune);
-    InitLMS2(mLMSChips.at(1), skipTune);
-    InitLMS3(mLMSChips.at(2), skipTune);
+    InitLMS1(skipTune);
+    InitLMS2(skipTune);
+    InitLMS3(skipTune);
     return 0;
 }
 

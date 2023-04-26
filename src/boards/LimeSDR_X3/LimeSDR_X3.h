@@ -66,6 +66,9 @@ protected:
         uint32_t mDefaultSlave;
     };
 
+    int InitLMS1(bool skipTune = false);
+    int InitLMS2(bool skipTune = false);
+    int InitLMS3(bool skipTune = false);
     void PreConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void PostConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
