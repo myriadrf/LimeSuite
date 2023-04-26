@@ -80,7 +80,7 @@ struct CDCM_Outputs
 class LIME_API CDCM_Dev
 {
 public:
-    CDCM_Dev(lime::FPGA* fpga, uint16_t SPI_BASE_ADDR);
+    CDCM_Dev(lime::ISPI* comms, uint16_t SPI_BASE_ADDR);
     
     int Init(double primaryFreq, double secondaryFreq);
     int Reset(double primaryFreq, double secondaryFreq);
@@ -118,6 +118,9 @@ public:
     uint16_t GetSPIBaseAddr() {return SPI_BASE_ADDR;}
 
 private:
+    int WriteRegister(uint16_t addr, uint16_t val);
+    uint16_t ReadRegister(uint16_t addr);
+
     int SolveN(int Target, int* Mult8bit, int* Mult10bit);
     void CalculateFracDiv(CDCM_Output *Output);
     double DecToFrac(double target, int* num, int* den);
@@ -130,7 +133,7 @@ private:
     CDCM_VCO FindVCOConfig();
     int PrepareToReadRegs();
     
-    lime::FPGA *fpga;
+    lime::ISPI *comms;
     CDCM_VCO VCO;
     CDCM_Outputs Outputs;
     uint16_t SPI_BASE_ADDR;

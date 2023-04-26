@@ -137,7 +137,7 @@ private:
     void OnbtnClearStatusClick(wxCommandEvent& event);
     bool LoadRegValuesFromFile(std::string FName);
     unsigned char m_newConfiguration[255];
-    lime::SDRDevice *lmsControl;
+    lime::SDRDevice *device;
     //*)
 
 protected:

@@ -40,8 +40,6 @@ public:
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
     virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
-    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
-    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
@@ -53,14 +51,30 @@ public:
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 protected:
+    // Communications helper to divert data to specific device
+    class CommsRouter : public ISPI, public II2C
+    {
+    public:
+        CommsRouter(LitePCIe* port, uint32_t slaveID);
+        virtual ~CommsRouter();
+        virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
+        virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
+        virtual int I2CWrite(int address, const uint8_t *data, uint32_t length);
+        virtual int I2CRead(int addres, uint8_t *dest, uint32_t length);
+    private:
+        LitePCIe* port;
+        uint32_t mDefaultSlave;
+    };
+
     void PreConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void PostConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
-    void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
-    void LMS2SetPath(bool tx, uint8_t chan, uint8_t path);
-    void LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled);
-    void LMS3SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
+    void LMS1SetPath(TRXDir dir, uint8_t chan, uint8_t pathId);
+    void LMS2SetPath(TRXDir dir, uint8_t chan, uint8_t path);
+    void LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled);
+    void LMS3SetPath(TRXDir dir, uint8_t chan, uint8_t path);
+    void LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz);
     static void LMS1_UpdateFPGAInterface(void* userData);
 
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
@@ -85,11 +99,14 @@ protected:
     };
 
 private:
-    CDCM_Dev* cdcm[2];
+    CDCM_Dev* mClockGeneratorCDCM;
     LitePCIe *mControlPort;
     Equalizer* mEqualizer;
     std::vector<LitePCIe*> mRXStreamPorts;
     std::vector<LitePCIe*> mTXStreamPorts;
+
+    CommsRouter* mLMS7002Mcomms[3];
+    CommsRouter mFPGAcomms;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
 };

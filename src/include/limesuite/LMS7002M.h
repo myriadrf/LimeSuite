@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace lime{
-class IComms;
+class ISPI;
 class LMS7002M_RegistersMap;
 class MCU_BD;
 class BinSearchParam;
@@ -94,9 +94,9 @@ public:
      * \param devIndex which RFIC index (default 0 for most devices)
      * \param dataPort connection used to get samples data when calibrating with FFT
      */
-    void SetConnection(IComms *port, const size_t devIndex = 0);
+    void SetConnection(ISPI *port);
 
-    IComms *GetConnection(void) const
+    ISPI* GetConnection(void) const
     {
         return controlPort;
     }
@@ -533,8 +533,7 @@ protected:
     void Log(LogType type, const char *format, va_list argList);
 
     ///port used for communicating with LMS7002M
-    lime::IComms *controlPort;
-    unsigned mdevIndex;
+    lime::ISPI *controlPort;
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];
     double _cachedRefClockRate;

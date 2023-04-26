@@ -17,15 +17,15 @@
 
 namespace lime
 {
-class IComms;
+class ISPI;
 
 class FPGA
 {
 public:
   FPGA(uint32_t slaveID, uint32_t lmsSlaveId);
   virtual ~FPGA(){};
-  void SetConnection(lime::IComms *conn);
-  lime::IComms *GetConnection() const;
+  void SetConnection(lime::ISPI *conn);
+  lime::ISPI* GetConnection() const;
   int StartStreaming();
   int StopStreaming();
   int ResetTimestamp();
@@ -77,7 +77,7 @@ public:
     int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title = nullptr);
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
-    lime::IComms *connection;
+    lime::ISPI* connection;
     const uint32_t mSlaveId;
     const uint32_t mLMSSlaveId;
 

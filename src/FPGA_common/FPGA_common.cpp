@@ -227,12 +227,12 @@ int FPGA::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
     return 0;
 }
 
-void FPGA::SetConnection(IComms* conn)
+void FPGA::SetConnection(ISPI* conn)
 {
     connection = conn;
 }
 
-IComms* FPGA::GetConnection() const
+ISPI* FPGA::GetConnection() const
 {
     return connection;
 }

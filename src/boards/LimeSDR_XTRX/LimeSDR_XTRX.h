@@ -3,6 +3,7 @@
 
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
+#include "limesuite/IComms.h"
 
 #include <vector>
 #include <array>
@@ -34,8 +35,6 @@ public:
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
     virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
-    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
-    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
@@ -70,9 +69,27 @@ protected:
         COUNT
     };
 
+    // Communications helper to divert data to specific device
+    class CommsRouter : public ISPI, public II2C
+    {
+    public:
+        CommsRouter(LitePCIe* port, uint32_t slaveID);
+        virtual ~CommsRouter();
+        virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
+        virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
+        virtual int I2CWrite(int address, const uint8_t *data, uint32_t length);
+        virtual int I2CRead(int addres, uint8_t *dest, uint32_t length);
+    private:
+        LitePCIe* port;
+        uint32_t mDefaultSlave;
+    };
+
 private:
     LitePCIe *mControlPort;
     LitePCIe *mStreamPort;
+
+    CommsRouter mLMS7002Mcomms;
+    CommsRouter mFPGAcomms;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
 };

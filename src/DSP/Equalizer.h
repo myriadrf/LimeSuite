@@ -6,7 +6,7 @@
 
 namespace lime {
 
-class IComms;
+class ISPI;
 
 class Equalizer
 {
@@ -38,14 +38,14 @@ public:
         }
     };
 
-    Equalizer(IComms* comms, uint32_t spiBusAddr);
+    Equalizer(ISPI* comms, uint32_t spiBusAddr);
     ~Equalizer();
     void Configure(const Equalizer::Config &cfg);
 
     void SetOversample(uint8_t oversample);
     uint8_t GetOversample();
 private:
-    IComms *m_Comms;
+    ISPI *m_Comms;
     uint32_t mSPIbusAddr;
     void WriteRegister(const Register &reg, uint16_t value);
     uint16_t ReadRegister(const Register &reg);

@@ -139,10 +139,9 @@ void LMS7002M::Log(LogType type, const char *format, va_list argList)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(IComms *port, const size_t devIndex)
+void LMS7002M::SetConnection(ISPI *port)
 {
     controlPort = port;
-    mdevIndex = devIndex;
 
     if (controlPort != nullptr)
     {
@@ -152,7 +151,7 @@ void LMS7002M::SetConnection(IComms *port, const size_t devIndex)
             byte_array_size = 1024 * 16;
         else
             byte_array_size = 1024 * 8;
-        mcuControl->Initialize(port, mdevIndex, byte_array_size);
+        mcuControl->Initialize(port, byte_array_size);
     }
 }
 
@@ -166,7 +165,6 @@ LMS7002M::LMS7002M(uint32_t slaveID) :
     useCache(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
     controlPort(nullptr),
-    mdevIndex(0),
     mSelfCalDepth(0),
     _cachedRefClockRate(30.72e6)
 {
@@ -264,11 +262,7 @@ LMS7002M::Channel LMS7002M::GetActiveChannel(bool fromChip)
 
 size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
 {
-    switch (this->GetActiveChannel(fromChip))
-    {
-    case ChB: return mdevIndex*2 + 1;
-    default: return mdevIndex*2 + 0;
-    }
+    return this->GetActiveChannel(fromChip) == ChB ? 1 : 0;
 }
 
 int LMS7002M::EnableChannel(Dir dir, const uint8_t channel, const bool enable)
@@ -416,10 +410,6 @@ int LMS7002M::EnableChannel(Dir dir, const uint8_t channel, const bool enable)
 int LMS7002M::ResetChip()
 {
     int status = 0;
-    //if (controlPort)
-    //status = controlPort->DeviceReset(mdevIndex);
-    //else
-    //lime::warning("No device connected");
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     status |= Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
     return status;

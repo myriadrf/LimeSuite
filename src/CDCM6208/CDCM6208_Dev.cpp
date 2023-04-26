@@ -7,8 +7,8 @@
 
 using namespace lime;
 
-CDCM_Dev::CDCM_Dev(FPGA* fpga, uint16_t SPI_BASE_ADDR):
-    fpga(fpga),
+CDCM_Dev::CDCM_Dev(ISPI* comms, uint16_t SPI_BASE_ADDR):
+    comms(comms),
     SPI_BASE_ADDR(SPI_BASE_ADDR),
     is_locked(false)
 {
@@ -85,17 +85,17 @@ int CDCM_Dev::Reset(double primaryFreq, double secondaryFreq)
    
 
    for(auto reg : CDCM_Regs)
-      if(fpga->WriteRegister(reg.second.addr, reg.second.val) != 0)
+      if(WriteRegister(reg.second.addr, reg.second.val) != 0)
          return -1;
 
    // Load to CDCM
-   if(fpga->WriteRegister(SPI_BASE_ADDR+21, 1) != 0)
+   if(WriteRegister(SPI_BASE_ADDR+21, 1) != 0)
       return -1;
 
    if(PrepareToReadRegs() != 0)
       return -1;
 
-   is_locked = !((fpga->ReadRegister(SPI_BASE_ADDR+22)>>2)&1);
+   is_locked = !((ReadRegister(SPI_BASE_ADDR+22)>>2)&1);
    
    return DownloadConfiguration();
 }
@@ -453,7 +453,7 @@ bool CDCM_Dev::IsLocked()
 */
 int CDCM_Dev::UploadConfiguration()
 {
-   if(!fpga)
+   if(!comms)
       return -1;
    
    struct regVal
@@ -485,7 +485,7 @@ int CDCM_Dev::UploadConfiguration()
    
    for(int i = 3; i < 24; i+=3) {
       int reg = i == 6 ? 4 : i; // read 4th register instead of 6th
-      int val = fpga->ReadRegister(CDCM_Regs[reg].addr);
+      int val = ReadRegister(CDCM_Regs[reg].addr);
       if(val == -1) return -1;
       CDCM_Regs[reg].val = val;
    }
@@ -542,11 +542,11 @@ int CDCM_Dev::UploadConfiguration()
    CDCM_Regs[20].val = Outputs.Y7.fractional_part&0xFFFF;
 
    for(auto reg : CDCM_Regs)
-      if(fpga->WriteRegister(reg.second.addr, reg.second.val) != 0)
+      if(WriteRegister(reg.second.addr, reg.second.val) != 0)
          return -1;
    
    // Load to CDCM
-   if(fpga->WriteRegister(SPI_BASE_ADDR+21, 1) != 0)
+   if(WriteRegister(SPI_BASE_ADDR+21, 1) != 0)
       return -1;
 
    std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -554,7 +554,7 @@ int CDCM_Dev::UploadConfiguration()
    if(PrepareToReadRegs() != 0)
       return -1;
 
-   is_locked = !((fpga->ReadRegister(SPI_BASE_ADDR+22)>>2)&1);
+   is_locked = !((ReadRegister(SPI_BASE_ADDR+22)>>2)&1);
    
    return 0;
 }
@@ -565,7 +565,7 @@ int CDCM_Dev::UploadConfiguration()
 */
 int CDCM_Dev::DownloadConfiguration()
 {
-   if(!fpga)
+   if(!comms)
       return -1;
 
    struct regVal
@@ -603,7 +603,7 @@ int CDCM_Dev::DownloadConfiguration()
 
    for(auto &reg : CDCM_Regs)
    {
-      int val = fpga->ReadRegister(reg.second.addr);
+      int val = ReadRegister(reg.second.addr);
       if(val == -1) return -1;
       else reg.second.val = val;
    }
@@ -803,12 +803,12 @@ int CDCM_Dev::PrepareToReadRegs()
    const auto timeout = std::chrono::milliseconds(200);
    uint16_t status = 0;
    
-   fpga->WriteRegister(SPI_BASE_ADDR+24, 1);
+   WriteRegister(SPI_BASE_ADDR+24, 1);
    auto t1 = std::chrono::high_resolution_clock::now();
    auto t2 = t1;
    do
    {
-      status = fpga->ReadRegister(SPI_BASE_ADDR+24);
+      status = ReadRegister(SPI_BASE_ADDR+24);
       t2 = std::chrono::high_resolution_clock::now();
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
    } while (status != 2 && (t2-t1) < timeout);
@@ -1088,4 +1088,33 @@ CDCM_VCO CDCM_Dev::FindVCOConfig()
    CDCM_VCO vco_config;
    vco_config.valid = true;
    return vco_config;
+}
+
+int CDCM_Dev::WriteRegister(uint16_t addr, uint16_t val)
+{
+   const uint32_t mosi = (1 << 31) | (addr << 16) | val;
+   try
+   {
+      comms->SPI(&mosi, nullptr, 1);
+      return 0;
+   }
+   catch (...)
+   {
+      return -1;
+   }
+}
+
+uint16_t CDCM_Dev::ReadRegister(uint16_t addr)
+{
+   const uint32_t mosi = (addr << 16);
+   uint32_t miso = 0;
+   try
+   {
+      comms->SPI(&mosi, &miso, 1);
+      return miso & 0xFFFF;
+   }
+   catch (...)
+   {
+      return -1;
+   }
 }

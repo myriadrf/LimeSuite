@@ -21,6 +21,11 @@
 namespace lime
 {
 
+// XTRX board specific devices ids and data
+static constexpr uint8_t spi_LMS7002M = 0;
+static constexpr uint8_t spi_FPGA = 1;
+static constexpr float xtrxDefaultRefClk = 26e6;
+
 class PCIE_CSR_Pipe : public ISerialPort
 {
 public:
@@ -37,9 +42,41 @@ protected:
     LitePCIe& port;
 };
 
-static constexpr uint8_t spi_LMS7002M = 0;
-static constexpr uint8_t spi_FPGA = 1;
-static constexpr float xtrxDefaultRefClk = 26e6;
+LimeSDR_XTRX::CommsRouter::CommsRouter(LitePCIe* port, uint32_t slaveID)
+    : port(port), mDefaultSlave(slaveID)
+{
+}
+
+LimeSDR_XTRX::CommsRouter::~CommsRouter() {}
+
+void LimeSDR_XTRX::CommsRouter::SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+{
+    SPI(mDefaultSlave, MOSI, MISO, count);
+}
+void LimeSDR_XTRX::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+{
+    PCIE_CSR_Pipe pipe(*port);
+    switch (spiBusAddress) {
+        case spi_LMS7002M:
+            LMS64CProtocol::LMS7002M_SPI(pipe, MOSI, MISO, count);
+            return;
+        case spi_FPGA:
+            LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+            return;
+        default:
+            throw std::logic_error("invalid SPI chip select");
+    }
+}
+int LimeSDR_XTRX::CommsRouter::I2CWrite(int address, const uint8_t *data, uint32_t length)
+{
+    PCIE_CSR_Pipe pipe(*port);
+    return LMS64CProtocol::I2C_Write(pipe, address, data, length);
+}
+int LimeSDR_XTRX::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
+{
+    PCIE_CSR_Pipe pipe(*port);
+    return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
+}
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
 
@@ -66,6 +103,7 @@ void LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 // could read back it's state for debugging purposes
 LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     : LMS7002M_SDRDevice(), mControlPort(control), mStreamPort(stream)
+    , mLMS7002Mcomms(control, spi_LMS7002M), mFPGAcomms(stream, spi_FPGA)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
@@ -89,7 +127,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     desc.customParameters.push_back(cp_vctcxo_dac);
 
     mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M);
-    mFPGA->SetConnection(this);
+    mFPGA->SetConnection(&mFPGAcomms);
 
     RFSOCDescriptor soc;
     // LMS#1
@@ -102,7 +140,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     mLMSChips.push_back(chip);
     for ( auto iter : mLMSChips)
     {
-        iter->SetConnection(this);
+        iter->SetConnection(&mLMS7002Mcomms);
         iter->SetReferenceClk_SX(false, xtrxDefaultRefClk);
         iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, xtrxDefaultRefClk, 0);
     }
@@ -370,29 +408,16 @@ void LimeSDR_XTRX::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 
 void LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
-    PCIE_CSR_Pipe pipe(*mControlPort);
     switch (chipSelect) {
         case spi_LMS7002M:
-            LMS64CProtocol::LMS7002M_SPI(pipe, MOSI, MISO, count);
+            mLMS7002Mcomms.SPI(MOSI, MISO, count);
             return;
         case spi_FPGA:
-            LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+            mFPGAcomms.SPI(MOSI, MISO, count);
             return;
         default:
             throw std::logic_error("invalid SPI chip select");
     }
-}
-
-int LimeSDR_XTRX::I2CWrite(int address, const uint8_t *data, uint32_t length)
-{
-    PCIE_CSR_Pipe pipe(*mControlPort);
-    return LMS64CProtocol::I2C_Write(pipe, address, data, length);
-}
-
-int LimeSDR_XTRX::I2CRead(int address, uint8_t *data, uint32_t length)
-{
-    PCIE_CSR_Pipe pipe(*mControlPort);
-    return LMS64CProtocol::I2C_Read(pipe, address, data, length);
 }
 
 int LimeSDR_XTRX::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)

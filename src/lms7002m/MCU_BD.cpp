@@ -30,7 +30,6 @@ MCU_BD::MCU_BD()
     stepsDone = 0;
     aborted = false;
     callback = nullptr;
-    mChipSelect = 0;
     //ctor
     int i=0;
     m_serPort=NULL;
@@ -53,10 +52,9 @@ MCU_BD::~MCU_BD()
     //dtor
 }
 
-void MCU_BD::Initialize(IComms *pSerPort, unsigned chipSelect, unsigned size)
+void MCU_BD::Initialize(ISPI *pSerPort, unsigned size)
 {
     m_serPort = pSerPort;
-    mChipSelect = chipSelect;
     if (size > 0)
         byte_array_size = size;
 }
@@ -123,7 +121,7 @@ void MCU_BD:: mSPI_write(
     if(m_serPort == nullptr)
         return;
     uint32_t wrdata = (1 << 31) | addr_reg << 16 | data_reg;
-    m_serPort->SPI(mChipSelect, &wrdata, nullptr, 1);
+    m_serPort->SPI(&wrdata, nullptr, 1);
 }
 
 
@@ -134,7 +132,7 @@ unsigned short MCU_BD:: mSPI_read(
         return 0;
     uint32_t wrdata = addr_reg << 16;
     uint32_t rddata = 0;
-    m_serPort->SPI(mChipSelect, &wrdata, &rddata, 1);
+    m_serPort->SPI(&wrdata, &rddata, 1);
 
     return rddata & 0xFFFF;
 }
@@ -602,7 +600,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
     wrdata[0] = (1 << 31) | controlAddr | 0;
     wrdata[1] = (1 << 31) | controlAddr | (mode & 0x3);
 
-    m_serPort->SPI(mChipSelect, wrdata, nullptr, 2);
+    m_serPort->SPI(wrdata, nullptr, 2);
 
     if(callback)
         abort = callback(0, byte_array_size, "");
@@ -615,7 +613,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
         auto t1 = std::chrono::high_resolution_clock::now();
         auto t2 = t1;
         do{
-            m_serPort->SPI(mChipSelect, wrdata, &rddata, 1);
+            m_serPort->SPI(wrdata, &rddata, 1);
             fifoEmpty = rddata & EMTPY_WRITE_BUFF;
             t2 = std::chrono::high_resolution_clock::now();
         }while( (!fifoEmpty) && (t2-t1)<timeout);
@@ -627,7 +625,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
         for(uint8_t j=0; j<fifoLen; ++j)
             wrdata[j] = (1 << 31) | addrDTM | buffer[i+j];
 
-        m_serPort->SPI(mChipSelect, wrdata, nullptr, fifoLen);
+        m_serPort->SPI(wrdata, nullptr, fifoLen);
         if(callback)
             abort = callback(i+fifoLen, byte_array_size, "");
 #ifndef NDEBUG
@@ -643,7 +641,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
     do{
-        m_serPort->SPI(mChipSelect, wrdata, &rddata, 1);
+        m_serPort->SPI(wrdata, &rddata, 1);
         programmed = rddata & PROGRAMMED;
         t2 = std::chrono::high_resolution_clock::now();
     }while( (!programmed) && (t2-t1)<timeout);

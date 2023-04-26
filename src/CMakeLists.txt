@@ -223,6 +223,7 @@ set(LMS7SUITE_GUI_SOURCES
     windowFunction.cpp
     #boards_wxgui/pnlLimeSDR.cpp
     #boards_wxgui/pnlGPIO.cpp
+    GUI/CommsToDevice.cpp
     GUI/DeviceConnectionPanel.cpp
     GUI/events.cpp
 )

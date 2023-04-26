@@ -4,11 +4,22 @@
 #include "limesuite/config.h"
 
 namespace lime {
-class LIME_API IComms
+class LIME_API ISPI
 {
-  public:
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
+public:
+    // Default path for writing/reading registers
+    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
 
+    // Writing/reading registers for specific slave
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+    {
+        SPI(MOSI, MISO, count);
+    }
+};
+
+class LIME_API II2C
+{
+public:
     /*!
      * Write to an available I2C slave.
      * @param address I2C slave address

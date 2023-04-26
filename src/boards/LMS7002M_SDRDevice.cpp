@@ -21,17 +21,6 @@ LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
     }
 }
 
-/*
-LMS7002M_SDRDevice::DeviceInfo LMS7002M_SDRDevice::GetDeviceInfo(void)
-{
-    LMS7002M_SDRDevice::DeviceInfo info;
-    //initialize to UNKNOWN board type
-    //causes lms7_device::CreateDevice() to use LMS7_Generic
-    info.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
-    info.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
-    return info;
-}
-*/
 void LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     throw(OperationNotSupported("TransactSPI not implemented"));

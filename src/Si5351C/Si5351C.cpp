@@ -20,6 +20,8 @@
 using namespace std;
 using namespace lime;
 
+static uint8_t addrSi5351 = 0x20;
+
 /// Splits float into fraction integers A + B/C
 void realToFrac(const float real, int &A, int &B, int &C)
 {
@@ -277,14 +279,13 @@ const unsigned char Si5351C::m_defaultConfiguration[] =
 232,0x00};
 
 // ---------------------------------------------------------------------------
-Si5351C::Si5351C()
+Si5351C::Si5351C(lime::II2C& i2c_comms) : comms(i2c_comms)
 {
     memset(m_newConfiguration, 0, 255);
     for(unsigned int i=0; i<sizeof(m_defaultConfiguration); i+=2)
     {
         m_newConfiguration[m_defaultConfiguration[i]] = m_defaultConfiguration[i+1];
     }
-	device = NULL;
 }
 // ---------------------------------------------------------------------------
 
@@ -297,9 +298,6 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    if (!device)
-        return FAILED;
-
     std::vector<uint8_t> outBuffer;
     //Disable outputs
 	outBuffer.push_back(3);
@@ -329,25 +327,13 @@ Si5351C::Status Si5351C::UploadConfiguration()
     outBuffer.push_back(m_newConfiguration[3]);
 
     try {
-        device->I2CWrite(addrSi5351, outBuffer.data(), outBuffer.size());
+        comms.I2CWrite(addrSi5351, outBuffer.data(), outBuffer.size());
         return SUCCESS;
     }
     catch (std::runtime_error &e) {
         printf("Si5351C configuration failed %s\n", e.what());
         return FAILED;
     }
-}
-
-// ---------------------------------------------------------------------------
-/**
-    @brief Sets connection manager to use for data transferring Si5351C
-    @param mng connection manager for data transferring
-*/
-void Si5351C::Initialize(IComms *mng)
-{
-    device = mng;
-    if (device != nullptr)
-        addrSi5351 = 0x20; // TODO: get address from SDRDevice descriptor
 }
 
 /**
@@ -818,14 +804,12 @@ void Si5351C::Reset()
 Si5351C::StatusBits Si5351C::GetStatusBits()
 {
     StatusBits stat;
-    if(!device)
-        return stat;
     std::vector<uint8_t> dataIo;
     dataIo.push_back(0);
     dataIo.push_back(1);
 
     try {
-        device->I2CRead(addrSi5351, dataIo.data(), 2);
+        comms.I2CRead(addrSi5351, dataIo.data(), 2);
     }
     catch (std::runtime_error &e) {
         return stat;
@@ -846,15 +830,12 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
 
 Si5351C::Status Si5351C::ClearStatus()
 {
-    if(!device)
-        return FAILED;
-
     std::vector<uint8_t> dataWr;
     dataWr.push_back(1);
     dataWr.push_back(0x1);
 
     try {
-        device->I2CWrite(addrSi5351, dataWr.data(), dataWr.size());
+        comms.I2CWrite(addrSi5351, dataWr.data(), dataWr.size());
         return SUCCESS;
     }
     catch (std::runtime_error &e) {

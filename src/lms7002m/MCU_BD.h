@@ -13,7 +13,7 @@
 
 namespace lime{
 
-class IComms;
+class ISPI;
 
 class MCU_BD
 {
@@ -97,11 +97,10 @@ class MCU_BD
         int ReadOneByte(unsigned char * data);
         int One_byte_command(unsigned short data1, unsigned char * rdata1);
         unsigned int formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int m_iExt2, int m_iMode1, int m_iMode0);
-        IComms *m_serPort;
+        ISPI *m_serPort;
         int m_bLoadedDebug;
         int m_bLoadedProd;
         int byte_array_size;
-        uint32_t mChipSelect;
 
       public:
         uint8_t ReadMCUProgramID();
@@ -137,7 +136,7 @@ class MCU_BD
         void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
-        void Initialize(IComms *pSerPort, unsigned chipID = 0, unsigned rom_size = 0);
+        void Initialize(ISPI *pSerPort, unsigned rom_size = 0);
         ProgrammingCallback callback;
 };
 }

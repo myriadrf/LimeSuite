@@ -7,6 +7,7 @@
 #include "Si5351C_wxgui.h"
 #include "Si5351C.h"
 #include "limesuite/SDRDevice.h"
+#include "GUI/CommsToDevice.h"
 #include <LMSBoards.h>
 
 //(*InternalHeaders(Si5351C_wxgui)
@@ -73,9 +74,8 @@ END_EVENT_TABLE()
 #include <vector>
 
 Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
+    : device(nullptr)
 {
-    lmsControl = NULL;
-
     wxFlexGridSizer* FlexGridSizer4;
     wxFlexGridSizer* FlexGridSizer3;
     wxFlexGridSizer* FlexGridSizer5;
@@ -228,7 +228,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
 
 void Si5351C_wxgui::Initialize(SDRDevice *pModule)
 {
-    lmsControl = pModule;
+    device = pModule;
 }
 
 void Si5351C_wxgui::BuildContent(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& size)
@@ -245,10 +245,10 @@ void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
     if (openFileDialog.ShowModal() == wxID_CANCEL)
         return;
 
-    lime::Si5351C obj;
-    obj.Initialize(lmsControl);
-    obj.LoadRegValuesFromFile(std::string(openFileDialog.GetPath().ToStdString()));
-    if (obj.UploadConfiguration()!=0)
+    I2CToSDR i2c(*device);
+    lime::Si5351C clockGenerator(i2c);
+    clockGenerator.LoadRegValuesFromFile(std::string(openFileDialog.GetPath().ToStdString()));
+    if (clockGenerator.UploadConfiguration()!=0)
         wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
@@ -291,28 +291,28 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     if (chkInvert_CLK6->GetValue()) freq[6] *= -1;
     if (chkInvert_CLK7->GetValue()) freq[7] *= -1;
 
-    lime::Si5351C obj;
-    obj.Initialize(lmsControl);
+    I2CToSDR i2c(*device);
+    lime::Si5351C clockGenerator(i2c);
 
-    obj.SetPLL(0,clkin,rgrClkSrc->GetSelection());
-    obj.SetPLL(1,clkin,rgrClkSrc->GetSelection());
+    clockGenerator.SetPLL(0,clkin,rgrClkSrc->GetSelection());
+    clockGenerator.SetPLL(1,clkin,rgrClkSrc->GetSelection());
 
     for (int i = 0; i < 8;i++)
     {
         unsigned clock = abs(freq[i]);
-        obj.SetClock(i,clock,clock!=0,freq[i]<0);
+        clockGenerator.SetClock(i,clock,clock!=0,freq[i]<0);
     }
 
-    if (obj.ConfigureClocks()!=0 || obj.UploadConfiguration()!=0)
+    if (clockGenerator.ConfigureClocks()!=0 || clockGenerator.UploadConfiguration()!=0)
        wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
 void Si5351C_wxgui::OnbtnResetToDefaultsClick(wxCommandEvent& event)
 {
-    lime::Si5351C obj;
-    obj.Initialize(lmsControl);
-    obj.Reset();
-    obj.UploadConfiguration();
+    I2CToSDR i2c(*device);
+    lime::Si5351C clockGenerator(i2c);
+    clockGenerator.Reset();
+    clockGenerator.UploadConfiguration();
 }
 
 void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
@@ -408,9 +408,9 @@ void Si5351C_wxgui::ClockEnable(unsigned int i, bool enabled)
 
 void Si5351C_wxgui::OnbtnReadStatusClick(wxCommandEvent& event)
 {
-    lime::Si5351C obj;
-    obj.Initialize(lmsControl);
-    lime::Si5351C::StatusBits stat = obj.GetStatusBits();
+    I2CToSDR i2c(*device);
+    lime::Si5351C clockGenerator(i2c);
+    lime::Si5351C::StatusBits stat = clockGenerator.GetStatusBits();
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
 LOL_B:	%i  	LOL_B_STKY:	%i\n\
@@ -421,9 +421,9 @@ lblStatus->SetLabel(text);
 
 void Si5351C_wxgui::OnbtnClearStatusClick(wxCommandEvent& event)
 {
-    lime::Si5351C obj;
-    obj.Initialize(lmsControl);
-    obj.ClearStatus();
+    I2CToSDR i2c(*device);
+    lime::Si5351C clockGenerator(i2c);
+    clockGenerator.ClearStatus();
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
 LOL_B:	%i  	LOL_B_STKY:	%i\n\
