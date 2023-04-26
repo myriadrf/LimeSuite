@@ -1106,7 +1106,7 @@ int CDCM_Dev::WriteRegister(uint16_t addr, uint16_t val)
 
 uint16_t CDCM_Dev::ReadRegister(uint16_t addr)
 {
-   const uint32_t mosi = (addr << 16);
+   const uint32_t mosi = (addr);
    uint32_t miso = 0;
    try
    {
