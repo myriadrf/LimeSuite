@@ -6,7 +6,7 @@
 
 #include "TRXLooper.h"
 #include "MemoryPool.h"
-
+#include "limesuite/SDRDevice.h"
 
 namespace lime {
 
@@ -19,6 +19,8 @@ class TRXLooper_PCIE : public lime::TRXLooper
     virtual ~TRXLooper_PCIE();
     virtual void Setup(const lime::SDRDevice::StreamConfig &config);
     virtual void Start();
+
+    static int UploadTxWaveform(FPGA* fpga, LitePCIe* port, const lime::SDRDevice::StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count);
 
     typedef SamplesPacket<2> SamplesPacketType;
 

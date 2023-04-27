@@ -230,6 +230,8 @@ public:
     virtual int StreamTx(uint8_t moduleIndex, const void **samples, uint32_t count, const StreamMeta *meta) = 0;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
 
+    virtual int UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count) { return -1;}
+
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
     virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) = 0;
     virtual int I2CRead(int addres, uint8_t *dest, uint32_t length) = 0;

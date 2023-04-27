@@ -904,4 +904,106 @@ void TRXLooper_PCIE::RxTeardown()
     mRxArgs.port->RxDMAEnable(false, mRxArgs.bufferSize, 1);
 }
 
+int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga, LitePCIe* port, const lime::SDRDevice::StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+{
+    const int samplesInPkt = 256;
+    const bool useChannelB = config.txCount > 1;
+    const bool mimo = config.txCount == 2;
+    const bool compressed = config.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    fpga->WriteRegister(0xFFFF, 1 << moduleIndex);
+    fpga->WriteRegister(0x000C, mimo ? 0x3 : 0x1); //channels 0,1
+    if (config.linkFormat == SDRDevice::StreamConfig::DataFormat::I16)
+        fpga->WriteRegister(0x000E, 0x0); //16bit samples
+    else
+        fpga->WriteRegister(0x000E, 0x2); //12bit samples
+    
+    fpga->WriteRegister(0x000D, 0x4); // WFM_LOAD
+
+    LitePCIe::DMAInfo dma = port->GetDMAInfo();
+    std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
+    for(uint32_t i=0; i<dmaBuffers.size();++i)
+        dmaBuffers[i] = dma.txMemory+dma.bufferSize*i;
+
+    port->TxDMAEnable(true);
+
+    uint32_t samplesRemaining = count;
+    uint8_t dmaIndex = 0;
+    LitePCIe::DMAState state;
+    state.swIndex = 0;
+
+        
+    while (samplesRemaining > 0)
+    {
+        state = port->GetTxDMAState();
+        port->WaitTx(); // block until there is a free DMA buffer
+
+        int samplesToSend = samplesRemaining > samplesInPkt ? samplesInPkt : samplesRemaining;
+        int samplesDataSize = 0; 
+
+        port->CacheFlush(true, false, dmaIndex);
+        FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(dmaBuffers[dmaIndex]);
+        pkt->counter = 0;
+        pkt->reserved[0] = 0;
+
+        if (config.format == SDRDevice::StreamConfig::DataFormat::I16)
+        {
+            const lime::complex16_t* src[2] = {
+                &static_cast<const lime::complex16_t*>(samples[0])[count-samplesRemaining],
+                useChannelB ? &static_cast<const lime::complex16_t*>(samples[1])[count-samplesRemaining] : nullptr
+            };
+            samplesDataSize = FPGA::Samples2FPGAPacketPayload(src, samplesToSend, mimo, compressed, pkt->data);
+        }
+        else if(config.format == SDRDevice::StreamConfig::DataFormat::F32)
+        {
+            const lime::complex32f_t* src[2] = {
+                &static_cast<const lime::complex32f_t *>(samples[0])[count-samplesRemaining],
+                useChannelB ? &static_cast<const lime::complex32f_t *>(samples[1])[count-samplesRemaining] : nullptr
+            };
+            samplesDataSize = FPGA::Samples2FPGAPacketPayloadFloat(src, samplesToSend, mimo, compressed, pkt->data);
+        }
+
+        int payloadSize = (samplesDataSize / 4) * 4;
+        if(samplesDataSize % 4 != 0)
+            lime::warning("Packet samples count not multiple of 4");
+        pkt->reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt->reserved[1] = payloadSize & 0xFF; //WFM loading
+        pkt->reserved[0] = 0x1 << 5; //WFM loading
+
+        long bToSend = 16+payloadSize;
+        port->CacheFlush(true, true, dmaIndex);
+
+        state.swIndex = dmaIndex;
+        state.bufferSize = 16 + payloadSize;
+        state.genIRQ = (dmaIndex % 4) == 0;
+
+        // DMA memory is write only, to read from the buffer will trigger Bus errors
+        int ret = port->SetTxDMAState(state);
+        if (ret)
+        {
+            if (errno == EINVAL)
+            {
+                port->TxDMAEnable(false);
+                printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
+                return -1;
+            }
+            
+        }
+        else
+        {
+            samplesRemaining -= samplesToSend;
+            dmaIndex = (dmaIndex+1) % dma.bufferCount;
+        }
+    }
+
+    /*Give some time to load samples to FPGA*/
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    port->TxDMAEnable(false);
+
+    fpga->WriteRegister(0x000D, 0); // WFM_LOAD off
+    if(samplesRemaining == 0)
+        return 0;
+    else
+        return ReportError(-1, "Failed to upload waveform");
+}
+
 } // namespace lime

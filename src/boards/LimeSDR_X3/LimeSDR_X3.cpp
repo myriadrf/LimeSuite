@@ -1183,4 +1183,9 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
     return LMS64CProtocol::ProgramWrite(pipe, data, length, progMode, target, callback);
 }
 
+int LimeSDR_X3::UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count)
+{
+    return TRXLooper_PCIE::UploadTxWaveform(mFPGA, mTXStreamPorts[moduleIndex], config, moduleIndex, samples, count);
+}
+
 } //namespace lime

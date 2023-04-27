@@ -50,6 +50,7 @@ public:
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 protected:
     // Communications helper to divert data to specific device
     class CommsRouter : public ISPI, public II2C
