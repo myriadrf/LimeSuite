@@ -592,6 +592,41 @@ double SoapyLMS7::getMasterClockRate(void) const
     return lms7Device->GetClockFreq(LMS_CLOCK_CGEN);
 }
 
+std::string SoapyLMS7::getClockSource(void) const {
+    return _clockExternal ? "external" : "internal";
+}
+
+double SoapyLMS7::getReferenceClockRate(void) const {
+    return _clockExternal ? _clockRate : 0.0f;
+}
+
+SoapySDR::RangeList SoapyLMS7::getReferenceClockRates(void) const {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    SoapySDR::RangeList result;
+    result.emplace_back(0, lms7Device->GetClockFreq(LMS_CLOCK_REF));
+    return result;
+}
+
+std::vector<std::string> SoapyLMS7::listClockSources(void) const {
+    return {"internal", "external"};
+}
+
+void SoapyLMS7::setClockSource(const std::string &source) {
+    _clockExternal = source == "external";
+    updateReferenceClock();
+}
+
+void SoapyLMS7::setReferenceClockRate(const double rate) {
+    _clockRate = std::max(0.0, rate);
+    updateReferenceClock();
+}
+
+void SoapyLMS7::updateReferenceClock()
+{
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    lms7Device->SetClockFreq(LMS_CLOCK_EXTREF, _clockExternal ? _clockRate : 0.0);
+}
+
 /*******************************************************************
  * Time API
  ******************************************************************/

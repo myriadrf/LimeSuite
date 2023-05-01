@@ -205,6 +205,18 @@ public:
 
     double getMasterClockRate(void) const;
 
+    std::string getClockSource(void) const;
+
+    double getReferenceClockRate(void) const;
+
+    SoapySDR::RangeList getReferenceClockRates(void) const;
+
+    std::vector<std::string> listClockSources(void) const;
+
+    void setClockSource(const std::string &source);
+
+    void setReferenceClockRate(const double rate);
+
     /*******************************************************************
      * Time API
      ******************************************************************/
@@ -288,6 +300,7 @@ private:
     };
 
     int setBBLPF(bool direction, size_t channel, double bw);
+    void updateReferenceClock();
 
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     const std::string _moduleName;
@@ -298,4 +311,6 @@ private:
     mutable std::recursive_mutex _accessMutex;
     std::vector<Channel> mChannels[2]; //mChannels[direction]
     std::set<SoapySDR::Stream *> activeStreams;
+    bool _clockExternal{false};
+    double _clockRate{10e6f};
 };
