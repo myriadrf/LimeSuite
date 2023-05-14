@@ -864,6 +864,12 @@ void LimeSDR_X3::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhas
 
 void LimeSDR_X3::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
+    if (rxDecimation == 0)
+        rxDecimation = 2;
+    if (txInterpolation == 0)
+        txInterpolation = 2;
+    assert(rxDecimation > 0);
+    assert(txInterpolation > 0);
     if(txInterpolation/rxDecimation > 4)
         throw std::logic_error(strFormat("TxInterpolation(%i)/RxDecimation(%i) should not be more than 4", txInterpolation, rxDecimation));
     uint8_t oversample = rxDecimation;

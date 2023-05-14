@@ -195,7 +195,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
 
     // simple pointers for stream functions, can't just pass vector of vectors
     lime::complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
-    lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
+    const lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
 
     int testStreamIndex = chipIndex;
 
@@ -223,7 +223,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
         SDRDevice::StreamMeta rxMeta;
         rxMeta.timestamp = 0;
         auto tt1 = std::chrono::high_resolution_clock::now();
-        int samplesRead = dev.StreamRx(testStreamIndex, (void **)dest, samplesInPkt*txPacketCount, &rxMeta);
+        int samplesRead = dev.StreamRx(testStreamIndex, dest, samplesInPkt*txPacketCount, &rxMeta);
         auto tt2 = std::chrono::high_resolution_clock::now();
         int duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2 - tt1).count();
         if(show)
@@ -260,7 +260,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
             txMeta.flush = false; // not really matters because of continuous trasmitting
 
             auto tt1 = std::chrono::high_resolution_clock::now();
-            int samplesSent = dev.StreamTx(testStreamIndex, (const void **)src, samplesInPkt*txPacketCount, &txMeta);
+            int samplesSent = dev.StreamTx(testStreamIndex, src, samplesInPkt*txPacketCount, &txMeta);
             bsent += txPacketCount;
             //int samplesSent2 = dev.StreamTx(0, (const void **)src, samplesInPkt*txPacketCount/4, &txMeta);
             auto tt2 = std::chrono::high_resolution_clock::now();
@@ -379,7 +379,7 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
 
     // simple pointers for stream functions, can't just pass vector of vectors
     lime::complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
-    lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
+    const lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
 
     dev.StreamStart(chipIndex);
 
@@ -394,7 +394,7 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
     {
         //Receive samples
         SDRDevice::StreamMeta rxMeta;
-        int samplesRead = dev.StreamRx(chipIndex, (void **)dest, samplesInPkt*txPacketCount, &rxMeta);
+        int samplesRead = dev.StreamRx(chipIndex, dest, samplesInPkt*txPacketCount, &rxMeta);
         if(samplesRead < 0)
         {
             printf("Failed to StreamRx\n");
@@ -414,7 +414,7 @@ bool TxTiming(SDRDevice &dev, bool MIMO, float tsDelay_ms)
             txMeta.timestamp = rxNow + txDeltaTS;
             txMeta.useTimestamp = true;
             txMeta.flush = true;
-            int samplesSent = dev.StreamTx(chipIndex, (const void **)src, samplesInPkt, &txMeta);
+            int samplesSent = dev.StreamTx(chipIndex, src, samplesInPkt, &txMeta);
             if(samplesSent <= 0)
             {
                 if(samplesSent < 0)

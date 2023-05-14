@@ -19,7 +19,7 @@
 #include "DataPacket.h"
 #include "SamplesPacket.h"
 
-static bool showStats = false;
+static bool showStats = true;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
 
 typedef std::chrono::steady_clock perfClock;
@@ -218,14 +218,14 @@ template<class T>
 class TxBufferManager
 {
 public:
-    TxBufferManager(bool mimo, bool compressed, uint32_t maxSamplesInPkt, uint32_t maxPacketsInBatch) :
+    TxBufferManager(bool mimo, bool compressed, uint32_t maxSamplesInPkt, uint32_t maxPacketsInBatch, SDRDevice::StreamConfig::DataFormat inputFormat) :
     header(nullptr), payloadPtr(nullptr), mData(nullptr),
         bytesUsed(0), mCapacity(0),
         maxPacketsInBatch(maxPacketsInBatch), maxSamplesInPkt(maxSamplesInPkt),
         packetsCreated(0), payloadSize(0)
     {
         bytesForFrame = (compressed ? 3 : 4) * (mimo ? 2: 1);
-        conversion.srcFormat = SDRDevice::StreamConfig::DataFormat::F32;
+        conversion.srcFormat = inputFormat;//SDRDevice::StreamConfig::DataFormat::F32;
         conversion.destFormat = compressed ? SDRDevice::StreamConfig::DataFormat::I12 : SDRDevice::StreamConfig::DataFormat::I16;
         conversion.channelCount = mimo ? 2 : 1;
         maxPayloadSize = std::min(4080u, bytesForFrame*maxSamplesInPkt);
@@ -388,7 +388,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     uint32_t stagingBufferIndex = 0;
     SamplesPacketType* srcPkt = nullptr;
 
-    TxBufferManager<SamplesPacketType> output(mimo, compressed, mTxArgs.samplesInPacket, mTxArgs.packetsToBatch);
+    TxBufferManager<SamplesPacketType> output(mimo, compressed, mTxArgs.samplesInPacket, mTxArgs.packetsToBatch, mConfig.format);
 
     mTxArgs.port->CacheFlush(true, false, 0);
     output.Reset(dmaBuffers[0], mTxArgs.bufferSize);
@@ -734,9 +734,10 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     SDRDevice::StreamStats &stats = mRx.stats;
     auto fifo = mRx.fifo;
 
+    const int outputSampleSize = mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
     const int32_t outputPktSize = SamplesPacketType::headerSize
         + mRxArgs.packetsToBatch * samplesInPkt
-        * (mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t));
+        * outputSampleSize;
 
     DeltaVariable<int32_t> overrun(0);
     DeltaVariable<int32_t> loss(0);
@@ -769,7 +770,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     while (mRx.terminate.load(std::memory_order_relaxed) == false)
     {
         if (!outputPkt)
-            outputPkt = SamplesPacketType::ConstructSamplesPacket(mRx.memPool->Allocate(outputPktSize), samplesInPkt * mRxArgs.packetsToBatch, sizeof(complex32f_t));
+            outputPkt = SamplesPacketType::ConstructSamplesPacket(mRx.memPool->Allocate(outputPktSize), samplesInPkt * mRxArgs.packetsToBatch, outputSampleSize);
         dma = mRxArgs.port->GetRxDMAState();
         if(dma.hwIndex != lastHwIndex)
         {
@@ -969,7 +970,6 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga, LitePCIe* port, const lime::SDR
         pkt->reserved[1] = payloadSize & 0xFF; //WFM loading
         pkt->reserved[0] = 0x1 << 5; //WFM loading
 
-        long bToSend = 16+payloadSize;
         port->CacheFlush(true, true, dmaIndex);
 
         state.swIndex = dmaIndex;

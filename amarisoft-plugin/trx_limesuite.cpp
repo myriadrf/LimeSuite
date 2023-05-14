@@ -213,7 +213,8 @@ static void trx_lms7002m_write(TRXState *s, trx_timestamp_t timestamp,
 
     // samples format conversion is done internally
     LimeState *lime = (LimeState*)s->opaque;
-    int samplesConsumed = lime->device[port]->StreamTx(lime->chipIndex[port], (const void**)samples, count, &meta);
+    int samplesConsumed = lime->device[port]->StreamTx(lime->chipIndex[port],
+        reinterpret_cast<const lime::complex32f_t**>(samples), count, &meta);
     if(logVerbosity == LogLevel::DEBUG && samplesConsumed != count)
     {
         if(samplesConsumed < 0) // hardware timestamp is already ahead of meta.timestamp by (-samplesConsumed)
@@ -240,7 +241,8 @@ static int trx_lms7002m_read(TRXState *s, trx_timestamp_t *ptimestamp,
     meta.flush = false;
 
     md->flags = 0;
-    int samplesGot = lime->device[port]->StreamRx(lime->chipIndex[port], (void**)samples, count, &meta);
+    int samplesGot = lime->device[port]->StreamRx(lime->chipIndex[port],
+        reinterpret_cast<lime::complex32f_t**>(samples), count, &meta);
 
     if(samplesGot == 0)
     {

@@ -391,7 +391,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         }
     }
 
-    lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
+    const lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
 
     try
     {
@@ -427,7 +427,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         do
         {
             uint32_t samplesPopped;
-            samplesPopped = pthis->device->StreamRx(chipIndex, (void **)buffers, fftSize, &rxMeta);
+            samplesPopped = pthis->device->StreamRx(chipIndex, buffers, fftSize, &rxMeta);
             if(samplesPopped <= 0)
                 continue;
 
@@ -435,7 +435,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
             if (runTx) {
                 txMeta.timestamp = rxTS + 1020*128;
-                pthis->device->StreamTx(chipIndex, (const void **)src, fftSize, &txMeta);
+                pthis->device->StreamTx(chipIndex, src, fftSize, &txMeta);
             }
 
             if(pthis->captureSamples.load())

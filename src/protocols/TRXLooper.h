@@ -6,6 +6,7 @@
 #include <thread>
 #include "dataTypes.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/complex.h"
 #include "PacketsFIFO.h"
 #include "MemoryPool.h"
 #include "SamplesPacket.h"
@@ -30,8 +31,10 @@ public:
       return mConfig;
     }
 
-    virtual int StreamRx(void **samples, uint32_t count, SDRDevice::StreamMeta *meta);
-    virtual int StreamTx(const void **samples, uint32_t count, const SDRDevice::StreamMeta *meta);
+    virtual int StreamRx(lime::complex32f_t **samples, uint32_t count, SDRDevice::StreamMeta *meta);
+    virtual int StreamRx(lime::complex16_t **samples, uint32_t count, SDRDevice::StreamMeta *meta);
+    virtual int StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual int StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
     void SetMessageLogCallback(SDRDevice::LogCallbackType callback) {
       mCallback_logMessage = callback;
