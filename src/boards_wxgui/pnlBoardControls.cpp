@@ -12,6 +12,7 @@
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
 #include "pnlX3.h"
+#include "pnlXTRX.h"
 
 #include <ADCUnits.h>
 #include <assert.h>
@@ -97,7 +98,8 @@ const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
                                                 LMS_DEV_LIMESDR_QPCIE,
                                                 LMS_DEV_LIMESDRMINI,
                                                 LMS_DEV_LIMESDRMINI_V2,
-                                                LMS_DEV_LIMESDR_X3
+                                                LMS_DEV_LIMESDR_X3,
+                                                LMS_DEV_LIMESDR_XTRX
                                             };
 
 pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) :
@@ -489,6 +491,13 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
 
+    }
+    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_XTRX))
+    {
+        pnlXTRX* pnl = new pnlXTRX(this, wxNewId());
+        pnl->Initialize(mDevice);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
     }
     Layout();
     Fit();
