@@ -41,6 +41,8 @@ static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
 static constexpr float xtrxDefaultRefClk = 26e6;
 
+static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
+
 static inline void ValidateChannel(uint8_t channel)
 {
     if (channel > 2)
@@ -67,6 +69,13 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
+    desc.name = GetDeviceName(LMS_DEV_LIMESDR_XTRX);
+
+    PCIE_CSR_Pipe controlPipe(*mControlPort);
+    LMS64CProtocol::FirmwareInfo fw;
+    LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
+    LMS64CProtocol::FirmwareToDescriptor(fw, desc);
+
     desc.spiSlaveIds = {
         {"LMS7002M", spi_LMS7002M},
         {"FPGA", spi_FPGA}
@@ -76,6 +85,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
         {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
         {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
     };
+
+    desc.customParameters.push_back(cp_vctcxo_dac);
 
     mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M);
     mFPGA->SetConnection(this);
