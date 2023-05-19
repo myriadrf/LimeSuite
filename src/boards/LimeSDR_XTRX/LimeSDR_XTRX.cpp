@@ -58,7 +58,7 @@ void LimeSDR_XTRX::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI
     PCIE_CSR_Pipe pipe(*port);
     switch (spiBusAddress) {
         case spi_LMS7002M:
-            LMS64CProtocol::LMS7002M_SPI(pipe, MOSI, MISO, count);
+            LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
             return;
         case spi_FPGA:
             LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);

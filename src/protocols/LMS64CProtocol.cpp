@@ -21,9 +21,6 @@ const int LMS_RST_DEACTIVATE = 0;
 const int LMS_RST_ACTIVATE = 1;
 const int LMS_RST_PULSE = 2;
 
-//! arbitrary spi constants used to dispatch calls
-#define LMS7002M_SPI_INDEX 0x10
-#define ADF4002_SPI_INDEX 0x30
 namespace lime {
 
 LMS64CPacket::LMS64CPacket()
@@ -53,12 +50,12 @@ static inline const char* status2string(const int status)
         return "Unknown status";
 }
 
-static int SPI16(ISerialPort& port, eCMD_LMS writeCmd, const uint32_t *MOSI, eCMD_LMS readCmd, uint32_t *MISO, size_t count)
+static int SPI16(ISerialPort& port, uint8_t chipSelect, eCMD_LMS writeCmd, const uint32_t *MOSI, eCMD_LMS readCmd, uint32_t *MISO, size_t count)
 {
     LMS64CPacket pkt;
     pkt.status = STATUS_UNDEFINED;
     pkt.blockCount = 0;
-    pkt.periphID = 0;
+    pkt.periphID = chipSelect;
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
@@ -174,14 +171,14 @@ void FirmwareToDescriptor(const FirmwareInfo& fw, SDRDevice::Descriptor& descrip
     descriptor.serialNumber = fw.boardSerialNumber;
 }
 
-int LMS7002M_SPI(ISerialPort& port, const uint32_t* MOSI, uint32_t* MISO, size_t count)
+int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, size_t count)
 {
-    return SPI16(port, CMD_LMS7002_WR, MOSI, CMD_LMS7002_RD, MISO, count);
+    return SPI16(port, chipSelect, CMD_LMS7002_WR, MOSI, CMD_LMS7002_RD, MISO, count);
 }
 
 int FPGA_SPI(ISerialPort& port, const uint32_t* MOSI, uint32_t* MISO, size_t count)
 {
-    return SPI16(port, CMD_BRDSPI_WR, MOSI, CMD_BRDSPI_RD, MISO, count);
+    return SPI16(port, 0, CMD_BRDSPI_WR, MOSI, CMD_BRDSPI_RD, MISO, count);
 }
 
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* mosi, size_t count)

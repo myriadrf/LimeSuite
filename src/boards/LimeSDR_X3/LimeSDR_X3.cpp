@@ -63,7 +63,7 @@ void LimeSDR_X3::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, 
         case spi_LMS7002M_1:
         case spi_LMS7002M_2:
         case spi_LMS7002M_3:
-            LMS64CProtocol::LMS7002M_SPI(pipe, MOSI, MISO, count);
+            LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
             return;
         case spi_FPGA:
             LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);

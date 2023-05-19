@@ -135,7 +135,7 @@ struct FirmwareInfo
 int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info);
 void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descriptor);
 
-int LMS7002M_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count);
+int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count);
 int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count);
 
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
