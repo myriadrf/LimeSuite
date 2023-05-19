@@ -485,11 +485,16 @@ LMS7002M* lms7002_mainPanel::GetSelectedChip() const
 void lms7002_mainPanel::OnCGENFrequencyChange(wxCommandEvent &event)
 {
     //if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
+    try
     {
         LMS7002M* lms = GetSelectedChip();
         int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float phaseOffset = -999;
         sdrDevice->SetFPGAInterfaceFreq(decim, interp, phaseOffset, phaseOffset); // TODO: switch for automatic phase offset
+    }
+    catch (...)
+    {
+        wxMessageBox(_("Failed to set FPGA interface frequency"), _("Warning"));
     }
 }
