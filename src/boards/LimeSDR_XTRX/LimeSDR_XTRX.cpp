@@ -103,7 +103,7 @@ void LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 // could read back it's state for debugging purposes
 LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
     : LMS7002M_SDRDevice(), mControlPort(control), mStreamPort(stream)
-    , mLMS7002Mcomms(control, spi_LMS7002M), mFPGAcomms(stream, spi_FPGA)
+    , mLMS7002Mcomms(control, spi_LMS7002M), mFPGAcomms(control, spi_FPGA)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
