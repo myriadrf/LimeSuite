@@ -70,6 +70,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
     std::vector<lime::DeviceHandle> handles;
     handles = lime::DeviceRegistry::findDevices();
 
+printf ("\ngetdevicelist2\n");
     if (dev_list != nullptr)
     {
         for (size_t i = 0; i < handles.size(); i++)

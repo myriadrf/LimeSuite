@@ -13,4 +13,3 @@
 #include "limesuite/DeviceRegistry.h"
 #include <vector>
 #include <stdint.h>
-

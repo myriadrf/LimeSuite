@@ -1,5 +1,4 @@
 build/**
-builddir/**
 mcu_program/*.lst
 mcu_program/*.obj
 mcu_program/*.MAP
