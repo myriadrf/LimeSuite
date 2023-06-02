@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 {
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
-        {"full", no_argument, 0, 's'},
+        {"full", no_argument, 0, 'f'},
         {0, 0, 0,  0}
     };
 
@@ -39,6 +39,11 @@ int main(int argc, char *argv[])
         }
     }
     auto handles = DeviceRegistry::enumerate();
+    if (handles.size() == 0)
+    {
+        printf("No devices found\n");
+        return -1;
+    }
     std::cout << "Found " << handles.size() << " device(s) :" << std::endl;
     for (uint32_t i = 0; i < handles.size(); i++)
     {
@@ -58,10 +63,5 @@ int main(int argc, char *argv[])
         }
     }
     std::cout << std::endl;
-    if (handles.size() == 0)
-    {
-        printf("No devices found\n");
-        return -1;
-    }
-   return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
