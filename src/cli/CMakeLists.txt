@@ -6,18 +6,6 @@ if (NOT ENABLE_CLI)
     return()
 endif()
 
-# add_executable(basicRX basicRX.cpp)
-# set_target_properties(basicRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-# target_link_libraries(basicRX LimeSuite)
-
-# add_executable(singleRX singleRX.cpp)
-# set_target_properties(singleRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-# target_link_libraries(singleRX LimeSuite)
-
-# add_executable(singleRX_cpp singleRX_cpp.cpp)
-# set_target_properties(singleRX_cpp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-# target_link_libraries(singleRX_cpp LimeSuite)
-
 add_executable(LimeDevice LimeDevice.cpp)
 set_target_properties(LimeDevice PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(LimeDevice PUBLIC ${LIME_SUITE_INCLUDES})
@@ -27,6 +15,11 @@ add_executable(LimeSPI LimeSPI.cpp)
 set_target_properties(LimeSPI PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(LimeSPI PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(LimeSPI PUBLIC LimeSuite2 ${MAIN_LIBRARY_NAME})
+
+add_executable(LimeConfig LimeConfig.cpp)
+set_target_properties(LimeConfig PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_include_directories(LimeConfig PUBLIC ${LIME_SUITE_INCLUDES})
+target_link_libraries(LimeConfig PUBLIC LimeSuite2 ${MAIN_LIBRARY_NAME})
 
 # add_executable(dualRXTX dualRXTX.cpp)
 # set_target_properties(dualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

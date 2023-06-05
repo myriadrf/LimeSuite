@@ -11,5 +11,6 @@
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "limesuite/DeviceRegistry.h"
+#include "limesuite/LMS7002M.h"
 #include <vector>
 #include <stdint.h>

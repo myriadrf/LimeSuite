@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         {
         case 'h': 
             return printHelp();
-        case 's':
+        case 'f':
             full = true;
         }
     }
