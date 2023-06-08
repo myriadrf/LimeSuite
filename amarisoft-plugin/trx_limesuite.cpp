@@ -485,7 +485,7 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
                 hostState->tx_bandwidth[txChannelOffset+ch]/1e6, lime->chipIndex[p],
                 lime->txPath[p], paths[lime->txPath[p]].c_str()
             );
-            config.channel[ch].rx.enabled = true;
+            config.channel[ch].tx.enabled = true;
             config.channel[ch].tx.centerFrequency = freq;
             config.channel[ch].tx.path = lime->txPath[p];
 
