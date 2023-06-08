@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <ciso646>
 #include <getopt.h>
+#include <string>
+#include <cstdlib>
 #include <fstream>
 #include "Logger.h"
 #include "LMS64CProtocol.h"

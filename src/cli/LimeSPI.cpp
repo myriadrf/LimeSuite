@@ -14,7 +14,7 @@ static int printHelp(void)
     std::cout << "    --index <i>\t\t\t Specifies device index (0-... default 0)" << std::endl;
     std::cout << "    --addr <XXXX>\t\t Set Operating address (default 0)" << std::endl;
     std::cout << "    --write <YYYY> \t\t writes to SPI register specified with --addr value YYYY" << std::endl;
-    std::cout << "    --value <xxxx>\t\t\t Specifies value <xxxx> to be written (default 0)" << std::endl;
+    std::cout << "    --value <xxxx>\t\t Specifies value <xxxx> to be written (default 0)" << std::endl;
 
     return EXIT_SUCCESS;
 }

@@ -21,28 +21,8 @@ set_target_properties(LimeConfig PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BI
 target_include_directories(LimeConfig PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(LimeConfig PUBLIC LimeSuite2 ${MAIN_LIBRARY_NAME})
 
-# add_executable(dualRXTX dualRXTX.cpp)
-# set_target_properties(dualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-# target_link_libraries(dualRXTX LimeSuite)
+add_executable(LimeFLASH LimeFLASH.cpp)
+set_target_properties(LimeFLASH PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_include_directories(LimeFLASH PUBLIC ${LIME_SUITE_INCLUDES})
+target_link_libraries(LimeFLASH PUBLIC LimeSuite2 ${MAIN_LIBRARY_NAME})
 
-# add_executable(gpio_example gpio_example.cpp)
-# set_target_properties(gpio_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-# target_link_libraries(gpio_example LimeSuite)
-
-# add_executable(basicTX basicTX.cpp)
-# set_target_properties(basicTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-# target_link_libraries(basicTX LimeSuite)
-
-# if(ENABLE_LIMERFE)
-#     add_executable(limeRFE_USB_example limeRFE_USB_example.cpp)
-#     set_target_properties(limeRFE_USB_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-#     target_link_libraries(limeRFE_USB_example LimeSuite)
-
-#     add_executable(limeRFE_I2C_example limeRFE_I2C_example.cpp)
-#     set_target_properties(limeRFE_I2C_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-#     target_link_libraries(limeRFE_I2C_example LimeSuite)
-
-#     add_executable(limeRFE_ADC_example limeRFE_ADC_example.cpp)
-#     set_target_properties(limeRFE_ADC_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-#     target_link_libraries(limeRFE_ADC_example LimeSuite)
-# endif()
