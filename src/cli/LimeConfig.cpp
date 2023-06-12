@@ -79,11 +79,21 @@ int main(int argc, char *argv[])
     LMS7002M *chip = static_cast<LMS7002M*>(device->GetInternalChip (lms_index));
     if  (reset) chip->ResetChip ();
     if  (!f)
+    {
+        printHelp ();
         return EXIT_SUCCESS;
-    if  (load) 
-            chip->LoadConfig (f); 
-        else 
-            chip->SaveConfig (f);
+    }
+    if  (load)
+    { 
+        if  (debug)
+            std::cout << "Loading configuration file " << f << std::endl;
+        chip->LoadConfig (f);
+    } else
+    {
+        if  (debug)
+            std::cout << "Saving configuration file " << f << std::endl;
+        chip->SaveConfig (f);
+    }
     return EXIT_SUCCESS;
 }
 

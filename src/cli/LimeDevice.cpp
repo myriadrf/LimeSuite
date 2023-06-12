@@ -66,8 +66,6 @@ int main(int argc, char *argv[])
             std::cout << "\t" << "Memory devices\t\t:" << std::endl;
             for(const SDRDevice::DataStorage &mem : d.memoryDevices)
                 std::cout << "\t\t\t\t  " << mem.name << std::endl;
-            
-
         }
     }
     std::cout << std::endl;
