@@ -8,7 +8,7 @@ SDRDevice::SDRConfig    config;
 static int printHelp(void)
 {
     std::cout << "Usage LimeDevice [options]" << std::endl;
-    std::cout << "    --help \t This help" << std::endl;
+    std::cout << "    --help\t This help" << std::endl;
     std::cout << "    --full\t Force print detailed device(s) info" << std::endl;
     return EXIT_SUCCESS;
 }

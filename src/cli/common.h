@@ -16,3 +16,8 @@
 #include "limesuite/LMS7002M.h"
 #include <vector>
 #include <stdint.h>
+#include <iostream>
+#include <iomanip>
+
+void processRaw (std::string rawdata, uint32_t devAddr, bool debug);
+

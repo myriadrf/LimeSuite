@@ -10,7 +10,7 @@ static int printHelp(void)
     std::cout << "Usage LimeConfig [options]" << std::endl;
     std::cout << "    --help\t\t\t This help" << std::endl;
     std::cout << "    --debug\t\t\t Force debug output" << std::endl;
-    std::cout << "    --index <i>\t\t\t Specifies device index (0-... default 0)" << std::endl;
+    std::cout << "    --board <i>\t\t\t Specifies device index (0-... default 0)" << std::endl;
     std::cout << "    --load <file>\t\t Load LMS7002M registers from file <file>" << std::endl;
     std::cout << "    --save <file> \t\t Save LMS7002M registers to file <file>" << std::endl;
     std::cout << "    --lms <x>\t\t\t Specifies LMS7002M chip index <x> (default 0)" << std::endl;
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"debug", no_argument, 0, 'd'},
-        {"index", required_argument, 0, 'i'},
+        {"board", required_argument, 0, 'b'},
         {"load", required_argument, 0, 'l'},
         {"save", required_argument, 0, 's'},
         {"lms", required_argument, 0, 'm'},
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
         case 'd':
             debug = true;
             break;
-        case 'i':
+        case 'b':
             if (optarg != NULL) dev_index = std::stod(optarg);
             break;
         case 'l':

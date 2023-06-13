@@ -15,18 +15,10 @@ static int printHelp(void)
     return EXIT_SUCCESS;
 }
 
-void listTargets (void)
-{
-    std::cout <<"Possible device targets :" << std::endl;
-    auto d = device->GetDescriptor();
-    
-}
-
 bool CallBack (size_t bsent, size_t btotal, const char* statusMessage)
 {
     return true;
 }
-
 
 /***********************************************************************
  * main entry point
@@ -43,11 +35,12 @@ int main(int argc, char *argv[])
     int dev_index = -1;
     int long_index = 0;
     int option = 0;
-    int target = -1;
+    std::string target;
     char *fn = NULL;
     std::vector<char> data;
     std::ifstream inf;
-    
+    bool printlist(false);
+
     while ((option = getopt_long_only (argc, argv, "", long_options, &long_index)) != -1)
     {
         switch (option)
@@ -58,12 +51,15 @@ int main(int argc, char *argv[])
             if (optarg != NULL) dev_index = std::stod (optarg);
             break;
         case 't':
-            if (optarg != NULL && optarg[0] != '-') 
-               target = std::stod (optarg);
+            if (optarg != NULL) {
+                if (optarg[0] == '-')
+                    printlist =  true;
+                else
+                    target = optarg;
+            }
             break;
         }
-    }
-    if  (target < 0) {printHelp (); return EXIT_SUCCESS;}
+    }       
     auto handles = DeviceRegistry::enumerate();
     if (handles.size() == 0) 
     {
@@ -78,14 +74,23 @@ int main(int argc, char *argv[])
             dev_index = 0;
     }
     device = DeviceRegistry::makeDevice(handles.at(dev_index));
-    
-    
-    
-    
-    if  (optind == argc) {printHelp (); return -1;}
-//    if  (optind < argc) printf ("%s\n",argv[optind]);
-printf ("%u %u\n",optind,argc);
-    exit;
+    auto d = device->GetDescriptor();
+    if (printlist)
+    {
+        std::cout << "Memory devices list :" << std::endl;
+        for (const SDRDevice::DataStorage &mem : d.memoryDevices)
+            std::cout << "\t" << mem.name << std::endl;
+        return EXIT_SUCCESS;    
+    }
+    if  (target.empty ())
+    {
+        std::cout << "Target must be specified." << std::endl;
+        printHelp ();
+        return -1;
+    }
+    if  (optind == argc) {std::cout << "File must be specified." << std::endl;printHelp (); return -1;}
+printf ("%s\n",argv[optind]);
+
 //    inf.open (fflash, std::ifstream::in | std::ifstream::binary);
 
     if  (!inf)
@@ -100,13 +105,15 @@ printf ("%u %u\n",optind,argc);
     data.resize (cnt);
     inf.read (data.data (),cnt);
     inf.close ();
-  /*  if (device->UploadMemory (fram?0:1, data.data(), data.size(), CallBack))
+#ifdef eee
+
+    if (device->UploadMemory (fram?0:1, data.data(), data.size(), CallBack))
     {
         std::cout << "Error programming device." << std::endl;
         return -1;
     }
     std::cout << "Ok." << std::endl;
-*/
+#endif
     return EXIT_SUCCESS;
 }
 
