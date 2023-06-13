@@ -92,7 +92,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow *parent, wxWindowID id, const 
                 make_tuple( LMS7param(EN_G_RFE), wxT("Enable RFE module"), wxT("Enable control for all the RFE_1 power downs"))
             };
 
-            for(const auto row : rows)
+            for(const auto &row : rows)
                 sbSizerPowerDowns->Add( NewCheckBox(sbSizerPowerDowns->GetStaticBox(), get<0>(row), get<1>(row), get<2>(row)), wxALIGN_LEFT);
 
             wxStaticBoxSizer* sbSizer23 = new wxStaticBoxSizer( new wxStaticBox( sbSizerPowerDowns->GetStaticBox(), wxID_ANY, wxT("Direct control") ), wxHORIZONTAL );
@@ -115,7 +115,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow *parent, wxWindowID id, const 
                            wxT("Enables the input shorting switch at the input  of the LNAL")),
                 make_tuple(LMS7param(EN_INSHSW_W_RFE), wxT("input of LNAW"),
                            wxT("Enables the input shorting switch at the input  of the LNAW"))};
-            for(const auto row : rows)
+            for(const auto &row : rows)
                 sbSizerInputShorting->Add( NewCheckBox(sbSizerInputShorting->GetStaticBox(), get<0>(row), get<1>(row), get<2>(row)), 0, wxALIGN_LEFT, 0);
         }
         fgSizer190->Add( sbSizerInputShorting, 1, wxEXPAND, 5 );

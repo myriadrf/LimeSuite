@@ -117,7 +117,7 @@ bool SPI_wxgui::Initialize(SDRDevice *pCtrPort)
     wxArrayString spiSlavesList;
     const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
 
-    for (const auto nameIds : desc.spiSlaveIds)
+    for (const auto &nameIds : desc.spiSlaveIds)
         spiSlavesList.Add(wxString::Format("%s", nameIds.first.c_str()));
 
     for (auto iter : mSPIselection)
