@@ -79,7 +79,7 @@ protected:
     void LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled);
     void LMS3SetPath(TRXDir dir, uint8_t chan, uint8_t path);
     void LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz);
-    static void LMS1_UpdateFPGAInterface(void* userData);
+    static int LMS1_UpdateFPGAInterface(void* userData);
 
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
 

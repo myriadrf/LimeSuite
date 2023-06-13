@@ -48,7 +48,7 @@ public:
 protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
-    static void LMS1_UpdateFPGAInterface(void* userData);
+    static int LMS1_UpdateFPGAInterface(void* userData);
 
     enum class ePathLMS1_Rx {
         NONE = 0, LNAH = 1, LNAL = 2

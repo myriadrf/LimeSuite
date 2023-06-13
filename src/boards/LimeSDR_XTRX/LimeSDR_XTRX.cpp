@@ -87,16 +87,16 @@ static inline void ValidateChannel(uint8_t channel)
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-void LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
+int LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);
     LimeSDR_XTRX* pthis = static_cast<LimeSDR_XTRX*>(userData);
     // don't care about cgen changes while doing Config(), to avoid unnecessary fpga updates
     if (pthis->mConfigInProgress)
-        return;
+        return 0;
     LMS7002M* soc = pthis->mLMSChips[chipIndex];
-    UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
+    return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
 // Do not perform any unnecessary configuring to device in constructor, so you
