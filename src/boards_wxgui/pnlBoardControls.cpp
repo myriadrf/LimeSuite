@@ -297,7 +297,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
             continue;
         ids.push_back(mParameters[i].channel);
         values.push_back(mParameters[i].value);
-        int status = WriteCustomBoardParam(mDevice,mParameters[i].channel,mParameters[i].value,NULL);
+        int status = WriteCustomBoardParam(mDevice,mParameters[i].channel,mParameters[i].value);
         if (status != 0)
         {
             wxMessageBox(_("Failed to write values"), _("Warning"));
