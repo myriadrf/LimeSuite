@@ -5,6 +5,7 @@ using namespace lime;
 SDRDevice               *device = nullptr;
 SDRDevice::SDRConfig    config;
 std::ofstream           outfile;
+bool                    borting(false);
 
 /************************************************************************/
 static int printHelp(void)

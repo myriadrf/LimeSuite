@@ -2,8 +2,9 @@
 
 using namespace lime;
 
-SDRDevice               *device = nullptr;
-SDRDevice::SDRConfig    config;
+SDRDevice *device = nullptr;
+SDRDevice::SDRConfig config;
+bool abortflag(false);
 
 static int printHelp(void)
 {
@@ -14,12 +15,39 @@ static int printHelp(void)
 
     return EXIT_SUCCESS;
 }
-
-bool CallBack (size_t bsent, size_t btotal, const char* statusMessage)
+/***********************************************************************/
+void inthandler (int sig)
 {
-    return true;
+    abortflag = true;
+}
+/***********************************************************************/
+int findMemDevId (std::string target)
+{
+    auto d = device->GetDescriptor();
+
+    if (target[0] == '-')
+        std::cout << "Memory devices :" << std::endl;
+    for (const SDRDevice::DataStorage &mem : d.memoryDevices)
+        if (target[0] == '-')
+            std::cout << "\t" << mem.name << std::endl;                    
+        else
+            if (mem.name == target)
+                return (mem.id);
+                
+    return -1;
 }
 
+/***********************************************************************/
+bool CallBack (size_t bsent, size_t btotal, const char* statusMessage)
+{
+    std::cout << "Sent " << bsent << " of " << btotal << " bytes\r";
+    if (abortflag)
+    {
+        std::cout << "aborting..." << std::endl;
+        return false;
+    }
+    return true;
+}
 /***********************************************************************
  * main entry point
  **********************************************************************/
@@ -27,7 +55,7 @@ int main(int argc, char *argv[])
 {
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
-        {"index", required_argument, 0, 'i'},
+        {"board", required_argument, 0, 'b'},
         {"target", required_argument, 0, 't'},
         {0, 0, 0,  0}
     };
@@ -36,10 +64,10 @@ int main(int argc, char *argv[])
     int long_index = 0;
     int option = 0;
     std::string target;
-    char *fn = NULL;
     std::vector<char> data;
     std::ifstream inf;
     bool printlist(false);
+    int devid;
 
     while ((option = getopt_long_only (argc, argv, "", long_options, &long_index)) != -1)
     {
@@ -47,7 +75,7 @@ int main(int argc, char *argv[])
         {
         case 'h': 
             return printHelp ();
-        case 'i':
+        case 'b':
             if (optarg != NULL) dev_index = std::stod (optarg);
             break;
         case 't':
@@ -74,25 +102,24 @@ int main(int argc, char *argv[])
             dev_index = 0;
     }
     device = DeviceRegistry::makeDevice(handles.at(dev_index));
-    auto d = device->GetDescriptor();
     if (printlist)
     {
-        std::cout << "Memory devices list :" << std::endl;
-        for (const SDRDevice::DataStorage &mem : d.memoryDevices)
-            std::cout << "\t" << mem.name << std::endl;
+        findMemDevId ("-");
         return EXIT_SUCCESS;    
     }
-    if  (target.empty ())
+    if (target.empty ())
     {
         std::cout << "Target must be specified." << std::endl;
         printHelp ();
         return -1;
     }
-    if  (optind == argc) {std::cout << "File must be specified." << std::endl;printHelp (); return -1;}
-printf ("%s\n",argv[optind]);
-
-//    inf.open (fflash, std::ifstream::in | std::ifstream::binary);
-
+    if (optind == argc) {std::cout << "File must be specified." << std::endl;printHelp (); return -1;}
+    if ((devid = findMemDevId (target)) == - 1)
+    {
+        std::cout << "Memory device " << target << " not found" << std::endl;    
+        return -1;
+    }
+    inf.open (argv[optind], std::ifstream::in | std::ifstream::binary);
     if  (!inf)
     {
         std::cout << "Unable to open file." << std::endl;
@@ -105,15 +132,15 @@ printf ("%s\n",argv[optind]);
     data.resize (cnt);
     inf.read (data.data (),cnt);
     inf.close ();
-#ifdef eee
-
-    if (device->UploadMemory (fram?0:1, data.data(), data.size(), CallBack))
+    std::cout << "Memory device id : " << devid << std::endl;
+    signal (SIGINT, inthandler);
+    if (!device->UploadMemory (devid, data.data(), data.size(), CallBack))
     {
         std::cout << "Error programming device." << std::endl;
         return -1;
     }
-    std::cout << "Ok." << std::endl;
-#endif
+    std::cout << "Programming Ok." << std::endl;
+
     return EXIT_SUCCESS;
 }
 
