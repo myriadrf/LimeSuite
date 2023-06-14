@@ -233,8 +233,9 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
         double refClk = lmsControl->GetClockFreq(LMS_CLOCK_REF,
                                                  0); // use reference clock of the 0th channel
         controlDev.Append(wxString::Format(
-            _(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info.firmwareVersion,
-            info.hardwareVersion, info.protocolVersion, info.gatewareVersion, refClk / 1e6));
+            _(" FW:%s HW:%s Protocol:%s GW:%s.%s Ref Clk: %1.2f MHz"),
+            info.firmwareVersion, info.hardwareVersion, info.protocolVersion,
+            info.gatewareVersion, info.gatewareRevision, refClk / 1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         wxCommandEvent evt;
