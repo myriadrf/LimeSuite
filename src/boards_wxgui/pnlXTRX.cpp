@@ -71,7 +71,7 @@ void pnlXTRX::Initialize(lime::SDRDevice *dev)
 
     const SDRDevice::Descriptor &desc = device->GetDescriptor();
     const std::string targetSPI = "FPGA";
-    for (const auto nameIds : desc.spiSlaveIds)
+    for (const auto &nameIds : desc.spiSlaveIds)
     {
         if (nameIds.first == targetSPI)
         {

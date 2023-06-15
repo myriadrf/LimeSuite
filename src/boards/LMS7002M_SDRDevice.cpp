@@ -172,7 +172,7 @@ bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t leng
     throw(OperationNotSupported("UploadMemory not implemented"));
 }
 
-void LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex)
+int LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex)
 {
     double fpgaTxPLL = soc.GetReferenceClk_TSP(Tx);
     int interp = soc.Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
@@ -188,8 +188,9 @@ void LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga,
     }
 
     if(fpga.SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipIndex) != 0)
-        throw std::runtime_error("Failed to configure FPGA interface");
+        return -1;
     soc.ResetLogicregisters();
+    return 0;
 }
 
 } // namespace lime

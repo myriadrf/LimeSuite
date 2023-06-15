@@ -27,7 +27,7 @@ std::vector<std::string> LitePCIe::GetDevicesWithPattern(const std::string& rege
     while(fscanf(lsPipe, "%s", tempBuffer) == 1)
         devices.push_back(tempBuffer);
     pclose(lsPipe);
-    return std::move(devices);
+    return devices;
 }
 
 
@@ -369,8 +369,7 @@ bool LitePCIe::WaitRx()
     struct timespec timeout_ts;
     timeout_ts.tv_sec = 0;
     timeout_ts.tv_nsec = 10e6;
-    sigset_t origmask;
-    int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
+    int ret = ppoll(&desc, 1, &timeout_ts, NULL);
     if (ret < 0)
     {
         char msg[256];
@@ -404,8 +403,7 @@ bool LitePCIe::WaitTx()
     struct timespec timeout_ts;
     timeout_ts.tv_sec = 0;
     timeout_ts.tv_nsec = 1e8;
-    sigset_t origmask;
-    int ret = ppoll(&desc, 1, &timeout_ts, &origmask);
+    int ret = ppoll(&desc, 1, &timeout_ts, NULL);
     if (ret < 0)
     {
         if (errno == EINTR)

@@ -115,11 +115,35 @@ struct LimeState {
     int lossmain[TRX_MAX_RF_PORT];
     int rxOversample[TRX_MAX_RF_PORT];
     int txOversample[TRX_MAX_RF_PORT];
+    double rx_LO_override[TRX_MAX_RF_PORT];
+    double tx_LO_override[TRX_MAX_RF_PORT];
     std::vector<uint32_t> writeRegisters[TRX_MAX_RF_PORT];
     SDRDevice::StreamConfig::Extras* streamExtras[TRX_MAX_RF_PORT];
 
     LimeState()
     {
+#define memnull(x) memset(x, 0, sizeof(x));
+        memnull(device);
+        memnull(rxPath);
+        memnull(txPath);
+        memnull(skipConfig);
+        memnull(chipIndex);
+        memnull(tx_channel_count);
+        memnull(rx_channel_count);
+        //memnull(tcxo_calc);
+        memnull(tx_gfir_enable);
+        memnull(rx_gfir_enable);
+        memnull(sample_rate);
+        memnull(calibrate);
+        memnull(samplesInPacket);
+        memnull(glna);
+        memnull(gpga);
+        memnull(rxOversample);
+        memnull(txOversample);
+        memnull(streamExtras);
+        memnull(rx_LO_override);
+        memnull(tx_LO_override);
+#undef memnull
     }
 };
 
@@ -446,10 +470,23 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
         for (int ch = 0; ch < lime->rx_channel_count[p]; ++ch)
         {
             auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].rxPathNames;
-            const float freq = hostState->rx_freq[rxChannelOffset+ch];
+            double freq = hostState->rx_freq[rxChannelOffset+ch];
+            char loFreqStr[64];
+            if (lime->rx_LO_override[p] > 0)
+            {
+                freq = lime->rx_LO_override[p];
+                sprintf(loFreqStr, "expectedLO: %.3f MHz [override: %.3f (diff:%+.3f) MHz]",
+                    (double)hostState->rx_freq[rxChannelOffset+ch],
+                    lime->rx_LO_override[p],
+                    hostState->rx_freq[rxChannelOffset+ch] - lime->rx_LO_override[p]
+                );
+            }
+            else
+                sprintf(loFreqStr, "LO: %.3f MHz", freq);
             gMapRxChannelToPortCh[rxChannelOffset+ch] = {(uint8_t)p, (uint8_t)ch};
-            Log(LogLevel::INFO, "Port[%i] Rx CH[%i] LO: %.3f MHz, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
-                p, ch, freq/1e6,
+            Log(LogLevel::INFO, "Port[%i] Rx CH[%i] %s, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
+                p, ch,
+                loFreqStr,
                 samplingRate/1e6,
                 hostState->rx_bandwidth[rxChannelOffset+ch]/1e6, lime->chipIndex[p],
                 lime->rxPath[p], paths[lime->rxPath[p]].c_str()
@@ -477,15 +514,28 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
         for (int ch = 0; ch < lime->tx_channel_count[p]; ++ch)
         {
             auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].txPathNames;
-            const float freq = hostState->tx_freq[txChannelOffset+ch];
+            double freq = hostState->tx_freq[txChannelOffset+ch];
+            char loFreqStr[64];
+            if (lime->tx_LO_override[p] > 0)
+            {
+                freq = lime->tx_LO_override[p];
+                sprintf(loFreqStr, "expectedLO: %.3f MHz [override: %.3f (diff:%+.3f) MHz]",
+                    (double)hostState->tx_freq[txChannelOffset+ch],
+                    lime->tx_LO_override[p],
+                    hostState->tx_freq[txChannelOffset+ch] - lime->tx_LO_override[p]
+                );
+            }
+            else
+                sprintf(loFreqStr, "LO: %.3f MHz", freq);
             gMapTxChannelToPortCh[txChannelOffset+ch] = {(uint8_t)p, (uint8_t)ch};
-            Log(LogLevel::INFO, "Port[%i] Tx CH[%i] LO: %.3f MHz, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
-                p, ch, freq/1e6,
+            Log(LogLevel::INFO, "Port[%i] Tx CH[%i] %s, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
+                p, ch,
+                loFreqStr,
                 samplingRate/1e6,
                 hostState->tx_bandwidth[txChannelOffset+ch]/1e6, lime->chipIndex[p],
                 lime->txPath[p], paths[lime->txPath[p]].c_str()
             );
-            config.channel[ch].rx.enabled = true;
+            config.channel[ch].tx.enabled = true;
             config.channel[ch].tx.centerFrequency = freq;
             config.channel[ch].tx.path = lime->txPath[p];
 
@@ -501,7 +551,7 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
                 config.channel[ch].tx.calibrate = true;
             if (lime->calibrate[p] & Filter)
             {
-                config.channel[ch].tx.lpf = hostState->tx_bandwidth[rxChannelOffset+ch];
+                config.channel[ch].tx.lpf = hostState->tx_bandwidth[txChannelOffset+ch];
                 Log(LogLevel::DEBUG, "Port[%i][%i] txLPF:%.3f MHz\n", p, ch, config.channel[ch].tx.lpf/1e6);
             }
         }
@@ -784,6 +834,16 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
     for (int p=0; p<TRX_MAX_RF_PORT; ++p)
     {
         char varname[128];
+        sprintf(varname, "port%i_rx_lo_override", p);
+        s->rx_LO_override[p] = 0;
+        if (trx_get_param_double(hostState, &s->rx_LO_override[p], varname) == 0)
+            Log(LogLevel::INFO, "%s %.2f\n", varname, s->rx_LO_override[p]);
+
+        sprintf(varname, "port%i_tx_lo_override", p);
+        s->tx_LO_override[p] = 0;
+        if (trx_get_param_double(hostState, &s->tx_LO_override[p], varname) == 0)
+            Log(LogLevel::INFO, "%s %.2f\n", varname, s->tx_LO_override[p]);
+
         sprintf(varname, "port%i_rx_gainNormalized", p); // provided value should be [0:1]
         s->rxGainNorm[p] = -1;//nanf("");
         if (trx_get_param_double(hostState, &val, varname) == 0)
@@ -798,7 +858,7 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
         }
         sprintf(varname, "port%i_tx_gainNormalized", p);
         s->txGainNorm[p] = -1;//nanf("");
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
         {
             if(val < 0 || val > 1)
             {
@@ -814,24 +874,24 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
         s->iamp[p] = -1;
         s->lossmain[p] = -1;
         sprintf(varname, "port%i_G_LNA_RFE", p);
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
             s->glna[p] = val;
         sprintf(varname, "port%i_G_PGA_RBB", p);
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
             s->gpga[p] = val;
         sprintf(varname, "port%i_CG_IAMP_TBB", p);
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
             s->iamp[p] = val;
         sprintf(varname, "port%i_LOSS_MAIN_TXPAD_TRF", p);
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
             s->lossmain[p] = val;
 
         sprintf(varname, "port%i_rx_oversample", p);
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
             s->rxOversample[p] = val;
 
         sprintf(varname, "port%i_tx_oversample", p);
-        if (trx_get_param_double(hostState, &val, varname) >= 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
             s->txOversample[p] = val;
 
         // calibrations setup

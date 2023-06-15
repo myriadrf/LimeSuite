@@ -1719,7 +1719,7 @@ void lms7002_pnlTXTSP_view::UpdateNCOinputs()
     if (rgrMODE_TX->GetSelection() == 0) //FCW mode
     {
         double pho=0;
-        auto freqVector = lmsControl->GetNCOFrequencies(false, &pho);
+        auto freqVector = lmsControl->GetNCOFrequencies(true, &pho);
         for (size_t i = 0; i < txtNCOinputs.size() && i< freqVector.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freqVector[i]/1e6));
@@ -1732,7 +1732,7 @@ void lms7002_pnlTXTSP_view::UpdateNCOinputs()
     else //PHO mode
     {
         float_type fcw = 0;
-        auto angles_deg = lmsControl->GetNCOPhases(false, &fcw);
+        auto angles_deg = lmsControl->GetNCOPhases(true, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size() && i < angles_deg.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), angles_deg[i]));

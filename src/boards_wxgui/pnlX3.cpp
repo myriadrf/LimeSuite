@@ -358,7 +358,7 @@ void pnlX3::Initialize(lime::SDRDevice *pControl)
 
     const SDRDevice::Descriptor &desc = lmsControl->GetDescriptor();
     const std::string targetSPI = "FPGA";
-    for (const auto nameIds : desc.spiSlaveIds)
+    for (const auto &nameIds : desc.spiSlaveIds)
     {
         if (nameIds.first == targetSPI)
         {

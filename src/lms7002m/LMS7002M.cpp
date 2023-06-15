@@ -1247,7 +1247,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         output->csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO_CGEN));
 
     if (mCallback_onCGENChange)
-        mCallback_onCGENChange(mCallback_onCGENChange_userData);
+        return mCallback_onCGENChange(mCallback_onCGENChange_userData);
     return 0;
 }
 
