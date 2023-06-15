@@ -93,7 +93,7 @@ void pnlXTRX::OnInputChange(wxCommandEvent &event)
 
     if (pnlXTRX::LMS_ReadFPGAReg (device,addr,&value))
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
-    value &= ~(1 << 11 | 1 << 4 | 1 << 2);
+    value &= ~(1 << 11 | 1 << 4 | 1 << 3 | 1 << 2);
     bool autoSwitching = TDDCntrl->IsChecked();
     value |= autoSwitching << 11;
     value |= cmbTxPath->GetSelection() << 4;
