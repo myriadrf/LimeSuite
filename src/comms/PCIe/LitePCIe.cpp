@@ -43,7 +43,8 @@ LitePCIe::~LitePCIe()
 int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
 {
     mFilePath = deviceFilename;
-    mFileDescriptor = open(deviceFilename, flags); //O_RDWR
+    // use O_RDWR for now, because MMAP PROT_WRITE imples PROT_READ and will fail if file is opened write only
+    mFileDescriptor = open(deviceFilename, O_RDWR);
     if (mFileDescriptor < 0)
     {
         isConnected = false;
@@ -58,7 +59,8 @@ int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
         mDMA.bufferCount = info.dma_rx_buf_count;
         mDMA.bufferSize = info.dma_rx_buf_size;
         litepcie_ioctl_lock lockInfo;
-        if ((flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR)
+        // O_RDONLY has value of 0, so cannot detect if file is being opened as read only when other flags are preset
+        if ((flags & O_WRONLY) != O_WRONLY || (flags & O_RDWR) == O_RDWR)
         {
             memset(&lockInfo, 0, sizeof(lockInfo));
             lockInfo.dma_writer_request = 1;
@@ -96,7 +98,7 @@ int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 char msg[256];
-                sprintf(msg, "%s: failed to MMAP Rx DMA buffer", mFilePath.c_str());
+                sprintf(msg, "%s: failed to MMAP Tx DMA buffer", mFilePath.c_str());
                 throw std::runtime_error(msg);
             }
             mDMA.txMemory = buf;
