@@ -44,7 +44,9 @@ int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
 {
     mFilePath = deviceFilename;
     // use O_RDWR for now, because MMAP PROT_WRITE imples PROT_READ and will fail if file is opened write only
-    mFileDescriptor = open(deviceFilename, O_RDWR);
+    flags &= ~O_WRONLY;
+    flags |= O_RDWR;
+    mFileDescriptor = open(deviceFilename, flags);
     if (mFileDescriptor < 0)
     {
         isConnected = false;
