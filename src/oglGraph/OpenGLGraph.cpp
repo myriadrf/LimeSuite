@@ -828,6 +828,10 @@ void OpenGLGraph::Fit()
 */
 void OpenGLGraph::OnMouseDown(int mouseButton, int X, int Y)
 {
+    const float scale = GetContentScaleFactor();
+    X *= scale;
+    Y *= scale;
+
 #ifdef OGL_INVERT_MOUSE_Y
     Y = settings.windowHeight - Y;
 #endif // OGL_INVERT_MOUSE_Y
@@ -877,6 +881,15 @@ void OpenGLGraph::OnMouseDown(int mouseButton, int X, int Y)
 */
 void OpenGLGraph::OnMouseUp(int mouseButton, int X, int Y)
 {
+	/* Coordinate within the graph window measured in the window (logical)
+	 * coordinate system (without device scaling applied). */
+	const int X_window = X;
+	const int Y_window = Y;
+
+	const float scale = GetContentScaleFactor();
+	X *= scale;
+	Y *= scale;
+
 	switch(mouseButton)
 	{
 	case OGLG_LEFT:
@@ -906,7 +919,7 @@ void OpenGLGraph::OnMouseUp(int mouseButton, int X, int Y)
     case OGLG_RIGHT:
         if((m_MouseCoord.x2 == m_MouseCoord.x1) &&
         (m_MouseCoord.y2 == m_MouseCoord.y1))
-            ShowMenu(X, Y);
+            ShowMenu(X_window, Y_window);
         break;
     }
 	m_actionState = OGLG_IDLE;
@@ -921,6 +934,10 @@ void OpenGLGraph::OnMouseUp(int mouseButton, int X, int Y)
 */
 void OpenGLGraph::OnMouseMove(int X, int Y)
 {
+    const float scale = GetContentScaleFactor();
+    X *= scale;
+    Y *= scale;
+
     float spanx, spany, sx, sy;
 #ifdef OGL_INVERT_MOUSE_Y
 	Y = settings.windowHeight - Y;
