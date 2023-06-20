@@ -471,18 +471,18 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
         {
             auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].rxPathNames;
             double freq = hostState->rx_freq[rxChannelOffset+ch];
-            char loFreqStr[64];
+            char loFreqStr[1024];
             if (lime->rx_LO_override[p] > 0)
             {
                 freq = lime->rx_LO_override[p];
                 sprintf(loFreqStr, "expectedLO: %.3f MHz [override: %.3f (diff:%+.3f) MHz]",
-                    (double)hostState->rx_freq[rxChannelOffset+ch],
-                    lime->rx_LO_override[p],
-                    hostState->rx_freq[rxChannelOffset+ch] - lime->rx_LO_override[p]
+                    hostState->rx_freq[rxChannelOffset+ch]/1.0e6,
+                    lime->rx_LO_override[p]/1.0e6,
+                    (hostState->rx_freq[rxChannelOffset+ch] - lime->rx_LO_override[p])/1.0e6
                 );
             }
             else
-                sprintf(loFreqStr, "LO: %.3f MHz", freq);
+                sprintf(loFreqStr, "LO: %.3f MHz", freq/1.0e6);
             gMapRxChannelToPortCh[rxChannelOffset+ch] = {(uint8_t)p, (uint8_t)ch};
             Log(LogLevel::INFO, "Port[%i] Rx CH[%i] %s, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
                 p, ch,
@@ -515,24 +515,24 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
         {
             auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].txPathNames;
             double freq = hostState->tx_freq[txChannelOffset+ch];
-            char loFreqStr[64];
+            char loFreqStr[1024];
             if (lime->tx_LO_override[p] > 0)
             {
                 freq = lime->tx_LO_override[p];
                 sprintf(loFreqStr, "expectedLO: %.3f MHz [override: %.3f (diff:%+.3f) MHz]",
-                    (double)hostState->tx_freq[txChannelOffset+ch],
-                    lime->tx_LO_override[p],
-                    hostState->tx_freq[txChannelOffset+ch] - lime->tx_LO_override[p]
+                    hostState->tx_freq[txChannelOffset+ch]/1.0e6,
+                    lime->tx_LO_override[p]/1.0e6,
+                    (hostState->tx_freq[txChannelOffset+ch] - lime->tx_LO_override[p])/1.0e6
                 );
             }
             else
-                sprintf(loFreqStr, "LO: %.3f MHz", freq);
+                sprintf(loFreqStr, "LO: %.3f MHz", freq/1.0e6);
             gMapTxChannelToPortCh[txChannelOffset+ch] = {(uint8_t)p, (uint8_t)ch};
             Log(LogLevel::INFO, "Port[%i] Tx CH[%i] %s, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
                 p, ch,
                 loFreqStr,
-                samplingRate/1e6,
-                hostState->tx_bandwidth[txChannelOffset+ch]/1e6, lime->chipIndex[p],
+                samplingRate/1.0e6,
+                hostState->tx_bandwidth[txChannelOffset+ch]/1.0e6, lime->chipIndex[p],
                 lime->txPath[p], paths[lime->txPath[p]].c_str()
             );
             config.channel[ch].tx.enabled = true;
