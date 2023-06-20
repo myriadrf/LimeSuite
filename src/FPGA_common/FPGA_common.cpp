@@ -1145,7 +1145,7 @@ FPGA::GatewareInfo FPGA::GetGatewareInfo()
         return info;
 
     info.boardID = data[0];
-    info.version = data[1];
+    info.version = (int16_t)data[1];
     info.revision = data[2];
     info.hardwareVersion = data[3] & 0x7F;
     return info;
