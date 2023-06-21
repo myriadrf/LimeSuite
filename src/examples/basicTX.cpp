@@ -79,7 +79,6 @@ int main(int argc, char** argv)
     std::cout << "Configuring device ...\n";
     try {
         auto t1 = std::chrono::high_resolution_clock::now();
-        //device->Init();
         device->Configure(config, chipIndex);
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << "SDR configured in " <<

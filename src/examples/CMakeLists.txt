@@ -14,9 +14,9 @@ message(STATUS "GNUPlot Found")
 endif()
 endif()
 
-#add_executable(basicRX basicRX.cpp)
-#set_target_properties(basicRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-#target_link_libraries(basicRX LimeSuite2)
+add_executable(basicRX basicRX.cpp)
+set_target_properties(basicRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(basicRX LimeSuite2)
 
 # add_executable(singleRX singleRX.cpp)
 # set_target_properties(singleRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
