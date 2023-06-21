@@ -20,6 +20,8 @@
 #include "gnuPlotPipe.h"
 #endif
 
+#undef USE_GNU_PLOT
+
 using namespace lime;
 
 //Device structure, should be initialize to NULL
@@ -61,8 +63,10 @@ int main(int argc, char** argv)
     device = DeviceRegistry::makeDevice(handles.at(0));
     device->Init();
 
+    config.channel[0].tx.enabled = true; //for DAC ch1
     config.channel[0].rx.enabled = true;
     config.channel[0].rx.centerFrequency = frequencyLO;
+    config.channel[0].tx.centerFrequency = frequencyLO; //for DAC ch1
     config.channel[0].rx.sampleRate = sampleRate;
     config.channel[0].tx.oversample = 2; // ???
     config.channel[0].rx.oversample = 2; // ???
@@ -84,8 +88,7 @@ int main(int argc, char** argv)
         device->Configure(config, chipIndex);
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << "SDR configured in " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count()
-            << "ms\n";
+            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
     }
     catch ( std::runtime_error &e) {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
@@ -95,9 +98,6 @@ int main(int argc, char** argv)
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         error ();
     }
-       //Initialize data buffers
-    bool streamHadIssues = false;
-    stream.userData = &streamHadIssues; // gets set to true if problems occour
     device->StreamSetup(stream, chipIndex);
     device->StreamStart(chipIndex);
     std::cout << "Stream started ...\n";
@@ -105,6 +105,8 @@ int main(int argc, char** argv)
     GNUPlotPipe gp;
     gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
 #endif
+    //Initialize data buffers
+    const int channelCount = std::max(stream.rxCount, stream.txCount);
     const int samplesInPkt = 256;//(stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
 
     const float rxBufferTime = 0.002; // max buffer size in time (seconds)
@@ -112,26 +114,50 @@ int main(int argc, char** argv)
     assert(samplesToBuffer > 0);
 
     const float txTimeOffset = 0.005; // tx packets delay in time (seconds), will be rounded to even packets count
-    const int64_t txDeltaTS = (int)(txTimeOffset*sampleRate/samplesInPkt)*samplesInPkt;
-    printf("TxDeltaTS +%li, (+%.3fms) %li packets\n", txDeltaTS, 1000.0*txDeltaTS/sampleRate, txDeltaTS/samplesInPkt);
 
-    // const int alignment = 4096;
-    // complex32f_t rxSamples[2];
-    // rxSamples[0] = aligned_alloc(alignment, samplesToBuffer);
     std::vector< std::vector<complex32f_t> > rxSamples(2); // allocate two channels for simplicity
     for(uint i=0; i<rxSamples.size(); ++i)
         rxSamples[i].resize(samplesToBuffer);
-    const int txPacketCount = 4;        
-    lime::complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};        
+
+    int samplesRead;
+    int samplesReceived = 0;
+
+    SDRDevice::StreamMeta rxMeta;
+    complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
     auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1;
+    float approxSampleRate = 0;
     while (std::chrono::high_resolution_clock::now() - t1 < std::chrono::seconds(10)) //run for 10 seconds
     {
-        SDRDevice::StreamMeta rxMeta;
         rxMeta.timestamp = 0;
-        int samplesRead = device->StreamRx(chipIndex, dest, samplesInPkt*txPacketCount, &rxMeta);
-std::cout << "Got " << samplesRead << " samples" << std::endl;
+        int samplesRead = device->StreamRx(chipIndex, dest, samplesInPkt*4, &rxMeta);
+        samplesReceived += samplesRead;
+        approxSampleRate += samplesRead;
+        auto duration = std::chrono::high_resolution_clock::now() - t2;
+        if (duration > std::chrono::seconds(1)) {
+            t2 = std::chrono::high_resolution_clock::now();
+            std::cout << "Samples Got: " << samplesReceived << "\n";
+            std::cout << "Approx sample rate: " << (approxSampleRate/1e6) << "Msps\n";
+            approxSampleRate = 0;
+        }
+	/*
+		INSERT CODE FOR PROCESSING RECEIVED SAMPLES
+	*/
+#ifdef USE_GNU_PLOT
+        //Plot samples
+        gp.write("plot '-' with points\n");
+        for (int j = 0; j < samplesRead; ++j)
+        {
+//            printf ("%f %f\n", rxSamples[2 * j], rxSamples[2 * j + 1]);
+//            gp.writef("%i %i\n", rxSamples[2 * j], rxSamples[2 * j + 1]);
+        }
+//        gp.write("e\n");
+//        gp.flush();
+#endif
+
 
     }
+    DeviceRegistry::freeDevice(device);
     return 0;    
 }    
 
@@ -218,7 +244,7 @@ int main(int argc, char** argv)
     {
         //Receive samples
         int samplesRead = LMS_RecvStream(&streamId, buffer, sampleCnt, NULL, 1000);
-	//I and Q samples are interleaved in buffer: IQIQIQ...
+	    //I and Q samples are interleaved in buffer: IQIQIQ...
         printf("Received %d samples\n", samplesRead);
 	/*
 		INSERT CODE FOR PROCESSING RECEIVED SAMPLES
@@ -227,7 +253,7 @@ int main(int argc, char** argv)
         //Plot samples
         gp.write("plot '-' with points\n");
         for (int j = 0; j < samplesRead; ++j)
-            gp.writef("%i %i\n", buffer[2 * j], buffer[2 * j + 1]);
+//            gp.writef("%i %i\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");
         gp.flush();
 #endif

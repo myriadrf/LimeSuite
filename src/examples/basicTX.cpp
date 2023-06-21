@@ -82,8 +82,7 @@ int main(int argc, char** argv)
         device->Configure(config, chipIndex);
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << "SDR configured in " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count()
-            << "ms\n";
+            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
     }
     catch ( std::runtime_error &e) {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
