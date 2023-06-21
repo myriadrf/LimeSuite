@@ -136,7 +136,7 @@ int main(int argc, char** argv)
         txMeta.useTimestamp = false;
         txMeta.flush = false; // not really matters because of continuous trasmitting
         int samplesSent = device->StreamTx (chipIndex, src, samplesInPkt, &txMeta);
-        if (samplesSent <= 0)
+        if (samplesSent < 0)
         {
             printf("Failure to send\n");
             error ();

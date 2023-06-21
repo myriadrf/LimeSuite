@@ -450,7 +450,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
         throw std::logic_error("Samples streaming already running");
 
     bool needTx = cfg.txCount > 0;
-    bool needRx = true; // always need Rx to know current timestamps, cfg.rxCount > 0;
+    bool needRx = cfg.rxCount > 0; // always need Rx to know current timestamps, cfg.rxCount > 0;
     //bool needMIMO = cfg.rxCount > 1 || cfg.txCount > 1; // TODO: what if using only B channel, does it need MIMO configuration?
     uint8_t channelEnables = 0;
 
