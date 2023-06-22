@@ -122,7 +122,10 @@ void fftviewer_frFFTviewer::OnWindowFunctionChanged( wxCommandEvent& event )
 void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 {
     if (threadProcessing.joinable() == false)
+    {
+        SetNyquistFrequency();
         StartStreaming();
+    }
     else
         StopStreaming();
 }
