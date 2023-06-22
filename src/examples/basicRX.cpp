@@ -28,7 +28,7 @@ SDRDevice *device = nullptr;
 SDRDevice::StreamConfig stream;
 SDRDevice::SDRConfig config;
 
-static const double frequencyLO = 144.5e6; //2e9;
+static const double frequencyLO = 2e9;
 float sampleRate = 10e6;
 static uint8_t chipIndex = 0; // device might have several RF chips
 bool stoping(false);
@@ -121,6 +121,7 @@ int main(int argc, char** argv)
     complex32f_t *dest[2] = {rxSamples[0].data(), rxSamples[1].data()};
     int samplesRead = 0;
     signal(SIGINT, intHandler);
+    config.channel[0].rx.centerFrequency = 145.5e6;
     while (std::chrono::high_resolution_clock::now() - t1 < std::chrono::seconds(10) && !stoping) //run for 10 seconds
     {
         rxMeta.timestamp = 0;
