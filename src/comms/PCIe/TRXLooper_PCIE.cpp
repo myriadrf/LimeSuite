@@ -450,23 +450,26 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 }
             }
 
-            // drop old packets before forming that
-            int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
-            const int64_t txAdvance = srcPkt->timestamp - rxNow;
-            if(mConfig.hintSampleRate)
+            // drop old packets before forming, Rx is needed to get current timestamp
+            if (srcPkt->useTimestamp && mConfig.rxCount > 0)
             {
-                int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
-                txTSAdvance.Add(timeAdvance);
-            }
-            else
-                txTSAdvance.Add(txAdvance);
-            if(txAdvance <= 0)
-            {
-                underrun.add(1);
-                ++stats.underrun;
-                mTx.memPool->Free(srcPkt);
-                srcPkt = nullptr;
-                continue;
+                int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
+                const int64_t txAdvance = srcPkt->timestamp - rxNow;
+                if(mConfig.hintSampleRate)
+                {
+                    int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
+                    txTSAdvance.Add(timeAdvance);
+                }
+                else
+                    txTSAdvance.Add(txAdvance);
+                if(txAdvance <= 0)
+                {
+                    underrun.add(1);
+                    ++stats.underrun;
+                    mTx.memPool->Free(srcPkt);
+                    srcPkt = nullptr;
+                    break;
+                }
             }
 
             const bool doFlush = output.consume(srcPkt);
@@ -508,25 +511,28 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
             TxHeader* pkt = reinterpret_cast<TxHeader*>(output.data());
             lastTS = pkt->counter;
-            int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
-            const int64_t txAdvance = pkt->counter-rxNow;
-            if(mConfig.hintSampleRate)
+            if (mConfig.rxCount > 0) // Rx is needed for current timestamp
             {
-                int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
-                txTSAdvance.Add(timeAdvance);
-            }
-            else
-                txTSAdvance.Add(txAdvance);
-            if(txAdvance <= 0)
-            {
-                underrun.add(1);
-                ++stats.underrun;
-                // TODO: first packet in the buffer is already late, could just skip this
-                // buffer transmission, but packets at the end of buffer might just still
-                // make it in time.
-                // outputReady = false;
-                // output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], mTxArgs.bufferSize);
-                // continue;
+                int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
+                const int64_t txAdvance = pkt->counter-rxNow;
+                if(mConfig.hintSampleRate)
+                {
+                    int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
+                    txTSAdvance.Add(timeAdvance);
+                }
+                else
+                    txTSAdvance.Add(txAdvance);
+                if(txAdvance <= 0)
+                {
+                    underrun.add(1);
+                    ++stats.underrun;
+                    // TODO: first packet in the buffer is already late, could just skip this
+                    // buffer transmission, but packets at the end of buffer might just still
+                    // make it in time.
+                    // outputReady = false;
+                    // output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], mTxArgs.bufferSize);
+                    // continue;
+                }
             }
 
             // DMA memory is write only, to read from the buffer will trigger Bus errors
