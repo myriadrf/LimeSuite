@@ -1,218 +1,187 @@
 /**
-    @file   dualRXTX.cpp
+    @file   dualRxTx.cpp
     @author Lime Microsystems (www.limemicro.com)
-    @brief  Dual channel RX/TX example
+    @brief  minimal RX loopback to Tx example
  */
-#include "lime/LimeSuite.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/SDRDevice.h"
 #include <iostream>
 #include <chrono>
+#include <math.h>
+#include <signal.h>
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
 
-using namespace std;
+using namespace lime;
 
-//Device structure, should be initialize to NULL
-lms_device_t* device = NULL;
+static const double frequencyLO = 1.5e9;
+float sampleRate = 10e6;
+static uint8_t chipIndex = 0; // device might have several RF chips
 
-int error()
+bool stopProgram(false);
+void intHandler(int dummy) {
+    std::cout << "Stoppping\n";
+    stopProgram = true;
+}
+
+static SDRDevice::LogLevel logVerbosity = SDRDevice::VERBOSE;
+static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
-    if (device != NULL)
-        LMS_Close(device);
-    exit(-1);
+    if (lvl > logVerbosity)
+        return;
+    printf("%s\n", msg);
 }
 
 int main(int argc, char** argv)
 {
-    //Find devices
-    int n;
-    lms_info_str_t list[8]; //should be large enough to hold all detected devices
-    if ((n = LMS_GetDeviceList(list)) < 0) //NULL can be passed to only get number of devices
-        error();
-
-    cout << "Devices found: " << n << endl; //print number of devices
-    if (n < 1)
+    auto handles = DeviceRegistry::enumerate();
+    if (handles.size() == 0) {
+        printf("No devices found\n");
         return -1;
+    }
+    std::cout << "Devices found :" << std::endl;
+    for (size_t i = 0; i < handles.size(); i++)
+        std::cout << i << ": " << handles[i].serialize() << std::endl;
+    std::cout << std::endl;
 
-    //open the first device
-    if (LMS_Open(&device, list[0], NULL))
-        error();
-
-    //Initialize device with default configuration
-    //Do not use if you want to keep existing configuration
-    //Use LMS_LoadConfig(device, "/path/to/file.ini") to load config from INI
-    if (LMS_Init(device) != 0)
-        error();
-
-    //Get number of channels
-    if ((n = LMS_GetNumChannels(device, LMS_CH_RX)) < 0)
-        error();
-    cout << "Number of RX channels: " << n << endl;
-    if ((n = LMS_GetNumChannels(device, LMS_CH_TX)) < 0)
-        error();
-    cout << "Number of TX channels: " << n << endl;
-
-    //Enable RX channel
-    //Channels are numbered starting at 0
-    if (LMS_EnableChannel(device, LMS_CH_RX, 0, true) != 0)
-        error();
-    if (LMS_EnableChannel(device, LMS_CH_RX, 1, true) != 0)
-        error();
-    //Enable TX channels
-    if (LMS_EnableChannel(device, LMS_CH_TX, 0, true) != 0)
-        error();
-    if (LMS_EnableChannel(device, LMS_CH_TX, 1, true) != 0)
-        error();
-
-    //Set RX center frequency to 1 GHz
-    if (LMS_SetLOFrequency(device, LMS_CH_RX, 0, 1e9) != 0)
-        error();
-    if (LMS_SetLOFrequency(device, LMS_CH_RX, 1, 1e9) != 0)
-        error();
-    //Set TX center frequency to 1.2 GHz
-    //Automatically selects antenna port
-    if (LMS_SetLOFrequency(device, LMS_CH_TX, 0, 1.2e9) != 0)
-        error();
-    if (LMS_SetLOFrequency(device, LMS_CH_TX, 1, 1.2e9) != 0)
-        error();
-
-    //Set sample rate to 10 MHz, preferred oversampling in RF 4x
-    //This set sampling rate for all channels
-    if (LMS_SetSampleRate(device, 10e6, 4) != 0)
-        error();
-
-    //Set RX gain
-    if (LMS_SetNormalizedGain(device, LMS_CH_RX, 0, 0.7) != 0)
-        error();
-    if (LMS_SetNormalizedGain(device, LMS_CH_RX, 1, 0.7) != 0)
-        error();
-    //Set TX gain
-    if (LMS_SetNormalizedGain(device, LMS_CH_TX, 0, 0.4) != 0)
-        error();
-    if (LMS_SetNormalizedGain(device, LMS_CH_TX, 1, 0.4) != 0)
-        error();
-
-    //Enable test signals generation in RX channels
-    //To receive data from RF, remove these lines or change signal to LMS_TESTSIG_NONE
-    if (LMS_SetTestSignal(device, LMS_CH_RX, 0, LMS_TESTSIG_NCODIV4, 0, 0) != 0)
-        error();
-    if (LMS_SetTestSignal(device, LMS_CH_RX, 1, LMS_TESTSIG_NCODIV8F, 0, 0) != 0)
-        error();
-
-    //Streaming Setup
-
-    const int chCount = 2; //number of RX/TX streams
-    lms_stream_t rx_streams[chCount];
-    lms_stream_t tx_streams[chCount];
-    //Initialize streams
-    //All streams setups should be done before starting streams. New streams cannot be set-up if at least stream is running.
-    for (int i = 0; i < chCount; ++i)
+    // Use first available device
+    SDRDevice *device = DeviceRegistry::makeDevice(handles.at(0));
+    if (!device)
     {
-        rx_streams[i].channel = i; //channel number
-        rx_streams[i].fifoSize = 1024 * 1024; //fifo size in samples
-        rx_streams[i].throughputVsLatency = 0.5; //some middle ground
-        rx_streams[i].isTx = false; //RX channel
-        rx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
-        if (LMS_SetupStream(device, &rx_streams[i]) != 0)
-            error();
-        tx_streams[i].channel = i; //channel number
-        tx_streams[i].fifoSize = 1024 * 1024; //fifo size in samples
-        tx_streams[i].throughputVsLatency = 0.5; //some middle ground
-        tx_streams[i].isTx = true; //TX channel
-        tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
-        if (LMS_SetupStream(device, &tx_streams[i]) != 0)
-            error();
+        std::cout << "Failed to connect to device" << std::endl;
+        return -1;
+    }
+    device->SetMessageLogCallback(LogCallback);
+    device->Init();
+
+    // RF parameters
+    SDRDevice::SDRConfig config;
+    for (int c=0; c<2; ++c) // MIMO
+    {
+        config.channel[c].rx.enabled = true;
+        config.channel[c].rx.centerFrequency = frequencyLO;
+        config.channel[c].rx.sampleRate = sampleRate;
+        config.channel[c].rx.oversample = 2;
+        config.channel[c].rx.lpf = 0;
+        config.channel[c].rx.path = 2; // TODO: replace with string names
+        config.channel[c].rx.calibrate = false;
+
+        config.channel[c].tx.enabled = true;
+        config.channel[c].tx.sampleRate = sampleRate;
+        config.channel[c].tx.oversample = 2;
+        config.channel[c].tx.path = 2; // TODO: replace with string names
+        config.channel[c].tx.centerFrequency = frequencyLO;
+        config.channel[c].tx.calibrate = false;
     }
 
-    //Initialize data buffers
-    const int bufersize = 1024 * 8; //complex samples per buffer
-    int16_t * buffers[chCount];
-    for (int i = 0; i < chCount; ++i)
-    {
-        buffers[i] = new int16_t[bufersize * 2]; //buffer to hold complex values (2*samples))
-    }
+    // Samples data streaming configuration
+    SDRDevice::StreamConfig stream;
+    stream.rxCount = 2; // rx channels count
+    stream.txCount = 2;
+    stream.rxChannels[0] = 0;
+    stream.rxChannels[1] = 1;
+    stream.txChannels[0] = 0;
+    stream.txChannels[1] = 1;
+    stream.format = SDRDevice::StreamConfig::DataFormat::F32;
+    stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
 
-    //Start streaming
-    for (int i = 0; i < chCount; ++i)
-    {
-        LMS_StartStream(&rx_streams[i]);
-        LMS_StartStream(&tx_streams[i]);
-    }
+    signal(SIGINT, intHandler);
 
-    //Streaming
-
-    lms_stream_meta_t rx_metadata; //Use metadata for additional control over sample receive function behavior
-    rx_metadata.flushPartialPacket = false; //currently has no effect in RX
-    rx_metadata.waitForTimestamp = false; //currently has no effect in RX
-
-    lms_stream_meta_t tx_metadata; //Use metadata for additional control over sample send function behavior
-    tx_metadata.flushPartialPacket = false; //do not force sending of incomplete packet
-    tx_metadata.waitForTimestamp = true; //Enable synchronization to HW timestamp
+    const int samplesInBuffer = 256*4;
+    complex32f_t** rxSamples = new complex32f_t*[2]; // allocate two channels for simplicity
+    for (int i=0; i<2; ++i)
+        rxSamples[i] = new complex32f_t[samplesInBuffer];
 
 #ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
-    gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
+    gp.write("set size square\n set xrange[-1:1]\n set yrange[-1:1]\n");
 #endif
-    auto t1 = chrono::high_resolution_clock::now();
+
+    std::cout << "Configuring device ...\n";
+    try {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        device->Configure(config, chipIndex);
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::cout << "SDR configured in " <<
+            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
+
+        device->StreamSetup(stream, chipIndex);
+        device->StreamStart(chipIndex);
+
+    }
+    catch ( std::runtime_error &e) {
+        std::cout << "Failed to configure settings: " << e.what() << std::endl;
+        return -1;
+    }
+    catch ( std::logic_error &e) {
+        std::cout << "Failed to configure settings: " << e.what() << std::endl;
+        return -1;
+    }
+    std::cout << "Stream started ...\n";
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+    auto t1 = startTime;
     auto t2 = t1;
 
-    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
+    int totalSamplesReceived = 0;
+    int totalSamplesSent = 0;
+    float maxSignalAmplitude = 0;
+
+    SDRDevice::StreamMeta rxMeta;
+    while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
     {
-        for (int i = 0; i < chCount; ++i)
+        int samplesRead = device->StreamRx(chipIndex, rxSamples, samplesInBuffer, &rxMeta);
+        totalSamplesReceived += samplesRead;
+
+        // process samples
+        for (int n=0; n<samplesRead; ++n)
         {
-            int samplesRead;
-            //Receive samples
-            samplesRead = LMS_RecvStream(&rx_streams[i], buffers[i], bufersize, &rx_metadata, 1000);
-            //Send samples with 1024*256 sample delay from RX (waitForTimestamp is enabled)
-            tx_metadata.timestamp = rx_metadata.timestamp + 1024 * 256;
-            LMS_SendStream(&tx_streams[i], buffers[i], samplesRead, &tx_metadata, 1000);
+            float amplitude = pow(rxSamples[0][n].i, 2) + pow(rxSamples[0][n].q, 2);
+            if (amplitude > maxSignalAmplitude)
+                maxSignalAmplitude = amplitude;
         }
 
-        //Print stats every 1s
-        if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
+        SDRDevice::StreamMeta txMeta;
+        txMeta.timestamp = rxMeta.timestamp + samplesInBuffer*64;
+        txMeta.useTimestamp = true;
+        txMeta.flush = false;
+        int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesInBuffer, &txMeta);
+        if (samplesSent < 0)
         {
-            t2 = chrono::high_resolution_clock::now();
+            printf("Failure to send\n");
+            break;
+        }
+        totalSamplesSent += samplesSent;
+
+        t2 = std::chrono::high_resolution_clock::now();
+        if (t2-t1 > std::chrono::seconds(1))
+        {
+            t1 = t2;
+            std::cout << "Total samples received: " << totalSamplesReceived
+                << "  signal amplitude: " << sqrt(maxSignalAmplitude)
+                << "  total samples sent: " << totalSamplesSent
+                << std::endl;
+
 #ifdef USE_GNU_PLOT
-            //Plot samples
             gp.write("plot '-' with points title 'ch 0'");
-            for (int i = 1; i < chCount; ++i)
-                gp.write(", '-' with points title 'ch 1'\n");
-            for (int i = 0; i < chCount; ++i)
+            for (int c = 1; c < stream.rxCount; ++c)
+                gp.writef(", '-' with points title 'ch %i'\n", c);
+            for (int c = 0; c < stream.rxCount; ++c)
             {
-                for (uint32_t j = 0; j < bufersize / 8; ++j)
-                    gp.writef("%i %i\n", buffers[i][2 * j], buffers[i][2 * j + 1]);
+                for (uint32_t n = 0; n < samplesInBuffer; ++n)
+                    gp.writef("%f %f\n", rxSamples[c][n].i, rxSamples[c][n].q);
                 gp.write("e\n");
                 gp.flush();
             }
 #endif
-            //Print stats
-            lms_stream_status_t status;
-            LMS_GetStreamStatus(rx_streams, &status); //Obtain RX stream stats
-            cout << "RX rate: " << status.linkRate / 1e6 << " MB/s\n"; //link data rate (both channels))
-            cout << "RX 0 FIFO: " << 100 * status.fifoFilledCount / status.fifoSize << "%" << endl; //percentage of RX 0 fifo filled
-
-            LMS_GetStreamStatus(tx_streams, &status); //Obtain TX stream stats
-            cout << "TX rate: " << status.linkRate / 1e6 << " MB/s\n"; //link data rate (both channels))
-            cout << "TX 0 FIFO: " << 100 * status.fifoFilledCount / status.fifoSize << "%" << endl; //percentage of TX 0 fifo filled
+            maxSignalAmplitude = 0;
         }
     }
+    DeviceRegistry::freeDevice(device);
 
-    //Stop streaming
-    for (int i = 0; i < chCount; ++i)
-    {
-        LMS_StopStream(&rx_streams[i]); //stream is stopped but can be started again with LMS_StartStream()
-        LMS_StopStream(&tx_streams[i]);
-    }
-    for (int i = 0; i < chCount; ++i)
-    {
-        LMS_DestroyStream(device, &rx_streams[i]); //stream is deallocated and can no longer be used
-        LMS_DestroyStream(device, &tx_streams[i]);
-        delete[] buffers[i];
-    }
-
-    //Close device
-    LMS_Close(device);
-
+    for (int i=0; i<2; ++i)
+        delete[] rxSamples[i];
+    delete[] rxSamples;
     return 0;
 }
-

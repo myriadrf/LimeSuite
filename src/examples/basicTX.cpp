@@ -3,127 +3,157 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  minimal TX example
  */
+/**
+    @file   basicRX.cpp
+    @author Lime Microsystems (www.limemicro.com)
+    @brief  minimal RX example
+ */
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/SDRDevice.h"
 #include <iostream>
 #include <chrono>
 #include <math.h>
-#include "lime/LimeSuite.h"
+#include <signal.h>
 
-using namespace std;
+using namespace lime;
 
-//Device structure, should be initialize to NULL
-lms_device_t* device = NULL;
+static const double frequencyLO = 2e9;
+float sampleRate = 10e6;
+static uint8_t chipIndex = 0; // device might have several RF chips
 
-int error()
+bool stopProgram(false);
+void intHandler(int dummy) {
+    std::cout << "Stoppping\n";
+    stopProgram = true;
+}
+
+static SDRDevice::LogLevel logVerbosity = SDRDevice::VERBOSE;
+static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
-    if (device != NULL)
-  	LMS_Close(device);
-    exit(-1);
+    if (lvl > logVerbosity)
+        return;
+    printf("%s\n", msg);
 }
 
 int main(int argc, char** argv)
 {
-    const double frequency = 500e6;  //center frequency to 500 MHz
-    const double sample_rate = 5e6;    //sample rate to 5 MHz
-    const double tone_freq = 1e6; //tone frequency
-    const double f_ratio = tone_freq/sample_rate;
-    //Find devices
-    int n;
-    lms_info_str_t list[8]; //should be large enough to hold all detected devices
-    if ((n = LMS_GetDeviceList(list)) < 0) //NULL can be passed to only get number of devices
-        error();
-
-    cout << "Devices found: " << n << endl; //print number of devices
-    if (n < 1)
+    auto handles = DeviceRegistry::enumerate();
+    if (handles.size() == 0) {
+        printf("No devices found\n");
         return -1;
+    }
+    std::cout << "Devices found :" << std::endl;
+    for (size_t i = 0; i < handles.size(); i++)
+        std::cout << i << ": " << handles[i].serialize() << std::endl;
+    std::cout << std::endl;
 
-    //open the first device
-    if (LMS_Open(&device, list[0], NULL))
-        error();
-
-    //Initialize device with default configuration
-    //Do not use if you want to keep existing configuration
-    //Use LMS_LoadConfig(device, "/path/to/file.ini") to load config from INI
-    if (LMS_Init(device)!=0)
-        error();
-
-    //Enable TX channel,Channels are numbered starting at 0
-    if (LMS_EnableChannel(device, LMS_CH_TX, 0, true)!=0)
-        error();
-
-    //Set sample rate
-    if (LMS_SetSampleRate(device, sample_rate, 0)!=0)
-        error();
-    cout << "Sample rate: " << sample_rate/1e6 << " MHz" << endl;
-
-    //Set center frequency
-    if (LMS_SetLOFrequency(device,LMS_CH_TX, 0, frequency)!=0)
-        error();
-    cout << "Center frequency: " << frequency/1e6 << " MHz" << endl;
-
-    //select TX1_1 antenna
-    if (LMS_SetAntenna(device, LMS_CH_TX, 0, LMS_PATH_TX1)!=0)
-        error();
-
-    //set TX gain
-    if (LMS_SetNormalizedGain(device, LMS_CH_TX, 0, 0.7) != 0)
-        error();
-
-    //calibrate Tx, continue on failure
-    LMS_Calibrate(device, LMS_CH_TX, 0, sample_rate, 0);
-    
-    //Streaming Setup
-    
-    lms_stream_t tx_stream;                 //stream structure
-    tx_stream.channel = 0;                  //channel number
-    tx_stream.fifoSize = 256*1024;          //fifo size in samples
-    tx_stream.throughputVsLatency = 0.5;    //0 min latency, 1 max throughput
-    tx_stream.dataFmt = lms_stream_t::LMS_FMT_F32; //floating point samples
-    tx_stream.isTx = true;                  //TX channel
-    LMS_SetupStream(device, &tx_stream);
-
-    //Initialize data buffers
-    const int buffer_size = 1024*8;
-    float tx_buffer[2*buffer_size];     //buffer to hold complex values (2*samples))
-    for (int i = 0; i <buffer_size; i++) {      //generate TX tone
-        const double pi = acos(-1);
-        double w = 2*pi*i*f_ratio;
-        tx_buffer[2*i] = cos(w);
-        tx_buffer[2*i+1] = sin(w);
-    }   
-    cout << "Tx tone frequency: " << tone_freq/1e6 << " MHz" << endl;
-
-    const int send_cnt = int(buffer_size*f_ratio) / f_ratio; 
-    cout << "sample count per send call: " << send_cnt << std::endl;
-
-    LMS_StartStream(&tx_stream);         //Start streaming
-    //Streaming
-    auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = t1;
-    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
+    // Use first available device
+    SDRDevice *device = DeviceRegistry::makeDevice(handles.at(0));
+    if (!device)
     {
-        //Transmit samples
-        int ret = LMS_SendStream(&tx_stream, tx_buffer, send_cnt, nullptr, 1000);
-        if (ret != send_cnt)
-            cout << "error: samples sent: " << ret << "/" << send_cnt << endl;
-        //Print data rate (once per second)
-        if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
+        std::cout << "Failed to connect to device" << std::endl;
+        return -1;
+    }
+    device->SetMessageLogCallback(LogCallback);
+    device->Init();
+
+    // RF parameters
+    SDRDevice::SDRConfig config;
+    config.channel[0].tx.enabled = true;
+    config.channel[0].rx.enabled = false;
+    config.channel[0].rx.centerFrequency = frequencyLO;
+    config.channel[0].tx.centerFrequency = frequencyLO;
+    config.channel[0].rx.sampleRate = sampleRate;
+    config.channel[0].rx.oversample = 2;
+    config.channel[0].tx.sampleRate = sampleRate;
+    config.channel[0].tx.oversample = 2;
+    config.channel[0].tx.lpf = 0;
+    config.channel[0].tx.path = 2; // TODO: replace with string names
+    config.channel[0].tx.calibrate = false;
+    config.channel[0].tx.testSignal = false;
+
+    std::cout << "Configuring device ...\n";
+    try {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        device->Configure(config, chipIndex);
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::cout << "SDR configured in " <<
+            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
+
+        // Samples data streaming configuration
+        SDRDevice::StreamConfig stream;
+        stream.rxCount = 0;
+        stream.txCount = 1; // tx channels count
+        stream.txChannels[0] = 0;
+        stream.format = SDRDevice::StreamConfig::DataFormat::F32;
+        stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
+
+        device->StreamSetup(stream, chipIndex);
+        device->StreamStart(chipIndex);
+
+    }
+    catch ( std::runtime_error &e) {
+        std::cout << "Failed to configure settings: " << e.what() << std::endl;
+        return -1;
+    }
+    catch ( std::logic_error &e) {
+        std::cout << "Failed to configure settings: " << e.what() << std::endl;
+        return -1;
+    }
+
+    std::cout << "Stream started ...\n";
+    signal(SIGINT, intHandler);
+
+
+    // precomputing tx samples here, the result might not be continous
+    // each packet with different amplitude to distinguish them in time
+    std::vector< std::vector<complex32f_t> > txPattern(2);
+    const int txPacketCount = 4;
+    const int samplesInPkt = 256;
+    for (uint i=0; i<txPattern.size(); ++i)
+    {
+        txPattern[i].resize(txPacketCount*samplesInPkt);
+        for(int j=0; j<txPacketCount; ++j)
         {
-            t2 = chrono::high_resolution_clock::now();
-            lms_stream_status_t status;
-            LMS_GetStreamStatus(&tx_stream, &status);  //Get stream status
-            cout << "TX data rate: " << status.linkRate / 1e6 << " MB/s\n"; //link data rate
+            float src[4] = {1.0, 0.0, -1.0, 0.0};
+            float ampl = 1.0;
+            for(int k=0; k<samplesInPkt; ++k)
+            {
+                txPattern[i][j*samplesInPkt+k].i = src[k & 3] * ampl;
+                txPattern[i][j*samplesInPkt+k].q = src[(k+1) & 3] * ampl;
+            }
         }
     }
-    //Stop streaming
-    LMS_StopStream(&tx_stream);
-    LMS_DestroyStream(device, &tx_stream);
 
-    //Disable TX channel
-    if (LMS_EnableChannel(device, LMS_CH_TX, 0, false)!=0)
-        error();
+    std::cout << "Stream started ...\n";
+    const lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
+    auto startTime = std::chrono::high_resolution_clock::now();
+    auto t1 = startTime;
+    auto t2 = t1;
 
-    //Close device
-    if (LMS_Close(device)==0)
-        cout << "Closed" << endl;
+    SDRDevice::StreamMeta txMeta;
+    txMeta.timestamp = 0;
+    txMeta.useTimestamp = false;
+    txMeta.flush = true;
+
+    int totalSamplesSent = 0;
+
+    while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram) //run for 10 seconds
+    {
+        int samplesSent = device->StreamTx(chipIndex, src, samplesInPkt, &txMeta);
+        if (samplesSent < 0)
+        {
+            printf("Failure to send\n");
+            break;
+        }
+        totalSamplesSent += samplesSent;
+        //Print data rate (once per second)
+        t2 = std::chrono::high_resolution_clock::now();
+        if (t2 - t1 > std::chrono::seconds(1))
+        {
+            t1 = std::chrono::high_resolution_clock::now();
+            std::cout << "TX total samples sent: " << totalSamplesSent << std::endl;
+        }
+    }
     return 0;
 }

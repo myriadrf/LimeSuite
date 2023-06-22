@@ -615,7 +615,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             if(cfg.channel[ch].rx.testSignal)
             {
                 chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 1);
+                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 0);
                 chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
