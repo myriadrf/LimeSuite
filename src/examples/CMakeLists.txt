@@ -20,12 +20,6 @@ add_executable(basicRX basicRX.cpp)
 set_target_properties(basicRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir})
 target_link_libraries(basicRX ${MAIN_LIBRARY_NAME})
 
-add_executable(rfTest rfTest.cpp)
-set_target_properties(rfTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir})
-target_include_directories(rfTest PUBLIC ${LIME_SUITE_INCLUDES})
-
-target_link_libraries(rfTest PUBLIC ${MAIN_LIBRARY_NAME})
-
 add_executable(dualRXTX dualRXTX.cpp)
 set_target_properties(dualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir})
 target_link_libraries(dualRXTX ${MAIN_LIBRARY_NAME})

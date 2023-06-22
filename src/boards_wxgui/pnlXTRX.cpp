@@ -89,7 +89,7 @@ pnlXTRX::~pnlXTRX()
 void pnlXTRX::OnInputChange(wxCommandEvent &event)
 {
     uint16_t addr = 0x000a;
-    uint16_t value;
+    uint16_t value = 0;
 
     if (pnlXTRX::LMS_ReadFPGAReg (device,addr,&value))
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);

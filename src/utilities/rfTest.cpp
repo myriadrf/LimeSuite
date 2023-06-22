@@ -145,7 +145,6 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    const int channelCount = std::max(stream.rxCount, stream.txCount);
     const int samplesInPkt = 256;//(stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
 
     const float rxBufferTime = 0.002; // max buffer size in time (seconds)
@@ -204,7 +203,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
 
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = t1;
-    auto start = t1;
+    //auto start = t1;
 
     int64_t totalSent = 0;
     int64_t brecv = 0;
@@ -494,7 +493,7 @@ int main(int argc, char **argv)
     signal(SIGINT, intHandler);
 
     // Run tests
-    float millis = 10;
+    //float millis = 10;
     if(argc > 1)
         //sscanf(argv[1], "%f", &millis);
         iniArg = argv[1];

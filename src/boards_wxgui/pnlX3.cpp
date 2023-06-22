@@ -520,7 +520,7 @@ void pnlX3::SetRegValue(lime::SDRDevice *pLmsControl, Register reg, uint16_t val
 
     unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
 
-    uint16_t regValue;
+    uint16_t regValue = 0;
     LMS_ReadFPGAReg(pLmsControl, reg.address, &regValue); // read bit content
     regValue &= ~mask;
     regValue |= (value << reg.lsb) & mask;
