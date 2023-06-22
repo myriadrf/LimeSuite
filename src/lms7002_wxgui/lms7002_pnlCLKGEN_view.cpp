@@ -854,11 +854,9 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 {
     double freq;
-    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_RXTSP,&freq);
-    freq = lmsControl->GetReferenceClk_SX(false);
+    freq = lmsControl->GetReferenceClk_TSP(false);
     lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    //LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);
-    freq = lmsControl->GetReferenceClk_SX(true);
+    freq = lmsControl->GetReferenceClk_TSP(true);
     lblTxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
 }
 
