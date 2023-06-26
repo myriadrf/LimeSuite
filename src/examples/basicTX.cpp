@@ -119,8 +119,8 @@ int main(int argc, char** argv)
             float ampl = 1.0;
             for(int k=0; k<samplesInPkt; ++k)
             {
-                txPattern[i][j*samplesInPkt+k].i = src[k & 3] * ampl;
-                txPattern[i][j*samplesInPkt+k].q = src[(k+1) & 3] * ampl;
+                txPattern[i][j*samplesInPkt+k].q = src[k & 3] * ampl;
+                txPattern[i][j*samplesInPkt+k].i = src[(k+1) & 3] * ampl;
             }
         }
     }
