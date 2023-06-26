@@ -702,7 +702,7 @@ int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count
         mTx.stagingPacket = nullptr;
     }
 
-    const lime::complex32f_t* src[2] = {samples[0], samples[1]};
+    const lime::complex32f_t* src[2] = {samples[0], useChannelB ? samples[1] : nullptr};
     while (samplesRemaining) {
         if (!mTx.stagingPacket)
         {
@@ -755,7 +755,7 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
         mTx.stagingPacket = nullptr;
     }
 
-    const lime::complex16_t* src[2] = {samples[0], samples[1]};
+    const lime::complex16_t* src[2] = {samples[0], useChannelB ? samples[1] : nullptr};
     while (samplesRemaining) {
         if (!mTx.stagingPacket)
         {
