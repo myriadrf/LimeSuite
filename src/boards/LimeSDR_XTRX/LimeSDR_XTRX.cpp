@@ -275,8 +275,6 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         if(tddMode)
             chip->EnableSXTDD(true);
 
-        // enabled DAC is required for FPGA to work
-        chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
         for (int i = 0; i < 2; ++i) {
             const ChannelConfig &ch = cfg.channel[i];
             chip->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
@@ -295,6 +293,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal ? 1 : 0);
             // TODO: set gains, filters...
         }
+        // enabled ADC/DAC is required for FPGA to work
+        chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
+        chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
         chip->SetActiveChannel(LMS7002M::ChA);
 
         double sampleRate;
