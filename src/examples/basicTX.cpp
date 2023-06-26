@@ -104,9 +104,6 @@ int main(int argc, char** argv)
     std::cout << "Stream started ...\n";
     signal(SIGINT, intHandler);
 
-
-    // precomputing tx samples here, the result might not be continous
-    // each packet with different amplitude to distinguish them in time
     std::vector< std::vector<complex32f_t> > txPattern(2);
     const int txPacketCount = 4;
     const int samplesInPkt = 256;
@@ -133,20 +130,25 @@ int main(int argc, char** argv)
 
     SDRDevice::StreamMeta txMeta;
     txMeta.timestamp = 0;
-    txMeta.useTimestamp = false;
+    txMeta.useTimestamp = true;
     txMeta.flush = true;
 
     int totalSamplesSent = 0;
 
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram) //run for 10 seconds
     {
-        int samplesSent = device->StreamTx(chipIndex, src, samplesInPkt, &txMeta);
+        int samplesToSend = samplesInPkt*txPacketCount;
+        int samplesSent = device->StreamTx(chipIndex, src, samplesToSend, &txMeta);
         if (samplesSent < 0)
         {
             printf("Failure to send\n");
             break;
         }
-        totalSamplesSent += samplesSent;
+        if (samplesSent > 0)
+        {
+            txMeta.timestamp += samplesSent;
+            totalSamplesSent += samplesSent;
+        }
         //Print data rate (once per second)
         t2 = std::chrono::high_resolution_clock::now();
         if (t2 - t1 > std::chrono::seconds(1))
