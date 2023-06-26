@@ -106,14 +106,14 @@ int main(int argc, char** argv)
 
     std::vector< std::vector<complex32f_t> > txPattern(2);
     const int txPacketCount = 4;
-    const int samplesInPkt = 256;
+    const int samplesInPkt = 1024;
     for (uint i=0; i<txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount*samplesInPkt);
         for(int j=0; j<txPacketCount; ++j)
         {
             float src[4] = {1.0, 0.0, -1.0, 0.0};
-            float ampl = 1.0;
+            float ampl = 0.8;
             for(int k=0; k<samplesInPkt; ++k)
             {
                 txPattern[i][j*samplesInPkt+k].q = src[k & 3] * ampl;
