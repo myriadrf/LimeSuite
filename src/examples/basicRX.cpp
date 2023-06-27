@@ -9,9 +9,12 @@
 #include <chrono>
 #include <math.h>
 #include <signal.h>
+#include "kissFFT/kiss_fft.h"
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
+
+#undef USE_GNU_PLOT
 
 using namespace lime;
 
@@ -36,6 +39,10 @@ static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 int main(int argc, char** argv)
 {
     auto handles = DeviceRegistry::enumerate();
+    unsigned int fftSize = 16384;
+    int fftcounter = 0;
+    float peakAmplitude = -1000, peakFrequency = 0;
+
     if (handles.size() == 0) {
         printf("No devices found\n");
         return -1;
@@ -105,10 +112,10 @@ int main(int argc, char** argv)
     std::cout << "Stream started ...\n";
     signal(SIGINT, intHandler);
 
-    const int samplesInBuffer = 256*16;
+//    const int samplesInBuffer = fftsize;
     complex32f_t** rxSamples = new complex32f_t*[2]; // allocate two channels for simplicity
     for (int i=0; i<2; ++i)
-        rxSamples[i] = new complex32f_t[samplesInBuffer];
+        rxSamples[i] = new complex32f_t[fftSize];
 
 #ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
@@ -122,26 +129,68 @@ int main(int argc, char** argv)
     int totalSamplesReceived = 0;
     float maxSignalAmplitude = 0;
 
+    std::vector<float> samplesI(fftSize);
+    std::vector<float> samplesQ(fftSize);
+    std::vector<float> fftBins(fftSize);
+    kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
+    kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
+    kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];    
+    
+    
     SDRDevice::StreamMeta rxMeta;
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
     {
-        int samplesRead = device->StreamRx(chipIndex, rxSamples, samplesInBuffer, &rxMeta);
+        int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        if (samplesRead <= 0)
+            continue;
         totalSamplesReceived += samplesRead;
+        if (!fftcounter) // init
+        {
+            for (unsigned i = 0; i < fftSize; ++i)
+            {
+                fftBins[i] = 0;
+                samplesI[i] = rxSamples[0][i].i;
+                samplesQ[i] = rxSamples[0][i].q;
+            }
+            fftcounter++;
+        }
+        for (unsigned i = 0; i < fftSize; ++i)
+        {
+            m_fftCalcIn[i].r = rxSamples[0][i].i;
+            m_fftCalcIn[i].i = rxSamples[0][i].q;
+        }
+        kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+//        int output_index = 0;
+//        for (unsigned i = fftSize / 2 + 1; i < fftSize; ++i)
+//            fftBins[output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
+//        for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
+//            fftBins[output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
+        for (unsigned int i = 1; i<fftSize; ++i)
+        {
+            float output = 20*log10(sqrt(m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*(1<<15)));
+            if (output > peakAmplitude)
+            {
+                peakAmplitude = output;
+                peakFrequency = i * sampleRate / fftSize;
+            }
+        }
+        if (peakFrequency > sampleRate / 2)
+            peakFrequency = peakFrequency - sampleRate;
 
         // process samples
-        for (int n=0; n<samplesRead; ++n)
-        {
-            float amplitude = pow(rxSamples[0][n].i, 2) + pow(rxSamples[0][n].q, 2);
-            if (amplitude > maxSignalAmplitude)
-                maxSignalAmplitude = amplitude;
-        }
+//        for (int n=0; n<samplesRead; ++n)
+//        {
+//            float amplitude = pow(rxSamples[0][n].i, 2) + pow(rxSamples[0][n].q, 2);
+//            if (amplitude > maxSignalAmplitude)
+//                maxSignalAmplitude = amplitude;
+//        }
 
         t2 = std::chrono::high_resolution_clock::now();
         if (t2-t1 > std::chrono::seconds(1))
         {
             t1 = t2;
             std::cout << "Total samples received: " << totalSamplesReceived
-                << "  signal amplitude: " << sqrt(maxSignalAmplitude) << std::endl;
+                << "  peak amplitude: " << peakAmplitude << " peak frequency: " << peakFrequency << std::endl;
 
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points\n");
@@ -151,6 +200,7 @@ int main(int argc, char** argv)
             gp.flush();
 #endif
             maxSignalAmplitude = 0;
+            peakAmplitude = -1000;
         }
     }
     DeviceRegistry::freeDevice(device);
