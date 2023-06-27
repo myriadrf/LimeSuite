@@ -18,7 +18,7 @@
 
 using namespace lime;
 
-static const double frequencyLO = 1.5e9;
+static const double frequencyLO = 2.4e9;
 float sampleRate = 10e6;
 static uint8_t chipIndex = 0; // device might have several RF chips
 
@@ -40,7 +40,6 @@ int main(int argc, char** argv)
 {
     auto handles = DeviceRegistry::enumerate();
     unsigned int fftSize = 16384;
-    int fftcounter = 0;
     float peakAmplitude = -1000, peakFrequency = 0;
 
     if (handles.size() == 0) {
@@ -129,8 +128,6 @@ int main(int argc, char** argv)
     int totalSamplesReceived = 0;
     float maxSignalAmplitude = 0;
 
-    std::vector<float> samplesI(fftSize);
-    std::vector<float> samplesQ(fftSize);
     std::vector<float> fftBins(fftSize);
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
@@ -144,16 +141,8 @@ int main(int argc, char** argv)
         if (samplesRead <= 0)
             continue;
         totalSamplesReceived += samplesRead;
-        if (!fftcounter) // init
-        {
-            for (unsigned i = 0; i < fftSize; ++i)
-            {
-                fftBins[i] = 0;
-                samplesI[i] = rxSamples[0][i].i;
-                samplesQ[i] = rxSamples[0][i].q;
-            }
-            fftcounter++;
-        }
+//        for (unsigned i = 0; i < fftSize; ++i)
+//            fftBins[i] = 0;
         for (unsigned i = 0; i < fftSize; ++i)
         {
             m_fftCalcIn[i].r = rxSamples[0][i].i;
