@@ -26,7 +26,7 @@ void intHandler(int dummy) {
     stopProgram = true;
 }
 
-static SDRDevice::LogLevel logVerbosity = SDRDevice::VERBOSE;
+static SDRDevice::LogLevel logVerbosity = SDRDevice::DEBUG;
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
     if (lvl > logVerbosity)
@@ -69,12 +69,12 @@ int main(int argc, char** argv)
     config.channel[0].rx.calibrate = false;
     config.channel[0].rx.testSignal = false;
 
-    config.channel[0].tx.enabled = true;
+    config.channel[0].tx.enabled = false;
     config.channel[0].tx.sampleRate = sampleRate;
     config.channel[0].tx.oversample = 2;
     config.channel[0].tx.path = 2; // TODO: replace with string names
     config.channel[0].tx.centerFrequency = frequencyLO-1e6;
-    config.channel[0].tx.testSignal = true; // Tx will output sampleRate/4 signal
+    config.channel[0].tx.testSignal = false; // Tx will output sampleRate/4 signal
 
     std::cout << "Configuring device ...\n";
     try {
