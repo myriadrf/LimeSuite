@@ -676,6 +676,13 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
                 }
             }
         }
+
+        if (socIndex == 0)
+        {
+            // enabled ADC/DAC is required for FPGA to work
+            chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
+            chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
+        }
         chip->SetActiveChannel(LMS7002M::ChA);
 
         // Workaround: Toggle LimeLights transmit port to flush residual value from data interface
