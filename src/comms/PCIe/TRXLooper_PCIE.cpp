@@ -19,7 +19,7 @@
 #include "DataPacket.h"
 #include "SamplesPacket.h"
 
-static bool showStats = true;
+static bool showStats = false;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
 
 typedef std::chrono::steady_clock perfClock;

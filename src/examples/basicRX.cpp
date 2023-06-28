@@ -14,11 +14,9 @@
 #include "gnuPlotPipe.h"
 #endif
 
-//#undef USE_GNU_PLOT
-
 using namespace lime;
 
-static const double frequencyLO = 0.433e9;
+static const double frequencyLO = 1.9e9;
 float sampleRate = 10e6;
 static uint8_t chipIndex = 0; // device might have several RF chips
 
@@ -39,7 +37,6 @@ static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 int main(int argc, char** argv)
 {
     auto handles = DeviceRegistry::enumerate();
-    unsigned int fftSize = 16384;
     float peakAmplitude = -1000, peakFrequency = 0;
 
     if (handles.size() == 0) {
@@ -90,8 +87,8 @@ int main(int argc, char** argv)
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
         stream.rxCount = 1; // rx channels count
-        stream.txCount = 0;
         stream.rxChannels[0] = 0;
+        stream.txCount = 0;
         stream.format = SDRDevice::StreamConfig::DataFormat::F32;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
 
@@ -111,6 +108,7 @@ int main(int argc, char** argv)
     std::cout << "Stream started ...\n";
     signal(SIGINT, intHandler);
 
+    const uint fftSize = 16384;
     complex32f_t** rxSamples = new complex32f_t*[2]; // allocate two channels for simplicity
     for (int i=0; i<2; ++i)
         rxSamples[i] = new complex32f_t[fftSize];
@@ -124,13 +122,12 @@ int main(int argc, char** argv)
     auto t1 = startTime;
     auto t2 = t1;
 
-    int totalSamplesReceived = 0;
+    uint64_t totalSamplesReceived = 0;
 
     std::vector<float> fftBins(fftSize);
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
-    kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
-    kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];    
-    
+    kiss_fft_cpx m_fftCalcIn[fftSize];
+    kiss_fft_cpx m_fftCalcOut[fftSize];
     
     SDRDevice::StreamMeta rxMeta;
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
@@ -138,6 +135,7 @@ int main(int argc, char** argv)
         int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
+
         // process samples
         totalSamplesReceived += samplesRead;
         for (unsigned i = 0; i < fftSize; ++i)
@@ -145,10 +143,11 @@ int main(int argc, char** argv)
             m_fftCalcIn[i].r = rxSamples[0][i].i;
             m_fftCalcIn[i].i = rxSamples[0][i].q;
         }
-        kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+        kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
         for (unsigned int i = 1; i<fftSize; ++i)
         {
-            float output = 20*log10(sqrt(m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*(1<<15)));
+            float output = 10*log10(((m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*fftSize)));
+            fftBins[i] = output;
             if (output > peakAmplitude)
             {
                 peakAmplitude = output;
@@ -161,8 +160,8 @@ int main(int argc, char** argv)
         if (t2-t1 > std::chrono::seconds(1))
         {
             t1 = t2;
-            std::cout << "Total samples received: " << totalSamplesReceived
-                << "  peak amplitude: " << peakAmplitude << " peak frequency: " << peakFrequency << std::endl;
+            printf("Samples received: %li, Peak amplitude %.2f dBFS @ %.3f MHz\n",
+                totalSamplesReceived, peakAmplitude, (frequencyLO+peakFrequency)/1e6);
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points\n");
             for (int j = 0; j < samplesRead; ++j)
