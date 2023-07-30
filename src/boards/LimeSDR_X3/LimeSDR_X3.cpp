@@ -341,7 +341,6 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
         chip->Modify_SPI_Reg_bits(LMS7param(EN_DIR_RBB), 1);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), enable?1:0);
         chip->Modify_SPI_Reg_bits(LMS7param(PD_PGA_RBB), enable?0:1);
-        chip->Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), enable?0:1);
         chip->Modify_SPI_Reg_bits(LMS7param(OSW_PGA_RBB), 1); // switch external ADC
     }
 

@@ -354,7 +354,6 @@ int LMS7002M::EnableChannel(Dir dir, const uint8_t channel, const bool enable)
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_RBB), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), enable?1:0);
         this->Modify_SPI_Reg_bits(LMS7param(PD_PGA_RBB), enable?0:1);
-        this->Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), enable?0:1);
     }
 
     //--- frontend ---
