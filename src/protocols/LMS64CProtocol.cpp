@@ -307,7 +307,8 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
     packet.blockCount = packet.payloadSize;
 
     const size_t chunkSize = 32;
-    const uint32_t chunkCount = length/LMS64CPacket::payloadSize + (length%LMS64CPacket::payloadSize > 0) + 1; // +1 programming end packet
+    static_assert(chunkSize < LMS64CPacket::payloadSize);
+    const uint32_t chunkCount = length/chunkSize + (length%chunkSize > 0) + 1; // +1 programming end packet
 
     for (uint32_t chunkIndex = 0; chunkIndex<chunkCount && !abortProgramming; ++chunkIndex)
     {
