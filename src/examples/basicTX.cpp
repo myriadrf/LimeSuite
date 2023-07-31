@@ -3,11 +3,7 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  minimal TX example
  */
-/**
-    @file   basicRX.cpp
-    @author Lime Microsystems (www.limemicro.com)
-    @brief  minimal RX example
- */
+
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
 #include <iostream>
