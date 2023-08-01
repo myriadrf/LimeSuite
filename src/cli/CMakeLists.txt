@@ -26,3 +26,4 @@ set_target_properties(limeFLASH PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BIN
 target_include_directories(limeFLASH PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(limeFLASH PUBLIC ${MAIN_LIBRARY_NAME})
 
+install(TARGETS limeDevice limeSPI limeFLASH DESTINATION bin)
