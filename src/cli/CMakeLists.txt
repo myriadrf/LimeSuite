@@ -21,7 +21,7 @@ set_target_properties(limeConfig PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BI
 target_include_directories(limeConfig PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(limeConfig PUBLIC ${MAIN_LIBRARY_NAME})
 
-add_executable(limeFLASH limeFLASH.cpp)
+add_executable(limeFLASH limeFLASH.cpp common.cpp)
 set_target_properties(limeFLASH PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(limeFLASH PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(limeFLASH PUBLIC ${MAIN_LIBRARY_NAME})

@@ -277,7 +277,7 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
 #endif
     //erasing FLASH can take up to 3 seconds before reply is received
     const int progTimeout_ms = 5000;
-    char progressMsg[128];
+    char progressMsg[512];
     sprintf(progressMsg, "in progress...");
     bool abortProgramming = false;
     size_t bytesSent = 0;
@@ -307,7 +307,7 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
     packet.blockCount = packet.payloadSize;
 
     const size_t chunkSize = 32;
-    static_assert(chunkSize < LMS64CPacket::payloadSize);
+    static_assert(chunkSize < LMS64CPacket::payloadSize, "chunk must fit into packet payload");
     const uint32_t chunkCount = length/chunkSize + (length%chunkSize > 0) + 1; // +1 programming end packet
 
     for (uint32_t chunkIndex = 0; chunkIndex<chunkCount && !abortProgramming; ++chunkIndex)
@@ -365,16 +365,14 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
         }
         if(callback)
         {
+            bool completed = chunkIndex == chunkCount-1;
+            if (completed)
+                sprintf(progressMsg, "Programming: completed");
             abortProgramming = callback(bytesSent, length, progressMsg);
-            if (abortProgramming)
-            {
-                callback(bytesSent, length, "Programming: aborted by user");
+            if (abortProgramming && !completed)
                 return -1;
-            }
         }
     }
-    if(callback)
-        callback(bytesSent, length, "Programming: completed");
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
     if ((device == 2 && prog_mode == 2) == false)
