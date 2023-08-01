@@ -1,30 +1,18 @@
-#include <VersionInfo.h>
-#include <SystemResources.h>
-#include "lime/LimeSuite.h"
-#include "limesuite/DeviceHandle.h"
-#include "limesuite/SDRDevice.h"
-#include <iostream>
-#include <cstdlib>
-#include <ciso646>
-#include <getopt.h>
+#pragma once
+
 #include <string>
-#include <cstdlib>
-#include <fstream>
-#include "Logger.h"
-#include "LMS64CProtocol.h"
-#include "limesuite/DeviceRegistry.h"
-#include "limesuite/LMS7002M.h"
-#include "limesuite/SDRDevice.h"
 #include <vector>
 #include <stdint.h>
 #include <iostream>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <signal.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <chrono>
-#include <thread>
-#include <unistd.h>
+#include <getopt.h>
 
+#include "limesuite/DeviceHandle.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/SDRDevice.h"
+
+lime::SDRDevice* ConnectUsingNameHint(const char* name);

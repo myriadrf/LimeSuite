@@ -1,226 +1,233 @@
 #include "cli/common.h"
 
+#include <assert.h>
+#include <cstring>
+
+using namespace std;
 using namespace lime;
 
-SDRDevice               *device = nullptr;
-SDRDevice::SDRConfig    config;
-std::ofstream           outfile;
-bool                    borting(false);
+static int32_t FindChipSelectByName(SDRDevice* device, const char* chipName)
+{
+    if (!device)
+        return -1;
+    const auto chipMap = device->GetDescriptor().spiSlaveIds;
+    if (!chipName)
+    {
+        cerr << "specify SPI chip select, -c, --chip :" << endl;
+        for (const auto &nameIds : chipMap)
+            cerr << "\t" <<  nameIds.first.c_str() << endl;
+        return EXIT_SUCCESS;
+    }
 
-/************************************************************************/
+    auto iter = chipMap.find(std::string(chipName));
+    if (iter == chipMap.end())
+    {
+        cerr << "Device does not contain target chip (" << chipName << ")." << endl;
+        return -1;
+    }
+    return iter->second;
+}
+
+static void PrintMISO(std::ostream& stream, const std::vector<uint32_t>& miso)
+{
+    stream << std::hex << std::setfill('0');
+    for(uint32_t value : miso)
+        stream << std::setw(8) << value << std::endl;
+}
+
+static uint32_t hex2int(const char* hexstr)
+{
+    assert(hexstr);
+    uint32_t value = 0;
+    sscanf(hexstr, "%X", &value);
+    return value;
+}
+
+static int parseWriteInput(char* hexstr, std::vector<uint32_t>& mosi)
+{
+    static const char* delimiters = " \n;";
+    mosi.clear();
+    char* token = std::strtok(hexstr, delimiters);
+    const uint32_t spiWriteBit = 1 << 31;
+    int tokenCount = 0;
+    while (token)
+    {
+        int tokenLength = strlen(token);
+        if (tokenLength == 8) // write instruction
+        {
+            uint32_t value = hex2int(token);
+            mosi.push_back(spiWriteBit | value);
+        }
+        ++tokenCount;
+        token = std::strtok(nullptr, delimiters);
+    }
+    return tokenCount;
+}
+
+static int parseReadInput(char* hexstr, std::vector<uint32_t>& mosi)
+{
+    static const char* delimiters = " \n;";
+    mosi.clear();
+    char* token = std::strtok(hexstr, delimiters);
+    int tokenCount = 0;
+    while (token)
+    {
+        int tokenLength = strlen(token);
+        if (tokenLength == 4) // read instruction
+        {
+            uint32_t value = hex2int(token);
+            mosi.push_back(value);
+        }
+        ++tokenCount;
+        token = std::strtok(nullptr, delimiters);
+    }
+    return tokenCount;
+}
+
 static int printHelp(void)
 {
-    std::cout << "Usage LimeSPI [options]" << std::endl;
-    std::cout << "    --help\t\t\t This help" << std::endl;
-    std::cout << "    --board <i>\t\t\t Specifies device index (0-... required if devices > 1)" << std::endl;
-    std::cout << "    --target <TARGET>\t\t Selects target TARGET (- to list targets, required)" << std::endl;
-    std::cout << "    --debug\t\t\t Force debug output" << std::endl;
-    std::cout << "    --addr <XXXX>\t\t Set Operating address (default 0)" << std::endl;
-    std::cout << "    --value <xxxx>\t\t Specifies value <xxxx> to be written" << std::endl;
-    std::cout << "    --operation <r|w>\t\t Operation - read/write" << std::endl;
-    std::cout << "    --raw <xxxx>\t\t Specifies raw SPI value <xxxx> to be sent" << std::endl;
-    std::cout << "    --input <fname>\t\t Specifies input data file" << std::endl;
-    std::cout << "    --output <fname>\t\t Specifies ouput data file" << std::endl;
+    cerr << "limeSPI [options]" << endl;
+    cerr << "    -h, --help\t\t\t This help" << endl;
+    cerr << "    -d, --device <name>\t\t\t Specifies which device to use" << endl;
+    cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
+    cerr << "    -r, --read \"data or filepath\"\t\t space/newline delimited 16bit hexadecimal addresses for reading" << endl;
+    cerr << "    -w, --write \"data or filepath\"\t\t space/newline delimited 32bit hexadecimal values for writing" << endl;
+    cerr << "    -f, --file\t\t Use --read/--write argument as filename" << endl;
 
     return EXIT_SUCCESS;
 }
-/************************************************************************/
-void processRaw (uint32_t rawdata, uint32_t devAddr, bool debug)
-{
-    uint32_t mosi;
-    uint32_t miso = 0;
 
-    if  (debug) 
-         std::cout << "Processing raw data 0x" << std::hex << std::setfill('0') << std::setw(8) << rawdata << std::endl;
-    if  (rawdata & (1 << 31)) // write
-    {
-        mosi = rawdata;
-        if (debug)
-        {
-            std::cout << "Write operation. Addr : 0x" << std::hex << std::setfill('0') << std::setw(4) << ((mosi >> 16) & 0x7fff) << " data : 0x" << std::hex << (mosi & 0xffff) << std::endl;
-        }
-        mosi = rawdata;
-        device->SPI(devAddr, &mosi, nullptr, 1);
-    } 
-    else    
-    {
-        mosi = (rawdata >> 16) & 0xffff;
-        device->SPI(devAddr, &mosi, &miso, 1);        
-        if (debug)
-        {
-            std::cout << "Read operation. Addr : 0x" << std::hex << std::setfill('0') << std::setw(4) << ((mosi)& 0xffff) << std::endl;
-        }
-        if (outfile.is_open ())
-            outfile << "0x" << std::hex << std::setfill('0') << std::setw(4) << mosi << std::hex << std::setfill('0') << std::setw(4) << miso << std::endl;
-        else
-            std::cout << "0x" << std::hex << std::setfill('0') << std::setw(4) << mosi << std::hex << std::setfill('0') << std::setw(4) << miso << std::endl;        
-    }
-}
-/************************************************************************/
-void processFile (std::string infname, uint32_t devAddr, bool debug)
+int main(int argc, char** argv)
 {
-    std::ifstream infile;
-    uint32_t rawdata;
-    
-    infile.open (infname);
-    if (!infile.is_open ())
-    {
-        std::cout << "Can not open file " << infname << std::endl;
-        return;
-    }
-    for (std::string str; std::getline(infile, str);)
-    {
-        if (debug && str.size ())
-            std::cout << "Processing : " << str << std::endl;
-        if (str.size ())
-        {
-            rawdata = std::stod(str);
-            processRaw (rawdata, devAddr, debug);
-        }
-    }
-}
-/***********************************************************************
- * main entry point
- **********************************************************************/
-int main(int argc, char *argv[])
-{
+    char* devName = nullptr;
+    char* chipName = nullptr;
+    char* hexInput = nullptr;
+    bool hexInputIsFilename = false;
+    bool isWrite = false;
+    bool isRead = false;
+
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
-        {"target", required_argument, 0, 't'},
-        {"debug", no_argument, 0, 'd'},
-        {"board", required_argument, 0, 'b'},
-        {"addr", required_argument, 0, 'a'},
-        {"value", required_argument, 0, 'v'},
-        {"operation", required_argument, 0, 'p'},
-        {"raw", required_argument, 0, 'r'},
-        {"input", required_argument, 0, 'i'},
-        {"output", required_argument, 0, 'o'},
+        {"device", required_argument, 0, 'd'},
+        {"chip", required_argument, 0, 'c'},
+        {"read", required_argument, 0, 'r'},
+        {"write", required_argument, 0, 'w'},
+        {"file", optional_argument, 0, 'f'},
         {0, 0, 0,  0}
     };
 
-    bool debug(false),printlist(false),value_specified(false),raw(false);
-    long addr = 0;
-    int dev_index = -1;
     int long_index = 0;
-    int option = 0, opts = 0;
-    uint32_t devAddr = 0;
-    long value = 0;
-    uint32_t rawdata;
-    std::string target, operation, ifname;
-
+    int option = 0;
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
     {
         switch (option)
         {
-        case 'h': 
+        case 'h':
             return printHelp();
         case 'd':
-            debug = true;
+            if (optarg != NULL) devName = optarg;
             break;
-        case 'b':
-            if (optarg != NULL) dev_index = std::stod(optarg);
-            break;        
-        case 'a':
-            if (optarg != NULL) addr = std::stod(optarg);
-            break;
-        case 'v':
-            if (optarg != NULL) {value = std::stod(optarg);value_specified = true;}
-            break;
-        case 't':
-            if (optarg != NULL)
-            {
-                if (optarg[0] == '-')
-                    printlist =  true;
-                else
-                    target = optarg;
-            }
-            break;
-        case 'p':
-            if (optarg != NULL) {operation = optarg[0];opts++;}
+        case 'c':
+            if (optarg != NULL) chipName = optarg;
             break;
         case 'r':
-            if (optarg != NULL) {rawdata = std::stod(optarg);raw = true;opts++;}
+            if (optarg != NULL) {isRead = true; hexInput = optarg; }
             break;
-        case 'i':
-            if (optarg != NULL) {ifname = optarg;opts++;}
+        case 'w':
+            if (optarg != NULL) {isWrite = true; hexInput = optarg; }
             break;
-        case 'o':
-            if (optarg != NULL) outfile.open (optarg, std::ios_base::app);
+        case 'f':
+            hexInputIsFilename = true;
             break;
         }
     }
+
+    if (isRead && isWrite)
+    {
+        cerr << "use --read, OR --write, can't do both at the same time" << endl;
+        return EXIT_FAILURE;
+    }
+
     auto handles = DeviceRegistry::enumerate();
     if (handles.size() == 0)
     {
-        printf("No devices found\n");
-        return -1;
+        cerr << "No devices found" << endl;
+        return EXIT_FAILURE;
     }
-    if (debug) std::cout << "Found " << handles.size() << " device(s)" << std::endl;
-    if (handles.size() > 1 && dev_index == -1)
+
+    SDRDevice* device;
+    if (devName)
+        device = ConnectUsingNameHint(devName);
+    else
     {
-        std::cout << "Multiple devices detected and no --board specified " << std::endl;
-        return -1;
-    }
-    if (dev_index == -1) dev_index = 0;
-    device = DeviceRegistry::makeDevice(handles.at(dev_index));
-    auto descr = device->GetDescriptor();  
-    if (printlist)
-    {
-       std::cout << "SPI slave devices list :" << std::endl;
-       for (const auto nameIds : descr.spiSlaveIds)
-           std::cout << "\t" <<  nameIds.first.c_str() << std::endl;
-        return EXIT_SUCCESS;    
-    }
-    if  (operation[0] != 'r' && operation[0] != 'w' && !raw && !ifname.size ())
-    {
-        std::cout << "Operation must be specified --operation r, --operation w, --raw or --input" << std::endl;
-        printHelp ();
-        return -1;
-    }
-    if (opts > 1)
-    {
-        std::cout << "Allowed only one operation --operation r, --operation w, --raw or --input" << std::endl;
-        printHelp ();
-        return -1;
-    }
-    if  (target.empty ())
-    {
-        std::cout << "Target must be specified." << std::endl;
-        printHelp ();
-        return -1;
-    }
-    auto iter = descr.spiSlaveIds.find(std::string(target));
-    if (iter == descr.spiSlaveIds.end())
-    {
-        std::cout << "SPI device " << target << " do not exists." << std::endl;
-        return -1;
-    }
-    devAddr = iter->second;
-    if (raw)
-    {
-        processRaw (rawdata, devAddr, debug); 
-        return EXIT_SUCCESS;
-    }
-    if (ifname.size())
-    {
-        processFile (ifname, devAddr, debug);
-        return EXIT_SUCCESS;
-    }
-    if  (operation[0] == 'r')
-    {
-        rawdata = addr << 16;
-        processRaw (rawdata, devAddr, debug);
-    } else { // perform write operation
-        if  (!value_specified)
+        if (handles.size() > 1)
         {
-            std::cout << "Value must bu specified." << std::endl;
-            printHelp ();
-            return -1;
+            cerr << "Multiple devices detected, specify which one to use with -d, --device" << endl;
+            return EXIT_FAILURE;
         }
-        rawdata = (1 << 31) | addr << 16 | value;
-        processRaw (rawdata, devAddr, debug);
+        // device not specified, use the only one available
+        device = DeviceRegistry::makeDevice(handles.at(0));
     }
-    std::cout << std::endl;
+
+    if (!device)
+    {
+        cerr << "Device connection failed" << endl;
+        return EXIT_FAILURE;
+    }
+
+    int32_t chipSelect = FindChipSelectByName(device, chipName);
+    if (chipSelect < 0)
+        return EXIT_FAILURE;
+
+    std::vector<char> buffer;
+    if (hexInputIsFilename)
+    {
+        //read file
+        const std::string filename(hexInput);
+        std::ifstream inputFile(filename);
+        if (!inputFile.is_open())
+        {
+            cerr << "Failed to open file: " << filename << endl;
+            return EXIT_FAILURE;
+        }
+        inputFile.seekg(0,std::ios::end);
+        long fileSize = inputFile.tellg();
+        inputFile.seekg(0,std::ios::beg);
+
+        buffer.resize(fileSize+1); // +1 to add null termination
+        inputFile.read(&buffer[0], fileSize);
+        buffer[fileSize] = 0;
+        hexInput = buffer.data();
+    }
+
+    if (!hexInput)
+    {
+        cerr << "No input provided" << endl;
+        return EXIT_FAILURE;
+    }
+
+    std::vector<uint32_t> mosi;
+    if (isWrite)
+        parseWriteInput(hexInput, mosi);
+    else if (isRead)
+        parseReadInput(hexInput, mosi);
+
+    std::vector<uint32_t> miso(mosi.size());
+
+    try {
+        device->SPI(chipSelect, mosi.data(), miso.data(), mosi.size());
+    } catch (std::runtime_error &e) {
+        cerr << "SPI failed: " << e.what() << endl;
+        return EXIT_FAILURE;
+    }
+
+    // fill in register addresses for convenience and reusage as write input
+    for (size_t i=0; i<miso.size(); ++i)
+        miso[i] |= mosi[i] << 16;
+
+    if (isRead)
+        PrintMISO(cout, miso);
+
     return EXIT_SUCCESS;
 }
 

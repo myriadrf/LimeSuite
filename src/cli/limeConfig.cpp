@@ -1,5 +1,6 @@
 #include "cli/common.h"
 
+#include "limesuite/LMS7002M.h"
 using namespace lime;
 
 SDRDevice               *device = nullptr;
