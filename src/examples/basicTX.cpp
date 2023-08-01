@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     }
     std::cout << "Devices found :" << std::endl;
     for (size_t i = 0; i < handles.size(); i++)
-        std::cout << i << ": " << handles[i].serialize() << std::endl;
+        std::cout << i << ": " << handles[i].Serialize() << std::endl;
     std::cout << std::endl;
 
     // Use first available device

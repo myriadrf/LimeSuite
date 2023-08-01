@@ -680,7 +680,7 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
     {
         Log(LogLevel::DEBUG, "Available LMS7002M devices:\n");
         for (const auto &dev : devHandles)
-            Log(LogLevel::DEBUG, "\t\"%s\"\n", dev.serialize().c_str());
+            Log(LogLevel::DEBUG, "\t\"%s\"\n", dev.Serialize().c_str());
     }
 
     // Connect and initialize
@@ -698,10 +698,10 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
         free(deviceHandleStr);
 
         if(device != nullptr)
-            Log(LogLevel::INFO, "Port[%i] connected: %s\n", i, fullHandles.at(0).serialize().c_str());
+            Log(LogLevel::INFO, "Port[%i] connected: %s\n", i, fullHandles.at(0).Serialize().c_str());
         else
         {
-            Log(LogLevel::ERROR, "Port[%i] failed to connect: %s\n", i, fullHandles.at(0).serialize().c_str());
+            Log(LogLevel::ERROR, "Port[%i] failed to connect: %s\n", i, fullHandles.at(0).Serialize().c_str());
             return -1;
         }
         s->device[i] = device;
@@ -712,11 +712,11 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
     // use first available device for port0
     if (s->deviceCount == 0)
     {
-        Log(LogLevel::DEBUG, "Port[0] use: %s\n", devHandles.at(0).serialize().c_str());
+        Log(LogLevel::DEBUG, "Port[0] use: %s\n", devHandles.at(0).Serialize().c_str());
         SDRDevice *device = DeviceRegistry::makeDevice(devHandles.at(0));
         if (device == nullptr)
         {
-            Log(LogLevel::ERROR, "Port[0] failed to connect: %s\n", devHandles.at(0).serialize().c_str());
+            Log(LogLevel::ERROR, "Port[0] failed to connect: %s\n", devHandles.at(0).Serialize().c_str());
             return -1;
         }
         s->device[0] = device;

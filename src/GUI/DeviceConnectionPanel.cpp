@@ -29,7 +29,7 @@ void DeviceConnectionPanel::EnumerateDevicesToChoice()
             btnDisconnect->Disable();
         }
         for (size_t i = 0; i < handles.size(); i++)
-            choice->Append(handles[i].serialize().c_str());
+            choice->Append(handles[i].Serialize().c_str());
         choice->Enable();
         btnDisconnect->Enable();
     }

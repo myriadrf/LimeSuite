@@ -60,19 +60,17 @@ DeviceHandle::DeviceHandle()
 DeviceHandle::DeviceHandle(const std::string &args)
 {
     auto kwmap = argsToMap("name="+args); //append name= since it was stripped in serialize
-    if (kwmap.count("module") != 0) module = kwmap.at("module");
     if (kwmap.count("media") != 0) media = kwmap.at("media");
     if (kwmap.count("name") != 0) name = kwmap.at("name");
     if (kwmap.count("addr") != 0) addr = kwmap.at("addr");
     if (kwmap.count("serial") != 0) serial = kwmap.at("serial");
 }
 
-std::string DeviceHandle::serialize(void) const
+std::string DeviceHandle::Serialize(void) const
 {
     std::string out;
     if (not name.empty()) out += name;
     if (not media.empty()) out += ", media="+media;
-    if (not module.empty()) out += ", module="+module;
     if (not addr.empty()) out += ", addr="+addr;
     if (not serial.empty()) out += ", serial="+serial;
 
@@ -94,12 +92,12 @@ std::string DeviceHandle::ToString(void) const
     if (not trimmedSerial.empty()) out += " " + trimmedSerial;
 
     //backup condition if we are empty somehow
-    if (out.empty()) out = this->serialize();
+    if (out.empty()) out = this->Serialize();
 
     return out;
 }
 
 bool operator==(const DeviceHandle &lhs, const DeviceHandle &rhs)
 {
-    return lhs.serialize() == rhs.serialize();
+    return lhs.Serialize() == rhs.Serialize();
 }

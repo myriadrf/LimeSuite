@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     cout << "Found " << handles.size() << " device(s) :" << endl;
     for (uint32_t i = 0; i < handles.size(); i++)
     {
-        cout << i << ": " << handles[i].serialize() << endl;
+        cout << i << ": " << handles[i].Serialize() << endl;
         if (full)
         {
             SDRDevice* device = DeviceRegistry::makeDevice(handles.at(i));

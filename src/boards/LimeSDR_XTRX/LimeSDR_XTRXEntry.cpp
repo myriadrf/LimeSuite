@@ -32,20 +32,29 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
     DeviceHandle handle;
     handle.media = "PCIe";
 
+    if (!hint.media.empty() && hint.media != handle.media)
+        return handles;
+
     const std::string searchDevName("LimeXTRX");
+    if (!hint.name.empty() && searchDevName.find(hint.name) == std::string::npos)
+        return handles;
+
     const std::string pattern(searchDevName + "[0-9]*_control");
     const std::vector<std::string> devices = LitePCIe::GetDevicesWithPattern(pattern);
 
-    for(const auto& port : devices)
+    for(const auto& devPath : devices)
     {
-        size_t pos = port.find(searchDevName);
+        size_t pos = devPath.find(searchDevName);
         if(pos == std::string::npos)
             continue;
 
-        std::string dev_nr(&port[pos+searchDevName.length()], &port[port.find("_")]);
-        handle.name = GetDeviceName(LMS_DEV_LIMESDR_XTRX) + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
+        if (!hint.addr.empty() && devPath.find(hint.addr) == std::string::npos)
+            continue;
 
-        handle.addr = port.substr(0, port.find("_"));
+        std::string dev_nr(&devPath[pos+searchDevName.length()], &devPath[devPath.find("_")]);
+        handle.name = searchDevName + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
+
+        handle.addr = devPath.substr(0, devPath.find("_"));
         handles.push_back(handle);
     }
     return handles;
@@ -69,7 +78,7 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle &handle)
         delete control;
         delete stream;
         char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s)", handle.serialize().c_str());
+        sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
         throw std::runtime_error(reason);
     }
 }

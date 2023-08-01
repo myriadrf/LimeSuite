@@ -476,7 +476,7 @@ int main(int argc, char **argv)
     //Find devices
     auto handles = DeviceRegistry::enumerate();
     for (uint32_t i = 0; i < handles.size(); i++) //print device list
-        cout << i << ": " << handles[i].serialize() << endl;
+        cout << i << ": " << handles[i].Serialize() << endl;
     cout << endl;
 
     if (handles.size() == 0) {

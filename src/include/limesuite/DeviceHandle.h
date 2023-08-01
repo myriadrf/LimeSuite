@@ -7,7 +7,7 @@
 
 namespace lime {
 /*!
- * A SDRDevice handle identifies a particular device connection.
+ * A DeviceHandle identifies a particular device.
  * Handles are used by the device registry to return
  * enumeration results and to instantiate connections.
  *
@@ -19,44 +19,31 @@ namespace lime {
 class LIME_API DeviceHandle
 {
 public:
-
     DeviceHandle(void);
 
     //! Create from serialized string with key=value pairs
     DeviceHandle(const std::string &args);
 
     /*!
-     * The name of the IConnection support module.
-     * Example EVB7COM, EVB7STREAM, NOVENA7.
-     */
-    std::string module;
-
-    /*!
      * The connection media type.
-     * Example: SPI, COM, USB.
+     * Example: SPI, COM, USB, PCIe...
      */
     std::string media;
 
-    /*!
-     * The name of the device. Example: STREAM, NOVENA.
-     */
+    /// The name of the device. Example: STREAM, NOVENA.
     std::string name;
 
-    /*!
-     * An address such a URL, IP address, VID:PID or similar.
-     */
+    /// An address such a URL, IP address, VID:PID or similar.
     std::string addr;
 
-    /*!
-     * A serial number which is unique to a particular device.
-     */
+    /// A serial number which is unique to a particular device.
     std::string serial;
 
     /*!
      * Serialize this connection handle into a string format.
      * This string format can be used to represent the handle.
      */
-    std::string serialize(void) const;
+    std::string Serialize(void) const;
 
     /*!
      * Get a displayable string for this handle.

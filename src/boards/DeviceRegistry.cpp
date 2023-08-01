@@ -38,15 +38,11 @@ std::vector<DeviceHandle> DeviceRegistry::enumerate(const DeviceHandle &hint)
     std::vector<DeviceHandle> results;
     for (const auto &entry : registryEntries)
     {
-        //filter by module name when specified
-        if (not hint.module.empty() and hint.module != entry.first) continue;
+        // filter by media type if specified
+        if (not hint.media.empty() and hint.media != entry.first) continue;
 
         for (auto handle : entry.second->enumerate(hint))
-        {
-            //insert the module name, which can be filtered on in makeConnection()
-            handle.module = entry.first;
             results.push_back(handle);
-        }
     }
     return results;
 }
@@ -60,21 +56,15 @@ SDRDevice *DeviceRegistry::makeDevice(const DeviceHandle &handle)
     //only identifiers from the discovery function itself is used in the factory
     for (const auto &entry : registryEntries)
     {
-        //filter by module name when specified
-        if (not handle.module.empty() and handle.module != entry.first)
-            continue;
-
         const auto r = entry.second->enumerate(handle);
         if (r.empty())
             continue;
 
         auto realHandle = r.front(); //just pick the first
-        realHandle.module = entry.first;
-
         return entry.second->make(realHandle);
     }
     char reason[128];
-    std::sprintf(reason, "No devices found with given handle(%s)", handle.serialize().c_str());
+    std::sprintf(reason, "No devices found with given handle(%s)", handle.Serialize().c_str());
     throw (std::runtime_error(reason));
     return nullptr;
 }

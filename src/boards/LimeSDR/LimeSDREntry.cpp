@@ -150,7 +150,7 @@ SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)
     {
         delete usbComms;
         char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s)", handle.serialize().c_str());
+        sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
         throw std::runtime_error(reason);
     }
     return new LimeSDR(usbComms);//ctx, handle.addr, handle.serial, handle.index);
