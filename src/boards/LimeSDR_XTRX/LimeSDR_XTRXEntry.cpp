@@ -36,8 +36,25 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
         return handles;
 
     const std::string searchDevName("LimeXTRX");
-    if (!hint.name.empty() && searchDevName.find(hint.name) == std::string::npos)
-        return handles;
+    const std::vector<std::string> boardNames = {
+        GetDeviceName(LMS_DEV_LIMESDR_XTRX)
+        , "LimeSDR-XTRX"
+        , searchDevName
+    };
+    if (!hint.name.empty())
+    {
+        bool foundMatch = false;
+        for (const std::string& name : boardNames)
+        {
+            if (name.find(hint.name) != std::string::npos)
+            {
+                foundMatch = true;
+                break;
+            }
+        }
+        if (!foundMatch)
+            return handles;
+    }
 
     const std::string pattern(searchDevName + "[0-9]*_control");
     const std::vector<std::string> devices = LitePCIe::GetDevicesWithPattern(pattern);
@@ -52,7 +69,7 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
             continue;
 
         std::string dev_nr(&devPath[pos+searchDevName.length()], &devPath[devPath.find("_")]);
-        handle.name = searchDevName + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
+        handle.name = boardNames[0];// + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
 
         handle.addr = devPath.substr(0, devPath.find("_"));
         handles.push_back(handle);
