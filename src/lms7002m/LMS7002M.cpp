@@ -2749,7 +2749,7 @@ float_type LMS7002M::GetTemperature()
     uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 2);
 
-    this_thread::sleep_for(chrono::microseconds(250));
+    SleepForRefClkTicks(7680);
     const uint16_t reg606 = SPI_read(0x0606, true);
     float Vtemp = (reg606 >> 8) & 0xFF;
     Vtemp *= 1.84;
@@ -2818,7 +2818,7 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
         if(value < 0)
             wrValue |= 0x40;
         Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
-        this_thread::sleep_for(chrono::microseconds(5));
+        SleepForRefClkTicks(154);
         cmp = Get_SPI_Reg_bits(LMS7param(RSSIDC_CMPSTATUS), true);
         if(cmp != cmpPrev)
         {
@@ -2841,4 +2841,12 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     lime::debug("Found %i", found);
     Modify_SPI_Reg_bits(LMS7_EN_INSHSW_W_RFE, 0);
     return 0;
+}
+
+void LMS7002M::SleepForRefClkTicks(uint32_t ticks)
+{
+    float refclk = GetReferenceClk_SX(Rx);
+    int64_t period_ns = 1e9/refclk;
+    chrono::nanoseconds duration_ns = chrono::nanoseconds(ticks*period_ns);
+    this_thread::sleep_for(duration_ns);
 }

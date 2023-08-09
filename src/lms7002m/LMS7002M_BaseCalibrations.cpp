@@ -40,6 +40,7 @@ int LMS7002M::CalibrateInternalADC(int clkDiv)
         }
         ++bias;
         Modify_SPI_Reg_bits(LMS7_RSSI_BIAS, bias);
+        SleepForRefClkTicks(7575);
         regValue = SPI_read(0x0601, true);
     }
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
@@ -63,7 +64,7 @@ int LMS7002M::CalibrateRP_BIAS()
 
     const uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 1);
-    this_thread::sleep_for(chrono::microseconds(250));
+    SleepForRefClkTicks(7575);
     uint16_t reg606 = SPI_read(0x0606, true);
     uint16_t Vref = (reg606 >> 8) & 0xFF;
     uint16_t Vptat = reg606 & 0xFF;
@@ -75,6 +76,7 @@ int LMS7002M::CalibrateRP_BIAS()
         {
             --rpCalib;
             Modify_SPI_Reg_bits(LMS7_RP_CALIB_BIAS, rpCalib);
+            SleepForRefClkTicks(7575);
             reg606 = SPI_read(0x0606, true);
             Vref = (reg606 >> 8) & 0xFF;
             Vptat = reg606 & 0xFF;
@@ -87,6 +89,7 @@ int LMS7002M::CalibrateRP_BIAS()
         {
             ++rpCalib;
             Modify_SPI_Reg_bits(LMS7_RP_CALIB_BIAS, rpCalib);
+            SleepForRefClkTicks(7575);
             reg606 = SPI_read(0x0606, true);
             Vref = (reg606 >> 8) & 0xFF;
             Vptat = reg606 & 0xFF;
