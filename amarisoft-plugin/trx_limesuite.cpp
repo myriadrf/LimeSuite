@@ -1022,7 +1022,7 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
             s->streamExtras[p] = extra;
         }
         sprintf(varname, "port%i_double_freq_conversion_to_lower_side", p);
-        if (trx_get_param_double(hostState, &s->tx_LO_override[p], varname) == 0)
+        if (trx_get_param_double(hostState, &val, varname) == 0)
         {
             extra->negateQ = val;
             s->streamExtras[p] = extra;
