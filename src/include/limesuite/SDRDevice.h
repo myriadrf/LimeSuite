@@ -121,6 +121,7 @@ class LIME_API SDRDevice
             uint32_t rxPacketsInBatch;
             uint32_t txMaxPacketsInBatch;
             uint16_t txSamplesInPacket;
+            bool negateQ;
         };
         typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
         enum DataFormat

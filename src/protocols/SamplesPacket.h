@@ -75,6 +75,21 @@ public:
         for(uint8_t i = 0; i<chCount; ++i)
             tail[i] = channel[i] + sz*frameSize;
     }
+
+    template<class T>
+    void Scale(float iScale, float qScale, int channelCount)
+    {
+        int samplesCount = size();
+        for (int c=0; c<channelCount; ++c)
+        {
+            T* samples = reinterpret_cast<T*>(head[c]);
+            for (int i=0; i<samplesCount; ++i)
+            {
+                samples[i].i *= iScale;
+                samples[i].q *= qScale;
+            }
+        }
+    }
 private:
     uint8_t* head[chCount];
     uint8_t* tail[chCount];

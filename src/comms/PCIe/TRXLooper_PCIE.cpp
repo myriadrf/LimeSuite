@@ -448,6 +448,18 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     std::this_thread::yield();
                     break;
                 }
+                if (mConfig.extraConfig != nullptr && mConfig.extraConfig->negateQ)
+                {
+                    switch (mConfig.format)
+                    {
+                    case SDRDevice::StreamConfig::DataFormat::I16:
+                        srcPkt->Scale<complex16_t>(1, -1, mConfig.txCount);
+                        break;
+                    case SDRDevice::StreamConfig::DataFormat::F32:
+                        srcPkt->Scale<complex32f_t>(1, -1, mConfig.txCount);
+                        break;
+                    }
+                }
             }
 
             // drop old packets before forming, Rx is needed to get current timestamp
@@ -473,7 +485,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
 
             const bool doFlush = output.consume(srcPkt);
-            
+
             if(srcPkt->empty())
             {
                 mTx.memPool->Free(srcPkt);
@@ -873,16 +885,31 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         stats.timestamp = expectedTS;
         mRx.lastTimestamp.store(expectedTS, std::memory_order_relaxed);
 
-        if (outputPkt && fifo->push(outputPkt, false))
+        if (outputPkt)
         {
-            //maxFIFOlevel = std::max(maxFIFOlevel, (int)rxFIFO.size());
-            outputPkt = nullptr;
-        }
-        else
-        {
-            ++stats.overrun;
-            if(outputPkt)
-                outputPkt->Reset();
+            if (mConfig.extraConfig != nullptr && mConfig.extraConfig->negateQ)
+            {
+                switch (mConfig.format)
+                {
+                case SDRDevice::StreamConfig::DataFormat::I16:
+                    outputPkt->Scale<complex16_t>(1, -1, mConfig.rxCount);
+                    break;
+                case SDRDevice::StreamConfig::DataFormat::F32:
+                    outputPkt->Scale<complex32f_t>(1, -1, mConfig.rxCount);
+                    break;
+                }
+            }
+            if (fifo->push(outputPkt, false))
+            {
+                //maxFIFOlevel = std::max(maxFIFOlevel, (int)rxFIFO.size());
+                outputPkt = nullptr;
+            }
+            else
+            {
+                ++stats.overrun;
+                if(outputPkt)
+                    outputPkt->Reset();
+            }
         }
         mRxArgs.port->CacheFlush(false, true, dma.swIndex % bufferCount);
 
@@ -923,7 +950,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga, LitePCIe* port, const lime::SDR
         fpga->WriteRegister(0x000E, 0x0); //16bit samples
     else
         fpga->WriteRegister(0x000E, 0x2); //12bit samples
-    
+
     fpga->WriteRegister(0x000D, 0x4); // WFM_LOAD
 
     LitePCIe::DMAInfo dma = port->GetDMAInfo();
@@ -938,14 +965,14 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga, LitePCIe* port, const lime::SDR
     LitePCIe::DMAState state;
     state.swIndex = 0;
 
-        
+
     while (samplesRemaining > 0)
     {
         state = port->GetTxDMAState();
         port->WaitTx(); // block until there is a free DMA buffer
 
         int samplesToSend = samplesRemaining > samplesInPkt ? samplesInPkt : samplesRemaining;
-        int samplesDataSize = 0; 
+        int samplesDataSize = 0;
 
         port->CacheFlush(true, false, dmaIndex);
         FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(dmaBuffers[dmaIndex]);
@@ -992,7 +1019,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga, LitePCIe* port, const lime::SDR
                 printf("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
                 return -1;
             }
-            
+
         }
         else
         {

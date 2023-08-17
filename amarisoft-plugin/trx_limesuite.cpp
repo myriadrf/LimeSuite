@@ -1021,6 +1021,12 @@ int __attribute__ ((visibility ("default"))) trx_driver_init (TRXState *hostStat
             extra->txSamplesInPacket = val;
             s->streamExtras[p] = extra;
         }
+        sprintf(varname, "port%i_double_freq_conversion_to_lower_side", p);
+        if (trx_get_param_double(hostState, &s->tx_LO_override[p], varname) == 0)
+        {
+            extra->negateQ = val;
+            s->streamExtras[p] = extra;
+        }
     }
 
     // TODO: right now no need to specify samples format, as only floating point is supported by Amarisoft
