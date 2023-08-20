@@ -1,6 +1,7 @@
 #include "MCU_File.h"
 #include <algorithm>
 #include <iostream>
+#include <stdint.h>
 
 using namespace std;
 
