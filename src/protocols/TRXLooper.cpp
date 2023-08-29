@@ -512,12 +512,12 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     // Also need to set policy to default here, because if host process is running
     // with REALTIME policy, these threads would inherit it and exhibit mentioned
     // issues.
-    const auto schedulingPolicy = ThreadPolicy::REALTIME;
+    const auto schedulingPolicy = ThreadPolicy::PREEMPTIVE;
     if (needRx) {
         mRx.terminate.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         mRx.thread = std::thread(RxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &mRx.thread);
+        SetOSThreadPriority(ThreadPriority::HIGHEST, schedulingPolicy, &mRx.thread);
         pthread_setname_np(mRx.thread.native_handle(), "lime:RxLoop");
 
         cpu_set_t cpuset;
@@ -532,7 +532,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
         mTx.terminate.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         mTx.thread = std::thread(TxLoopFunction);
-        SetOSThreadPriority(ThreadPriority::HIGH, schedulingPolicy, &mTx.thread);
+        SetOSThreadPriority(ThreadPriority::HIGHEST, schedulingPolicy, &mTx.thread);
         pthread_setname_np(mTx.thread.native_handle(), "lime:TxLoop");
 
         cpu_set_t cpuset;
