@@ -6,10 +6,12 @@
 namespace lime
 {
 
+class ISPI;
+
 class FPGA_X3 : public FPGA
 {
 public:
-    FPGA_X3(uint32_t slaveID, uint32_t lmsSlaveId);
+    FPGA_X3(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI);
     virtual ~FPGA_X3(){};
     int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0) override;
     int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0) override;

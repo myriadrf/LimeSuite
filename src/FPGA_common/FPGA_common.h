@@ -22,10 +22,9 @@ class ISPI;
 class FPGA
 {
 public:
-  FPGA(uint32_t slaveID, uint32_t lmsSlaveId);
+  FPGA(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI);
   virtual ~FPGA(){};
-  void SetConnection(lime::ISPI *conn);
-  lime::ISPI* GetConnection() const;
+
   int StartStreaming();
   int StopStreaming();
   int ResetTimestamp();
@@ -77,9 +76,8 @@ public:
     int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title = nullptr);
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
-    lime::ISPI* connection;
-    const uint32_t mSlaveId;
-    const uint32_t mLMSSlaveId;
+    lime::ISPI* fpgaPort;
+    lime::ISPI* lms7002mPort;
 
   private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);

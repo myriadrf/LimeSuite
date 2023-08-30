@@ -86,7 +86,7 @@ public:
         bool success;
     };
 
-    LMS7002M(uint32_t slaveID);
+    LMS7002M(ISPI *port);
 
     /*!
      * Set the connection for the LMS7002M driver.
@@ -470,7 +470,6 @@ protected:
     CGENChangeCallbackType mCallback_onCGENChange;
     void* mCallback_onCGENChange_userData;
 
-    const uint32_t mSlaveID;
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;
     bool useCache;

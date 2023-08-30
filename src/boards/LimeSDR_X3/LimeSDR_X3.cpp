@@ -29,60 +29,6 @@ static constexpr uint8_t spi_LMS7002M_2 = 1;
 static constexpr uint8_t spi_LMS7002M_3 = 2;
 static constexpr uint8_t spi_FPGA = 3;
 
-class PCIE_CSR_Pipe : public ISerialPort
-{
-public:
-    explicit PCIE_CSR_Pipe(LitePCIe& port) : port(port) {};
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.WriteControl(data, length, timeout_ms);
-    }
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.ReadControl(data, length, timeout_ms);
-    }
-protected:
-    LitePCIe& port;
-};
-
-LimeSDR_X3::CommsRouter::CommsRouter(LitePCIe* port, uint32_t slaveID)
-    : port(port), mDefaultSlave(slaveID)
-{
-}
-
-LimeSDR_X3::CommsRouter::~CommsRouter() {}
-
-void LimeSDR_X3::CommsRouter::SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
-{
-    SPI(mDefaultSlave, MOSI, MISO, count);
-}
-void LimeSDR_X3::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
-{
-    PCIE_CSR_Pipe pipe(*port);
-    switch (spiBusAddress) {
-        case spi_LMS7002M_1:
-        case spi_LMS7002M_2:
-        case spi_LMS7002M_3:
-            LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-            return;
-        case spi_FPGA:
-            LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
-            return;
-        default:
-            throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
-    }
-}
-int LimeSDR_X3::CommsRouter::I2CWrite(int address, const uint8_t *data, uint32_t length)
-{
-    PCIE_CSR_Pipe pipe(*port);
-    return LMS64CProtocol::I2C_Write(pipe, address, data, length);
-}
-int LimeSDR_X3::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
-{
-    PCIE_CSR_Pipe pipe(*port);
-    return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
-}
-
 static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
 static SDRDevice::CustomParameter cp_temperature = {"Board Temperature", 1, 0, 65535, true};
 
@@ -108,21 +54,42 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
+// Communications helper to divert data to specific device
+class SlaveSelectShim : public ISPI
+{
+public:
+    SlaveSelectShim(IComms* comms, uint32_t slaveId) : port(comms), slaveId(slaveId) {};
+    virtual ~SlaveSelectShim() {};
+    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        port->SPI(slaveId, MOSI, MISO, count);
+    }
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        port->SPI(spiBusAddress, MOSI, MISO, count);
+    }
+    virtual int ResetDevice()
+    {
+        return port->ResetDevice(slaveId);
+    }
+private:
+    IComms* port;
+    uint32_t slaveId;
+};
+
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
-    std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams)
-    : LMS7002M_SDRDevice(), mControlPort(control), mRXStreamPorts(rxStreams), mTXStreamPorts(txStreams)
-    , mFPGAcomms(control, spi_FPGA)
+LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA,
+        std::vector<lime::LitePCIe*> trxStreams)
+    : LMS7002M_SDRDevice(), mTRXStreamPorts(trxStreams), fpgaPort(spiFPGA)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor &desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
 
-    PCIE_CSR_Pipe controlPipe(*mControlPort);
-    LMS64CProtocol::FirmwareInfo fw;
-    LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
-    LMS64CProtocol::FirmwareToDescriptor(fw, desc);
+    // LMS64CProtocol::FirmwareInfo fw;
+    // LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
+    // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
     desc.spiSlaveIds = {
         {"LMS7002M_1", spi_LMS7002M_1},
@@ -139,14 +106,15 @@ LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
 
-    mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M_1);
-    mFPGA->SetConnection(&mFPGAcomms);
+    mLMS7002Mcomms[0] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_1);
+
+    mFPGA = new lime::FPGA_X3(spiFPGA, mLMS7002Mcomms[0]);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, desc);
 
-    mEqualizer = new Equalizer(&mFPGAcomms, spi_FPGA);
+    mEqualizer = new Equalizer(spiFPGA, spi_FPGA);
 
-    mClockGeneratorCDCM = new CDCM_Dev(&mFPGAcomms, CDCM2_BASE_ADDR);
+    mClockGeneratorCDCM = new CDCM_Dev(spiFPGA, CDCM2_BASE_ADDR);
     // TODO: read back cdcm values or mClockGeneratorCDCM->Reset(30.72e6, 25e6);
 
     RFSOCDescriptor soc;
@@ -156,8 +124,8 @@ LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     soc.rxPathNames = {"None", "LNAH", "LNAL"};
     soc.txPathNames = {"None", "Band1", "Band2"};
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[0] = new CommsRouter(mControlPort, spi_LMS7002M_1);
-    LMS7002M* lms1 = new LMS7002M(spi_LMS7002M_1);
+
+    LMS7002M* lms1 = new LMS7002M(mLMS7002Mcomms[0]);
     lms1->SetOnCGENChangeCallback(LMS1_UpdateFPGAInterface, this);
     mLMSChips.push_back(lms1);
 
@@ -166,22 +134,16 @@ LimeSDR_X3::LimeSDR_X3(lime::LitePCIe* control,
     soc.rxPathNames = {"None", "TDD", "FDD", "Calibration (LMS3)"};
     soc.txPathNames = {"None", "TDD", "FDD"};
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[1] = new CommsRouter(mControlPort, spi_LMS7002M_2);
-    mLMSChips.push_back(new LMS7002M(spi_LMS7002M_2));
+    mLMS7002Mcomms[1] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_2);
+    mLMSChips.push_back(new LMS7002M(mLMS7002Mcomms[1]));
 
     // LMS#3
     soc.name = "LMS 3";
     soc.rxPathNames = {"None", "LNAH", "Calibration (LMS2)"};
     soc.txPathNames = {"None", "Band1"};
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[2] = new CommsRouter(mControlPort, spi_LMS7002M_3);
-    mLMSChips.push_back(new LMS7002M(spi_LMS7002M_3));
-
-    for (size_t i=0; i<mLMSChips.size(); ++i)
-    {
-        mLMSChips[i]->SetConnection(mLMS7002Mcomms[i]);
-        //iter->SetReferenceClk_SX(false, 30.72e6);
-    }
+    mLMS7002Mcomms[2] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_3);
+    mLMSChips.push_back(new LMS7002M(mLMS7002Mcomms[2]));
 
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
@@ -727,10 +689,8 @@ int LimeSDR_X3::Init()
 
 void LimeSDR_X3::Reset()
 {
-    PCIE_CSR_Pipe pipe(*mControlPort);
-
     for(uint32_t i=0; i<mLMSChips.size(); ++i)
-        LMS64CProtocol::DeviceReset(pipe, i);
+        mLMS7002Mcomms[i]->ResetDevice();
 }
 
 double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
@@ -783,7 +743,7 @@ void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, 
             mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
             return;
         case spi_FPGA:
-            mFPGAcomms.SPI(MOSI, MISO, count);
+            fpgaPort->SPI(MOSI, MISO, count);
             return;
         default:
             throw std::logic_error("invalid SPI chip select");
@@ -796,14 +756,14 @@ int LimeSDR_X3::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
         return -1; // already running
     try {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(
-            mRXStreamPorts.at(moduleIndex),
-            mRXStreamPorts.at(moduleIndex),
+            mTRXStreamPorts.at(moduleIndex),
+            mTRXStreamPorts.at(moduleIndex),
             mFPGA, mLMSChips.at(moduleIndex),
             moduleIndex
         );
         if (mCallback_logMessage)
             mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
-        LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
+        LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
         if(!trxPort->IsOpen())
         {
             int dirFlag = 0;
@@ -837,7 +797,7 @@ int LimeSDR_X3::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
 void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
 {
     LMS7002M_SDRDevice::StreamStop(moduleIndex);
-    LitePCIe* trxPort = mRXStreamPorts.at(moduleIndex);
+    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();
 }
@@ -1170,19 +1130,16 @@ void LimeSDR_X3::LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz)
 
 int LimeSDR_X3::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
-    PCIE_CSR_Pipe pipe(*mControlPort);
-    return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
+    return fpgaPort->CustomParameterWrite(ids, values, count, units);
 }
 
 int LimeSDR_X3::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
 {
-    PCIE_CSR_Pipe pipe(*mControlPort);
-    return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
+    return fpgaPort->CustomParameterRead(ids, values, count, units);
 }
 
 bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
 {
-    PCIE_CSR_Pipe pipe(*mControlPort);
     int progMode;
     LMS64CProtocol::ProgramWriteTarget target;
     target = LMS64CProtocol::ProgramWriteTarget::FPGA;
@@ -1192,12 +1149,12 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
         progMode = 1;
     else
         return false;
-    return LMS64CProtocol::ProgramWrite(pipe, data, length, progMode, target, callback);
+    return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
 int LimeSDR_X3::UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count)
 {
-    return TRXLooper_PCIE::UploadTxWaveform(mFPGA, mTXStreamPorts[moduleIndex], config, moduleIndex, samples, count);
+    return TRXLooper_PCIE::UploadTxWaveform(mFPGA, mTRXStreamPorts[moduleIndex], config, moduleIndex, samples, count);
 }
 
 } //namespace lime

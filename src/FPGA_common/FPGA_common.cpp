@@ -107,8 +107,8 @@ static bool HasFPGAClockPhaseSearch(uint8_t targetDevice, uint8_t version, uint8
     }
 }
 
-FPGA::FPGA(uint32_t slaveID, uint32_t lmsSlaveId)
-    : mSlaveId(slaveID), mLMSSlaveId(lmsSlaveId), useCache(false)
+FPGA::FPGA(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI)
+    : fpgaPort(fpgaSPI), lms7002mPort(lms7002mSPI), useCache(false)
 {
 }
 
@@ -155,13 +155,13 @@ int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned c
             regsCache[addrs[i]] = data[i];
         }
         if (spiBuffer.size())
-            connection->SPI(mSlaveId, spiBuffer.data(), nullptr, spiBuffer.size());
+            fpgaPort->SPI(spiBuffer.data(), nullptr, spiBuffer.size());
         return 0;
     }
     for (unsigned i = 0; i < cnt; i++)
         spiBuffer.push_back((1 << 31) | (addrs[i]) << 16 | data[i]);
     if (spiBuffer.size())
-        connection->SPI(mSlaveId, spiBuffer.data(), nullptr, spiBuffer.size());
+        fpgaPort->SPI(spiBuffer.data(), nullptr, spiBuffer.size());
     return 0;
 }
 
@@ -171,7 +171,7 @@ int FPGA::WriteLMS7002MSPI(const uint32_t *data, uint32_t length)
     for (uint32_t i = 0; i < length; ++i)
         assert(data[i] & (1 << 31));
 #endif
-    connection->SPI(mLMSSlaveId, data, nullptr, length);
+    lms7002mPort->SPI(data, nullptr, length);
     return 0;
 }
 
@@ -180,7 +180,7 @@ int FPGA::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, uint32_
     std::vector<uint32_t> spiBuf(length);
     for (uint32_t i = 0; i < length; ++i)
         spiBuf[i] = writeData[i] >> 16;
-    connection->SPI(mLMSSlaveId, spiBuf.data(), readData, length);
+    lms7002mPort->SPI(spiBuf.data(), readData, length);
     return 0;
 }
 
@@ -210,7 +210,7 @@ int FPGA::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
 
         if (spiBuffer.size()) {
             std::vector<uint32_t> reg_val(spiBuffer.size());
-            connection->SPI(mSlaveId, spiBuffer.data(), reg_val.data(), spiBuffer.size());
+            fpgaPort->SPI(spiBuffer.data(), reg_val.data(), spiBuffer.size());
             for (unsigned i = 0; i < spiBuffer.size(); i++)
                 regsCache[spiBuffer[i]] = reg_val[i];
         }
@@ -221,20 +221,10 @@ int FPGA::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
     for (unsigned i = 0; i < cnt; i++)
         spiBuffer.push_back(addrs[i]);
     std::vector<uint32_t> reg_val(spiBuffer.size());
-    connection->SPI(mSlaveId, spiBuffer.data(), reg_val.data(), spiBuffer.size());
+    fpgaPort->SPI(spiBuffer.data(), reg_val.data(), spiBuffer.size());
     for (unsigned i = 0; i < cnt; i++)
         data[i] = reg_val[i] & 0xFFFF;
     return 0;
-}
-
-void FPGA::SetConnection(ISPI* conn)
-{
-    connection = conn;
-}
-
-ISPI* FPGA::GetConnection() const
-{
-    return connection;
 }
 
 int FPGA::StartStreaming()
@@ -373,7 +363,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     verbose_printf("FPGA SetPllFrequency: PLL[%i] input:%.3f MHz clockCount:%i\n", pllIndex, inputFreq/1e6, clockCount);
     WriteRegistersBatch batch(this);
     const auto timeout = chrono::seconds(3);
-    if(not connection)
+    if(not fpgaPort)
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
 
     const bool waitForDone = HasWaitForDone(ReadRegister(0)); // read targetDevice
@@ -537,7 +527,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
 
 int FPGA::SetDirectClocking(int clockIndex)
 {
-    if(not connection)
+    if(not fpgaPort)
         return ReportError(ENODEV, "SetDirectClocking: connection port is NULL");
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
