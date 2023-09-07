@@ -92,10 +92,14 @@ protected:
     LitePCIe& port;
 };
 
-class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
+class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 {
 public:
-    LMS64C_LMS7002M_Over_PCIe(LitePCIe* dataPort, uint32_t subdeviceIndex) : pipe(*dataPort), subdeviceIndex(subdeviceIndex) {}
+    LMS64C_LMS7002M_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex) : pipe(*dataPort), subdeviceIndex(subdeviceIndex) {}
+    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        SPI(0, MOSI, MISO, count);
+    }
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
@@ -109,10 +113,14 @@ private:
     uint32_t subdeviceIndex;
 };
 
-class LMS64C_FPGA_Over_PCIe : public lime::IComms
+class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
 {
 public:
-    LMS64C_FPGA_Over_PCIe(LitePCIe* dataPort, uint32_t subdeviceIndex) : pipe(*dataPort) {}
+    LMS64C_FPGA_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex) : pipe(*dataPort), subdeviceIndex(subdeviceIndex) {}
+    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
+    }
     void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
@@ -143,10 +151,10 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle &handle)
     std::vector<IComms*> fpga(9);
     for (size_t i=0; i<controls.size(); ++i)
     {
-        controls[i] = new LMS64C_LMS7002M_Over_PCIe(control, i+1);
-        fpga[i] = new LMS64C_FPGA_Over_PCIe(control, i+1);
+        controls[i] = new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i+1);
+        fpga[i] = new LMS64C_FPGA_Over_PCIe_MMX8(control, i+1);
     }
-    fpga.push_back(new LMS64C_FPGA_Over_PCIe(control, 0));
+    fpga.push_back(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0));
 
     try {
         std::string controlFile(handle.addr + "_control");

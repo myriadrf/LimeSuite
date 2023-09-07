@@ -98,6 +98,11 @@ class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
 {
 public:
     LMS64C_LMS7002M_Over_PCIe(LitePCIe* dataPort) : pipe(*dataPort) {}
+    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        SPI(0, MOSI, MISO, count);
+        return;
+    }
     void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
@@ -111,6 +116,10 @@ class LMS64C_FPGA_Over_PCIe : public lime::IComms
 {
 public:
     LMS64C_FPGA_Over_PCIe(LitePCIe* dataPort) : pipe(*dataPort) {}
+    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        SPI(0, MOSI, MISO, count);
+    }
     void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);

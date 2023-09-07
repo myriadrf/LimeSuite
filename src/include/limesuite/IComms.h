@@ -9,10 +9,7 @@ class LIME_API ISPI
 {
 public:
     // Default path for writing/reading registers
-    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
-    {
-        SPI(0, MOSI, MISO, count);
-    }
+    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
 
     // Writing/reading registers for specific slave
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
