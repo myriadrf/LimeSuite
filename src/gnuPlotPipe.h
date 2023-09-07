@@ -12,9 +12,9 @@ public:
     {
 #ifdef __unix__
         if(persistent)
-            pipeHandle = popen("gnuplot -persistent", "w");
+            pipeHandle = popen("gnuplot -persistent -noraise", "we");
         else
-            pipeHandle = popen("gnuplot", "w");
+            pipeHandle = popen("gnuplot -noraise", "we");
 #else
         if(persistent)
             pipeHandle = _popen("gnuplot -persistent", "w");
@@ -35,7 +35,7 @@ public:
     void write(const char* str)
     {
         fprintf(pipeHandle, "%s", str);
-        fflush(pipeHandle);
+        //fflush(pipeHandle);
     }
 
     void writef(const char* format, ...)
