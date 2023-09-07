@@ -32,9 +32,23 @@ static int printHelp(void)
 {
     cerr << "limeConfig [options]" << endl;
     cerr << "    -h, --help\t\t\t This help" << endl;
-    cerr << "    -d, --device <name>\t\t\t Specifies which device to use" << endl;
+    cerr << "    -d, --device <name>\t\t Specifies which device to use" << endl;
     cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
-    cerr << "    -f, --file\t\t Use --read/--write argument as filename" << endl;
+    cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
+
+    cerr << "    --refclk\t\t Reference clock in Hz" << endl;
+    cerr << "    --samplerate\t Sampling rate in Hz" << endl;
+    cerr << "    --rxen=[0,1]\t Enable receiver" << endl;
+    cerr << "    --rxlo\t\t Receiver center frequency in Hz" << endl;
+    cerr << "    --rxlpf\t\t Receiver low pass filter bandwidth in Hz" << endl;
+    cerr << "    --rxoversample\t Receiver decimation 1,2,4,8..." << endl;
+    cerr << "    --rxtestsignal=[0,1]\t Enables receiver test signal if available" << endl;
+
+    cerr << "    --txen=[0,1]\t\t Enable transmitter" << endl;
+    cerr << "    --txlo\t\t Transmitter center frequency in Hz" << endl;
+    cerr << "    --txlpf\t\t Transmitter low pass filter bandwidth in Hz" << endl;
+    cerr << "    --txoversample\t Transmitter interpolation 1,2,4,8..." << endl;
+    cerr << "    --txtestsignal=[0,1]\t Enables transmitter test signal if available" << endl;
 
     return EXIT_SUCCESS;
 }
