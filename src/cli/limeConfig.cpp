@@ -1,100 +1,191 @@
 #include "cli/common.h"
 
-#include "limesuite/LMS7002M.h"
+#include <assert.h>
+#include <cstring>
+
+using namespace std;
 using namespace lime;
 
-SDRDevice               *device = nullptr;
-SDRDevice::SDRConfig    config;
+static SDRDevice::LogLevel logVerbosity = SDRDevice::ERROR;
+static SDRDevice::LogLevel strToLogLevel(const char* str)
+{
+    if (strstr("debug", str))
+        return SDRDevice::DEBUG;
+    else if (strstr("verbose", str))
+        return SDRDevice::VERBOSE;
+    else if (strstr("error", str))
+        return SDRDevice::ERROR;
+    else if (strstr("warning", str))
+        return SDRDevice::WARNING;
+    else if (strstr("info", str))
+        return SDRDevice::INFO;
+    return SDRDevice::ERROR;
+}
+static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
+{
+    if (lvl > logVerbosity)
+        return;
+    printf("%s\n", msg);
+}
 
 static int printHelp(void)
 {
-    std::cout << "Usage LimeConfig [options]" << std::endl;
-    std::cout << "    --help\t\t\t This help" << std::endl;
-    std::cout << "    --debug\t\t\t Force debug output" << std::endl;
-    std::cout << "    --board <i>\t\t\t Specifies device index (0-... default 0)" << std::endl;
-    std::cout << "    --load <file>\t\t Load LMS7002M registers from file <file>" << std::endl;
-    std::cout << "    --save <file> \t\t Save LMS7002M registers to file <file>" << std::endl;
-    std::cout << "    --lms <x>\t\t\t Specifies LMS7002M chip index <x> (default 0)" << std::endl;
-    std::cout << "    --reset\t\t\t Perform LMS7002M reset" << std::endl;
+    cerr << "limeConfig [options]" << endl;
+    cerr << "    -h, --help\t\t\t This help" << endl;
+    cerr << "    -d, --device <name>\t\t\t Specifies which device to use" << endl;
+    cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
+    cerr << "    -f, --file\t\t Use --read/--write argument as filename" << endl;
 
     return EXIT_SUCCESS;
 }
 
-/***********************************************************************
- * main entry point
- **********************************************************************/
-int main(int argc, char *argv[])
+enum Args
 {
+    HELP = 'h',
+    DEVICE = 'd',
+    CHIP = 'c',
+    LOG = 'l',
+
+    REFCLK = 200,
+    SAMPLERATE,
+    RXEN,
+    RXLO,
+    RXPATH,
+    RXLPF,
+    RXOVERSAMPLE,
+    RXTESTSIGNAL,
+    TXEN,
+    TXLO,
+    TXPATH,
+    TXLPF,
+    TXOVERSAMPLE,
+    TXTESTSIGNAL,
+};
+
+int main(int argc, char** argv)
+{
+    char* devName = nullptr;
+    int moduleId = 0;
+
+    SDRDevice::SDRConfig config;
+    config.channel[0].rx.oversample = 2;
+    config.channel[0].tx.oversample = 2;
+
     static struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
-        {"debug", no_argument, 0, 'd'},
-        {"board", required_argument, 0, 'b'},
-        {"load", required_argument, 0, 'l'},
-        {"save", required_argument, 0, 's'},
-        {"lms", required_argument, 0, 'm'},
-        {"reset", no_argument, 0, 'r'},
+        {"help", no_argument, 0, Args::HELP},
+        {"device", required_argument, 0, Args::DEVICE},
+        {"chip", required_argument, 0, Args::CHIP},
+        {"log", required_argument, 0, Args::LOG},
+        {"refclk", required_argument, 0, Args::REFCLK},
+        {"samplerate", required_argument, 0, Args::SAMPLERATE},
+        {"rxen", required_argument, 0, Args::RXEN},
+        {"rxlo", required_argument, 0, Args::RXLO},
+        {"rxlpf", required_argument, 0, Args::RXLPF},
+        {"rxoversample", required_argument, 0, Args::RXOVERSAMPLE},
+        {"rxtestsignal", required_argument, 0, Args::RXTESTSIGNAL},
+        {"txen", required_argument, 0, Args::TXEN},
+        {"txlo", required_argument, 0, Args::TXLO},
+        {"txlpf", required_argument, 0, Args::TXLPF},
+        {"txoversample", required_argument, 0, Args::TXOVERSAMPLE},
+        {"txtestsignal", required_argument, 0, Args::TXTESTSIGNAL},
         {0, 0, 0,  0}
     };
 
-    bool debug(false),load(true),reset(false);
-    int dev_index = 0;
-    int lms_index = 0;
     int long_index = 0;
     int option = 0;
-    char *f = NULL;
-    
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
     {
         switch (option)
         {
-        case 'h': 
+        case Args::HELP:
             return printHelp();
-        case 'd':
-            debug = true;
+        case Args::DEVICE:
+            if (optarg != NULL) devName = optarg;
             break;
-        case 'b':
-            if (optarg != NULL) dev_index = std::stod(optarg);
+        case Args::CHIP:
+            if (optarg != NULL) moduleId = stoi(optarg);
             break;
-        case 'l':
-            if (optarg != NULL) {f = optarg;load = true;}
+        case Args::LOG:
+            if (optarg != NULL) {logVerbosity = strToLogLevel(optarg); }
             break;
-        case 's':
-            if (optarg != NULL) {f = optarg;load = false;}
+        case REFCLK:
+            config.referenceClockFreq = stof(optarg);
             break;
-        case 'm':
-            if (optarg != NULL) lms_index = std::stod(optarg);
+        case SAMPLERATE:
+            config.channel[0].rx.sampleRate = stof(optarg);
+            config.channel[0].tx.sampleRate = config.channel[0].rx.sampleRate;
             break;
-        case 'r':
-            reset = true;
+        case RXEN:
+            config.channel[0].rx.enabled = stoi(optarg) != 0;
+            break;
+        case RXLO:
+            config.channel[0].rx.centerFrequency = stof(optarg);
+            break;
+        case RXLPF:
+            config.channel[0].rx.lpf = stof(optarg);
+            break;
+        case RXOVERSAMPLE:
+            config.channel[0].rx.oversample = stoi(optarg);
+            break;
+        case RXTESTSIGNAL:
+            config.channel[0].rx.testSignal = stoi(optarg) != 0;
+            break;
+        case TXEN:
+            config.channel[0].tx.enabled = stoi(optarg) != 0;
+            break;
+        case TXLO:
+            config.channel[0].tx.centerFrequency = stof(optarg);
+            break;
+        case TXLPF:
+            config.channel[0].tx.lpf = stof(optarg);
+            break;
+        case TXOVERSAMPLE:
+            config.channel[0].tx.oversample = stoi(optarg);
+            break;
+        case TXTESTSIGNAL:
+            config.channel[0].tx.testSignal = stoi(optarg) != 0;
             break;
         }
     }
+
+    config.channel[1] = config.channel[0];
+
     auto handles = DeviceRegistry::enumerate();
     if (handles.size() == 0)
     {
-        printf("No devices found\n");
-        return -1;
+        cerr << "No devices found" << endl;
+        return EXIT_FAILURE;
     }
-    if (debug) std::cout << "Found " << handles.size() << " device(s)" << std::endl;
-    device = DeviceRegistry::makeDevice(handles.at(dev_index));
-    LMS7002M *chip = static_cast<LMS7002M*>(device->GetInternalChip (lms_index));
-    if  (reset) chip->ResetChip ();
-    if  (!f)
+
+    SDRDevice* device;
+    if (devName)
+        device = ConnectUsingNameHint(devName);
+    else
     {
-        printHelp ();
-        return EXIT_SUCCESS;
+        if (handles.size() > 1)
+        {
+            cerr << "Multiple devices detected, specify which one to use with -d, --device" << endl;
+            return EXIT_FAILURE;
+        }
+        // device not specified, use the only one available
+        device = DeviceRegistry::makeDevice(handles.at(0));
     }
-    if  (load)
-    { 
-        if  (debug)
-            std::cout << "Loading configuration file " << f << std::endl;
-        chip->LoadConfig (f);
-    } else
+
+    if (!device)
     {
-        if  (debug)
-            std::cout << "Saving configuration file " << f << std::endl;
-        chip->SaveConfig (f);
+        cerr << "Device connection failed" << endl;
+        return EXIT_FAILURE;
     }
+
+    device->SetMessageLogCallback(LogCallback);
+    try {
+        device->Init();
+        device->Configure(config, moduleId);
+    } catch (std::runtime_error &e) {
+        cerr << "Config failed: " << e.what() << endl;
+        return EXIT_FAILURE;
+    }
+
     return EXIT_SUCCESS;
 }
 

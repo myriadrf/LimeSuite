@@ -16,7 +16,7 @@ set_target_properties(limeSPI PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINAR
 target_include_directories(limeSPI PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(limeSPI PUBLIC ${MAIN_LIBRARY_NAME})
 
-add_executable(limeConfig limeConfig.cpp)
+add_executable(limeConfig limeConfig.cpp common.cpp)
 set_target_properties(limeConfig PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(limeConfig PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(limeConfig PUBLIC ${MAIN_LIBRARY_NAME})
