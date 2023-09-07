@@ -18,6 +18,7 @@ static std::map<std::string, DeviceRegistryEntry *> registryEntries;
 
 void __loadLimeSDR_X3();
 void __loadLimeSDR_XTRX();
+void __loadLimeSDR_MMX8();
 //void __loadLimeSDR();
 
 void __loadDevicesSupport()
@@ -25,6 +26,7 @@ void __loadDevicesSupport()
     //__loadLimeSDR();
     __loadLimeSDR_X3();
     __loadLimeSDR_XTRX();
+    __loadLimeSDR_MMX8();
 }
 
 /*******************************************************************

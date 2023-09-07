@@ -219,6 +219,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
     uint16_t spisw_ctrl = 0;
 
     LMS7002M* chip = GetSelectedChip();
+    assert(chip);
 
     if (pageId == ID_TAB_SXR) //change active channel to A
         chip->Modify_SPI_Reg_bits(LMS7param(MAC), 1);

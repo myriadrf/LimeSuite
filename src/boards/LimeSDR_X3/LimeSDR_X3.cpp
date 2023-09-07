@@ -99,7 +99,6 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA,
     };
 
     desc.memoryDevices = {
-        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
         {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
     };
 

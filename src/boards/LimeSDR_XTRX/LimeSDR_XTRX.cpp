@@ -66,7 +66,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::IComms* spiRFsoc, lime::IComms* spiFPGA, lime::
     };
 
     desc.memoryDevices = {
-        {"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
+        //{"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
         {"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH},
     };
 

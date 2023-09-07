@@ -1,0 +1,105 @@
+#ifndef LIME_LIMESDR_5G_H
+#define	LIME_LIMESDR_5G_H
+
+#include "CDCM6208/CDCM6208_Dev.h"
+#include "LMS7002M_SDRDevice.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/IComms.h"
+
+#include "protocols/LMS64CProtocol.h"
+
+#include <vector>
+#include <array>
+
+#include "PacketsFIFO.h"
+#include "dataTypes.h"
+
+namespace lime
+{
+
+class LMS7002M;
+class LitePCIe;
+class FPGA;
+class Equalizer;
+class TRXLooper_PCIE;
+class LimeSDR_XTRX;
+
+class LimeSDR_MMX8 : public lime::SDRDevice
+{
+public:
+    LimeSDR_MMX8() = delete;
+    LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams);
+    virtual ~LimeSDR_MMX8();
+
+    virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
+    virtual const Descriptor &GetDescriptor() override;
+
+    virtual int Init() override;
+    virtual void Reset() override;
+
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
+
+    virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
+    virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
+
+    virtual void Synchronize(bool toChip) override;
+    virtual void EnableCache(bool enable) override;
+
+    virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
+    virtual void StreamStart(uint8_t moduleIndex) override;
+    virtual void StreamStop(uint8_t moduleIndex) override;
+
+    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count,
+                         const StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count,
+                         const StreamMeta* meta) override;
+    virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
+
+
+    virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
+    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
+    virtual int I2CRead(int addres, uint8_t *dest, uint32_t length) override;
+
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
+
+    virtual void SetDataLogCallback(DataCallbackType callback) {};
+    virtual void SetMessageLogCallback(LogCallbackType callback) {};
+
+    virtual void *GetInternalChip(uint32_t index) { return nullptr; };
+    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
+                                      double rxPhase) override;
+
+    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
+protected:
+    enum class eMemoryDevice {
+        FPGA_FLASH,
+        COUNT
+    };
+
+private:
+    lime::IComms* mMainFPGAcomms;
+    Descriptor mDeviceDescriptor;
+    std::vector<LitePCIe*> mTRXStreamPorts;
+    std::vector<lime::LimeSDR_XTRX*> mSubDevices;
+    std::map<uint32_t, lime::LimeSDR_XTRX*> chipSelectToDevice;
+    std::map<uint32_t, lime::LimeSDR_XTRX*> memorySelectToDevice;
+    std::map<uint32_t, lime::LimeSDR_XTRX*> customParameterToDevice;
+};
+
+class LimeSDR_MMX8Entry : public DeviceRegistryEntry
+{
+public:
+    LimeSDR_MMX8Entry();
+    virtual ~LimeSDR_MMX8Entry();
+    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
+    SDRDevice* make(const DeviceHandle& handle) override;
+};
+
+}
+
+#endif // LIME_LIMESDR_5G_H
+
