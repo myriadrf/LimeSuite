@@ -104,6 +104,7 @@ void LimeSDR_MMX8::Configure(const SDRConfig& cfg, uint8_t socIndex)
 {
     try
     {
+        mSubDevices[socIndex]->Init();
         mSubDevices[socIndex]->Configure(cfg, 0);
     } //try
     catch (std::logic_error &e) {

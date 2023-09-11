@@ -35,6 +35,7 @@ static int printHelp(void)
     cerr << "    -d, --device <name>\t\t Specifies which device to use" << endl;
     cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
+    cerr << "    -i, --initialize\t\t Reset and initialize entire device" << endl;
 
     cerr << "    --refclk\t\t Reference clock in Hz" << endl;
     cerr << "    --samplerate\t Sampling rate in Hz" << endl;
@@ -59,6 +60,7 @@ enum Args
     DEVICE = 'd',
     CHIP = 'c',
     LOG = 'l',
+    INIT = 'i',
 
     REFCLK = 200,
     SAMPLERATE,
@@ -80,6 +82,7 @@ int main(int argc, char** argv)
 {
     char* devName = nullptr;
     int moduleId = 0;
+    bool initializeBoard = false;
 
     SDRDevice::SDRConfig config;
     config.channel[0].rx.oversample = 2;
@@ -90,6 +93,7 @@ int main(int argc, char** argv)
         {"device", required_argument, 0, Args::DEVICE},
         {"chip", required_argument, 0, Args::CHIP},
         {"log", required_argument, 0, Args::LOG},
+        {"initialize", no_argument, 0, Args::INIT},
         {"refclk", required_argument, 0, Args::REFCLK},
         {"samplerate", required_argument, 0, Args::SAMPLERATE},
         {"rxen", required_argument, 0, Args::RXEN},
@@ -121,6 +125,9 @@ int main(int argc, char** argv)
             break;
         case Args::LOG:
             if (optarg != NULL) {logVerbosity = strToLogLevel(optarg); }
+            break;
+        case Args::INIT:
+            initializeBoard = true;
             break;
         case REFCLK:
             config.referenceClockFreq = stof(optarg);
@@ -193,7 +200,8 @@ int main(int argc, char** argv)
 
     device->SetMessageLogCallback(LogCallback);
     try {
-        device->Init();
+        if (initializeBoard)
+            device->Init();
         device->Configure(config, moduleId);
     } catch (std::runtime_error &e) {
         cerr << "Config failed: " << e.what() << endl;
