@@ -55,6 +55,7 @@ static int printHelp(void)
     cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
     cerr << "    -i, --input \"filepath\"\t\t Waveform file for samples transmitting" << endl;
     cerr << "    -o, --output \"filepath\"\t\t Waveform file for received samples" << endl;
+    cerr << "    --looptx \t Loop tx samples transmission" << endl;
     cerr << "    -s, --samplesCount\t\t Number of samples to receive" << endl;
     cerr << "    -t, --time\t\t Time duration in milliseconds to receive" << endl;
     cerr << "    -f, --fft\t\t Display Rx FFT plot" << endl;
@@ -75,7 +76,8 @@ enum Args
     TIME = 't',
     FFT = 'f',
     CONSTELLATION = 'x',
-    LOG = 'l'
+    LOG = 'l',
+    LOOPTX = 'r'
 };
 
 class FFTPlotter
@@ -233,6 +235,7 @@ int main(int argc, char** argv)
     bool tx = false;
     bool showFFT = false;
     bool showConstelation = false;
+    bool loopTx = false;
     int64_t samplesToCollect = 0;
     int64_t workTime = 0;
     int chipIndex = 0;
@@ -242,6 +245,7 @@ int main(int argc, char** argv)
         {"chip", required_argument, 0, Args::CHIP},
         {"input", required_argument, 0, Args::INPUT},
         {"output", required_argument, 0, Args::OUTPUT},
+        {"looptx", no_argument, 0, Args::LOOPTX},
         {"samplesCount", required_argument, 0, Args::SAMPLES_COUNT},
         {"time", required_argument, 0, Args::TIME},
         {"fft", no_argument, 0, Args::FFT},
@@ -266,6 +270,9 @@ int main(int argc, char** argv)
             break;
         case Args::OUTPUT:
             if (optarg != NULL) {rx = true; rxFilename = optarg; }
+            break;
+        case Args::LOOPTX:
+            loopTx = true;
             break;
         case Args::INPUT:
             if (optarg != NULL) {tx = true; txFilename = optarg; }
@@ -360,7 +367,6 @@ int main(int argc, char** argv)
         inputFile.read((char*)txData.data(), cnt);
         inputFile.close();
     }
-    const complex16_t* txSamples[2] = {txData.data(), txData.data()};
 
     int64_t totalSamplesReceived = 0;
 
@@ -392,7 +398,7 @@ int main(int argc, char** argv)
     SDRDevice::StreamMeta rxMeta;
     SDRDevice::StreamMeta txMeta;
     txMeta.useTimestamp = true;
-    txMeta.timestamp = sampleRate/1000; // send tx samples 1ms after start
+    txMeta.timestamp = sampleRate/100; // send tx samples 10ms after start
 
     fftplot.Start();
     constellationplot.Start();
@@ -410,13 +416,21 @@ int main(int argc, char** argv)
             break;
 
         int toSend = txData.size()-txSent > fftSize ? fftSize : txData.size()-txSent;
-        if (tx && toSend > 0)
-        {
-            int samplesSent = device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
-            if (samplesSent > 0)
+        if (tx)
+        {   if (loopTx && toSend == 0)
             {
-                txSent += samplesSent;
-                txMeta.timestamp += samplesSent;
+                txSent = 0;
+                toSend = txData.size()-txSent > fftSize ? fftSize : txData.size()-txSent;
+            }
+            if (toSend > 0)
+            {
+                const complex16_t* txSamples[2] = {&txData[txSent], &txData[txSent]};
+                int samplesSent = device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
+                if (samplesSent > 0)
+                {
+                    txSent += samplesSent;
+                    txMeta.timestamp += samplesSent;
+                }
             }
         }
 
