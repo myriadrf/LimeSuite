@@ -270,6 +270,12 @@ int main(int argc, char** argv)
         case Args::INPUT:
             if (optarg != NULL) {tx = true; txFilename = optarg; }
             break;
+        case Args::SAMPLES_COUNT:
+            samplesToCollect = stoi(optarg);
+            break;
+        case Args::TIME:
+            workTime = stoi(optarg);
+            break;
         case Args::FFT: showFFT = true; break;
         case Args::CONSTELLATION: showConstelation = true; break;
         case Args::LOG:
@@ -356,11 +362,6 @@ int main(int argc, char** argv)
     }
     const complex16_t* txSamples[2] = {txData.data(), txData.data()};
 
-    auto startTime = std::chrono::high_resolution_clock::now();
-    auto t1 = startTime - std::chrono::seconds(2); // rewind t1 to do update on first loop
-    auto t2 = t1;
-
-
     int64_t totalSamplesReceived = 0;
 
     std::vector<float> fftBins(fftSize);
@@ -396,9 +397,14 @@ int main(int argc, char** argv)
     fftplot.Start();
     constellationplot.Start();
     device->StreamStart(chipIndex);
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+    auto t1 = startTime - std::chrono::seconds(2); // rewind t1 to do update on first loop
+    auto t2 = t1;
+
     while (!stopProgram)
     {
-        if (workTime != 0 && std::chrono::high_resolution_clock::now() - startTime < std::chrono::milliseconds(workTime))
+        if (workTime != 0 && (std::chrono::high_resolution_clock::now() - startTime) > std::chrono::milliseconds(workTime))
             break;
         if (samplesToCollect != 0 && totalSamplesReceived > samplesToCollect)
             break;
