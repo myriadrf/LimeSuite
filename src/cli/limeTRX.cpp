@@ -7,6 +7,8 @@
 #include <signal.h>
 #include <thread>
 #include "kissFFT/kiss_fft.h"
+#include <condition_variable>
+#include <mutex>
 #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
@@ -14,6 +16,8 @@
 
 using namespace lime;
 using namespace std;
+
+std::mutex globalGnuPlotMutex; // seems multiple plot pipes can't be used concurently
 
 bool stopProgram(false);
 void intHandler(int dummy) {
@@ -72,6 +76,152 @@ enum Args
     FFT = 'f',
     CONSTELLATION = 'x',
     LOG = 'l'
+};
+
+class FFTPlotter
+{
+public:
+    FFTPlotter(float sampleRate, int fftSize, bool persistent)
+        : plot(persistent), sampleRate(sampleRate), doWork(false)
+    {
+        bins.resize(fftSize);
+        plot.writef("set xrange[%f:%f]\n set yrange[%i:%i]\n", -sampleRate/2, sampleRate/2, -120, 0);
+        plot.flush();
+    }
+    ~FFTPlotter()
+    {
+        Stop();
+    }
+
+    void Start()
+    {
+        doWork = true;
+        plotThread = std::thread(&FFTPlotter::PlotLoop, this);
+    }
+
+    void Stop()
+    {
+        doWork = false;
+        if (plotThread.joinable())
+        {
+            plotDataReady.notify_one();
+            plotThread.join();
+        }
+    }
+
+    void SubmitData(const vector<float>& data)
+    {
+        {
+            std::unique_lock<std::mutex> lk(plotLock);
+            bins = data;
+        }
+        plotDataReady.notify_one();
+    }
+
+private:
+    void PlotLoop()
+    {
+        std::unique_lock<std::mutex> lk(plotLock);
+        while(doWork)
+        {
+            if (plotDataReady.wait_for(lk, std::chrono::milliseconds(2000)) == std::cv_status::timeout)
+            {
+                printf("plot timeout\n");
+                continue;
+            }
+            if (!doWork)
+                break;
+
+            std::unique_lock<std::mutex> glk(globalGnuPlotMutex);
+            plot.write("plot '-' with lines\n");
+            const int fftSize = bins.size();
+            for (int j = fftSize/2; j < fftSize; ++j)
+                plot.writef("%f %f\n", sampleRate*(j-fftSize)/fftSize, bins[j]);
+            for (int j = 0; j < fftSize/2; ++j)
+                plot.writef("%f %f\n", sampleRate*j/fftSize, bins[j]);
+            plot.write("e\n");
+            plot.flush();
+        }
+    }
+
+    GNUPlotPipe plot;
+    std::vector<float> bins;
+    std::condition_variable plotDataReady;
+    std::mutex plotLock;
+    std::thread plotThread;
+    float sampleRate;
+    bool doWork;
+};
+
+class ConstellationPlotter
+{
+public:
+    ConstellationPlotter(int range, bool persistent)
+        : plot(persistent), doWork(false)
+    {
+        plot.writef("set size square\n set xrange[%i:%i]\n set yrange[%i:%i]\n", -range, range, -range, range);
+        plot.flush();
+    }
+    ~ConstellationPlotter()
+    {
+        Stop();
+    }
+
+    void Start()
+    {
+        doWork = true;
+        plotThread = std::thread(&ConstellationPlotter::PlotLoop, this);
+    }
+
+    void Stop()
+    {
+        doWork = false;
+        if (plotThread.joinable())
+        {
+            plotDataReady.notify_one();
+            plotThread.join();
+        }
+    }
+
+    void SubmitData(const vector<complex16_t>& data)
+    {
+        {
+            std::unique_lock<std::mutex> lk(plotLock);
+            samples = data;
+        }
+        plotDataReady.notify_one();
+    }
+
+private:
+    void PlotLoop()
+    {
+        std::unique_lock<std::mutex> lk(plotLock);
+        while(doWork)
+        {
+            if (plotDataReady.wait_for(lk, std::chrono::milliseconds(2000)) == std::cv_status::timeout)
+            {
+                printf("plot timeout\n");
+                continue;
+            }
+            if (!doWork)
+                break;
+
+            std::unique_lock<std::mutex> glk(globalGnuPlotMutex);
+            plot.write("plot '-' with points\n");
+            const int samplesCount = samples.size();
+            for (int j = 0; j < samplesCount; ++j)
+                plot.writef("%i %i\n", samples[j].i, samples[j].q);
+            plot.write("e\n");
+            plot.flush();
+        }
+    }
+
+    GNUPlotPipe plot;
+    std::vector<complex16_t> samples;
+    std::condition_variable plotDataReady;
+    std::mutex plotLock;
+    std::thread plotThread;
+    bool doWork;
 };
 
 int main(int argc, char** argv)
@@ -168,7 +318,6 @@ int main(int argc, char** argv)
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
         device->StreamSetup(stream, chipIndex);
-        device->StreamStart(chipIndex);
     }
     catch ( std::runtime_error &e) {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
@@ -182,9 +331,9 @@ int main(int argc, char** argv)
     signal(SIGINT, intHandler);
 
     const int fftSize = 16384;
-    complex16_t** rxSamples = new complex16_t*[2]; // allocate two channels for simplicity
+    std::vector<complex16_t> rxData[2];
     for (int i=0; i<2; ++i)
-        rxSamples[i] = new complex16_t[fftSize];
+        rxData[i].resize(fftSize);
 
     std::vector<complex16_t> txData;
     int64_t txSent = 0;
@@ -234,17 +383,19 @@ int main(int argc, char** argv)
 
 #ifdef USE_GNU_PLOT
     bool persistPlotWindows = false;
-    GNUPlotPipe gp(persistPlotWindows);
     int range = 32768;
-    gp.writef("set size square\n set xrange[%i:%i]\n set yrange[%i:%i]\n", -range, range, -range, range);
-
-    GNUPlotPipe fftplot(persistPlotWindows);
-    fftplot.writef("set xrange[%f:%f]\n set yrange[%i:%i]\n", -sampleRate/2, sampleRate/2, -120, 0);
+    ConstellationPlotter constellationplot(range, persistPlotWindows);
+    FFTPlotter fftplot(sampleRate, fftSize, persistPlotWindows);
 #endif
 
     SDRDevice::StreamMeta rxMeta;
     SDRDevice::StreamMeta txMeta;
     txMeta.useTimestamp = true;
+    txMeta.timestamp = sampleRate/1000; // send tx samples 1ms after start
+
+    fftplot.Start();
+    constellationplot.Start();
+    device->StreamStart(chipIndex);
     while (!stopProgram)
     {
         if (workTime != 0 && std::chrono::high_resolution_clock::now() - startTime < std::chrono::milliseconds(workTime))
@@ -256,14 +407,17 @@ int main(int argc, char** argv)
         if (tx && toSend > 0)
         {
             int samplesSent = device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
-            txSent += samplesSent;
-            txMeta.timestamp += samplesSent;
+            if (samplesSent > 0)
+            {
+                txSent += samplesSent;
+                txMeta.timestamp += samplesSent;
+            }
         }
 
+        complex16_t* rxSamples[2] = {rxData[0].data(), rxData[1].data()};
         int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
-
 
         // process samples
         totalSamplesReceived += samplesRead;
@@ -303,31 +457,16 @@ int main(int argc, char** argv)
             printf("Samples received: %li, Peak amplitude %.2f dBFS @ %.3f MHz\n",
                 totalSamplesReceived, peakAmplitude, (frequencyLO+peakFrequency)/1e6);
             peakAmplitude = -1000;
-            if (showFFT)
-            {
-    #ifdef USE_GNU_PLOT
-                fftplot.write("plot '-' with lines\n");
-                const float halfSampleRate = sampleRate;
-                for (int j = fftSize/2; j < fftSize; ++j)
-                    fftplot.writef("%f %f\n", halfSampleRate*(j-fftSize)/fftSize, fftBins[j]);
-                for (int j = 0; j < fftSize/2; ++j)
-                    fftplot.writef("%f %f\n", halfSampleRate*j/fftSize, fftBins[j]);
-                fftplot.write("e\n");
-                fftplot.flush();
-    #endif
-            }
-        }
-
-        if (showConstelation && doUpdate)
-        {
 #ifdef USE_GNU_PLOT
-            gp.write("plot '-' with points\n");
-            for (int j = 0; j < samplesRead; ++j)
-                gp.writef("%i %i\n", rxSamples[0][j].i, rxSamples[0][j].q);
-            gp.write("e\n");
-            gp.flush();
+            if (showFFT)
+                fftplot.SubmitData(fftBins);
 #endif
         }
+
+#ifdef USE_GNU_PLOT
+        if (showConstelation && doUpdate)
+            constellationplot.SubmitData(rxData[0]);
+#endif
     }
 #ifdef USE_GNU_PLOT
     // some sleep for GNU plot data to flush, otherwise sometimes cout spams  gnuplot "invalid command"
@@ -336,9 +475,5 @@ int main(int argc, char** argv)
     DeviceRegistry::freeDevice(device);
 
     rxFile.close();
-
-    for (int i=0; i<2; ++i)
-        delete[] rxSamples[i];
-    delete[] rxSamples;
     return 0;
 }
