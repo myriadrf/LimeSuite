@@ -37,7 +37,7 @@ std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle &hint)
     const std::string searchDevName("LimeMM-X8");
     const std::vector<std::string> boardNames = {
         GetDeviceName(LMS_DEV_LIMESDR_MMX8)
-        , "LimeSDR-XTRX"
+        , "LimeSDR-MMX8"
         , searchDevName
     };
     if (!hint.name.empty())
