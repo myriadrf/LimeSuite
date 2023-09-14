@@ -327,6 +327,7 @@ int main(int argc, char** argv)
         stream.rxCount = rx ? 1 : 0; // rx channels count
         stream.rxChannels[0] = 0;
         stream.txCount = tx ? 1 : 0;
+        stream.txChannels[0] = 0;
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
@@ -386,6 +387,8 @@ int main(int argc, char** argv)
     float peakAmplitude = 0;
     float peakFrequency = 0;
     float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx);
+    if (sampleRate <= 0)
+        sampleRate = 1; // sample rate readback not available, assign default value
     float frequencyLO = 0;
 
 #ifdef USE_GNU_PLOT
@@ -400,8 +403,10 @@ int main(int argc, char** argv)
     txMeta.useTimestamp = true;
     txMeta.timestamp = sampleRate/100; // send tx samples 10ms after start
 
-    fftplot.Start();
-    constellationplot.Start();
+    if (showFFT)
+        fftplot.Start();
+    if (showConstelation)
+        constellationplot.Start();
     device->StreamStart(chipIndex);
 
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -459,13 +464,14 @@ int main(int argc, char** argv)
                 m_fftCalcIn[i].i = rxSamples[0][i].q/32768.0;
             }
             kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
-            for (unsigned int i = 1; i<fftSize; ++i)
+            for (unsigned int i = 0; i<fftSize; ++i)
             {
                 float amplitude = ((m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*fftSize));
 
                 float output = amplitude > 0 ? 10*log10(amplitude) : -150;
                 fftBins[i] = output;
-                if (output > peakAmplitude)
+                // exlude DC from amplitude comparison, the 0 bin
+                if (output > peakAmplitude && i > 0)
                 {
                     peakAmplitude = output;
                     peakFrequency = i * sampleRate / fftSize;
