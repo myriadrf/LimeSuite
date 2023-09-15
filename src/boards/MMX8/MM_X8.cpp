@@ -225,6 +225,11 @@ int LimeSDR_MMX8::I2CRead(int addres, uint8_t *dest, uint32_t length)
     return -1;
 }
 
+void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
+{
+    return mSubDevices[index]->GetInternalChip(0);
+}
+
 void LimeSDR_MMX8::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
 {
     for (size_t i=0; i<mSubDevices.size(); ++i)

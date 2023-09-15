@@ -1,5 +1,6 @@
 #include "cli/common.h"
 
+#include "limesuite/LMS7002M.h"
 #include <assert.h>
 #include <cstring>
 
@@ -51,6 +52,8 @@ static int printHelp(void)
     cerr << "    --txoversample\t Transmitter interpolation 1,2,4,8..." << endl;
     cerr << "    --txtestsignal=[0,1]\t Enables transmitter test signal if available" << endl;
 
+    cerr << "    --ini\t Path to LMS7002M .ini configuration file to use as a base" << endl;
+
     return EXIT_SUCCESS;
 }
 
@@ -76,6 +79,7 @@ enum Args
     TXLPF,
     TXOVERSAMPLE,
     TXTESTSIGNAL,
+    INIFILE
 };
 
 int main(int argc, char** argv)
@@ -83,6 +87,7 @@ int main(int argc, char** argv)
     char* devName = nullptr;
     int moduleId = 0;
     bool initializeBoard = false;
+    char* iniFilename = nullptr;
 
     SDRDevice::SDRConfig config;
     config.channel[0].rx.oversample = 2;
@@ -106,6 +111,7 @@ int main(int argc, char** argv)
         {"txlpf", required_argument, 0, Args::TXLPF},
         {"txoversample", required_argument, 0, Args::TXOVERSAMPLE},
         {"txtestsignal", required_argument, 0, Args::TXTESTSIGNAL},
+        {"ini", required_argument, 0, Args::INIFILE},
         {0, 0, 0,  0}
     };
 
@@ -166,6 +172,9 @@ int main(int argc, char** argv)
         case TXTESTSIGNAL:
             config.channel[0].tx.testSignal = stoi(optarg) != 0;
             break;
+        case INIFILE:
+            iniFilename = optarg;
+            break;
         }
     }
 
@@ -202,6 +211,32 @@ int main(int argc, char** argv)
     try {
         if (initializeBoard)
             device->Init();
+        if (iniFilename)
+        {
+            char configFilepath[1024];
+            config.skipDefaults = true;
+            std::string cwd(argv[0]);
+            const size_t slash0Pos = cwd.find_last_of("/\\");
+            if (slash0Pos != std::string::npos)
+                cwd.resize(slash0Pos);
+
+             if(iniFilename[0] != '/') // is not global path
+                sprintf(configFilepath, "%s/%s", cwd.c_str(), iniFilename);
+            else
+                sprintf(configFilepath, "%s", iniFilename);
+
+            LMS7002M* chip = static_cast<LMS7002M*>(device->GetInternalChip(moduleId));
+            if (!chip)
+            {
+                cerr << "Failed to get internal chip: " << moduleId << endl;
+                return EXIT_FAILURE;
+            }
+            if (chip->LoadConfig(configFilepath) != 0)
+            {
+                cerr << "Error loading file: " << configFilepath << endl;
+                return -1;
+            }
+        }
         device->Configure(config, moduleId);
     } catch (std::runtime_error &e) {
         cerr << "Config failed: " << e.what() << endl;

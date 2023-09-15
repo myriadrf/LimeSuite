@@ -68,7 +68,7 @@ public:
     virtual void SetDataLogCallback(DataCallbackType callback) {};
     virtual void SetMessageLogCallback(LogCallbackType callback) {};
 
-    virtual void *GetInternalChip(uint32_t index) { return nullptr; };
+    virtual void *GetInternalChip(uint32_t index) override;
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
                                       double rxPhase) override;
 
