@@ -7,7 +7,7 @@
 #include "LitePCIe.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"
-#include "FPGA_X3.h"
+#include "FPGA_XTRX.h"
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 
@@ -126,7 +126,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::LitePCIe* control, lime::LitePCIe* stream)
 
     desc.customParameters.push_back(cp_vctcxo_dac);
 
-    mFPGA = new lime::FPGA_X3(spi_FPGA, spi_LMS7002M);
+    mFPGA = new lime::FPGA_XTRX(spi_FPGA, spi_LMS7002M);
     mFPGA->SetConnection(&mFPGAcomms);
 
     RFSOCDescriptor soc;
