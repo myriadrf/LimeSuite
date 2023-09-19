@@ -438,7 +438,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
             if (runTx) {
                 txMeta.timestamp = rxTS + 1020*128;
-                pthis->device->StreamTx(chipIndex, src, fftSize, &txMeta);
+                pthis->device->StreamTx(chipIndex, buffers, fftSize, &txMeta);
             }
 
             if(pthis->captureSamples.load())
