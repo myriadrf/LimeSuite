@@ -445,7 +445,7 @@ void LimeSDR_XTRX::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPh
 
 void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
-    if(txInterpolation/rxDecimation > 4)
+    if (rxDecimation != 0 && txInterpolation/rxDecimation > 4)
         throw std::logic_error(strFormat("TxInterpolation(%i)/RxDecimation(%i) should not be more than 4", txInterpolation, rxDecimation));
     uint8_t oversample = rxDecimation;
     const bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
@@ -483,7 +483,10 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
     LMS7002M* mLMSChip = mLMSChips[0];
     mLMSChip->SetFrequencyCGEN(cgenFreq);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2 - std::log2(txInterpolation/rxDecimation));
+    if (rxDecimation != 0)
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2 - std::log2(txInterpolation/rxDecimation));
+    else
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
