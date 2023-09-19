@@ -66,7 +66,7 @@ public:
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback) {};
-    virtual void SetMessageLogCallback(LogCallbackType callback) {};
+    virtual void SetMessageLogCallback(LogCallbackType callback) override;
 
     virtual void *GetInternalChip(uint32_t index) override;
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,

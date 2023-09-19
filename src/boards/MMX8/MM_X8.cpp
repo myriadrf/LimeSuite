@@ -225,6 +225,12 @@ int LimeSDR_MMX8::I2CRead(int addres, uint8_t *dest, uint32_t length)
     return -1;
 }
 
+void LimeSDR_MMX8::SetMessageLogCallback(LogCallbackType callback)
+{
+    for (size_t i=0; i<mSubDevices.size(); ++i)
+        mSubDevices[i]->SetMessageLogCallback(callback);
+}
+
 void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
 {
     return mSubDevices[index]->GetInternalChip(0);
