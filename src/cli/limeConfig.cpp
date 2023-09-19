@@ -42,12 +42,14 @@ static int printHelp(void)
     cerr << "    --samplerate\t Sampling rate in Hz" << endl;
     cerr << "    --rxen=[0,1]\t Enable receiver" << endl;
     cerr << "    --rxlo\t\t Receiver center frequency in Hz" << endl;
+    cerr << "    --rxpath\t\t Receiver antenna path" << endl;
     cerr << "    --rxlpf\t\t Receiver low pass filter bandwidth in Hz" << endl;
     cerr << "    --rxoversample\t Receiver decimation 1,2,4,8..." << endl;
     cerr << "    --rxtestsignal=[0,1]\t Enables receiver test signal if available" << endl;
 
     cerr << "    --txen=[0,1]\t\t Enable transmitter" << endl;
     cerr << "    --txlo\t\t Transmitter center frequency in Hz" << endl;
+    cerr << "    --txpath\t\t Transmitter antenna path" << endl;
     cerr << "    --txlpf\t\t Transmitter low pass filter bandwidth in Hz" << endl;
     cerr << "    --txoversample\t Transmitter interpolation 1,2,4,8..." << endl;
     cerr << "    --txtestsignal=[0,1]\t Enables transmitter test signal if available" << endl;
@@ -103,11 +105,13 @@ int main(int argc, char** argv)
         {"samplerate", required_argument, 0, Args::SAMPLERATE},
         {"rxen", required_argument, 0, Args::RXEN},
         {"rxlo", required_argument, 0, Args::RXLO},
+        {"rxpath", required_argument, 0, Args::RXPATH},
         {"rxlpf", required_argument, 0, Args::RXLPF},
         {"rxoversample", required_argument, 0, Args::RXOVERSAMPLE},
         {"rxtestsignal", required_argument, 0, Args::RXTESTSIGNAL},
         {"txen", required_argument, 0, Args::TXEN},
         {"txlo", required_argument, 0, Args::TXLO},
+        {"txpath", required_argument, 0, Args::TXPATH},
         {"txlpf", required_argument, 0, Args::TXLPF},
         {"txoversample", required_argument, 0, Args::TXOVERSAMPLE},
         {"txtestsignal", required_argument, 0, Args::TXTESTSIGNAL},
@@ -148,6 +152,9 @@ int main(int argc, char** argv)
         case RXLO:
             config.channel[0].rx.centerFrequency = stof(optarg);
             break;
+        case RXPATH:
+            config.channel[0].rx.path = stoi(optarg);
+            break;
         case RXLPF:
             config.channel[0].rx.lpf = stof(optarg);
             break;
@@ -162,6 +169,9 @@ int main(int argc, char** argv)
             break;
         case TXLO:
             config.channel[0].tx.centerFrequency = stof(optarg);
+            break;
+        case TXPATH:
+            config.channel[0].tx.path = stoi(optarg);
             break;
         case TXLPF:
             config.channel[0].tx.lpf = stof(optarg);
