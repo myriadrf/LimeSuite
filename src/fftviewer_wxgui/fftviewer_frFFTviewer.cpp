@@ -168,6 +168,8 @@ void fftviewer_frFFTviewer::StartStreaming()
     chkCaptureToFile->Disable();
     spinCaptureCount->Disable();
     lmsIndex = cmbRFSOC->GetSelection();
+    if (lmsIndex < 0)
+        return;
     if (mStreamRunning.load() == true)
         return;
     switch (cmbMode->GetSelection()%2)
@@ -385,7 +387,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             srcI[j] = cos(j*2*3.141592/8);// = {1.0, 0.0, -1.0, 0.0};
             srcQ[j] = sin(j*2*3.141592/8);// = {-1.0, 0.0, 1.0, 0.0};
         }
-        
+
         float ampl = 1.0;//(j+1)*(1.0/(txPacketCount+1));
         for(uint32_t k=0; k<fftSize; ++k)
         {
@@ -596,8 +598,13 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 void fftviewer_frFFTviewer::SetNyquistFrequency()
 {
     double freqHz = 20e6;
+    int index = cmbRFSOC->GetSelection();
+    if (index < 0)
+        return;
     if (device)
-        freqHz = device->GetSampleRate(cmbRFSOC->GetSelection(), TRXDir::Rx);
+        freqHz = device->GetSampleRate(index, TRXDir::Rx);
+    if (freqHz <= 0)
+        return;
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
     mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
 }
