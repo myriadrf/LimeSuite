@@ -60,6 +60,15 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
         mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i]);
         const SDRDevice::Descriptor &d = mSubDevices[i]->GetDescriptor();
 
+        for (const auto &soc : d.rfSOC)
+        {
+            RFSOCDescriptor temp = soc;
+            char ctemp[512];
+            sprintf(ctemp, "%s@%li", temp.name.c_str(), i+1);
+            temp.name = std::string(ctemp);
+            desc.rfSOC.push_back(temp);
+        }
+
         for (const auto &s : d.spiSlaveIds)
         {
             char ctemp[512];

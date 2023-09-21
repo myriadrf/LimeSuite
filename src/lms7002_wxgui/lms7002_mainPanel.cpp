@@ -268,7 +268,7 @@ void lms7002_mainPanel::Initialize(SDRDevice *pControl)
 
         cmbLmsDevice->Clear();
         for(int i=0; i<socCount; ++i)
-            cmbLmsDevice->Append( wxString::Format("LMS %i", i+1));
+            cmbLmsDevice->Append(sdrDevice->GetDescriptor().rfSOC[i].name);
         cmbLmsDevice->SetSelection( 0 );
         cmbLmsDevice->Show();
     }

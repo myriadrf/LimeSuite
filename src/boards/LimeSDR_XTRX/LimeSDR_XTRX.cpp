@@ -76,6 +76,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::IComms* spiRFsoc, lime::IComms* spiFPGA, lime::
 
     RFSOCDescriptor soc;
     // LMS#1
+    soc.name = "LMS7002M";
     soc.channelCount = 2;
     soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
     soc.txPathNames = {"None", "Band1", "Band2"};
