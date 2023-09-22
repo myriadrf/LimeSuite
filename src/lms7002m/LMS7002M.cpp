@@ -607,7 +607,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     @param filename Configuration source file
     @return 0-success, other-failure
 */
-int LMS7002M::LoadConfig(const char* filename)
+int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
 {
 	ifstream f(filename);
     if (f.good() == false) //file not found
@@ -714,6 +714,13 @@ int LMS7002M::LoadConfig(const char* filename)
     }
 
     ResetLogicregisters();
+
+    if (tuneDynamicValues)
+    {
+        TuneVCO(VCO_CGEN);
+        TuneVCO(VCO_SXT);
+        TuneVCO(VCO_SXR);
+    }
     this->SetActiveChannel(ChA);
     return 0;
 }

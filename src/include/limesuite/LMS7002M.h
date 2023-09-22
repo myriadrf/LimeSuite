@@ -159,7 +159,7 @@ public:
     int SoftReset();
     int ResetLogicregisters();
 
-    int LoadConfig(const char* filename);
+    int LoadConfig(const char* filename, bool tuneDynamicValues = true);
     int SaveConfig(const char* filename);
     ///@}
 
