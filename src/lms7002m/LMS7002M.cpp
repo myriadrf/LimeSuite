@@ -720,6 +720,8 @@ int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
         TuneVCO(VCO_CGEN);
         TuneVCO(VCO_SXT);
         TuneVCO(VCO_SXR);
+        if (mCallback_onCGENChange)
+            return mCallback_onCGENChange(mCallback_onCGENChange_userData);
     }
     this->SetActiveChannel(ChA);
     return 0;

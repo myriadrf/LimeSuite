@@ -745,10 +745,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
-    wxCommandEvent evt;
-    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
-    //device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
-    wxPostEvent(this, evt);
     wxCommandEvent cmd;
     cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));
     cmd.SetEventType(LOG_MESSAGE);

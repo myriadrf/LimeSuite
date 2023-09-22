@@ -134,7 +134,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     programmer = new LMS_Programing_wxgui(this, wxNewId());
     AddModule(programmer, "Programming");
 
-    //Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     int x,y1,y2;
     m_scrolledWindow1->GetVirtualSize(&x,&y1);
     mMiniLog->GetSize(nullptr,&y2);
