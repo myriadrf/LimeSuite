@@ -51,7 +51,7 @@ pnlXTRX::pnlXTRX(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSi
     Connect(TDDCntrl->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlXTRX::OnInputChange), NULL, this);
 
     wxStaticBoxSizer *mainBoxSizer;
-    mainBoxSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("RF controls")), wxHORIZONTAL);
+    mainBoxSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxString::Format("RF controls %s", name)), wxHORIZONTAL);
     mainBoxSizer->Add(mainSizer, 0, 0, 5);
 
     mainBoxSizer->Fit(this);
@@ -62,7 +62,7 @@ pnlXTRX::pnlXTRX(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSi
     Bind(WRITE_ALL_VALUES, &pnlXTRX::OnWriteAll, this, this->GetId());
 }
 
-void pnlXTRX::Initialize(lime::SDRDevice *dev)
+void pnlXTRX::Initialize(lime::SDRDevice *dev, const string& spiSlaveName)
 {
     chipSelect = -1;
     device = dev;
@@ -70,10 +70,9 @@ void pnlXTRX::Initialize(lime::SDRDevice *dev)
         return;
 
     const SDRDevice::Descriptor &desc = device->GetDescriptor();
-    const std::string targetSPI = "FPGA";
     for (const auto &nameIds : desc.spiSlaveIds)
     {
-        if (nameIds.first == targetSPI)
+        if (nameIds.first == spiSlaveName)
         {
             chipSelect = nameIds.second;
             break;
@@ -132,7 +131,7 @@ int pnlXTRX::LMS_ReadFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t
         *val = miso & 0xFFFF;
         return 0;
     }
-    catch (...) 
+    catch (...)
     {
         return -1;
     }

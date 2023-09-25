@@ -253,16 +253,26 @@ void LimeSDR_MMX8::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPh
 
 int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
-    // PCIE_CSR_Pipe pipe(*mControlPort);
-    // return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
-    return -1;
+    int ret = 0;
+    for (int i=0; i<count; ++i)
+    {
+        int subModuleIndex = (ids[i] >> 8)-1;
+        int id = ids[i] & 0xFF;
+        ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, units);
+    }
+    return ret;
 }
 
 int LimeSDR_MMX8::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
 {
-    // PCIE_CSR_Pipe pipe(*mControlPort);
-    // return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
-    return -1;
+    int ret = 0;
+    for (int i=0; i<count; ++i)
+    {
+        int subModuleIndex = (ids[i] >> 8)-1;
+        int id = ids[i] & 0xFF;
+        ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, &units[i]);
+    }
+    return ret;
 }
 
 bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)

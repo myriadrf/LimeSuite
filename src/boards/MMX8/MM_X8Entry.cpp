@@ -148,7 +148,7 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle &handle)
     LitePCIe* control = new LitePCIe();
     std::vector<LitePCIe*> trxStreams(8);
     std::vector<IComms*> controls(8);
-    std::vector<IComms*> fpga(9);
+    std::vector<IComms*> fpga(8);
     for (size_t i=0; i<controls.size(); ++i)
     {
         controls[i] = new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i+1);
