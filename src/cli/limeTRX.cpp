@@ -61,6 +61,8 @@ static int printHelp(void)
     cerr << "    -f, --fft\t\t Display Rx FFT plot" << endl;
     cerr << "    --contellation\t\t Display IQ constellation plot" << endl;
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
+    cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
+    cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;
 
     return EXIT_SUCCESS;
 }
@@ -77,7 +79,9 @@ enum Args
     FFT = 'f',
     CONSTELLATION = 'x',
     LOG = 'l',
-    LOOPTX = 'r'
+    LOOPTX = 'r',
+    MIMO = 200,
+    REPEATER
 };
 
 class FFTPlotter
@@ -239,6 +243,9 @@ int main(int argc, char** argv)
     int64_t samplesToCollect = 0;
     int64_t workTime = 0;
     int chipIndex = 0;
+    int channelCount = 1;
+    bool repeater = false;
+    int64_t repeaterDelay = 0;
     static struct option long_options[] = {
         {"help", no_argument, 0, Args::HELP},
         {"device", required_argument, 0, Args::DEVICE},
@@ -251,6 +258,8 @@ int main(int argc, char** argv)
         {"fft", no_argument, 0, Args::FFT},
         {"constellation", no_argument, 0, Args::CONSTELLATION},
         {"log", required_argument, 0, Args::LOG},
+        {"mimo", optional_argument, 0, Args::MIMO},
+        {"repeater", optional_argument, 0, Args::REPEATER},
         {0, 0, 0,  0}
     };
 
@@ -288,6 +297,17 @@ int main(int argc, char** argv)
         case Args::LOG:
             if (optarg != NULL) {logVerbosity = strToLogLevel(optarg); }
             break;
+        case Args::MIMO:
+            if (optarg != NULL)
+                channelCount = stoi(optarg);
+            else
+                channelCount = 2;
+            break;
+        case Args::REPEATER:
+            repeater = true;
+            tx = true;
+            if (optarg != NULL) {repeaterDelay = stoi(optarg); }
+            break;
         }
     }
 
@@ -324,10 +344,12 @@ int main(int argc, char** argv)
     try {
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = rx ? 1 : 0; // rx channels count
-        stream.rxChannels[0] = 0;
-        stream.txCount = tx ? 1 : 0;
-        stream.txChannels[0] = 0;
+        stream.rxCount = rx ? channelCount : 0; // rx channels count
+        for (int i=0; i<channelCount; ++i)
+            stream.rxChannels[i] = i;
+        stream.txCount = tx ? channelCount : 0;
+        for (int i=0; i<channelCount; ++i)
+            stream.txChannels[i] = i;
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
@@ -421,8 +443,9 @@ int main(int argc, char** argv)
             break;
 
         int toSend = txData.size()-txSent > fftSize ? fftSize : txData.size()-txSent;
-        if (tx)
-        {   if (loopTx && toSend == 0)
+        if (tx && !repeater)
+        {
+            if (loopTx && toSend == 0)
             {
                 txSent = 0;
                 toSend = txData.size()-txSent > fftSize ? fftSize : txData.size()-txSent;
@@ -443,6 +466,14 @@ int main(int argc, char** argv)
         int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
+
+        if (tx && repeater)
+        {
+            txMeta.timestamp = rxMeta.timestamp+samplesRead+repeaterDelay;
+            txMeta.useTimestamp = true;
+            txMeta.flush = true;
+            int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesRead, &txMeta);
+        }
 
         // process samples
         totalSamplesReceived += samplesRead;
