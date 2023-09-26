@@ -507,35 +507,41 @@ int main(int argc, char** argv)
 
         if (doUpdate)
         {
-            for (unsigned i = 0; i < fftSize; ++i)
-            {
-                m_fftCalcIn[i].r = rxSamples[0][i].i/32768.0;
-                m_fftCalcIn[i].i = rxSamples[0][i].q/32768.0;
-            }
-            kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
-            for (unsigned int i = 0; i<fftSize; ++i)
-            {
-                float amplitude = ((m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*fftSize));
-
-                float output = amplitude > 0 ? 10*log10(amplitude) : -150;
-                fftBins[i] = output;
-                // exlude DC from amplitude comparison, the 0 bin
-                if (output > peakAmplitude && i > 0)
-                {
-                    peakAmplitude = output;
-                    peakFrequency = i * sampleRate / fftSize;
-                }
-            }
-            if (peakFrequency > sampleRate / 2)
-                peakFrequency = peakFrequency - sampleRate;
-
-            printf("Samples received: %li, Peak amplitude %.2f dBFS @ %.3f MHz\n",
-                totalSamplesReceived, peakAmplitude, (frequencyLO+peakFrequency)/1e6);
-            peakAmplitude = -1000;
-#ifdef USE_GNU_PLOT
             if (showFFT)
+            {
+                for (unsigned i = 0; i < fftSize; ++i)
+                {
+                    m_fftCalcIn[i].r = rxSamples[0][i].i/32768.0;
+                    m_fftCalcIn[i].i = rxSamples[0][i].q/32768.0;
+                }
+                kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
+                for (unsigned int i = 0; i<fftSize; ++i)
+                {
+                    float amplitude = ((m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*fftSize));
+
+                    float output = amplitude > 0 ? 10*log10(amplitude) : -150;
+                    fftBins[i] = output;
+                    // exlude DC from amplitude comparison, the 0 bin
+                    if (output > peakAmplitude && i > 0)
+                    {
+                        peakAmplitude = output;
+                        peakFrequency = i * sampleRate / fftSize;
+                    }
+                }
+                if (peakFrequency > sampleRate / 2)
+                    peakFrequency = peakFrequency - sampleRate;
+
+                printf("Samples received: %li, Peak amplitude %.2f dBFS @ %.3f MHz\n",
+                    totalSamplesReceived, peakAmplitude, (frequencyLO+peakFrequency)/1e6);
+                peakAmplitude = -1000;
+#ifdef USE_GNU_PLOT
                 fftplot.SubmitData(fftBins);
 #endif
+            }
+            else
+            {
+                printf("Samples received: %li\n", totalSamplesReceived);
+            }
         }
 
 #ifdef USE_GNU_PLOT
