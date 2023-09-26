@@ -63,6 +63,7 @@ static int printHelp(void)
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
     cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
     cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;
+    cerr << "    --linkformat [I16, I12]\t\t Data transfer format" << endl;
 
     return EXIT_SUCCESS;
 }
@@ -81,7 +82,8 @@ enum Args
     LOG = 'l',
     LOOPTX = 'r',
     MIMO = 200,
-    REPEATER
+    REPEATER,
+    LINKFORMAT
 };
 
 class FFTPlotter
@@ -246,6 +248,7 @@ int main(int argc, char** argv)
     int channelCount = 1;
     bool repeater = false;
     int64_t repeaterDelay = 0;
+    SDRDevice::StreamConfig::DataFormat linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
     static struct option long_options[] = {
         {"help", no_argument, 0, Args::HELP},
         {"device", required_argument, 0, Args::DEVICE},
@@ -260,6 +263,7 @@ int main(int argc, char** argv)
         {"log", required_argument, 0, Args::LOG},
         {"mimo", optional_argument, 0, Args::MIMO},
         {"repeater", optional_argument, 0, Args::REPEATER},
+        {"linkFormat", required_argument, 0, Args::LINKFORMAT},
         {0, 0, 0,  0}
     };
 
@@ -308,6 +312,20 @@ int main(int argc, char** argv)
             tx = true;
             if (optarg != NULL) {repeaterDelay = stoi(optarg); }
             break;
+        case Args::LINKFORMAT:
+            if (optarg != NULL)
+            {
+                if (strcmp(optarg, "I16") == 0)
+                    linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
+                else if (strcmp(optarg, "I12") == 0)
+                    linkFormat = SDRDevice::StreamConfig::DataFormat::I12;
+                else
+                {
+                    cerr << "Invalid linkFormat " << optarg << std::endl;
+                    return -1;
+                }
+            }
+            break;
         }
     }
 
@@ -352,7 +370,7 @@ int main(int argc, char** argv)
             stream.txChannels[i] = i;
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
-        stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
+        stream.linkFormat = linkFormat;
         device->StreamSetup(stream, chipIndex);
     }
     catch ( std::runtime_error &e) {
