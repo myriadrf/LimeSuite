@@ -13,6 +13,15 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
+### v23.09.0
+
+\li SoapyLMS7: added reference clock and clock source functions
+\li Fix usage of -march=native compile flag
+\li Fix hard-to-read log text on dark mode themes
+\li Fix OpenGL graph on Retina displays
+\li GCC and MSVC warning fixes
+\li Fix CMAKE_AUTOSET_INSTALL_RPATH option
+
 ### v22.09.1
 
 \li Bump API version info

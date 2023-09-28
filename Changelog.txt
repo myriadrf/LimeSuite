@@ -1,9 +1,20 @@
+Release 23.09.0 (2023-09-28)
+==========================
+
+- API version info in src/VersionInfo.h
+- SoapyLMS7: added reference clock and clock source functions
+- Fix usage of -march=native compile flag
+- Fix hard-to-read log text on dark mode themes
+- Fix OpenGL graph on Retina displays
+- GCC and MSVC warning fixes
+- Fix CMAKE_AUTOSET_INSTALL_RPATH option
+
 Release 22.09.1 (2022-10-15)
 ==========================
 
 Minor updates missed in previous release:
 
-- API version info in src/VersionInfo.h 
+- API version info in src/VersionInfo.h
 - Debian packaging
 - Doxygen change log
 
@@ -132,7 +143,7 @@ Release 19.04.0 (2019-05-09)
 
 LimeSuite library changes:
 - Added support for LimeNet-Micro v2.1
-- Fixed Tx ch.B calibration when Rx ch.B is disabled 
+- Fixed Tx ch.B calibration when Rx ch.B is disabled
 - Added save and restore of analog DC/IQ calibration values when saving/loading INI file
 - Fixed Rx only mode not working on LimeSDR-USB with sample rate <2.5 MSps
 - Fixed Rx only mode not working on LimeSDR-USB with sample rate <2.5 MSps
@@ -159,7 +170,7 @@ LimeSuite library changes:
 - Add initial support for LimeNET-Micro
 - Add auto RF path selection option (LMS_PATH_AUTO) for LMS_SetAntenna()
 - Remove LMS_Disconnect() and LMS_IsOpen() functions from API
-- Add support for sending smaller Tx packets (improve end of burst handling) 
+- Add support for sending smaller Tx packets (improve end of burst handling)
 - Change Rx RF path set by LMS_Init() for LimeSDR-USB to LNA_L
 - Disable Tx channel in LMS_Init()
 
@@ -194,7 +205,7 @@ LimeSuite library changes:
 - Add FPGA register cache
 - Add connection remote (disabled by default)
 - Fix incorrect TBB gain control behaviour under certain conditions
-- Disable GFIR coefficient ordering based on oversampling when coefficient count is to high 
+- Disable GFIR coefficient ordering based on oversampling when coefficient count is to high
 - Remove late timestamp reset commands from Rx streaming loop
 
 LimeSuiteGUI:
@@ -276,8 +287,8 @@ LMS API changes:
 - Changed firmware/gateware programming functions
 - Changed lms_dev_info_t structure
 - LMS_SetLOFrequency() now attempts to set different frequencies for A/B channels using NCO
-- Fix Rx NCO direction flip (downconvert flag used to set Rx NCO to upconvert) 
-- Disabling LPF is now same as setting it to maximum bandwidth 
+- Fix Rx NCO direction flip (downconvert flag used to set Rx NCO to upconvert)
+- Disabling LPF is now same as setting it to maximum bandwidth
 - Extented gain range for LMS_SetGaindB()
 
 Other changes:
@@ -319,7 +330,7 @@ LMS API changes:
 
 LimeSuiteGUI changes:
 - Added scrollbars
-- Fix multiple crashes that occured when board is not connected 
+- Fix multiple crashes that occured when board is not connected
 - Bring window to front when trying to open already opened window
 - Some cosmetic GUI changes
 - Added default config button to GUI
@@ -339,7 +350,7 @@ LMS API changes:
 - Fixed WriteStream() end of burst flushing in fifo.h
 - Fixed abs() overload compiler issue in lms7_device.cpp
 - Removed private include in mcu_program/host_src/main.cpp
-- Fixed error checking bug causing compilation error on MacOS in LMS_GetGaindB() and LMS_GetNormalizedGain() 
+- Fixed error checking bug causing compilation error on MacOS in LMS_GetGaindB() and LMS_GetNormalizedGain()
 
 Other changes:
 - LimeSDR v1.4 updated to r2.10 gateware
@@ -351,10 +362,10 @@ LimeSuite library changes:
 - Added transfer size adjustment based on sample rate
 - Improved MCU calibration procedures
 - Initial support for LimeSDR-QPCIe
-- Changed format to 16 bit for data transfer when float (non-native) format is selected in API 
+- Changed format to 16 bit for data transfer when float (non-native) format is selected in API
 
 LMS API changes:
-- Added external reference clock(LMS_CLOCK_EXTREF) configuration to LMS_SetClockFreq()  
+- Added external reference clock(LMS_CLOCK_EXTREF) configuration to LMS_SetClockFreq()
 - Change LMS_SetGaindB() and LMS_SetNormalizedGain() to select optimal TBB gain for TX
 - Fixed LMS_GetStreamStatus() not returning some status values
 
