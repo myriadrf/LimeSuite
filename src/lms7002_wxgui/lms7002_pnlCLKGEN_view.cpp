@@ -770,18 +770,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         return ;
     }
 
-    // int status;
-    // TODO:
-    // try {
-    //     if (this->chkAutoPhase->GetValue())
-    //         device->SetFPGAInterfaceFreq(interp, decim, 999, 999);
-    //     else
-    //         device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
-    // }
-    // catch (...) {
-    //     wxMessageBox(_("CLKGEN: failed to set interface frequency"));
-    // }
-
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
@@ -804,18 +792,6 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
         wxMessageBox(wxString(_("CLKGEN VCO Tune failed")));
         return ;
     }
-
-    // int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-    // int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-
-    // int status;
-    // TODO:
-    // if (this->chkAutoPhase->GetValue())
-    //     status = device->SetFPGAInterfaceFreq(interp, decim);
-    // else
-    //     status = device->SetFPGAInterfaceFreq(interp, decim, txPhase->GetValue(), rxPhase->GetValue());
-    //if (status != 0)
-    wxMessageBox(_("CLKGEN VCO Tune: failed to set interface frequency"));
 
     uint16_t value = ReadParam(LMS7param(CSW_VCO_CGEN));
     cmbCSW_VCO_CGEN->SetValue(value);
