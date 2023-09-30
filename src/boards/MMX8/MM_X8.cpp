@@ -99,6 +99,9 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
             customParameterToDevice[p.id] = mSubDevices[i];
         }
 
+        char ctemp[256];
+        sprintf(ctemp, "%s#%li", d.socTree->name.c_str(), i+1);
+        d.socTree->name = std::string(ctemp);
         desc.socTree->childs.push_back(d.socTree);
     }
 }
