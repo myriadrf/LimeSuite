@@ -2,6 +2,8 @@
 
 /// Interface for adding additional GUI modules of SoC
 
+#include <wx/frame.h>
+
 namespace lime {
 class SDRDevice;
 }
