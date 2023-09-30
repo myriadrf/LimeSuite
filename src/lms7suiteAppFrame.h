@@ -6,7 +6,8 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
-
+#include <wx/treectrl.h>
+#include <wx/treebase.h>
 #include <wx/string.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -31,6 +32,7 @@
 #include <map>
 #include "IModuleFrame.h"
 #include "pnlBoardControls.h"
+#include "GUI/ISOCPanel.h"
 
 #include "GUI/DeviceConnectionPanel.h"
 
@@ -47,40 +49,19 @@ class LMS7SuiteAppFrame : public wxFrame
       // Handlers for AppFrame events.
       void OnClose(wxCloseEvent &event);
       void OnQuit(wxCommandEvent &event);
-      // void OnShowConnectionSettings( wxCommandEvent& event );
       void OnAbout(wxCommandEvent &event);
       void OnDeviceHandleChange(wxCommandEvent &event);
       void HandleLMSevent(wxCommandEvent &event);
       void OnModuleClose(wxCloseEvent &event);
       void OnShowModule(wxCommandEvent &event);
-      // void OnADF4002Close(wxCloseEvent& event);
-      // void OnShowADF4002(wxCommandEvent& event);
-      // void OnSi5351Close(wxCloseEvent& event);
-      // void OnShowSi5351C(wxCommandEvent& event);
-      // void OnProgramingClose(wxCloseEvent& event);
-      // void OnShowPrograming(wxCommandEvent& event);
-      // void OnFPGAcontrolsClose(wxCloseEvent& event);
-      // void OnShowFPGAcontrols(wxCommandEvent& event);
-      // void OnDeviceInfoClose(wxCloseEvent& event);
-      // void OnShowDeviceInfo(wxCommandEvent& event);
-      // void OnSPIClose(wxCloseEvent& event);
-      // void OnShowSPI(wxCommandEvent& event);
-      // void OnBoardControlsClose(wxCloseEvent& event);
-      // void OnAPIClose(wxCloseEvent& event);
-      // void OnShowBoardControls(wxCommandEvent& event);
-      // void OnChangeCacheSettings(wxCommandEvent& event);
-      // void OnLmsChanged(wxCommandEvent& event);
-      // void OnShowAPICalls( wxCommandEvent& event );
-      // void OnShowLimeRFE(wxCommandEvent& event);
       void OnDeviceDisconnect();
+
+      void DeviceTreeSelectionChanged(wxTreeEvent &event);
     public:
-		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
 
         virtual ~LMS7SuiteAppFrame();
-        // void UpdateVisiblePanel() const;
         static int m_lmsSelection;
-        // void OnLimeRFEClose(wxCloseEvent& event);
       protected:
         static void OnGlobalLogEvent(const lime::LogLevel level, const char *message);
         static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
@@ -103,6 +84,7 @@ class LMS7SuiteAppFrame : public wxFrame
             idMenuAbout
         };
 
+        wxTreeCtrl* deviceTree;
         wxMenuBar *mbar;
         wxMenu *fileMenu;
         wxMenu *mnuOptions;
@@ -113,18 +95,9 @@ class LMS7SuiteAppFrame : public wxFrame
         wxFlexGridSizer *mainSizer;
         wxScrolledWindow *m_scrolledWindow1;
         wxFlexGridSizer *contentSizer;
-        lms7002_mainPanel *mContent;
-        //       ADF4002_wxgui* adfGUI;
-
-        //       Si5351C_wxgui* si5351gui;
-
+        ISOCPanel *mContent;
         LMS_Programing_wxgui* programmer;
-        //       FPGAcontrols_wxgui* fpgaControls;
-        //       dlgDeviceInfo* deviceInfo;
-        //       SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
-        //       pnlAPI* api;
-        // limeRFE_wxgui* limeRFEwin;
         lime::DeviceConnectionPanel* pnlDeviceConnection;
 };
 

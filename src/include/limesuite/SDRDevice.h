@@ -15,6 +15,7 @@
 
 namespace lime {
 
+class DeviceNode;
 /// SDRDevice can have multiple modules (RF chips), that can operate independently
 
 class LIME_API SDRDevice
@@ -91,6 +92,7 @@ class LIME_API SDRDevice
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
         std::vector<DataStorage> memoryDevices;
+        DeviceNode* socTree;
     };
 
     struct StreamStats

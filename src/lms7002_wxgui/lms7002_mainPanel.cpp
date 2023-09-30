@@ -33,7 +33,7 @@ using namespace lime;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPoint &pos,
                                      const wxSize &size, long style)
-    : wxPanel(parent, id, pos, size, style), sdrDevice(nullptr)
+    : ISOCPanel(parent, id, pos, size, style), soc(nullptr)
 {
     wxFlexGridSizer *mainSizer;
     mainSizer = new wxFlexGridSizer(3, 1, 0, 0);
@@ -125,9 +125,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
 
     tabsNotebook = new wxNotebook(this, ID_TABS_NOTEBOOK);
 
-    coarseConfigTab = new SDRConfiguration_view(tabsNotebook, wxNewId());
-    tabsNotebook->AddPage(coarseConfigTab, wxT("Coarse Setup"), true);
-
     ILMS7002MTab *tab;
     tab = new lms7002_pnlCalibrations_view(tabsNotebook, ID_TAB_CALIBRATIONS);
     tabsNotebook->AddPage(tab, _("Calibration"), false);
@@ -210,7 +207,7 @@ lms7002_mainPanel::~lms7002_mainPanel()
 
 void lms7002_mainPanel::UpdateVisiblePanel()
 {
-    if (sdrDevice == nullptr)
+    if (soc == nullptr)
         return;
 
     wxWindow* currentPage = tabsNotebook->GetCurrentPage();
@@ -248,36 +245,23 @@ void lms7002_mainPanel::UpdateVisiblePanel()
 #endif
 }
 
-void lms7002_mainPanel::Initialize(SDRDevice *pControl)
+void lms7002_mainPanel::Initialize(lime::LMS7002M* socPtr)
 {
-    sdrDevice = pControl;
-    if (sdrDevice == nullptr)
+    soc = socPtr;
+    if (soc == nullptr)
     {
-        coarseConfigTab->Setup(nullptr);
         for (auto &tab : mTabs)
             tab.second->Initialize(nullptr);
         return;
     }
     cmbLmsDevice->SetSelection(0);
+    cmbLmsDevice->Hide();
+    int ch = soc->GetActiveChannelIndex();
+    rbChannelA->SetValue(ch == 0);
+    rbChannelB->SetValue(ch == 1);
 
-    coarseConfigTab->Setup(sdrDevice);
-    const int socCount = sdrDevice->GetDescriptor().rfSOC.size();
-    if (socCount > 1)
-    {
-
-        cmbLmsDevice->Clear();
-        for(int i=0; i<socCount; ++i)
-            cmbLmsDevice->Append(sdrDevice->GetDescriptor().rfSOC[i].name);
-        cmbLmsDevice->SetSelection( 0 );
-        cmbLmsDevice->Show();
-    }
-    else
-        cmbLmsDevice->Hide();
-    rbChannelA->SetValue(true);
-    rbChannelB->SetValue(false);
-    LMS7002M* chip = GetSelectedChip();
     for (auto &tab : mTabs)
-        tab.second->Initialize(chip);
+        tab.second->Initialize(soc);
     UpdateGUI();
     Layout();
 }
@@ -285,7 +269,7 @@ void lms7002_mainPanel::Initialize(SDRDevice *pControl)
 void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
     try {
-        sdrDevice->Reset();
+        soc->ResetChip();
     }
     catch (std::runtime_error &e)
     {
@@ -300,7 +284,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
 {
     try {
-        sdrDevice->Reset();
+        soc->ResetChip();
     }
     catch (std::runtime_error &e) {
         wxMessageBox(wxString::Format("Load Default failed: %s", e.what()), _("Warning"));
@@ -420,7 +404,7 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
 void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
     try {
-        sdrDevice->Synchronize(false);
+        soc->DownloadAll();
     }
     catch (std::runtime_error &e)
     {
@@ -433,7 +417,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
     try {
-        sdrDevice->Synchronize(false);
+        soc->UploadAll();
     }
     catch (std::runtime_error &e)
     {
@@ -468,6 +452,5 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
 
 LMS7002M* lms7002_mainPanel::GetSelectedChip() const
 {
-    LMS7002M* chip = static_cast<LMS7002M*>(sdrDevice->GetInternalChip(cmbLmsDevice->GetSelection()));
-    return chip;
+    return soc;
 }

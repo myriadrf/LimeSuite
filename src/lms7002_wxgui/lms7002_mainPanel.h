@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include "ILMS7002MTab.h"
 
+#include "GUI/ISOCPanel.h"
+
 namespace lime{
 class MCU_BD;
 class SDRDevice;
@@ -14,7 +16,7 @@ class lms7002_pnlMCU_BD_view;
 class lms7002_pnlR3_view;
 class SDRConfiguration_view;
 
-class lms7002_mainPanel : public wxPanel
+class lms7002_mainPanel : public ISOCPanel
 {
 protected:
   // Handlers for mainPanel events.
@@ -34,7 +36,6 @@ protected:
   void OnChannelOrSOCChange(wxCommandEvent &event);
 
   lime::LMS7002M* GetSelectedChip() const;
-  void OnCGENFrequencyChange(wxCommandEvent& event);
 
 public:
 
@@ -42,12 +43,13 @@ public:
   virtual ~lms7002_mainPanel();
   void UpdateVisiblePanel();
   void UpdateGUI();
-  void Initialize(lime::SDRDevice *pControl);
+  void Initialize(lime::LMS7002M* socPtr);
 
   std::unordered_map<wxWindowID, ILMS7002MTab *> mTabs;
 
 protected:
-  lime::SDRDevice *sdrDevice;
+  //lime::SDRDevice *sdrDevice;
+  lime::LMS7002M* soc;
 
   enum
   {
@@ -92,7 +94,6 @@ protected:
   wxStaticText* txtTemperature;
   wxButton* btnReadTemperature;
   wxNotebook* tabsNotebook;
-  SDRConfiguration_view *coarseConfigTab;
 };
 
 #endif // __lms7002_mainPanel__

@@ -877,7 +877,7 @@ void CDCM6208_panelgui::OnChange( wxCommandEvent& event )
          CDCM->SetSPIBaseAddr(i_val);
       }
    }
-   catch(std::invalid_argument)
+   catch(std::invalid_argument &e)
    {
       return;
    }
@@ -967,7 +967,7 @@ void CDCM6208_panelgui::OnFreqEntry( wxCommandEvent& event )
 
       UpdateGUI();
    }
-   catch(std::invalid_argument)
+   catch(std::invalid_argument &e)
    {
       m_FrequencyPlanRes->SetLabel("Invalid Freq Request");
       m_FrequencyPlanRes->SetForegroundColour(wxColour("#ff0000"));

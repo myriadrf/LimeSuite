@@ -12,6 +12,7 @@
 #include "protocols/ADCUnits.h"
 
 #include "boards/LimeSDR_XTRX/LimeSDR_XTRX.h"
+#include "limesuite/DeviceNode.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -51,6 +52,8 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
     // mFPGA->SetConnection(&mFPGAcomms);
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
+
+    desc.socTree = new DeviceNode("X8", "LimeSDR_MMX8", this);
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
@@ -95,6 +98,8 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
             desc.customParameters.push_back(p);
             customParameterToDevice[p.id] = mSubDevices[i];
         }
+
+        desc.socTree->childs.push_back(d.socTree);
     }
 }
 
@@ -254,7 +259,7 @@ void LimeSDR_MMX8::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPh
 int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
     int ret = 0;
-    for (int i=0; i<count; ++i)
+    for (size_t i=0; i<count; ++i)
     {
         int subModuleIndex = (ids[i] >> 8)-1;
         int id = ids[i] & 0xFF;
@@ -266,7 +271,7 @@ int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values,
 int LimeSDR_MMX8::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
 {
     int ret = 0;
-    for (int i=0; i<count; ++i)
+    for (size_t i=0; i<count; ++i)
     {
         int subModuleIndex = (ids[i] >> 8)-1;
         int id = ids[i] & 0xFF;

@@ -225,7 +225,7 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
 
 SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
                                      const wxSize &size, long style)
-    : wxPanel(parent, id, pos, size, style), sdrDevice(nullptr)
+    : ISOCPanel(parent, id, pos, size, style), sdrDevice(nullptr)
 {
     wxFlexGridSizer *mainSizer;
     mainSizer = new wxFlexGridSizer(4, 1, 0, 0);
@@ -236,14 +236,12 @@ SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, co
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Left().Top();
 
-    const int rowCount = 4;
+    const int rowCount = 3;
     for (int i=0; i<rowCount; ++i)
     {
         SOCConfig_view* row = new SOCConfig_view(this, wxNewId());
         mainSizer->Add(row, ctrlFlags);
         socGUI.push_back(row);
-        if (i>0)
-            row->Hide();
     }
 
    this->SetSizerAndFit(mainSizer);
@@ -265,7 +263,6 @@ void SDRConfiguration_view::Setup(lime::SDRDevice *device)
         {
             socGUI[i]->Setup(sdrDevice, i);
             socGUI[i]->Show();
-
         }
         else
             socGUI[i]->Hide();

@@ -14,6 +14,8 @@
 
 #include "limesuite/SDRDevice.h"
 
+#include "GUI/ISOCPanel.h"
+
 struct ChannelConfigGUI
 {
   wxCheckBox* enable;
@@ -50,13 +52,14 @@ protected:
   int socIndex;
 };
 
-class SDRConfiguration_view : public wxPanel
+class SDRConfiguration_view : public ISOCPanel
 {
   public:
     SDRConfiguration_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
     void Setup(lime::SDRDevice *device);
 
   protected:
+    SDRConfiguration_view() = delete;
     std::vector<SOCConfig_view*> socGUI;
     lime::SDRDevice *sdrDevice;
 };

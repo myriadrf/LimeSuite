@@ -13,6 +13,7 @@
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 #include "protocols/ADCUnits.h"
+#include "limesuite/DeviceNode.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -134,7 +135,8 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA,
     soc.txPathNames = {"None", "TDD", "FDD"};
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[1] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_2);
-    mLMSChips.push_back(new LMS7002M(mLMS7002Mcomms[1]));
+    LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
+    mLMSChips.push_back(lms2);
 
     // LMS#3
     soc.name = "LMS 3";
@@ -142,10 +144,26 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA,
     soc.txPathNames = {"None", "Band1"};
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[2] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_3);
-    mLMSChips.push_back(new LMS7002M(mLMS7002Mcomms[2]));
+    LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
+    mLMSChips.push_back(lms3);
+
+    for (size_t i=0; i<mLMSChips.size(); ++i)
+    {
+        mLMSChips[i]->SetConnection(mLMS7002Mcomms[i]);
+        //iter->SetReferenceClk_SX(false, 30.72e6);
+    }
 
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
+
+    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA_X3", mFPGA);
+    fpgaNode->childs.push_back(new DeviceNode("LMS_1", "LMS7002M", lms1));
+    fpgaNode->childs.push_back(new DeviceNode("LMS_2", "LMS7002M", lms2));
+    fpgaNode->childs.push_back(new DeviceNode("LMS_3", "LMS7002M", lms3));
+    desc.socTree = new DeviceNode("X3", "LimeSDR_X3", this);
+    desc.socTree->childs.push_back(fpgaNode);
+
+    desc.socTree->childs.push_back(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
 }
 
 LimeSDR_X3::~LimeSDR_X3()

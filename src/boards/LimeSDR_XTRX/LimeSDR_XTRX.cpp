@@ -11,6 +11,7 @@
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 
+#include "limesuite/DeviceNode.h"
 #include "lms7002m/LMS7002M_validation.h"
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -92,6 +93,11 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::IComms* spiRFsoc, lime::IComms* spiFPGA, lime::
 
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
+
+    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA_XTRX", mFPGA);
+    fpgaNode->childs.push_back(new DeviceNode("LMS7002M", "LMS7002M", chip));
+    desc.socTree = new DeviceNode("XTRX", "LimeSDR_XTRX", this);
+    desc.socTree->childs.push_back(fpgaNode);
 }
 
 LimeSDR_XTRX::~LimeSDR_XTRX()
