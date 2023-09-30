@@ -384,16 +384,23 @@ void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent &event)
 
 ISOCPanel* CreateGUI(wxWindow* parent, const std::string& klass, void* socPtr)
 {
-    if (klass == "LMS7002M")
+    if (klass == "SDRDevice")
+    {
+        SDRConfiguration_view* pnl = new SDRConfiguration_view(parent, wxNewId());
+        pnl->Setup(reinterpret_cast<SDRDevice*>(socPtr));
+        pnl->Hide();
+        return pnl;
+    }
+    else if (klass == "LMS7002M")
     {
         lms7002_mainPanel* pnl = new lms7002_mainPanel(parent, wxNewId());
-        pnl->Initialize((LMS7002M*)socPtr);
+        pnl->Initialize(reinterpret_cast<LMS7002M*>(socPtr));
         return pnl;
     }
     else if (klass == "CDCM6208")
     {
         CDCM6208_panelgui* pnl = new CDCM6208_panelgui(parent, wxNewId());
-        pnl->Initialize((CDCM_Dev*)socPtr);
+        pnl->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
         return pnl;
     }
 

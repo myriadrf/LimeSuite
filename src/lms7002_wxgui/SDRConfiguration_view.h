@@ -62,6 +62,7 @@ class SDRConfiguration_view : public ISOCPanel
     SDRConfiguration_view() = delete;
     std::vector<SOCConfig_view*> socGUI;
     lime::SDRDevice *sdrDevice;
+    wxFlexGridSizer *mainSizer;
 };
 
 #endif // LIME_SDR_CONFIGURATION_VIEW

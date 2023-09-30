@@ -160,7 +160,7 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA,
     fpgaNode->childs.push_back(new DeviceNode("LMS_1", "LMS7002M", lms1));
     fpgaNode->childs.push_back(new DeviceNode("LMS_2", "LMS7002M", lms2));
     fpgaNode->childs.push_back(new DeviceNode("LMS_3", "LMS7002M", lms3));
-    desc.socTree = new DeviceNode("X3", "LimeSDR_X3", this);
+    desc.socTree = new DeviceNode("X3", "SDRDevice", this);
     desc.socTree->childs.push_back(fpgaNode);
 
     desc.socTree->childs.push_back(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM));

@@ -53,7 +53,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
-    desc.socTree = new DeviceNode("X8", "LimeSDR_MMX8", this);
+    desc.socTree = new DeviceNode("X8", "SDRDevice", this);
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
