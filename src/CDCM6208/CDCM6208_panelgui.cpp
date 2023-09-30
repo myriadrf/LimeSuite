@@ -7,12 +7,6 @@ CDCM6208_panelgui::CDCM6208_panelgui( wxWindow* parent, wxWindowID id
 {
    wxFlexGridSizer* Master;
    Master = new wxFlexGridSizer( 0, 2, 0, 0 );
-   Master->AddGrowableCol( 0 );
-   Master->AddGrowableCol( 1 );
-   Master->AddGrowableCol( 2 );
-   Master->AddGrowableRow( 0 );
-   Master->AddGrowableRow( 1 );
-   Master->AddGrowableRow( 2 );
    Master->SetFlexibleDirection( wxBOTH );
    Master->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
 
