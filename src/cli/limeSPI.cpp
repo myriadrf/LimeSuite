@@ -47,7 +47,7 @@ static uint32_t hex2int(const char* hexstr)
 
 static int parseWriteInput(char* hexstr, std::vector<uint32_t>& mosi)
 {
-    static const char* delimiters = " \n;";
+    static const char* delimiters = " \n,";
     mosi.clear();
     char* token = std::strtok(hexstr, delimiters);
     const uint32_t spiWriteBit = 1 << 31;
@@ -55,11 +55,13 @@ static int parseWriteInput(char* hexstr, std::vector<uint32_t>& mosi)
     while (token)
     {
         int tokenLength = strlen(token);
-        if (tokenLength == 8) // write instruction
+        if (tokenLength <= 8 && tokenLength > 4) // write instruction
         {
             uint32_t value = hex2int(token);
             mosi.push_back(spiWriteBit | value);
         }
+        else
+            std::cerr << "Invalid input value: " << token << std::endl;
         ++tokenCount;
         token = std::strtok(nullptr, delimiters);
     }
@@ -68,18 +70,20 @@ static int parseWriteInput(char* hexstr, std::vector<uint32_t>& mosi)
 
 static int parseReadInput(char* hexstr, std::vector<uint32_t>& mosi)
 {
-    static const char* delimiters = " \n;";
+    static const char* delimiters = " \n,";
     mosi.clear();
     char* token = std::strtok(hexstr, delimiters);
     int tokenCount = 0;
     while (token)
     {
         int tokenLength = strlen(token);
-        if (tokenLength == 4) // read instruction
+        if (tokenLength <= 4 && tokenLength > 0) // read instruction
         {
             uint32_t value = hex2int(token);
             mosi.push_back(value);
         }
+        else
+            std::cerr << "Invalid input value: " << token << std::endl;
         ++tokenCount;
         token = std::strtok(nullptr, delimiters);
     }
@@ -92,8 +96,8 @@ static int printHelp(void)
     cerr << "    -h, --help\t\t\t This help" << endl;
     cerr << "    -d, --device <name>\t\t\t Specifies which device to use" << endl;
     cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
-    cerr << "    -r, --read \"data or filepath\"\t\t space/newline delimited 16bit hexadecimal addresses for reading" << endl;
-    cerr << "    -w, --write \"data or filepath\"\t\t space/newline delimited 32bit hexadecimal values for writing" << endl;
+    cerr << "    -r, --read \"data or filepath\"\t\t space/newline/comma delimited 16bit hexadecimal addresses for reading" << endl;
+    cerr << "    -w, --write \"data or filepath\"\t\t space/newline/comma delimited 32bit hexadecimal values for writing" << endl;
     cerr << "    -f, --file\t\t Use --read/--write argument as filename" << endl;
 
     return EXIT_SUCCESS;
