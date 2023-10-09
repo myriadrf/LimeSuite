@@ -7,12 +7,14 @@
 #include <wx/checkbox.h>
 #include <wx/statbox.h>
 
+#include "limesuite/SDRDevice.h"
+
 using namespace lime;
 using namespace std;
 
 pnlGPIO::pnlGPIO(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
 {
-    lmsControl = nullptr;
+    device = nullptr;
     gpioCnt = 8;
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
@@ -20,21 +22,19 @@ pnlGPIO::pnlGPIO(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize
 #endif
 }
 
-void pnlGPIO::Initialize(lms_device_t* pControl)
+void pnlGPIO::Initialize(lime::SDRDevice* pControl)
 {
-    lmsControl = pControl;
-    if(lmsControl)
+    device = pControl;
+    if(device)
     {
-        auto info = LMS_GetDeviceInfo(lmsControl);
-        if(info != nullptr)
-        {
-            if (string(info->deviceName) == string(GetDeviceName(LMS_DEV_LIMESDR_PCIE)))
-                gpioCnt = 16;
-            else if (string(info->deviceName) == string(GetDeviceName(LMS_DEV_LIMESDRMINI)))
-                gpioCnt = 10;
-            else if (string(info->deviceName) == string(GetDeviceName(LMS_DEV_LIMESDRMINI_V2)))
-                gpioCnt = 10;
-        }
+        auto info = device->GetDescriptor();
+
+        if (info.name == string(GetDeviceName(LMS_DEV_LIMESDR_PCIE)))
+            gpioCnt = 16;
+        else if (info.name == string(GetDeviceName(LMS_DEV_LIMESDRMINI)))
+            gpioCnt = 10;
+        else if (info.name == string(GetDeviceName(LMS_DEV_LIMESDRMINI_V2)))
+            gpioCnt = 10;
     }
 
     auto gpioSizer = new wxFlexGridSizer(0, gpioCnt+1, 0, 0);
@@ -103,7 +103,8 @@ void pnlGPIO::OnUsrGPIODirChange(wxCommandEvent& event)
             value[i/8] |= 1 << (i%8);
         gpioOut[i]->Enable(check);
     }
-    if(lmsControl && LMS_GPIODirWrite(lmsControl, value, gpioCnt > 8 ? 2 : 1))
+
+    if(device && device->GPIODirWrite(value, gpioCnt > 8 ? 2 : 1))
         lime::error("GPIO direction change failed");
 }
 
@@ -116,7 +117,7 @@ void pnlGPIO::OnUsrGPIOChange(wxCommandEvent& event)
             value[i/8] |= 1 << (i%8);
     }
 
-    if(lmsControl && LMS_GPIOWrite(lmsControl, value, gpioCnt > 8 ? 2 : 1))
+    if(device && device->GPIOWrite(value, gpioCnt > 8 ? 2 : 1))
         lime::error("GPIO write failed");
 }
 
@@ -125,7 +126,7 @@ void pnlGPIO::UpdatePanel()
     uint8_t gpio[2] = {0};
     uint8_t dir[2] = {0};
 
-    if(lmsControl && LMS_GPIODirRead(lmsControl, dir, gpioCnt > 8 ? 2 : 1)==0)
+    if(device && device->GPIODirRead(dir, gpioCnt > 8 ? 2 : 1)==0)
     {
         for (int i = 0; i < gpioCnt; i++)
         {
@@ -140,7 +141,7 @@ void pnlGPIO::UpdatePanel()
         return;
     }
 
-    if(lmsControl && LMS_GPIORead(lmsControl, gpio, gpioCnt > 8 ? 2 : 1) == 0)
+    if(device && device->GPIORead(gpio, gpioCnt > 8 ? 2 : 1) == 0)
     {
         for (int i = 0; i < gpioCnt; i++)
         {
@@ -151,4 +152,3 @@ void pnlGPIO::UpdatePanel()
     else
         lime::error("GPIO read failed");
 }
-

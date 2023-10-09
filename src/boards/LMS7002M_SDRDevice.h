@@ -1,7 +1,6 @@
 #ifndef LIME_LMS7002M_SDRDevice_H
 #define LIME_LMS7002M_SDRDevice_H
 
-#include "PacketsFIFO.h"
 #include "dataTypes.h"
 
 #include <vector>

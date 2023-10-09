@@ -94,8 +94,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
             txDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);
         }
     }
-    if (pkt)
-        txFIFO->release(pkt);
+    // if (pkt)
+    //     txFIFO->release(pkt);
     // comms->AbortEndpointXfers(rxEndPt);
     txDataRate_Bps.store(0, std::memory_order_relaxed);
 }
@@ -163,16 +163,16 @@ void TRXLooper_USB::ReceivePacketsLoop()
             rxLastTimestamp.store(lastTS, std::memory_order_relaxed);
 
             
-            FPGA_DataPacket *fifoPkt = rxFIFO->acquire();
-            if(fifoPkt)
-            {
-                memcpy(fifoPkt, pkt, sizeof(FPGA_DataPacket));
-                rxFIFO->push(fifoPkt);
-            }
-            else
-            {
-                // TODO: Rx FIFO full, report overrun
-            }
+            // FPGA_DataPacket *fifoPkt = rxFIFO->acquire();
+            // if(fifoPkt)
+            // {
+            //     memcpy(fifoPkt, pkt, sizeof(FPGA_DataPacket));
+            //     rxFIFO->push(fifoPkt);
+            // }
+            // else
+            // {
+            //     // TODO: Rx FIFO full, report overrun
+            // }
         }
         // Re-submit this request to keep the queue full
         handles[bi] = comms->BeginDataXfer(&buffers[bi*bufferSize], bufferSize, rxEndPt);

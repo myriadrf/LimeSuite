@@ -1,5 +1,5 @@
 #include "pnlBoardControls.h"
-#include "wx/wxprec.h"
+#include <wx/wxprec.h>
 #include "lime/LimeSuite.h"
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -477,15 +477,15 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     //     additionalControls = pnl;
     //     sizerAdditionalControls->Add(additionalControls);
     // }
-    // else if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
-    //      || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE))
-    // {
-    //     pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
-    //     pnl->Initialize(mDevice);
-    //     additionalControls = pnl;
-    //     sizerAdditionalControls->Add(additionalControls);
-    // }
-    if (boardID == GetDeviceName(LMS_DEV_LIMESDR_X3))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDR))
+        //  || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE))
+    {
+        pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
+        pnl->Initialize(mDevice);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
+    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_X3))
     {
         pnlX3* pnl = new pnlX3(this, wxNewId());
         pnl->Initialize(mDevice);

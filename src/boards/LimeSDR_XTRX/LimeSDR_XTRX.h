@@ -6,9 +6,9 @@
 #include "limesuite/IComms.h"
 
 #include <vector>
+#include <mutex>
 #include <array>
 
-#include "PacketsFIFO.h"
 #include "dataTypes.h"
 
 namespace lime

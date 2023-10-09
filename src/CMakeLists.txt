@@ -104,7 +104,7 @@ option(ENABLE_LIBRARY "Enable build library" ON)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(${MAIN_LIBRARY_NAME} ${LIME_SUITE_SOURCES})
-    target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIME_SUITE_LIBRARIES} samplesConversion)
+    target_link_libraries(${MAIN_LIBRARY_NAME} ${LIME_SUITE_LIBRARIES} samplesConversion)
     set_property(TARGET ${MAIN_LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES VERSION ${LIME_SUITE_LIBVER})
@@ -133,10 +133,10 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-#include(comms/USB/CMakeLists.txt)
+include(comms/USB/CMakeLists.txt)
 include(comms/PCIe/CMakeLists.txt)
 
-#include(boards/LimeSDR/CMakeLists.txt)
+include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_X3/CMakeLists.txt)
 include(boards/LimeSDR_XTRX/CMakeLists.txt)
 include(boards/MMX8/CMakeLists.txt)
@@ -223,8 +223,8 @@ set(LMS7SUITE_GUI_SOURCES
     # boards_wxgui/pnlLimeNetMicro.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     windowFunction.cpp
-    #boards_wxgui/pnlLimeSDR.cpp
-    #boards_wxgui/pnlGPIO.cpp
+    boards_wxgui/pnlLimeSDR.cpp
+    boards_wxgui/pnlGPIO.cpp
     GUI/CommsToDevice.cpp
     GUI/DeviceConnectionPanel.cpp
     GUI/events.cpp

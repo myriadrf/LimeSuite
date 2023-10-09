@@ -1,13 +1,14 @@
 #ifndef LIME_LIMESDR_H
 #define LIME_LIMESDR_H
 
-#include "limesuite/SDRDevice.h"
-#include "DeviceRegistry.h"
-#include "DeviceHandle.h"
+#include "LMS7002M_SDRDevice.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/DeviceHandle.h"
 #include <vector>
 #include <memory>
 
-#include "PacketsFIFO.h"
+#include <FX3.h>
+
 #include "dataTypes.h"
 namespace lime
 {
@@ -18,15 +19,15 @@ class Streamer;
 class FPGA;
 class TRXLooper_USB;
 
-class LimeSDR : public SDRDevice
+class LimeSDR : public LMS7002M_SDRDevice
 {
 public:
     LimeSDR(lime::USBGeneric* conn);
     virtual ~LimeSDR();
 
-    virtual void Configure(const SDRConfig config, uint8_t moduleIndex) override;
+    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
-    virtual const SDRDevice::Descriptor &GetDescriptor() const override;
+    virtual const Descriptor &GetDescriptor() override;
 
     virtual int Init() override;
     virtual void Reset() override;
@@ -40,14 +41,16 @@ public:
     virtual void EnableCache(bool enable) override;
 
     virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
-    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
-    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
+
+    // virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
+    // virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
 
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
+
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual void StreamStatus(uint8_t channel, SDRDevice::StreamStats &status) override;
+    virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
     virtual void *GetInternalChip(uint32_t index) override;
 
@@ -55,11 +58,24 @@ public:
                                       double rxPhase) override;
 
   protected:
-    int EnableChannel(Dir dir, uint8_t channel, bool enabled);
-    SDRDevice::DeviceInfo GetDeviceInfo();
+    class CommsRouter : public ISPI, public II2C
+    {
+    public:
+        CommsRouter(FX3* port, uint32_t slaveID);
+        virtual ~CommsRouter();
+        virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
+        virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
+        virtual int I2CWrite(int address, const uint8_t *data, uint32_t length);
+        virtual int I2CRead(int addres, uint8_t *dest, uint32_t length);
+    private:
+        FX3* port;
+        uint32_t mDefaultSlave;
+    };
+
+    int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
+    SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
     void SetSampleRate(double f_Hz, uint8_t oversample);
-    std::unique_ptr<FPGA> mFPGA;
     USBGeneric* comms;
 };
 

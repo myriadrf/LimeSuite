@@ -1,7 +1,7 @@
 #include "LimeSDR.h"
 #include "DeviceExceptions.h"
-#include "DeviceRegistry.h"
-#include "DeviceHandle.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/DeviceHandle.h"
 #include "Logger.h"
 
 #include "FX3.h"

@@ -174,13 +174,13 @@ bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t leng
 
 int LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex)
 {
-    double fpgaTxPLL = soc.GetReferenceClk_TSP(Tx);
+    double fpgaTxPLL = soc.GetReferenceClk_TSP(TRXDir::Tx);
     int interp = soc.Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     if (interp != 7) {
         uint8_t siso = soc.Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
         fpgaTxPLL /= std::pow(2, interp + siso);
     }
-    double fpgaRxPLL = soc.GetReferenceClk_TSP(Rx);
+    double fpgaRxPLL = soc.GetReferenceClk_TSP(TRXDir::Rx);
     int dec = soc.Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     if (dec != 7) {
         uint8_t siso = soc.Get_SPI_Reg_bits(LMS7_LML2_SISODDR);

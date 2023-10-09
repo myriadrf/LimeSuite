@@ -8,6 +8,7 @@
 #include <wx/spinctrl.h>
 #include <wx/msgdlg.h>
 #include "lms7suiteEvents.h"
+#include "limesuite/SDRDevice.h"
 
 #include <ciso646>
 
@@ -82,7 +83,7 @@ int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice *device, int32_t param_id, d
 pnlX3::pnlX3(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size, int style, wxString name)
 {
     chipSelect = -1;
-    lmsControl = nullptr;
+    device = nullptr;
 
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
@@ -352,11 +353,11 @@ pnlX3::pnlX3(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &
 void pnlX3::Initialize(lime::SDRDevice *pControl)
 {
     chipSelect = -1;
-    lmsControl = pControl;
-    if (lmsControl == nullptr)
+    device = pControl;
+    if (device == nullptr)
         return;
 
-    const SDRDevice::Descriptor &desc = lmsControl->GetDescriptor();
+    const SDRDevice::Descriptor &desc = device->GetDescriptor();
     const std::string targetSPI = "FPGA";
     for (const auto &nameIds : desc.spiSlaveIds)
     {
@@ -420,7 +421,7 @@ void pnlX3::OnInputChange(wxCommandEvent &event)
     value |= cmbLms1Tx2Path->GetSelection() << 12;
     value |= cmbLms1Tx1Path->GetSelection() << 13;
 
-    if (LMS_WriteFPGAReg(lmsControl, addr, value))
+    if (LMS_WriteFPGAReg(device, addr, value))
         wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
 
     addr = 0x00D2;
@@ -433,14 +434,14 @@ void pnlX3::OnInputChange(wxCommandEvent &event)
     value |= Lms1tx2En->GetValue() << 4;
     value |= Lms1tx1En->GetValue() << 5;
 
-    if (LMS_WriteFPGAReg(lmsControl, addr, value))
+    if (LMS_WriteFPGAReg(device, addr, value))
         wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
 }
 
 void pnlX3::OnDacChange(wxCommandEvent &event)
 {
-    LMS_WriteCustomBoardParam(lmsControl, 2, spinDac1->GetValue(), "");
-    LMS_WriteCustomBoardParam(lmsControl, 3, spinDac2->GetValue(), "");
+    LMS_WriteCustomBoardParam(device, 2, spinDac1->GetValue(), "");
+    LMS_WriteCustomBoardParam(device, 3, spinDac2->GetValue(), "");
 
     return;
 }
@@ -449,7 +450,7 @@ void pnlX3::UpdatePanel()
 {
     uint16_t addr = 0x00D1;
     uint16_t value = 0;
-    if (LMS_ReadFPGAReg(lmsControl, addr, &value))
+    if (LMS_ReadFPGAReg(device, addr, &value))
     {
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -472,7 +473,7 @@ void pnlX3::UpdatePanel()
 
     addr = 0x00D2;
     value = 0;
-    if (LMS_ReadFPGAReg(lmsControl, addr, &value))
+    if (LMS_ReadFPGAReg(device, addr, &value))
     {
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -486,9 +487,9 @@ void pnlX3::UpdatePanel()
     Lms1tx1En->SetValue((value >> 5) & 1);
 
     double dacVal = 0;
-    LMS_ReadCustomBoardParam(lmsControl, 2, &dacVal, nullptr);
+    LMS_ReadCustomBoardParam(device, 2, &dacVal, nullptr);
     spinDac1->SetValue((int)dacVal);
-    LMS_ReadCustomBoardParam(lmsControl, 3, &dacVal, nullptr);
+    LMS_ReadCustomBoardParam(device, 3, &dacVal, nullptr);
     spinDac2->SetValue((int)dacVal);
 }
 
@@ -588,30 +589,30 @@ void pnlX3::OnLMS1Configure(wxCommandEvent &event)
 
         if (m_bLMS1DownLink == 1)
         {
-            SetRegValue(lmsControl, chkLms1Tx1, 1); // Enabled
+            SetRegValue(device, chkLms1Tx1, 1); // Enabled
             if (m_bLMS1LowFreq == 1)
             {
-                SetRegValue(lmsControl, cmbLms1Tx1Path, 0);     //("TX1_2 -> TX1 (J8)");
-                SetRegValue(lmsControl, cmbLms1Rx1Path, 1); //("RX1_H <- RX1 (J1)");
+                SetRegValue(device, cmbLms1Tx1Path, 0);     //("TX1_2 -> TX1 (J8)");
+                SetRegValue(device, cmbLms1Rx1Path, 1); //("RX1_H <- RX1 (J1)");
             }
             else
             {
-                SetRegValue(lmsControl, cmbLms1Tx1Path, 1);     //("TX1_1 -> TX1 (J8)");
-                SetRegValue(lmsControl, cmbLms1Rx1Path, 0); //("RX1_L <- RX1 (J1)");
+                SetRegValue(device, cmbLms1Tx1Path, 1);     //("TX1_1 -> TX1 (J8)");
+                SetRegValue(device, cmbLms1Rx1Path, 0); //("RX1_L <- RX1 (J1)");
             }
         }
         else  // Uplink
         {
-            SetRegValue(lmsControl, chkLms1Tx1, 0); // Disabled
+            SetRegValue(device, chkLms1Tx1, 0); // Disabled
             if (m_bLMS1LowFreq == 0)
             {
-                SetRegValue(lmsControl, cmbLms1Tx1Path, 0);     //("TX1_2 -> TX1 (J8)");
-                SetRegValue(lmsControl, cmbLms1Rx1Path, 1); //("RX1_H <- RX1 (J1)");
+                SetRegValue(device, cmbLms1Tx1Path, 0);     //("TX1_2 -> TX1 (J8)");
+                SetRegValue(device, cmbLms1Rx1Path, 1); //("RX1_H <- RX1 (J1)");
             }
             else
             {
-                SetRegValue(lmsControl, cmbLms1Tx1Path, 1);     //("TX1_1 -> TX1 (J8)");
-                SetRegValue(lmsControl, cmbLms1Rx1Path, 0); //("RX1_L <- RX1 (J1)");
+                SetRegValue(device, cmbLms1Tx1Path, 1);     //("TX1_1 -> TX1 (J8)");
+                SetRegValue(device, cmbLms1Rx1Path, 0); //("RX1_L <- RX1 (J1)");
             }
         }
     }
@@ -621,30 +622,30 @@ void pnlX3::OnLMS1Configure(wxCommandEvent &event)
 
         if (m_bLMS1DownLink == 1)
         {
-            SetRegValue(lmsControl, chkLms1Tx2, 1); // Enabled
+            SetRegValue(device, chkLms1Tx2, 1); // Enabled
             if (m_bLMS1LowFreq == 1)
             {
-                SetRegValue(lmsControl, cmbLms1Tx2Path, 0);     //("TX2_2 -> TX2 (J9)");
-                SetRegValue(lmsControl, cmbLms1Rx2Path, 1); //("RX2_H <- RX2 (J2)");
+                SetRegValue(device, cmbLms1Tx2Path, 0);     //("TX2_2 -> TX2 (J9)");
+                SetRegValue(device, cmbLms1Rx2Path, 1); //("RX2_H <- RX2 (J2)");
             }
             else
             {
-                SetRegValue(lmsControl, cmbLms1Tx2Path, 1);     //("TX2_1 -> TX2 (J9)");
-                SetRegValue(lmsControl, cmbLms1Rx2Path, 0); //("RX2_L <- RX2 (J2)");
+                SetRegValue(device, cmbLms1Tx2Path, 1);     //("TX2_1 -> TX2 (J9)");
+                SetRegValue(device, cmbLms1Rx2Path, 0); //("RX2_L <- RX2 (J2)");
             }
         }
         else  // Uplink
         {
-            SetRegValue(lmsControl, chkLms1Tx2, 0); // Disabled
+            SetRegValue(device, chkLms1Tx2, 0); // Disabled
             if (m_bLMS1LowFreq == 0)
             {
-                SetRegValue(lmsControl, cmbLms1Tx2Path, 0);     //("TX2_2 -> TX2 (J9)");
-                SetRegValue(lmsControl, cmbLms1Rx2Path, 1); //("RX2_H <- RX2 (J2)");
+                SetRegValue(device, cmbLms1Tx2Path, 0);     //("TX2_2 -> TX2 (J9)");
+                SetRegValue(device, cmbLms1Rx2Path, 1); //("RX2_H <- RX2 (J2)");
             }
             else
             {
-                SetRegValue(lmsControl, cmbLms1Tx2Path, 1);     //("TX2_1 -> TX2 (J9)");
-                SetRegValue(lmsControl, cmbLms1Rx2Path, 0); //("RX2_L <- RX2 (J2)");
+                SetRegValue(device, cmbLms1Tx2Path, 1);     //("TX2_1 -> TX2 (J9)");
+                SetRegValue(device, cmbLms1Rx2Path, 0); //("RX2_L <- RX2 (J2)");
             }
         }
     }
@@ -697,21 +698,21 @@ void pnlX3::OnLMS2Configure(wxCommandEvent &event)
     {
         if (m_bLMS2DownLink == 1)
         {
-            SetRegValue(lmsControl, chkLms2Tx1, 1);   // Enabled
-            SetRegValue(lmsControl, cmbLms2Trx1T, 0); // TX1_1(LNA)->RFSW_TX1OUT
-            SetRegValue(lmsControl, cmbLms2Trx1, 1);  // RFSW_TX1OUT->TRX1(J8)
-            SetRegValue(lmsControl, chkLms2Lna1, 1);  // Disabled
-            SetRegValue(lmsControl, cmbLms2Rx1C, 0);  // RX1_H<-RFSW_RX1(LNA)
-            SetRegValue(lmsControl, cmbLms2Rx1In, 1); // RFSW_RX1<-RFSW_RX1IN
+            SetRegValue(device, chkLms2Tx1, 1);   // Enabled
+            SetRegValue(device, cmbLms2Trx1T, 0); // TX1_1(LNA)->RFSW_TX1OUT
+            SetRegValue(device, cmbLms2Trx1, 1);  // RFSW_TX1OUT->TRX1(J8)
+            SetRegValue(device, chkLms2Lna1, 1);  // Disabled
+            SetRegValue(device, cmbLms2Rx1C, 0);  // RX1_H<-RFSW_RX1(LNA)
+            SetRegValue(device, cmbLms2Rx1In, 1); // RFSW_RX1<-RFSW_RX1IN
         }
         else
         {
-            SetRegValue(lmsControl, chkLms2Tx1, 0);   // Disabled
-            SetRegValue(lmsControl, cmbLms2Trx1T, 1); // TX1_1(LNA)->Ground
-            SetRegValue(lmsControl, cmbLms2Trx1, 0);  // RFSW_RX1IN<-TRX1(J8)
-            SetRegValue(lmsControl, chkLms2Lna1, 0);  // Enabled
-            SetRegValue(lmsControl, cmbLms2Rx1C, 0);  // RX1_H<-RFSW_RX1(LNA)
-            SetRegValue(lmsControl, cmbLms2Rx1In, 1); // RFSW_RX1<-RFSW_RX1IN
+            SetRegValue(device, chkLms2Tx1, 0);   // Disabled
+            SetRegValue(device, cmbLms2Trx1T, 1); // TX1_1(LNA)->Ground
+            SetRegValue(device, cmbLms2Trx1, 0);  // RFSW_RX1IN<-TRX1(J8)
+            SetRegValue(device, chkLms2Lna1, 0);  // Enabled
+            SetRegValue(device, cmbLms2Rx1C, 0);  // RX1_H<-RFSW_RX1(LNA)
+            SetRegValue(device, cmbLms2Rx1In, 1); // RFSW_RX1<-RFSW_RX1IN
         }
     }
 
@@ -736,21 +737,21 @@ void pnlX3::OnLMS2Configure(wxCommandEvent &event)
         if (m_bLMS2DownLink == 1)
         {
             // Downlink
-            SetRegValue(lmsControl, chkLms2Tx2, 1);   // Enabled
-            SetRegValue(lmsControl, cmbLms2Trx2T, 1); // TX2_1(LNA)->RFSW_TX2OUT
-            SetRegValue(lmsControl, cmbLms2Trx2, 1);  // RFSW_TX2OUT->TRX2(J10)
-            SetRegValue(lmsControl, chkLms2Lna2, 1);  // Disabled
-            SetRegValue(lmsControl, cmbLms2Rx2C, 0);  // RX2_H<-RFSW_RX2(LNA)
-            SetRegValue(lmsControl, cmbLms2Rx2In, 1); // RFSW_RX2<-RFSW_RX2IN
+            SetRegValue(device, chkLms2Tx2, 1);   // Enabled
+            SetRegValue(device, cmbLms2Trx2T, 1); // TX2_1(LNA)->RFSW_TX2OUT
+            SetRegValue(device, cmbLms2Trx2, 1);  // RFSW_TX2OUT->TRX2(J10)
+            SetRegValue(device, chkLms2Lna2, 1);  // Disabled
+            SetRegValue(device, cmbLms2Rx2C, 0);  // RX2_H<-RFSW_RX2(LNA)
+            SetRegValue(device, cmbLms2Rx2In, 1); // RFSW_RX2<-RFSW_RX2IN
         }
         else // Uplink
         {
-            SetRegValue(lmsControl, chkLms2Tx2, 0);   // Disabled
-            SetRegValue(lmsControl, cmbLms2Trx2T, 0); // TX2_1(LNA)->Ground
-            SetRegValue(lmsControl, cmbLms2Trx2, 0);  // RFSW_RX2IN<-TRX2(J10)
-            SetRegValue(lmsControl, chkLms2Lna2, 0);  // Enabled
-            SetRegValue(lmsControl, cmbLms2Rx2C, 0);  // RX2_H<-RFSW_RX2(LNA)
-            SetRegValue(lmsControl, cmbLms2Rx2In, 1); // RFSW_RX2<-RFSW_RX2IN
+            SetRegValue(device, chkLms2Tx2, 0);   // Disabled
+            SetRegValue(device, cmbLms2Trx2T, 0); // TX2_1(LNA)->Ground
+            SetRegValue(device, cmbLms2Trx2, 0);  // RFSW_RX2IN<-TRX2(J10)
+            SetRegValue(device, chkLms2Lna2, 0);  // Enabled
+            SetRegValue(device, cmbLms2Rx2C, 0);  // RX2_H<-RFSW_RX2(LNA)
+            SetRegValue(device, cmbLms2Rx2In, 1); // RFSW_RX2<-RFSW_RX2IN
         }
     }
 

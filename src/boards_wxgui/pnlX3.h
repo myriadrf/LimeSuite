@@ -5,10 +5,10 @@
 #include <wx/panel.h>
 #include <wx/choice.h>
 #include <wx/spinctrl.h>
+
 class wxStaticText;
 class wxFlexGridSizer;
 class wxCheckBox;
-
 
 // B.J.
 class wxRadioButton; 
@@ -105,7 +105,8 @@ protected:
     // end B.J.
 
     int chipSelect;
-    lime::SDRDevice *lmsControl;
+    lime::SDRDevice *device;
+
     DECLARE_EVENT_TABLE()
 };
 
