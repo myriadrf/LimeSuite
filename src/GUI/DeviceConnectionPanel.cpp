@@ -25,13 +25,17 @@ void DeviceConnectionPanel::EnumerateDevicesToChoice()
         if (handles.size() == 0)
         {
             choice->Append("No devices found");
+            choice->Select(0);
             choice->Disable();
             btnDisconnect->Disable();
         }
+
         for (size_t i = 0; i < handles.size(); i++)
+        {
             choice->Append(handles[i].Serialize().c_str());
-        choice->Enable();
-        btnDisconnect->Enable();
+            choice->Enable();
+            btnDisconnect->Enable();
+        }
     }
     catch (std::runtime_error &e) {
         choice->Disable();
