@@ -27,6 +27,67 @@ typedef lime::SDRDevice::LogLevel LogLevel;
 static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::ERROR;
 static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 
+struct RxGainRow
+{
+    int lna;
+    int pga;
+};
+
+static RxGainRow rxGainTable[] = {
+     {1, 12}
+    ,{1, 13}
+    ,{2, 12}
+    ,{2, 13}
+    ,{2, 14}
+    ,{3, 12}
+    ,{3, 13}
+    ,{3, 14}
+    ,{4, 12}
+    ,{4, 13}
+    ,{4, 14}
+    ,{5, 12}
+    ,{5, 13}
+    ,{5, 14}
+    ,{6, 12}
+    ,{6, 13}
+    ,{6, 14}
+    ,{7, 12}
+    ,{7, 13}
+    ,{7, 14}
+    ,{8, 12}
+    ,{8, 13}
+    ,{8, 14}
+    ,{9, 12}
+    ,{9, 13}
+    ,{9, 14}
+    ,{10, 12}
+    ,{11, 12}
+    ,{12, 12}
+    ,{13, 12}
+    ,{14, 12}
+    ,{15, 12}
+    ,{15, 13}
+    ,{15, 14}
+    ,{15, 15}
+    ,{15, 16}
+    ,{15, 17}
+    ,{15, 18}
+    ,{15, 19}
+    ,{15, 20}
+    ,{15, 21}
+    ,{15, 22}
+    ,{15, 23}
+    ,{15, 24}
+    ,{15, 25}
+    ,{15, 26}
+    ,{15, 27}
+    ,{15, 28}
+    ,{15, 29}
+    ,{15, 30}
+    ,{15, 31}
+};
+static_assert(sizeof(rxGainTable)/sizeof(RxGainRow) == 51, "missing rx gains rows");
+
 static inline int64_t ts_to_time(int64_t fs, int64_t ts)
 {
     int n, r;
@@ -415,14 +476,20 @@ static void trx_lms7002m_set_tx_gain_func(TRXState *s1, double gain, int channel
     //     fprintf(stderr, "Failed to set Tx gain\n");
 }
 
-//min gain 0
-//max gain Rx: 73
 static void trx_lms7002m_set_rx_gain_func(TRXState *s1, double gain, int channel_num)
 {
-    return; //not used
-    //LimeState *s = (LimeState*)s1->opaque;
-    // if (LMS_SetGaindB(s->device, LMS_CH_RX, channel_num, gain)!=0)
-    //     fprintf(stderr, "Failed to set Rx gain\n");
+    LimeState *lime = (LimeState*)s1->opaque;
+    int row = gain;
+    if (row < 0 || row >= (int)(sizeof(rxGainTable)/sizeof(RxGainRow)))
+        return;
+
+    const PortChPair& pair = gMapRxChannelToPortCh[channel_num];
+    LMS7002M* chip = static_cast<LMS7002M*>(lime->device[pair.port]->GetInternalChip(lime->chipIndex[pair.port]));
+    chip->Modify_SPI_Reg_bits(LMS7_MAC, pair.ch+1);
+    chip->Modify_SPI_Reg_bits(LMS7_G_LNA_RFE, rxGainTable[row].lna);
+    chip->Modify_SPI_Reg_bits(LMS7_G_PGA_RBB, rxGainTable[row].pga);
+    chip->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+    Log(LogLevel::DEBUG, "Port[%i] ch[%i] Rx gain set LNA:%i, PGA:%i\n", pair.port, pair.ch, rxGainTable[row].lna, rxGainTable[row].pga);
 }
 
 static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
