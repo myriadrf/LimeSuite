@@ -589,23 +589,13 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             loss.set(stats.loss);
             if(showStats || mCallback_logMessage)
             {
-                fpga->WriteRegister(0xFFFF, 1 << chipId);
-                const uint16_t addr = 0x7FE2 + (chipId*5);
-                uint32_t addrs[] = {addr, addr+1u};
-                uint32_t values[2];
-                fpga->ReadRegisters(addrs, values, 2);
-                const uint32_t fpgaTxPktIngressCount = (values[0] << 16) | values[1];
-
                 char msg[512];
-                snprintf(msg, sizeof(msg)-1, "%s Tx: %3.3f MB/s | TS:%li pkt:%li o:%i totalOut:(x%08X)-fpga(x%08X)=%i, shw:%u/%u(%+i) u:%i(%+i) l:%i(%+i) tsAdvance:%+.0f/%+.0f/%+.0f%s, f:%i",
+                snprintf(msg, sizeof(msg)-1, "%s Tx: %3.3f MB/s | TS:%li pkt:%li o:%i shw:%u/%u(%+i) u:%i(%+i) l:%i(%+i) tsAdvance:%+.0f/%+.0f/%+.0f%s, f:%i",
                     mRxArgs.port->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     lastTS,
                     stats.packets,
                     stats.overrun,
-                    totalPacketSent&0xFFFFFFFF,
-                    fpgaTxPktIngressCount,
-                    totalPacketSent - fpgaTxPktIngressCount,
                     state.swIndex,
                     state.hwIndex,
                     state.swIndex-state.hwIndex,
