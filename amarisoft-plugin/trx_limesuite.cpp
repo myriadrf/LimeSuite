@@ -14,6 +14,7 @@
 #include <atomic>
 #include <vector>
 #include <chrono>
+#include <mutex>
 
 extern "C" {
 #include "trx_driver.h"
@@ -23,6 +24,8 @@ using namespace std;
 using namespace lime;
 
 typedef lime::SDRDevice::LogLevel LogLevel;
+
+std::mutex gainsMutex;
 
 static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::ERROR;
 static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
@@ -87,6 +90,69 @@ static RxGainRow rxGainTable[] = {
     ,{15, 31}
 };
 static_assert(sizeof(rxGainTable)/sizeof(RxGainRow) == 51, "missing rx gains rows");
+
+
+struct TxGainRow
+{
+    int main;
+    int lin;
+};
+
+static TxGainRow txGainTable[] = {
+      {30, 30}
+     ,{30, 30}
+     ,{29, 29}
+     ,{29, 29}
+     ,{28, 28}
+     ,{28, 28}
+     ,{27, 27}
+     ,{27, 27}
+     ,{26, 26}
+     ,{26, 26}
+     ,{25, 25}
+     ,{25, 25}
+     ,{24, 24}
+     ,{24, 24}
+     ,{23, 23}
+     ,{23, 23}
+     ,{22, 22}
+     ,{22, 22}
+     ,{21, 21}
+     ,{21, 21}
+     ,{20, 20}
+     ,{20, 20}
+     ,{19, 19}
+     ,{19, 19}
+     ,{18, 18}
+     ,{18, 18}
+     ,{17, 17}
+     ,{17, 17}
+     ,{16, 16}
+     ,{16, 16}
+     ,{15, 15}
+     ,{15, 15}
+     ,{14, 14}
+     ,{14, 14}
+     ,{13, 13}
+     ,{13, 13}
+     ,{12, 12}
+     ,{12, 12}
+     ,{11, 11}
+     ,{11, 11}
+     ,{10, 10}
+     ,{9, 9}
+     ,{8, 8}
+     ,{7, 7}
+     ,{6, 6}
+     ,{5, 5}
+     ,{4, 4}
+     ,{3, 3}
+     ,{2, 2}
+     ,{1, 1}
+     ,{0, 0}
+ };
+ static_assert(sizeof(txGainTable)/sizeof(TxGainRow) == 51, "missing tx gains rows");
+
 
 static inline int64_t ts_to_time(int64_t fs, int64_t ts)
 {
@@ -470,10 +536,20 @@ static int trx_lms7002m_get_abs_tx_power_func(TRXState *s1, float *presult, int 
 //max gain ~70-76 (higher will probably degrade signal quality to much)
 static void trx_lms7002m_set_tx_gain_func(TRXState *s1, double gain, int channel_num)
 {
-    return; // not used
-    //LimeState *s = (LimeState*)s1->opaque;
-    // if (LMS_SetGaindB(s->device, LMS_CH_TX, channel_num, gain)!=0)
-    //     fprintf(stderr, "Failed to set Tx gain\n");
+    LimeState *lime = (LimeState*)s1->opaque;
+    int row = gain;
+    if (row < 0 || row >= (int)(sizeof(txGainTable)/sizeof(TxGainRow)))
+        return;
+
+    std::lock_guard<std::mutex> lk(gainsMutex);
+
+    const PortChPair& pair = gMapTxChannelToPortCh[channel_num];
+    LMS7002M* chip = static_cast<LMS7002M*>(lime->device[pair.port]->GetInternalChip(lime->chipIndex[pair.port]));
+    chip->Modify_SPI_Reg_bits(LMS7_MAC, pair.ch+1);
+    chip->Modify_SPI_Reg_bits(LMS7_LOSS_MAIN_TXPAD_TRF, txGainTable[row].main);
+    chip->Modify_SPI_Reg_bits(LMS7_LOSS_LIN_TXPAD_TRF, txGainTable[row].lin);
+    chip->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+    Log(LogLevel::DEBUG, "Port[%i] ch[%i] Tx gain set MAIN:%i, LIN:%i\n", pair.port, pair.ch, txGainTable[row].main, txGainTable[row].lin);
 }
 
 static void trx_lms7002m_set_rx_gain_func(TRXState *s1, double gain, int channel_num)
@@ -482,6 +558,8 @@ static void trx_lms7002m_set_rx_gain_func(TRXState *s1, double gain, int channel
     int row = gain;
     if (row < 0 || row >= (int)(sizeof(rxGainTable)/sizeof(RxGainRow)))
         return;
+
+    std::lock_guard<std::mutex> lk(gainsMutex);
 
     const PortChPair& pair = gMapRxChannelToPortCh[channel_num];
     LMS7002M* chip = static_cast<LMS7002M*>(lime->device[pair.port]->GetInternalChip(lime->chipIndex[pair.port]));
