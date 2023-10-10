@@ -81,6 +81,9 @@ public:
     void ResetUSBFIFO();
     void SetSampleRate(double f_Hz, uint8_t oversample);
     USBGeneric* comms;
+    CommsRouter mFPGAComms;
+    CommsRouter mLMSComms;
+private:
 };
 
 class LimeSDREntry : public DeviceRegistryEntry

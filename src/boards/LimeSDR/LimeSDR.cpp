@@ -21,8 +21,6 @@
     #include <libusb.h>
 #endif
 
-using namespace lime;
-
 #define CTR_W_REQCODE 0xC1
 #define CTR_W_VALUE 0x0000
 #define CTR_W_INDEX 0x0000
@@ -44,6 +42,51 @@ static constexpr uint8_t spi_FPGA = 1;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
 static SDRDevice::CustomParameter cp_temperature = {"Board Temperature", 1, 0, 65535, true};
+
+LimeSDR::CommsRouter::CommsRouter(FX3* port, uint32_t slaveID)
+    : port(port), mDefaultSlave(slaveID)
+{
+}
+
+LimeSDR::CommsRouter::~CommsRouter() {}
+
+void LimeSDR::CommsRouter::SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+{
+    SPI(mDefaultSlave, MOSI, MISO, count);
+}
+void LimeSDR::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+{
+    lime::warning("LimeSDR CommsRouter SPI stub.");
+
+    // PCIE_CSR_Pipe pipe(*port);
+    // switch (spiBusAddress) {
+    //     case spi_LMS7002M_1:
+    //     case spi_LMS7002M_2:
+    //     case spi_LMS7002M_3:
+    //         LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
+    //         return;
+    //     case spi_FPGA:
+    //         LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+    //         return;
+    //     default:
+    //         throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
+    // }
+}
+int LimeSDR::CommsRouter::I2CWrite(int address, const uint8_t *data, uint32_t length)
+{
+    lime::warning("LimeSDR CommsRouter I2CWrite stub.");
+
+    // PCIE_CSR_Pipe pipe(*port);
+    // return LMS64CProtocol::I2C_Write(pipe, address, data, length);
+    return 0;
+}
+int LimeSDR::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
+{
+    lime::warning("LimeSDR CommsRouter I2CRead stub.");
+    // PCIE_CSR_Pipe pipe(*port);
+    // return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
+    return 0;
+}
 
 const SDRDevice::Descriptor &LimeSDR::GetDescriptor()
 {
@@ -80,13 +123,15 @@ static inline void ValidateChannel(uint8_t channel)
 }
 
 LimeSDR::LimeSDR(lime::USBGeneric *conn)
-    : comms(conn)
+    : comms(conn),
+    mFPGAComms(static_cast<lime::FX3*>(conn), spi_FPGA),
+    mLMSComms(static_cast<lime::FX3*>(conn), spi_LMS7002M)
 {
     mLMSChips.push_back(new LMS7002M(spi_LMS7002M));
-    // mLMSChips[0]->SetConnection(this);
+    mLMSChips[0]->SetConnection(&mLMSComms);
 
-    // mFPGA = std::unique_ptr<FPGA>(new FPGA(spi_FPGA, spi_LMS7002M));
-    // mFPGA->SetConnection(this);
+    mFPGA = new FPGA(spi_FPGA, spi_LMS7002M);
+    mFPGA->SetConnection(&mFPGAComms);
 
     // rxFIFOs.resize(1, nullptr);
     // txFIFOs.resize(1, nullptr);
@@ -124,6 +169,7 @@ LimeSDR::~LimeSDR()
     if (mStreamers[0])
         delete mStreamers[0];
     delete comms;
+    delete mFPGA;
 }
 
 // Verify and configure given settings
@@ -738,6 +784,8 @@ void *LimeSDR::GetInternalChip(uint32_t index)
 
 int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 {
+    lime::warning("LimeSDR GPIODirRead stub.");
+
     buffer[0] = 0b01010101;
     return 0;
     // LMS64CPacket pkt;
@@ -759,16 +807,22 @@ int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 
 int LimeSDR::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
+    lime::warning("LimeSDR GPIORead stub.");
+
     buffer[0] = 0b10101010;
     return 0;
 }
 
 int LimeSDR::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
 {
+    lime::warning("LimeSDR GPIODirWrite stub.");
+
     return 0;
 }
 
 int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
+    lime::warning("LimeSDR GPIOWrite stub.");
+
     return 0;
 }
