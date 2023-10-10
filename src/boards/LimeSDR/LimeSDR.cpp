@@ -9,6 +9,7 @@
 #include "FPGA_common.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
+#include "protocols/LMS64CProtocol.h"
 
 #include <assert.h>
 #include <memory>
@@ -63,13 +64,13 @@ const SDRDevice::Descriptor &LimeSDR::GetDescriptor()
 //control commands to be send via bulk port for boards v1.2 and later
 static const std::set<uint8_t> commandsToBulkCtrlHw2 =
 {
-    lime::LMS64CProtocol::CMD_BRDSPI_WR, lime::LMS64CProtocol::CMD_BRDSPI_RD,
-    lime::LMS64CProtocol::CMD_LMS7002_WR, lime::LMS64CProtocol::CMD_LMS7002_RD,
-    lime::LMS64CProtocol::CMD_ANALOG_VAL_WR, lime::LMS64CProtocol::CMD_ANALOG_VAL_RD,
-    lime::LMS64CProtocol::CMD_ADF4002_WR,
-    lime::LMS64CProtocol::CMD_LMS7002_RST,
-    lime::LMS64CProtocol::CMD_GPIO_DIR_WR, lime::LMS64CProtocol::CMD_GPIO_DIR_RD,
-    lime::LMS64CProtocol::CMD_GPIO_WR, lime::LMS64CProtocol::CMD_GPIO_RD,
+    LMS64CProtocol::CMD_BRDSPI_WR, LMS64CProtocol::CMD_BRDSPI_RD,
+    LMS64CProtocol::CMD_LMS7002_WR, LMS64CProtocol::CMD_LMS7002_RD,
+    LMS64CProtocol::CMD_ANALOG_VAL_WR, LMS64CProtocol::CMD_ANALOG_VAL_RD,
+    LMS64CProtocol::CMD_ADF4002_WR,
+    LMS64CProtocol::CMD_LMS7002_RST,
+    LMS64CProtocol::CMD_GPIO_DIR_WR, LMS64CProtocol::CMD_GPIO_DIR_RD,
+    LMS64CProtocol::CMD_GPIO_WR, LMS64CProtocol::CMD_GPIO_RD,
 };
 
 static inline void ValidateChannel(uint8_t channel)
@@ -373,7 +374,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     try
     {
         LMS64CPacket pkt;
-        pkt.cmd = lime::LMS64CProtocol::CMD_GET_INFO;
+        pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
         int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
         if (sentBytes != sizeof(pkt))
             throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
@@ -382,7 +383,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
             throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
 
         LMS64CProtocol::FirmwareInfo info;
-        if (pkt.status == lime::LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
+        if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
         {
             info.firmware = pkt.payload[0];
             info.deviceId = pkt.payload[1] < LMS_DEV_COUNT ? static_cast<eLMS_DEV>(pkt.payload[1]) : LMS_DEV_UNKNOWN;
@@ -434,8 +435,8 @@ void LimeSDR::Reset()
 {
     assert(comms);
     LMS64CPacket pkt;
-    pkt.cmd = lime::LMS64CProtocol::CMD_LMS7002_RST;
-    pkt.status = lime::LMS64CProtocol::STATUS_UNDEFINED;
+    pkt.cmd = LMS64CProtocol::CMD_LMS7002_RST;
+    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     pkt.blockCount = 1;
     pkt.periphID = spi_LMS7002M;
     const int LMS_RST_PULSE = 2;
@@ -446,7 +447,7 @@ void LimeSDR::Reset()
         throw std::runtime_error("LMS Reset write failed");
     int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t *)&pkt, sizeof(pkt), 100);
 
-    if (recv >= pkt.headerSize && pkt.status != lime::LMS64CProtocol::STATUS_COMPLETED_CMD)
+    if (recv >= pkt.headerSize && pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
         throw std::runtime_error("LMS Reset read failed");
 }
 
@@ -521,7 +522,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
     assert(comms);
     assert(MOSI);
     LMS64CPacket pkt;
-    pkt.status = lime::LMS64CProtocol::STATUS_UNDEFINED;
+    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     pkt.blockCount = 0;
     pkt.periphID = chipSelect;
 
@@ -539,10 +540,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
             if (isWrite) {
                 switch (chipSelect) {
                 case spi_LMS7002M:
-                    pkt.cmd = lime::LMS64CProtocol::CMD_LMS7002_WR;
+                    pkt.cmd = LMS64CProtocol::CMD_LMS7002_WR;
                     break;
                 case spi_FPGA:
-                    pkt.cmd = lime::LMS64CProtocol::CMD_BRDSPI_WR;
+                    pkt.cmd = LMS64CProtocol::CMD_BRDSPI_WR;
                     break;
                 default:
                     throw std::logic_error("LimeSDR SPI invalid SPI chip select");
@@ -556,10 +557,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
             else {
                 switch (chipSelect) {
                 case spi_LMS7002M:
-                    pkt.cmd = lime::LMS64CProtocol::CMD_LMS7002_RD;
+                    pkt.cmd = LMS64CProtocol::CMD_LMS7002_RD;
                     break;
                 case spi_FPGA:
-                    pkt.cmd = lime::LMS64CProtocol::CMD_BRDSPI_RD;
+                    pkt.cmd = LMS64CProtocol::CMD_BRDSPI_RD;
                     break;
                 default:
                     throw std::logic_error("LimeSDR SPI invalid SPI chip select");
@@ -581,7 +582,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
         int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
-        if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == lime::LMS64CProtocol::STATUS_COMPLETED_CMD) {
+        if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD) {
             for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i) {
                 //MISO[destIndex] = 0;
                 //MISO[destIndex] = pkt.payload[0] << 24;
@@ -593,7 +594,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
         else
             throw std::runtime_error("SPI failed");
         pkt.blockCount = 0;
-        pkt.status = lime::LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     }
 }
 
@@ -605,9 +606,9 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
     // const uint8_t* src = data;
     // while (remainingBytes > 0)
     // {
-    //     pkt.cmd = lime::LMS64CProtocol::CMD_I2C_WR;
-    //     pkt.status = lime::LMS64CProtocol::STATUS_UNDEFINED;
-    //     pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
+    //     pkt.cmd = LMS64CProtocol::CMD_I2C_WR;
+    //     pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+    //     pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
     //     pkt.periphID = address;
     //     memcpy(pkt.payload, src, pkt.blockCount);
     //     src += pkt.blockCount;
@@ -617,7 +618,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
     //         throw std::runtime_error("I2C write failed");
     //     int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
 
-    //     if (recv < pkt.headerSize || pkt.status != lime::LMS64CProtocol::STATUS_COMPLETED_CMD)
+    //     if (recv < pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
     //         throw std::runtime_error("I2C write failed");
     // }
     // return 0;
@@ -631,9 +632,9 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
     // uint8_t* dest = data;
     // while (remainingBytes > 0)
     // {
-    //     pkt.cmd = lime::LMS64CProtocol::CMD_I2C_RD;
-    //     pkt.status = lime::LMS64CProtocol::STATUS_UNDEFINED;
-    //     pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
+    //     pkt.cmd = LMS64CProtocol::CMD_I2C_RD;
+    //     pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+    //     pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
     //     pkt.periphID = address;
 
     //     int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
@@ -645,7 +646,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
     //     dest += pkt.blockCount;
     //     remainingBytes -= pkt.blockCount;
 
-    //     if (recv <= pkt.headerSize || pkt.status != lime::LMS64CProtocol::STATUS_COMPLETED_CMD)
+    //     if (recv <= pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
     //         throw std::runtime_error("I2C read failed");
     // }
     // return 0;
@@ -656,8 +657,8 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
 void LimeSDR::ResetUSBFIFO()
 {
     LMS64CPacket pkt;
-    pkt.cmd = lime::LMS64CProtocol::CMD_USB_FIFO_RST;
-    pkt.status = lime::LMS64CProtocol::STATUS_UNDEFINED;
+    pkt.cmd = LMS64CProtocol::CMD_USB_FIFO_RST;
+    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     pkt.blockCount = 1;
     pkt.payload[0] = 0;
     int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE,
@@ -733,4 +734,41 @@ void LimeSDR::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRD
 void *LimeSDR::GetInternalChip(uint32_t index)
 {
     return mLMSChips.at(index);
+}
+
+int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
+{
+    buffer[0] = 0b01010101;
+    return 0;
+    // LMS64CPacket pkt;
+    // pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
+    // int status = TransferPacket(pkt);
+
+    // if(status != 0)
+    // {
+    //     return ConvertStatus(status, pkt);
+    // }
+
+    // for (size_t i=0; i < bufLength; ++i)
+    // {
+    //     buffer[i] = pkt.inBuffer[i];
+    // }
+
+    // return status;
+}
+
+int LimeSDR::GPIORead(uint8_t *buffer, const size_t bufLength)
+{
+    buffer[0] = 0b10101010;
+    return 0;
+}
+
+int LimeSDR::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    return 0;
+}
+
+int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    return 0;
 }

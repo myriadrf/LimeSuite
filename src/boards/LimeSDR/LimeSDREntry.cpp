@@ -26,14 +26,19 @@ void __loadLimeSDR(void) //TODO fixme replace with LoadLibrary/dlopen
 LimeSDREntry::LimeSDREntry() : DeviceRegistryEntry("LimeSDR")
 {
 #ifdef __unix__
-    int r = libusb_init(&ctx); //initialize the library for the session we just declared
-    if(r < 0)
-        lime::error("Init Error %i", r); //there was an error
+    if (ctx == nullptr) 
+    {
+        int r = libusb_init(&ctx); //initialize the library for the session we just declared
+        if(r < 0)
+        {
+            lime::error("Init Error %i", r); //there was an error
+        }
 #if LIBUSBX_API_VERSION < 0x01000106
-    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+        libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
 #else
-    libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, 3); //set verbosity level to 3, as suggested in the documentation
+        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); //set verbosity level to 3, as suggested in the documentation
 #endif
+    }
 
 #endif
 }
@@ -48,6 +53,11 @@ LimeSDREntry::~LimeSDREntry()
 std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
 {
     std::vector<DeviceHandle> handles;
+
+    if (!hint.media.empty() && hint.media.find("USB") == std::string::npos)
+    {
+        return handles;
+    }
 
 #ifndef __unix__
     CCyUSBDevice device;
@@ -145,7 +155,7 @@ SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos+1), nullptr, 16);
 
-    usbComms = new FX3();
+    usbComms = new FX3(ctx);
     if (usbComms->Connect(vid, pid, handle.serial) != 0)
     {
         delete usbComms;

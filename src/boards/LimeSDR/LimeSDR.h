@@ -57,6 +57,10 @@ public:
     virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
                                       double rxPhase) override;
 
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
   protected:
     class CommsRouter : public ISPI, public II2C
     {
