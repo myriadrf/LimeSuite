@@ -93,10 +93,10 @@ public:
         uint8_t* data, uint32_t length,
         int32_t timeout = USBGeneric::defaultTimeout) override;
 
-    virtual int BeginDataXfer(const uint8_t *buffer, uint32_t length,
+    virtual int BeginDataXfer(uint8_t *buffer, uint32_t length,
                               uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
-    virtual int FinishDataXfer(const uint8_t *buffer, uint32_t length, int contextHandle) override;
+    virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 
   protected:

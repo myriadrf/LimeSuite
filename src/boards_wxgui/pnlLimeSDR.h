@@ -26,9 +26,6 @@ public:
     void OnWriteAll(wxCommandEvent &event);
 
 protected:
-    int LMS_WriteFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t val);
-    int LMS_ReadFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t *val);
-
     pnlGPIO* pnl_gpio;
     wxCheckBox* chkRFLB_A_EN;
     wxCheckBox* chkRFLB_B_EN;

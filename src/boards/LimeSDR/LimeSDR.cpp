@@ -43,6 +43,26 @@ static constexpr uint8_t spi_FPGA = 1;
 static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
 static SDRDevice::CustomParameter cp_temperature = {"Board Temperature", 1, 0, 65535, true};
 
+class USB_CSR_Pipe : public ISerialPort
+{
+public:
+    explicit USB_CSR_Pipe(FX3& port) : port(port) {};
+    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
+    {
+        // lime::warning("LimeSDR USB_CSR_Pipe Write stub.");
+        // return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, timeout_ms);
+        return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
+    }
+    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
+    {
+        // lime::warning("LimeSDR USB_CSR_Pipe Read stub.");
+        // return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, timeout_ms);
+        return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
+    }
+protected:
+    FX3& port;
+};
+
 LimeSDR::CommsRouter::CommsRouter(FX3* port, uint32_t slaveID)
     : port(port), mDefaultSlave(slaveID)
 {
@@ -56,26 +76,21 @@ void LimeSDR::CommsRouter::SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t co
 }
 void LimeSDR::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
-    lime::warning("LimeSDR CommsRouter SPI stub.");
-
-    // PCIE_CSR_Pipe pipe(*port);
-    // switch (spiBusAddress) {
-    //     case spi_LMS7002M_1:
-    //     case spi_LMS7002M_2:
-    //     case spi_LMS7002M_3:
-    //         LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-    //         return;
-    //     case spi_FPGA:
-    //         LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
-    //         return;
-    //     default:
-    //         throw std::logic_error("LimeSDR_X3 SPI invalid SPI chip select");
-    // }
+    USB_CSR_Pipe pipe(*port);
+    switch (spiBusAddress) {
+        case spi_LMS7002M:
+            LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
+            return;
+        case spi_FPGA:
+            LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+            return;
+        default:
+            throw std::logic_error("invalid SPI chip select");
+    }
 }
 int LimeSDR::CommsRouter::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
     lime::warning("LimeSDR CommsRouter I2CWrite stub.");
-
     // PCIE_CSR_Pipe pipe(*port);
     // return LMS64CProtocol::I2C_Write(pipe, address, data, length);
     return 0;
@@ -141,27 +156,27 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
     mDeviceDescriptor.customParameters.push_back(cp_temperature);
 
     //must configure synthesizer before using LimeSDR
-    //if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
-    /*{
-        std::shared_ptr<Si5351C> si5351module(new Si5351C());
-        si5351module->Initialize(conn);
-        si5351module->SetPLL(0, 25000000, 0);
-        si5351module->SetPLL(1, 25000000, 0);
-        si5351module->SetClock(0, 27000000, true, false);
-        si5351module->SetClock(1, 27000000, true, false);
-        for (int i = 2; i < 8; ++i)
-            si5351module->SetClock(i, 27000000, false, false);
-        Si5351C::Status status = si5351module->ConfigureClocks();
-        if (status != Si5351C::SUCCESS)
-        {
-            lime::warning("Failed to configure Si5351C");
-            return;
-        }
-        status = si5351module->UploadConfiguration();
-        if (status != Si5351C::SUCCESS)
-            lime::warning("Failed to upload Si5351C configuration");
-        std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
-    }*/
+    // if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
+    // {
+    //     std::shared_ptr<Si5351C> si5351module(new Si5351C());
+    //     si5351module->Initialize(conn);
+    //     si5351module->SetPLL(0, 25000000, 0);
+    //     si5351module->SetPLL(1, 25000000, 0);
+    //     si5351module->SetClock(0, 27000000, true, false);
+    //     si5351module->SetClock(1, 27000000, true, false);
+    //     for (int i = 2; i < 8; ++i)
+    //         si5351module->SetClock(i, 27000000, false, false);
+    //     Si5351C::Status status = si5351module->ConfigureClocks();
+    //     if (status != Si5351C::SUCCESS)
+    //     {
+    //         lime::warning("Failed to configure Si5351C");
+    //         return;
+    //     }
+    //     status = si5351module->UploadConfiguration();
+    //     if (status != Si5351C::SUCCESS)
+    //         lime::warning("Failed to upload Si5351C configuration");
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
+    // }
 }
 
 LimeSDR::~LimeSDR()
@@ -788,21 +803,6 @@ int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 
     buffer[0] = 0b01010101;
     return 0;
-    // LMS64CPacket pkt;
-    // pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
-    // int status = TransferPacket(pkt);
-
-    // if(status != 0)
-    // {
-    //     return ConvertStatus(status, pkt);
-    // }
-
-    // for (size_t i=0; i < bufLength; ++i)
-    // {
-    //     buffer[i] = pkt.inBuffer[i];
-    // }
-
-    // return status;
 }
 
 int LimeSDR::GPIORead(uint8_t *buffer, const size_t bufLength)
@@ -826,3 +826,14 @@ int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 
     return 0;
 }
+
+int LimeSDR::ReadFPGARegister(uint32_t address)
+{
+    return mFPGA->ReadRegister(address);
+}
+
+int LimeSDR::WriteFPGARegister(uint32_t address, uint32_t value)
+{
+    return mFPGA->WriteRegister(address, value);
+}
+

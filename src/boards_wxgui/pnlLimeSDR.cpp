@@ -2,6 +2,7 @@
 #include "lms7suiteEvents.h"
 #include "Logger.h"
 #include "pnlGPIO.h"
+#include "LimeSDR.h"
 
 #include <wx/sizer.h>
 
@@ -85,9 +86,11 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_AT->GetValue() << 5;
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
-    if(device && LMS_WriteFPGAReg(device, addr, value)) 
+    auto SDR = static_cast<lime::LimeSDR*>(device);
+
+    if(SDR && SDR->WriteFPGARegister(addr, value)) 
     {
-        lime::error("Board loopback cahnge failed");
+        lime::error("Board loopback change failed");
     }
 }
 
@@ -105,7 +108,10 @@ void pnlLimeSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(device && LMS_ReadFPGAReg(device, addr, &value)==0)
+
+    auto SDR = static_cast<lime::LimeSDR*>(device);
+
+    if(SDR && (value = SDR->ReadFPGARegister(addr)) >= 0)
     {
         chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
         chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
@@ -130,37 +136,4 @@ void pnlLimeSDR::OnWriteAll(wxCommandEvent &event)
     OnGPIOChange(event);
     pnl_gpio->OnUsrGPIODirChange(event);
     pnl_gpio->OnUsrGPIOChange(event);
-}
-
-int pnlLimeSDR::LMS_WriteFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t val)
-{
-    if (!device)
-        return -1;
-
-    const uint32_t mosi = (1 << 31) | address << 16 | val;
-    try {
-        device->SPI(chipSelect, &mosi, nullptr, 1);
-        return 0;
-    }
-    catch (...) {
-        return -1;
-    }
-}
-
-int pnlLimeSDR::LMS_ReadFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t *val)
-{
-    if (!device)
-        return -1;
-    const uint32_t mosi = address;
-    uint32_t miso = 0;
-
-    try {
-        device->SPI(chipSelect, &mosi, &miso, 1);
-        *val = miso & 0xFFFF;
-        return 0;
-    }
-    catch (...) 
-    {
-        return -1;
-    }
 }

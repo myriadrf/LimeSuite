@@ -61,6 +61,9 @@ public:
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
     virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
     virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
+
+    virtual int ReadFPGARegister(uint32_t address);
+    virtual int WriteFPGARegister(uint32_t address, uint32_t value);
   protected:
     class CommsRouter : public ISPI, public II2C
     {
