@@ -799,30 +799,78 @@ void *LimeSDR::GetInternalChip(uint32_t index)
 
 int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 {
-    lime::warning("LimeSDR GPIODirRead stub.");
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
 
-    buffer[0] = 0b01010101;
+    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (sentBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::GPIODirRead write failed");
+    }
+
+    int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (gotBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::GPIODirRead read failed");
+    }
+
+    for (size_t i = 0; i < bufLength; ++i)
+    {
+        buffer[i] = pkt.payload[i];
+    }
+
     return 0;
 }
 
 int LimeSDR::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
-    lime::warning("LimeSDR GPIORead stub.");
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
 
-    buffer[0] = 0b10101010;
+    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (sentBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::GPIORead write failed");
+    }
+
+    int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (gotBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::GPIORead read failed");
+    }
+
+    for (size_t i = 0; i < bufLength; ++i)
+    {
+        buffer[i] = pkt.payload[i];
+    }
+
     return 0;
 }
 
 int LimeSDR::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    lime::warning("LimeSDR GPIODirWrite stub.");
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_WR;
+
+    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (sentBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::GPIODirWrite write failed");
+    }
 
     return 0;
 }
 
 int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    lime::warning("LimeSDR GPIOWrite stub.");
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_GPIO_WR;
+
+    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+    if (sentBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::GPIOWrite write failed");
+    }
 
     return 0;
 }
