@@ -705,6 +705,12 @@ static int trx_lms7002m_start(TRXState *s1, const TRXDriverParams *hostState)
             config.skipDefaults = lime->skipConfig[p];
             portDevice->Configure(config, lime->chipIndex[p]);
 
+            for (int c=0; c<hostState->rx_channel_count; ++c)
+                trx_lms7002m_set_rx_gain_func(s1, hostState->rx_gain[c], c);
+
+            for (int c=0; c<hostState->tx_channel_count; ++c)
+                trx_lms7002m_set_tx_gain_func(s1, hostState->tx_gain[c], c);
+
             // override gains
             LMS7002M* chip = static_cast<LMS7002M*>(portDevice->GetInternalChip(lime->chipIndex[p]));
             for(int mac=1; mac<=2; ++mac)
