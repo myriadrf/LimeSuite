@@ -25,15 +25,6 @@ class TRXLooper_USB : public lime::TRXLooper
     USBGeneric *comms;
     const uint8_t rxEndPt;
     const uint8_t txEndPt;
-
-    std::atomic<bool> terminateRx;
-    std::atomic<bool> terminateTx;
-
-    std::atomic<uint32_t> rxDataRate_Bps;
-    std::atomic<uint32_t> txDataRate_Bps;
-
-    std::atomic<uint64_t> rxLastTimestamp;
-    std::atomic<uint64_t> txLastTimestamp;
 };
 
 } // namespace lime

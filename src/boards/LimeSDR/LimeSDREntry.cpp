@@ -36,7 +36,7 @@ LimeSDREntry::LimeSDREntry() : DeviceRegistryEntry("LimeSDR")
 #if LIBUSBX_API_VERSION < 0x01000106
         libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
 #else
-        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); //set verbosity level to 3, as suggested in the documentation
+        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); //set verbosity level to info, as suggested in the documentation
 #endif
     }
 

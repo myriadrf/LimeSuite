@@ -20,6 +20,14 @@ TRXLooper_USB::~TRXLooper_USB() {}
 
 void TRXLooper_USB::TransmitPacketsLoop()
 {
+    // thread ready for work, just wait for stream enable
+    {
+        std::unique_lock<std::mutex> lk(streamMutex);
+        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
+            streamActive.wait_for(lk, std::chrono::milliseconds(100));
+        lk.unlock();
+    }
+
     printf("TransmitPacketsLoop\n");
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = mConfig.txCount;
@@ -41,9 +49,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
     uint64_t totalBytesSent = 0; //for data rate calculation
 
     std::vector<complex16_t> parsedBuffer(samplesInPacket);
-    FPGA_DataPacket *pkt = nullptr;
-    while (terminateTx.load(std::memory_order_relaxed) == false) {
-        int32_t bytesSent = 0;
+    // FPGA_DataPacket *pkt = nullptr;
+    while (mTx.terminate.load(std::memory_order_relaxed) == false) {
         if(handles[bi] >= 0)
         {
             if (comms->WaitForXfer(handles[bi], 1000) == true)
@@ -62,6 +69,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
         // if (!pkt)
         //     pkt = txFIFO->pop();
 
+        // int32_t bytesSent = 0;
         // if (pkt)
         // {
         //     bytesSent = comms->BulkTransfer(txEndPt, reinterpret_cast<uint8_t *>(pkt),
@@ -88,16 +96,16 @@ void TRXLooper_USB::TransmitPacketsLoop()
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000) {
             t1 = t2;
-            double dataRate = 1000.0 * totalBytesSent / timePeriod;
+            float dataRate = 1000.0 * totalBytesSent / timePeriod;
             printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
             totalBytesSent = 0;
-            txDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);
+            mTx.stats.dataRate_Bps = dataRate;
         }
     }
     // if (pkt)
     //     txFIFO->release(pkt);
-    // comms->AbortEndpointXfers(rxEndPt);
-    txDataRate_Bps.store(0, std::memory_order_relaxed);
+    comms->AbortEndpointXfers(txEndPt);
+    mTx.stats.dataRate_Bps = 0;
 }
 
 /** @brief Function dedicated for receiving data samples from board
@@ -105,7 +113,14 @@ void TRXLooper_USB::TransmitPacketsLoop()
 */
 void TRXLooper_USB::ReceivePacketsLoop()
 {
-    printf("ReceivePacketsLoop\n");
+    // thread ready for work, just wait for stream enable
+    {
+        std::unique_lock<std::mutex> lk(streamMutex);
+        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
+            streamActive.wait_for(lk, std::chrono::milliseconds(100));
+        lk.unlock();
+    }
+
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = mConfig.rxCount;
     const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
@@ -127,7 +142,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
     uint64_t lastTS = 0;
 
     std::vector<complex16_t> parsedBuffer(samplesInPacket);
-    while (terminateRx.load(std::memory_order_relaxed) == false) {
+    while (mRx.terminate.load(std::memory_order_relaxed) == false) {
         int32_t bytesReceived = 0;
         if(handles[bi] >= 0)
         {
@@ -160,15 +175,13 @@ void TRXLooper_USB::ReceivePacketsLoop()
                 // TODO: callback for Rx drops
                 printf("Rx drop: %li\n", lastTS);
             }
-            rxLastTimestamp.store(lastTS, std::memory_order_relaxed);
-
+            mRx.lastTimestamp.store(lastTS, std::memory_order_relaxed);
             
-            // FPGA_DataPacket *fifoPkt = rxFIFO->acquire();
+            // FPGA_DataPacket *fifoPkt = mRx.fifo. rxFIFO->acquire();
             // if(fifoPkt)
             // {
-            //     memcpy(fifoPkt, pkt, sizeof(FPGA_DataPacket));
-            //     rxFIFO->push(fifoPkt);
-            // }
+                // memcpy(fifoPkt, pkt, sizeof(FPGA_DataPacket));
+            //     mRx.fifo->push(fifoPkt);            }
             // else
             // {
             //     // TODO: Rx FIFO full, report overrun
@@ -182,14 +195,15 @@ void TRXLooper_USB::ReceivePacketsLoop()
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000) {
             t1 = t2;
-            double dataRate = 1000.0 * totalBytesReceived / timePeriod;
+            float dataRate = 1000.0 * totalBytesReceived / timePeriod;
             printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
             totalBytesReceived = 0;
-            rxDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);
+
+            mRx.stats.dataRate_Bps = dataRate;
         }
     }
     comms->AbortEndpointXfers(rxEndPt);
-    rxDataRate_Bps.store(0, std::memory_order_relaxed);
+    mRx.stats.dataRate_Bps = 0;
 }
 
 } // namespace lime
