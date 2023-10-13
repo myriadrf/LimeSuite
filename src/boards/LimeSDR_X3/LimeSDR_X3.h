@@ -21,12 +21,13 @@ class LitePCIe;
 class FPGA;
 class Equalizer;
 class TRXLooper_PCIE;
+class SlaveSelectShim;
 
 class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
 public:
     LimeSDR_X3() = delete;
-    LimeSDR_X3(lime::LitePCIe* control, std::vector<lime::LitePCIe*> rxStreams, std::vector<lime::LitePCIe*> txStreams);
+    LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::vector<lime::LitePCIe*> trxStreams);
     virtual ~LimeSDR_X3();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -52,20 +53,6 @@ public:
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
     virtual int UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 protected:
-    // Communications helper to divert data to specific device
-    class CommsRouter : public ISPI, public II2C
-    {
-    public:
-        CommsRouter(LitePCIe* port, uint32_t slaveID);
-        virtual ~CommsRouter();
-        virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
-        virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
-        virtual int I2CWrite(int address, const uint8_t *data, uint32_t length);
-        virtual int I2CRead(int addres, uint8_t *dest, uint32_t length);
-    private:
-        LitePCIe* port;
-        uint32_t mDefaultSlave;
-    };
 
     int InitLMS1(bool skipTune = false);
     int InitLMS2(bool skipTune = false);
@@ -104,13 +91,11 @@ protected:
 
 private:
     CDCM_Dev* mClockGeneratorCDCM;
-    LitePCIe *mControlPort;
     Equalizer* mEqualizer;
-    std::vector<LitePCIe*> mRXStreamPorts;
-    std::vector<LitePCIe*> mTXStreamPorts;
+    std::vector<LitePCIe*> mTRXStreamPorts;
 
-    CommsRouter* mLMS7002Mcomms[3];
-    CommsRouter mFPGAcomms;
+    SlaveSelectShim* mLMS7002Mcomms[3];
+    IComms* fpgaPort;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
 };

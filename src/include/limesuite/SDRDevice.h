@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <functional>
 #include <string.h>
 #include <string>
@@ -14,6 +15,7 @@
 
 namespace lime {
 
+class DeviceNode;
 /// SDRDevice can have multiple modules (RF chips), that can operate independently
 
 class LIME_API SDRDevice
@@ -45,7 +47,7 @@ class LIME_API SDRDevice
         CLK_TXTSP = 5
     };
 
-    typedef std::unordered_map<std::string, uint32_t> SlaveNameIds_t;
+    typedef std::map<std::string, uint32_t> SlaveNameIds_t;
 
     struct RFSOCDescriptor
     {
@@ -90,6 +92,7 @@ class LIME_API SDRDevice
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
         std::vector<DataStorage> memoryDevices;
+        DeviceNode* socTree;
     };
 
     struct StreamStats

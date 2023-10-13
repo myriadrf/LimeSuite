@@ -99,7 +99,8 @@ const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
                                                 LMS_DEV_LIMESDRMINI,
                                                 LMS_DEV_LIMESDRMINI_V2,
                                                 LMS_DEV_LIMESDR_X3,
-                                                LMS_DEV_LIMESDR_XTRX
+                                                LMS_DEV_LIMESDR_XTRX,
+                                                LMS_DEV_LIMESDR_MMX8
                                             };
 
 pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) :
@@ -497,6 +498,22 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         pnlXTRX* pnl = new pnlXTRX(this, wxNewId());
         pnl->Initialize(mDevice);
         additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
+    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_MMX8))
+    {
+        wxPanel* owner = new wxPanel(this, wxNewId());
+        wxFlexGridSizer* submodulesSizer = new wxFlexGridSizer(4, 0, 0, 0);
+        for (int i=0; i<8; ++i)
+        {
+            char spiSlaveName[128];
+            sprintf(spiSlaveName, "FPGA@%i", i+1);
+            pnlXTRX* pnl = new pnlXTRX(owner, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, spiSlaveName);
+            submodulesSizer->Add(pnl);
+            pnl->Initialize(mDevice, spiSlaveName);
+        }
+        owner->SetSizer(submodulesSizer);
+        additionalControls = owner;
         sizerAdditionalControls->Add(additionalControls);
     }
     Layout();

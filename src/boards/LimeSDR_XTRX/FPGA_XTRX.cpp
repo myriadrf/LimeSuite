@@ -11,7 +11,7 @@
 namespace lime
 {
 
-FPGA_XTRX::FPGA_XTRX(uint32_t slaveID, uint32_t lmsSlaveId) : FPGA(slaveID, lmsSlaveId) {}
+FPGA_XTRX::FPGA_XTRX(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI) : FPGA(fpgaSPI, lms7002mSPI) {}
 
 int FPGA_XTRX::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {

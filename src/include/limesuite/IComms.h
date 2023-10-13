@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 #include "limesuite/config.h"
 
 namespace lime {
@@ -11,10 +12,7 @@ public:
     virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
 
     // Writing/reading registers for specific slave
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
-    {
-        SPI(MOSI, MISO, count);
-    }
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) = 0;
 };
 
 class LIME_API II2C
@@ -41,6 +39,22 @@ public:
      * @return 0-success
      */
     virtual int I2CRead(int addres, uint8_t *dest, uint32_t length) = 0;
+};
+
+
+class IComms : public ISPI
+{
+public:
+    virtual ~IComms(){};
+
+    bool IsOpen();
+
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) { return -1; };
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) { return -1; };
+
+    typedef bool(*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
+    virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) { return -1; }
+    virtual int ResetDevice(int chipSelect) { return -1; };
 };
 
 } // namespace lime

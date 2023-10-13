@@ -158,13 +158,12 @@ void LMS7002M::SetConnection(ISPI *port)
 /** @brief Creates LMS7002M main control object.
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
-LMS7002M::LMS7002M(uint32_t slaveID) :
+LMS7002M::LMS7002M(ISPI *port) :
     mCallback_onCGENChange(nullptr),
     mCallback_onCGENChange_userData(nullptr),
-    mSlaveID(slaveID),
     useCache(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
-    controlPort(nullptr),
+    controlPort(port),
     mSelfCalDepth(0),
     _cachedRefClockRate(30.72e6)
 {
@@ -608,7 +607,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     @param filename Configuration source file
     @return 0-success, other-failure
 */
-int LMS7002M::LoadConfig(const char* filename)
+int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
 {
 	ifstream f(filename);
     if (f.good() == false) //file not found
@@ -715,6 +714,15 @@ int LMS7002M::LoadConfig(const char* filename)
     }
 
     ResetLogicregisters();
+
+    if (tuneDynamicValues)
+    {
+        TuneVCO(VCO_CGEN);
+        TuneVCO(VCO_SXT);
+        TuneVCO(VCO_SXR);
+        if (mCallback_onCGENChange)
+            return mCallback_onCGENChange(mCallback_onCGENChange_userData);
+    }
     this->SetActiveChannel(ChA);
     return 0;
 }
@@ -2177,7 +2185,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         lime::error("No device connected");
         return -1;
     }
-    controlPort->SPI(mSlaveID, data.data(), nullptr, data.size());
+    controlPort->SPI(data.data(), nullptr, data.size());
     return 0;
 }
 
@@ -2202,7 +2210,7 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
         dataWr[i] = (uint32_t)(spiAddr[i]);
     }
 
-    controlPort->SPI(mSlaveID, dataWr.data(), dataRd.data(), cnt);
+    controlPort->SPI(dataWr.data(), dataRd.data(), cnt);
 
     int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
 
@@ -2448,7 +2456,7 @@ bool LMS7002M::IsSynced()
     std::vector<uint32_t> dataRd(addrToRead.size());
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
-    controlPort->SPI(mSlaveID, dataWr.data(), dataRd.data(), dataWr.size());
+    controlPort->SPI(dataWr.data(), dataRd.data(), dataWr.size());
 
     for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
@@ -2482,7 +2490,7 @@ bool LMS7002M::IsSynced()
     dataRd.resize(addrToRead.size());
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
-    controlPort->SPI(mSlaveID, dataWr.data(), dataRd.data(), dataWr.size());
+    controlPort->SPI(dataWr.data(), dataRd.data(), dataWr.size());
     for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
     this->SetActiveChannel(ChB);
@@ -3126,7 +3134,7 @@ int LMS7002M::SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth
         return -1;
 
     stringstream ss;
-    ss << "LMS(" << mSlaveID << ") " << (tx ? "Tx" : "Rx") << " GFIR coefficients (BW: " << bandwidth << " MHz):\n";
+    ss << "LMS " << (tx ? "Tx" : "Rx") << " GFIR coefficients (BW: " << bandwidth << " MHz):\n";
     ss << "GFIR1 = GFIR2:";
     for (int i=0; i<L*5; ++i)
         ss << " " << coef2[i];

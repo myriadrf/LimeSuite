@@ -15,7 +15,7 @@ class pnlXTRX : public wxPanel
 {
 public:
     pnlXTRX(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = wxEmptyString);
-    void Initialize(lime::SDRDevice *device);
+    void Initialize(lime::SDRDevice *device, const std::string& spiSlaveName = "FPGA");
     virtual ~pnlXTRX();
     virtual void UpdatePanel();
 

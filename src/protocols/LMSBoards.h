@@ -37,6 +37,7 @@ enum eLMS_DEV
     LMS_DEV_LIMESDRMINI_V2          = 25, //FTDI + ECP5 + LMS
     LMS_DEV_LIMESDR_X3              = 26, // 3xLMS
     LMS_DEV_LIMESDR_XTRX            = 27, // XTRX
+    LMS_DEV_LIMESDR_MMX8            = 28,
 
     LMS_DEV_COUNT
 };
@@ -70,7 +71,8 @@ const char LMS_DEV_NAMES[][80] =
     "LimeSDR-Core-HE",
     "LimeSDR-Mini_v2",
     "LimeSDR X3",
-    "LimeSDR XTRX"
+    "LimeSDR XTRX",
+    "LimeSDR MMX8"
 };
 
 static inline const char* GetDeviceName(const eLMS_DEV device)

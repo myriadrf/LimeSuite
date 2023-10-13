@@ -33,7 +33,7 @@ using namespace lime;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPoint &pos,
                                      const wxSize &size, long style)
-    : wxPanel(parent, id, pos, size, style), sdrDevice(nullptr)
+    : ISOCPanel(parent, id, pos, size, style), soc(nullptr)
 {
     wxFlexGridSizer *mainSizer;
     mainSizer = new wxFlexGridSizer(3, 1, 0, 0);
@@ -125,9 +125,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
 
     tabsNotebook = new wxNotebook(this, ID_TABS_NOTEBOOK);
 
-    coarseConfigTab = new SDRConfiguration_view(tabsNotebook, wxNewId());
-    tabsNotebook->AddPage(coarseConfigTab, wxT("Coarse Setup"), true);
-
     ILMS7002MTab *tab;
     tab = new lms7002_pnlCalibrations_view(tabsNotebook, ID_TAB_CALIBRATIONS);
     tabsNotebook->AddPage(tab, _("Calibration"), false);
@@ -201,7 +198,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow *parent, wxWindowID id, const wxPo
     btnLoadDefault->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnLoadDefault ), NULL, this );
     btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnReadTemperature ), NULL, this );
     tabsNotebook->Bind( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, &lms7002_mainPanel::Onnotebook_modulesPageChanged, this);
-    Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(lms7002_mainPanel::OnCGENFrequencyChange), NULL, this);
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
@@ -211,7 +207,7 @@ lms7002_mainPanel::~lms7002_mainPanel()
 
 void lms7002_mainPanel::UpdateVisiblePanel()
 {
-    if (sdrDevice == nullptr)
+    if (soc == nullptr)
         return;
 
     wxWindow* currentPage = tabsNotebook->GetCurrentPage();
@@ -219,6 +215,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
     uint16_t spisw_ctrl = 0;
 
     LMS7002M* chip = GetSelectedChip();
+    assert(chip);
 
     if (pageId == ID_TAB_SXR) //change active channel to A
         chip->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
@@ -248,36 +245,23 @@ void lms7002_mainPanel::UpdateVisiblePanel()
 #endif
 }
 
-void lms7002_mainPanel::Initialize(SDRDevice *pControl)
+void lms7002_mainPanel::Initialize(lime::LMS7002M* socPtr)
 {
-    sdrDevice = pControl;
-    if (sdrDevice == nullptr)
+    soc = socPtr;
+    if (soc == nullptr)
     {
-        coarseConfigTab->Setup(nullptr);
         for (auto &tab : mTabs)
             tab.second->Initialize(nullptr);
         return;
     }
     cmbLmsDevice->SetSelection(0);
+    cmbLmsDevice->Hide();
+    int ch = soc->GetActiveChannelIndex();
+    rbChannelA->SetValue(ch == 0);
+    rbChannelB->SetValue(ch == 1);
 
-    coarseConfigTab->Setup(sdrDevice);
-    const int socCount = sdrDevice->GetDescriptor().rfSOC.size();
-    if (socCount > 1)
-    {
-
-        cmbLmsDevice->Clear();
-        for(int i=0; i<socCount; ++i)
-            cmbLmsDevice->Append( wxString::Format("LMS %i", i+1));
-        cmbLmsDevice->SetSelection( 0 );
-        cmbLmsDevice->Show();
-    }
-    else
-        cmbLmsDevice->Hide();
-    rbChannelA->SetValue(true);
-    rbChannelB->SetValue(false);
-    LMS7002M* chip = GetSelectedChip();
     for (auto &tab : mTabs)
-        tab.second->Initialize(chip);
+        tab.second->Initialize(soc);
     UpdateGUI();
     Layout();
 }
@@ -285,7 +269,7 @@ void lms7002_mainPanel::Initialize(SDRDevice *pControl)
 void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
     try {
-        sdrDevice->Reset();
+        soc->ResetChip();
     }
     catch (std::runtime_error &e)
     {
@@ -300,7 +284,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
 {
     try {
-        sdrDevice->Reset();
+        soc->ResetChip();
     }
     catch (std::runtime_error &e) {
         wxMessageBox(wxString::Format("Load Default failed: %s", e.what()), _("Warning"));
@@ -311,9 +295,6 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
     chkEnableMIMO->SetValue(false);
     //((LMS7_Device*)sdrDevice)->SetActiveChip(cmbLmsDevice->GetSelection());
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
-    wxCommandEvent evt2;
-    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
-    wxPostEvent(this, evt2);
 }
 
 void lms7002_mainPanel::UpdateGUI()
@@ -348,9 +329,6 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     wxCommandEvent tevt;
     // LMS_WriteParam(sdrDevice, LMS7param(MAC), rbChannelA->GetValue() == 1 ? 1 : 2);
     UpdateGUI();
-    wxCommandEvent evt;
-    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
-    wxPostEvent(this, evt);
 }
 
 void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
@@ -426,7 +404,7 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
 void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
     try {
-        sdrDevice->Synchronize(false);
+        soc->DownloadAll();
     }
     catch (std::runtime_error &e)
     {
@@ -439,17 +417,13 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
     try {
-        sdrDevice->Synchronize(false);
+        soc->UploadAll();
     }
     catch (std::runtime_error &e)
     {
         wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
         return;
     }
-
-    wxCommandEvent evt;
-    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
-    wxPostEvent(this, evt);
     UpdateVisiblePanel();
 }
 
@@ -478,23 +452,5 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
 
 LMS7002M* lms7002_mainPanel::GetSelectedChip() const
 {
-    LMS7002M* chip = static_cast<LMS7002M*>(sdrDevice->GetInternalChip(cmbLmsDevice->GetSelection()));
-    return chip;
-}
-
-void lms7002_mainPanel::OnCGENFrequencyChange(wxCommandEvent &event)
-{
-    //if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
-    try
-    {
-        LMS7002M* lms = GetSelectedChip();
-        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        float phaseOffset = -999;
-        sdrDevice->SetFPGAInterfaceFreq(decim, interp, phaseOffset, phaseOffset); // TODO: switch for automatic phase offset
-    }
-    catch (...)
-    {
-        wxMessageBox(_("Failed to set FPGA interface frequency"), _("Warning"));
-    }
+    return soc;
 }

@@ -17,6 +17,7 @@
 #include "fftviewer_frFFTviewer.h"
 #include "ADF4002/ADF4002_wxgui.h"
 #include "Si5351C/Si5351C_wxgui.h"
+#include "CDCM6208/CDCM6208_panelgui.h"
 #include "LMS_Programing/LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
 #include "FPGAcontrols_wxgui.h"
@@ -34,9 +35,11 @@
 //#include "limeRFE_wxgui.h"
 #include "SPI_wxgui.h"
 #include "GUI/events.h"
-
+#include "GUI/ISOCPanel.h"
+#include "SDRConfiguration_view.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/DeviceNode.h"
 //#include "LimeSDR.h"
 using namespace std;
 using namespace lime;
@@ -57,6 +60,22 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char 
     evt.SetInt(int(level));
     wxPostEvent(obj_ptr, evt);
 }
+
+struct DeviceTreeItemData : public wxTreeItemData
+{
+    DeviceTreeItemData(const DeviceNode* soc)
+     : wxTreeItemData(), gui(nullptr), soc(soc)
+    {
+    }
+
+    ~DeviceTreeItemData()
+    {
+        if (gui)
+            gui->Destroy();
+    }
+    ISOCPanel* gui;
+    const DeviceNode* soc;
+};
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     : wxFrame(parent, wxNewId(), _("LimeSuite")), lmsControl(nullptr)
@@ -96,18 +115,18 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     m_scrolledWindow1 = new wxScrolledWindow(this, wxNewId(), wxDefaultPosition, wxDefaultSize,
                                              wxHSCROLL | wxVSCROLL);
     m_scrolledWindow1->SetScrollRate(5, 5);
-    contentSizer = new wxFlexGridSizer(0, 1, 0, 0);
-    contentSizer->AddGrowableCol(0);
+    contentSizer = new wxFlexGridSizer(0, 2, 0, 0);
+    contentSizer->AddGrowableCol(1);
     contentSizer->AddGrowableRow(0);
     contentSizer->SetFlexibleDirection(wxBOTH);
     contentSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
-    mContent = new lms7002_mainPanel(m_scrolledWindow1, wxNewId(), wxDefaultPosition, wxDefaultSize,
-                                     wxTAB_TRAVERSAL);
-    contentSizer->Add(mContent, 0, 0, 5);
+    mContent = nullptr;//new lms7002_mainPanel(m_scrolledWindow1, wxNewId(), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    //contentSizer->Add(mContent, 0, 0, 5);
+    deviceTree = new wxTreeCtrl(m_scrolledWindow1, wxNewId(), wxPoint(0,0), wxSize(200,385), wxTR_HAS_BUTTONS | wxTR_SINGLE | wxTR_ROW_LINES);
+    contentSizer->Add(deviceTree, 0, wxEXPAND, 0);
 
     m_scrolledWindow1->SetSizerAndFit(contentSizer);
-    //m_scrolledWindow1->Layout();
     mainSizer->Add(m_scrolledWindow1, 4, wxEXPAND, 5);
 
     mMiniLog = new pnlMiniLog(this, wxNewId());
@@ -134,7 +153,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     programmer = new LMS_Programing_wxgui(this, wxNewId());
     AddModule(programmer, "Programming");
 
-    //Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     int x,y1,y2;
     m_scrolledWindow1->GetVirtualSize(&x,&y1);
     mMiniLog->GetSize(nullptr,&y2);
@@ -147,14 +165,11 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     // mnuCacheValues->Check(false);
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
-    //Bind(LMS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::OnLmsChanged), this);
-
     Bind(limeEVT_SDR_HANDLE_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDeviceHandleChange), this);
-    // #ifndef LIMERFE
-    // 	mnuModules->Delete(ID_MENUITEM_LIMERFE);
-    // #endif
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
+
+    deviceTree->Bind(wxEVT_TREE_SEL_CHANGED, wxTreeEventHandler(LMS7SuiteAppFrame::DeviceTreeSelectionChanged), this, deviceTree->GetId());
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -163,6 +178,7 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
         iter.second->Destroy();
 
     OnDeviceDisconnect();
+
 }
 
 void LMS7SuiteAppFrame::OnClose( wxCloseEvent& event )
@@ -183,7 +199,6 @@ void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
 
 void LMS7SuiteAppFrame::UpdateConnections(SDRDevice *device)
 {
-    mContent->Initialize(device);
     for (auto iter : mModules) {
         iter.second->Initialize(device);
     }
@@ -206,6 +221,39 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
         lime::DeviceRegistry::freeDevice(lmsControl);
         lmsControl = nullptr;
     }
+
+    deviceTree->DeleteAllItems();
+    mContent = nullptr;
+}
+
+void CreateBranch(wxTreeCtrl* treeRoot, wxTreeItemId parentId, const DeviceNode* node)
+{
+    wxTreeItemId branchId = treeRoot->AppendItem(parentId, node->name, 0, 0, new DeviceTreeItemData(node));
+    if (node->childs.size() == 0)
+        return;
+
+    for (const auto& soc : node->childs)
+        CreateBranch(treeRoot, branchId, soc);
+}
+
+void FillDeviceTree(wxTreeCtrl* root, lime::SDRDevice* device, wxWindow* parentWindow)
+{
+    if (!root || !device)
+        return;
+
+    SDRConfiguration_view* sdrUI = new SDRConfiguration_view(parentWindow, wxNewId());
+    sdrUI->Setup(device);
+    sdrUI->Hide();
+
+    DeviceNode* node = device->GetDescriptor().socTree;
+    DeviceTreeItemData* treeRootData = new DeviceTreeItemData(node);
+    treeRootData->gui = sdrUI;
+    wxTreeItemId rootId = root->AddRoot(node->name, 0, 0, treeRootData);
+
+    for (const auto& soc : node->childs)
+        CreateBranch(root, rootId, soc);
+    root->ExpandAll();
+    root->SelectItem(rootId, true);
 }
 
 void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
@@ -238,12 +286,18 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
             info.gatewareVersion, info.gatewareRevision, refClk / 1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
+        FillDeviceTree(deviceTree, lmsControl, m_scrolledWindow1);
+        wxTreeEvent eee(wxEVT_TREE_SEL_CHANGED, deviceTree, deviceTree->GetFocusedItem());
+        DeviceTreeSelectionChanged(eee);
+
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
         UpdateConnections(lmsControl);
+
+        Fit();
     }
     catch (std::runtime_error &e) {
         printf("Failed to connect %s\n", e.what());
@@ -324,6 +378,55 @@ void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent &event)
         module->Show(true);
         module->Iconize(false); // restore the window if minimized
         module->SetFocus();     // focus on my window
-        module->Raise();        // bring window to front
+        module->Raise();         // bring window to front
     }
+}
+
+ISOCPanel* CreateGUI(wxWindow* parent, const std::string& klass, void* socPtr)
+{
+    if (klass == "SDRDevice")
+    {
+        SDRConfiguration_view* pnl = new SDRConfiguration_view(parent, wxNewId());
+        pnl->Setup(reinterpret_cast<SDRDevice*>(socPtr));
+        pnl->Hide();
+        return pnl;
+    }
+    else if (klass == "LMS7002M")
+    {
+        lms7002_mainPanel* pnl = new lms7002_mainPanel(parent, wxNewId());
+        pnl->Initialize(reinterpret_cast<LMS7002M*>(socPtr));
+        return pnl;
+    }
+    else if (klass == "CDCM6208")
+    {
+        CDCM6208_panelgui* pnl = new CDCM6208_panelgui(parent, wxNewId());
+        pnl->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
+        return pnl;
+    }
+
+    return nullptr;
+}
+
+void LMS7SuiteAppFrame::DeviceTreeSelectionChanged(wxTreeEvent &event)
+{
+    DeviceTreeItemData* item = reinterpret_cast<DeviceTreeItemData*>(deviceTree->GetItemData(event.GetItem()));
+    if (item->gui == nullptr)
+        item->gui = CreateGUI(m_scrolledWindow1, item->soc->klass, item->soc->ptr);
+
+    if (mContent && mContent != item->gui)
+    {
+        contentSizer->Remove(1);
+        mContent->Hide();
+        mContent = nullptr;
+    }
+
+    mContent = item->gui;
+    if (!mContent)
+        return;
+    mContent->Show();
+    contentSizer->Add(mContent, 0, 0, 5);
+    contentSizer->Layout();
+    m_scrolledWindow1->SetSizerAndFit(contentSizer);
+    Layout();
+    Fit();
 }

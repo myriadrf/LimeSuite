@@ -11,7 +11,7 @@
 namespace lime
 {
 
-FPGA_X3::FPGA_X3(uint32_t slaveID, uint32_t lmsSlaveId) : FPGA(slaveID, lmsSlaveId) {}
+FPGA_X3::FPGA_X3(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI) : FPGA(fpgaSPI, lms7002mSPI) {}
 
 int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {

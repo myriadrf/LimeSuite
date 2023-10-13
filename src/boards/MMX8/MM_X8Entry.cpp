@@ -3,31 +3,29 @@
 #endif
 
 #include "LitePCIe.h"
-#include "LimeSDR_XTRX.h"
-#include "protocols/LMS64CProtocol.h"
+#include "MM_X8.h"
 
 #include <fstream>
 #include <map>
 #include <unistd.h>
 #include <fcntl.h>
-#include "LMSBoards.h"
 
 using namespace lime;
 
-void __loadLimeSDR_XTRX(void) //TODO fixme replace with LoadLibrary/dlopen
+void __loadLimeSDR_MMX8(void) //TODO fixme replace with LoadLibrary/dlopen
 {
-    static LimeSDR_XTRXEntry limesdr_XTRXSupport; // self register on initialization
+    static LimeSDR_MMX8Entry limesdr_MMX8Support; // self register on initialization
 }
 
-LimeSDR_XTRXEntry::LimeSDR_XTRXEntry() : DeviceRegistryEntry("LimeSDR_XTRX")
-{
-}
-
-LimeSDR_XTRXEntry::~LimeSDR_XTRXEntry()
+LimeSDR_MMX8Entry::LimeSDR_MMX8Entry() : DeviceRegistryEntry("LimeSDR_MMX8")
 {
 }
 
-std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
+LimeSDR_MMX8Entry::~LimeSDR_MMX8Entry()
+{
+}
+
+std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle &hint)
 {
     std::vector<DeviceHandle> handles;
     DeviceHandle handle;
@@ -36,10 +34,10 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
     if (!hint.media.empty() && hint.media != handle.media)
         return handles;
 
-    const std::string searchDevName("LimeXTRX");
+    const std::string searchDevName("LimeMM-X8");
     const std::vector<std::string> boardNames = {
-        GetDeviceName(LMS_DEV_LIMESDR_XTRX)
-        , "LimeSDR-XTRX"
+        GetDeviceName(LMS_DEV_LIMESDR_MMX8)
+        , "LimeSDR-MMX8"
         , searchDevName
     };
     if (!hint.name.empty())
@@ -70,7 +68,7 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
             continue;
 
         std::string dev_nr(&devPath[pos+searchDevName.length()], &devPath[devPath.find("_")]);
-        handle.name = boardNames[0];// + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
+        handle.name = GetDeviceName(LMS_DEV_LIMESDR_MMX8) + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
 
         handle.addr = devPath.substr(0, devPath.find("_"));
         handles.push_back(handle);
@@ -94,78 +92,89 @@ protected:
     LitePCIe& port;
 };
 
-class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
+class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 {
 public:
-    LMS64C_LMS7002M_Over_PCIe(LitePCIe* dataPort) : pipe(*dataPort) {}
-    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    LMS64C_LMS7002M_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex) : pipe(*dataPort), subdeviceIndex(subdeviceIndex) {}
+    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         SPI(0, MOSI, MISO, count);
-        return;
     }
-    void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
-        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-        return;
+        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
     }
+    virtual int ResetDevice(int chipSelect) override
+    {
+        return LMS64CProtocol::DeviceReset(pipe, chipSelect, subdeviceIndex);
+    };
 private:
     PCIE_CSR_Pipe pipe;
+    uint32_t subdeviceIndex;
 };
 
-class LMS64C_FPGA_Over_PCIe : public lime::IComms
+class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
 {
 public:
-    LMS64C_FPGA_Over_PCIe(LitePCIe* dataPort) : pipe(*dataPort) {}
+    LMS64C_FPGA_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex) : pipe(*dataPort), subdeviceIndex(subdeviceIndex) {}
     void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
-        SPI(0, MOSI, MISO, count);
+        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
     void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
 
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override
     {
-        return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
+        return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units, subdeviceIndex);
     };
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override
     {
-        return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
+        return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units, subdeviceIndex);
     }
     virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
     {
-        return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
+        return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback, subdeviceIndex);
     }
 private:
     PCIE_CSR_Pipe pipe;
+    uint32_t subdeviceIndex;
 };
 
-SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle &handle)
+SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle &handle)
 {
-    // Data transmission layer
     LitePCIe* control = new LitePCIe();
-    LitePCIe* stream = new LitePCIe();
-
-    // protocol layer
-    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_PCIe(control);
-    IComms* route_fpga = new LMS64C_FPGA_Over_PCIe(control);
+    std::vector<LitePCIe*> trxStreams(8);
+    std::vector<IComms*> controls(8);
+    std::vector<IComms*> fpga(8);
+    for (size_t i=0; i<controls.size(); ++i)
+    {
+        controls[i] = new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i+1);
+        fpga[i] = new LMS64C_FPGA_Over_PCIe_MMX8(control, i+1);
+    }
+    fpga.push_back(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0));
 
     try {
         std::string controlFile(handle.addr + "_control");
         control->Open(controlFile.c_str(), O_RDWR);
 
-        std::string streamFile(handle.addr + "_trx0");
-        stream->SetPathName(streamFile.c_str());
-
-        return new LimeSDR_XTRX(route_lms7002m, route_fpga, stream);
+        std::string streamFile("");
+        for (size_t i=0; i<trxStreams.size(); ++i)
+        {
+            char portName[128];
+            sprintf(portName, "%s_trx%li", handle.addr.c_str(), i);
+            trxStreams[i] = new LitePCIe();
+            trxStreams[i]->SetPathName(portName);
+        }
+        return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams));
     }
     catch ( std::runtime_error &e )
     {
         delete control;
-        delete stream;
         char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
+        sprintf(reason, "Unable to connect to device using handle(%s): %s", handle.Serialize().c_str(), e.what());
         throw std::runtime_error(reason);
     }
 }

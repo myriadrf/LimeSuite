@@ -139,6 +139,7 @@ include(comms/PCIe/CMakeLists.txt)
 #include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_X3/CMakeLists.txt)
 include(boards/LimeSDR_XTRX/CMakeLists.txt)
+include(boards/MMX8/CMakeLists.txt)
 
 # configure_file(
 #     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
@@ -165,6 +166,7 @@ message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 set(LMS7SUITE_GUI_SOURCES
     GUI/ILMS7002MTab.cpp
     ADF4002/ADF4002_wxgui.cpp
+    CDCM6208/CDCM6208_panelgui.cpp
     lms7002_wxgui/SDRConfiguration_view.cpp
     lms7002_wxgui/lms7002_pnlXBUF_view.cpp
     lms7002_wxgui/lms7002_pnlRFE_view.cpp

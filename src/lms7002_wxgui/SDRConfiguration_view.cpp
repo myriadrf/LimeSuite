@@ -225,28 +225,21 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
 
 SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
                                      const wxSize &size, long style)
-    : wxPanel(parent, id, pos, size, style), sdrDevice(nullptr)
+    : ISOCPanel(parent, id, pos, size, style), sdrDevice(nullptr)
 {
-    wxFlexGridSizer *mainSizer;
-    mainSizer = new wxFlexGridSizer(4, 1, 0, 0);
+    mainSizer = new wxFlexGridSizer(0, 1, 0, 0);
     mainSizer->AddGrowableCol(0);
     mainSizer->SetFlexibleDirection(wxBOTH);
     mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
+
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Left().Top();
+    SOCConfig_view* row = new SOCConfig_view(this, wxNewId());
+    mainSizer->Add(row, ctrlFlags);
+    socGUI.push_back(row);
 
-    const int rowCount = 4;
-    for (int i=0; i<rowCount; ++i)
-    {
-        SOCConfig_view* row = new SOCConfig_view(this, wxNewId());
-        mainSizer->Add(row, ctrlFlags);
-        socGUI.push_back(row);
-        if (i>0)
-            row->Hide();
-    }
-
-   this->SetSizerAndFit(mainSizer);
+    this->SetSizerAndFit(mainSizer);
 }
 
 void SDRConfiguration_view::Setup(lime::SDRDevice *device)
@@ -258,17 +251,30 @@ void SDRConfiguration_view::Setup(lime::SDRDevice *device)
             panel->Hide();
         return;
     }
+
     const SDRDevice::Descriptor &desc = device->GetDescriptor();
+
+    wxSizerFlags ctrlFlags(0);
+    ctrlFlags = ctrlFlags.Left().Top();
+
+    // add rows for each SOC
+    for (size_t i=socGUI.size(); i<desc.rfSOC.size(); ++i)
+    {
+        SOCConfig_view* row = new SOCConfig_view(this, wxNewId());
+        mainSizer->Add(row, ctrlFlags);
+        socGUI.push_back(row);
+        row->Hide();
+    }
+
     for (size_t i=0; i<socGUI.size(); ++i)
     {
         if (i < desc.rfSOC.size())
         {
             socGUI[i]->Setup(sdrDevice, i);
             socGUI[i]->Show();
-
         }
         else
             socGUI[i]->Hide();
     }
-    Fit();
+    this->SetSizerAndFit(mainSizer);
 }

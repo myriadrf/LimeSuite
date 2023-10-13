@@ -23,7 +23,8 @@ struct LMS64CPacket
     uint8_t status;
     uint8_t blockCount;
     uint8_t periphID;
-    uint8_t reserved[4];
+    uint8_t subDevice;
+    uint8_t reserved[3];
     uint8_t payload[payloadSize];
 };
 
@@ -135,19 +136,19 @@ struct FirmwareInfo
 int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info);
 void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descriptor);
 
-int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count);
-int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count);
+int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
+int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
 
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
 int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
 
-int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *values, const size_t count, const std::string& units);
-int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, const size_t count, std::string* units);
+int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *values, const size_t count, const std::string& units, uint32_t subDevice = 0);
+int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, const size_t count, std::string* units, uint32_t subDevice = 0);
 
 typedef bool(*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
-int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mode, ProgramWriteTarget device, ProgressCallback callback = nullptr);
+int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mode, ProgramWriteTarget device, ProgressCallback callback = nullptr, uint32_t subDevice = 0);
 
-int DeviceReset(ISerialPort& port, uint32_t socIndex);
+int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice = 0);
 
 }
 
