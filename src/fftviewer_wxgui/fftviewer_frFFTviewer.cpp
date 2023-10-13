@@ -592,7 +592,7 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
     else if (dataRate > 1000)
         return wxString::Format(_("%.3f KB/s"), dataRate / 1000.0);
     else
-        return wxString::Format(_("%.0f B/s"), dataRate / 1000.0);
+        return wxString::Format(_("%.0f B/s"), dataRate);
 }
 
 void fftviewer_frFFTviewer::SetNyquistFrequency()
