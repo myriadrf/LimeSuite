@@ -782,14 +782,19 @@ void LimeSDR::StreamStop(uint8_t moduleIndex)
 
 void LimeSDR::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
 {
-    // if (rxFIFO) {
-    //     status.rxFIFO_filled = rxFIFO->Usage();
-    //     status.rxDataRate_Bps = mStreamers[0]->GetDataRate(false);
-    // }
-    // if (txFIFO) {
-    //     status.txFIFO_filled = txFIFO->Usage();
-    //     status.txDataRate_Bps = mStreamers[0]->GetDataRate(true);
-    // }
+    if (rx)
+    {
+        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Rx);
+        rx->FIFO_filled = stats.FIFO_filled;
+        rx->dataRate_Bps = stats.dataRate_Bps;
+    }
+
+    if (tx)
+    {
+        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Tx);
+        tx->FIFO_filled = stats.FIFO_filled;
+        tx->dataRate_Bps = stats.dataRate_Bps;
+    }
 }
 
 void *LimeSDR::GetInternalChip(uint32_t index)

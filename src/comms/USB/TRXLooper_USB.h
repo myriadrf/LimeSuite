@@ -10,9 +10,6 @@ namespace lime {
 
 class USBGeneric;
 
-const int samples12InPkt = 1360;
-const int samples16InPkt = 1020;
-
 class TRXLooper_USB : public lime::TRXLooper
 {
   public:
