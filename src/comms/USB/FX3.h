@@ -103,6 +103,7 @@ public:
     static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
 
     USBTransferContext* contexts;
+    std::mutex contextsLock;
 
     bool isConnected;
 

@@ -6,6 +6,7 @@
 #include <thread>
 #include <chrono>
 #include <assert.h>
+#include <mutex>
 
 using namespace std;
 using namespace lime;
@@ -238,6 +239,8 @@ static void process_libusbtransfer(libusb_transfer *trans)
 */
 int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 {
+    std::unique_lock<std::mutex> lock{contextsLock};
+
     int i = 0;
     bool contextFound = false;
     //find not used context
@@ -248,10 +251,12 @@ int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
         }
     }
     if (!contextFound) {
-        printf("No contexts left for reading data\n");
+        printf("No contexts left for reading or sending data, address %i\n", endPointAddr);
         return -1;
     }
     contexts[i].used = true;
+
+    lock.unlock();
 #ifndef __unix__
     if (InEndPt[endPointAddr & 0xF]) {
         contexts[i].EndPt = InEndPt[endPointAddr & 0xF];

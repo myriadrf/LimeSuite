@@ -18,46 +18,82 @@ TRXLooper_USB::TRXLooper_USB(USBGeneric *comms, FPGA *f, LMS7002M *chip, uint8_t
 
 TRXLooper_USB::~TRXLooper_USB() {}
 
-void TRXLooper_USB::TransmitPacketsLoop()
+void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig &config)
 {
-    // thread ready for work, just wait for stream enable
+    if (config.txCount > 0)
     {
-        std::unique_lock<std::mutex> lk(streamMutex);
-        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
-            streamActive.wait_for(lk, std::chrono::milliseconds(100));
-        lk.unlock();
+        TxSetup();
     }
 
+    TRXLooper::Setup(config);
+}
+
+int TRXLooper_USB::TxSetup()
+{    
+    char name[64];
+    sprintf(name, "Tx%i_memPool", chipId);
+    const int upperAllocationLimit = 65536;//sizeof(complex32f_t) * mTx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
+    mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
+
+    return 0;
+}
+
+void TRXLooper_USB::TransmitPacketsLoop()
+{
     printf("TransmitPacketsLoop\n");
+
+    DataConversion conversion;
+    conversion.destFormat = mConfig.linkFormat;
+    conversion.srcFormat = mConfig.format;
+    conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+
     //at this point FPGA has to be already configured to output samples
     // const uint8_t chCount = mConfig.txCount;
-    // const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    // const uint32_t samplesInPacket = (packed ? samples12InPkt : samples16InPkt) / chCount;
+    const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    uint samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;//mRx.samplesInPkt;
 
-    const uint8_t batchCount = 1; // how many async reads to schedule, dataPort->GetBuffersCount();
+    const uint8_t batchCount = 8; // how many async reads to schedule, dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = 1; // dataPort->CheckStreamSize(rxBatchSize);
     const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_DataPacket);
+
     std::vector<int> handles(batchCount, -1);
     std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
 
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
-    for (int i = 0; i<batchCount; ++i)
-        handles[i] = comms->BeginDataXfer(&buffers[i*bufferSize], bufferSize, rxEndPt);
 
     int bi = 0;
     uint64_t totalBytesSent = 0; //for data rate calculation
 
-    // std::vector<complex16_t> parsedBuffer(samplesInPacket);
-    // FPGA_DataPacket *pkt = nullptr;
-    while (mTx.terminate.load(std::memory_order_relaxed) == false) {
+    SamplesPacketType* srcPkt = nullptr;
+
+    bool sendBuffer = false;
+    uint payloadSize = 0;
+    uint bytesUsed = 0;
+    uint packetsCreated = 0;
+
+    const bool mimo = std::max(mConfig.txCount, mConfig.rxCount) > 1;
+    const int bytesForFrame = (packed ? 3 : 4) * (mimo ? 2 : 1);
+    uint maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
+
+    // thread ready for work, just wait for stream enable
+    {
+        std::unique_lock<std::mutex> lk(streamMutex);
+        while (!mStreamEnabled && !mTx.terminate.load(std::memory_order_relaxed))
+            streamActive.wait_for(lk, std::chrono::milliseconds(100));
+        lk.unlock();
+    }
+
+    while (mTx.terminate.load(std::memory_order_relaxed) == false)
+    {
         if(handles[bi] >= 0)
         {
             if (comms->WaitForXfer(handles[bi], 1000) == true)
             {
-                int bytesReceived = comms->FinishDataXfer(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-                totalBytesSent += bytesReceived;
-                //printf("Recv %i\n", bytesReceived);
+                int bytesSent = comms->FinishDataXfer(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+                totalBytesSent += bytesSent;
+                handles[bi] = -1;
+                //printf("Send %i\n", bytesSent);
             }
             else
             {
@@ -66,32 +102,122 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 continue;
             }
         }
-        // if (!pkt)
-        //     pkt = txFIFO->pop();
 
-        // int32_t bytesSent = 0;
-        // if (pkt)
-        // {
-        //     bytesSent = comms->BulkTransfer(txEndPt, reinterpret_cast<uint8_t *>(pkt),
-        //                                         sizeof(FPGA_DataPacket), 500);
-        //     if (bytesSent == 0) {
-        //         printf("Tx failed transfer\n");
-        //         continue;
-        //     }
-        //     else {
-        //         //printf("Rx recv %i\n", bytesReceived);
-        //         totalBytesSent += bytesSent;
-        //     }
-        //     txFIFO->release(pkt);
-        //     pkt = nullptr;
-        // }
-        // else
-        //     printf("Tx underrun\n");
+        if(!srcPkt || srcPkt->empty())
+        {
+            if (srcPkt != nullptr)
+            {
+                mTx.memPool->Free(srcPkt);
+            }
 
-        // Re-submit this request to keep the queue full
-        handles[bi] = comms->BeginDataXfer(&buffers[bi*bufferSize], bufferSize, rxEndPt);
-        bi = (bi + 1) & (batchCount-1);
+            if(!mTx.fifo->pop(&srcPkt, true, 100))
+            {
+                std::this_thread::yield();
+                break;
+            }
 
+            if (mConfig.extraConfig != nullptr && mConfig.extraConfig->negateQ)
+            {
+                switch (mConfig.format)
+                {
+                case SDRDevice::StreamConfig::DataFormat::I16:
+                    srcPkt->Scale<complex16_t>(1, -1, mConfig.txCount);
+                    break;
+                case SDRDevice::StreamConfig::DataFormat::F32:
+                    srcPkt->Scale<complex32f_t>(1, -1, mConfig.txCount);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+        
+        /*if (srcPkt->useTimestamp && mConfig.rxCount > 0)
+        {
+            int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
+            const int64_t txAdvance = srcPkt->timestamp - rxNow;
+
+            if(mConfig.hintSampleRate)
+            {
+                int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
+                txTSAdvance.Add(timeAdvance);
+            }
+            else
+                txTSAdvance.Add(txAdvance);
+            if(txAdvance <= 0)
+            {
+                underrun.add(1);
+                ++stats.underrun;
+                mTx.memPool->Free(srcPkt);
+                srcPkt = nullptr;
+                break;
+            }
+        }*/
+
+        TxHeader* header = reinterpret_cast<TxHeader*>(&buffers[bi * bufferSize]);
+        uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
+
+        while(!srcPkt->empty())
+        {
+            if ((payloadSize >= maxPayloadSize || payloadSize == samplesInPkt * bytesForFrame) && bytesUsed + sizeof(TxHeader) <= bufferSize)
+            {
+                header = reinterpret_cast<TxHeader*>(&buffers[bi*bufferSize + bytesUsed]);
+                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
+                payloadSize = 0;
+            }
+
+            if(payloadSize == 0)
+            {
+                header->Clear();
+                ++packetsCreated;
+                header->counter = srcPkt->timestamp;
+                bytesUsed += sizeof(TxHeader);
+            }
+
+            header->ignoreTimestamp(!srcPkt->useTimestamp);
+
+            const uint freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
+            uint transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint>(srcPkt->size()));
+            transferCount = std::min(transferCount, samplesInPkt);
+
+            if (transferCount > 0)
+            {
+                int samplesDataSize = Interleave(srcPkt, transferCount, conversion, payloadPtr);
+                payloadPtr = payloadPtr+samplesDataSize;
+                payloadSize += samplesDataSize;
+                bytesUsed += samplesDataSize;
+                header->SetPayloadSize(payloadSize);
+                assert(payloadSize > 0);
+                assert(payloadSize <= maxPayloadSize);
+            }
+            else
+            {
+                sendBuffer = true;
+            }
+
+            const bool packetNotFull = payloadSize < maxPayloadSize;
+            const bool spaceAvailable = bufferSize - bytesUsed > 0;
+            const bool hasSpace = packetNotFull && spaceAvailable;
+
+            if (packetsCreated >= packetsToBatch && !hasSpace)
+                sendBuffer = true;
+
+            if (bytesUsed >= bufferSize)
+                sendBuffer = true; // not enough space for more packets, need to flush
+
+            if (sendBuffer)
+            {        
+                handles[bi] = comms->BeginDataXfer(&buffers[bi*bufferSize], bufferSize, txEndPt);
+                bi = (bi + 1) % batchCount;
+                sendBuffer = false;
+                bytesUsed = 0;
+                payloadSize = 0;
+                packetsCreated = 0;
+
+                break;
+            }
+        }
+        
         t2 = std::chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000) {
@@ -102,8 +228,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             mTx.stats.dataRate_Bps = dataRate;
         }
     }
-    // if (pkt)
-    //     txFIFO->release(pkt);
+
     comms->AbortEndpointXfers(txEndPt);
     mTx.stats.dataRate_Bps = 0;
 }
@@ -157,7 +282,9 @@ void TRXLooper_USB::ReceivePacketsLoop()
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
     for (int i = 0; i<batchCount; ++i)
+    {
         handles[i] = comms->BeginDataXfer(&buffers[i*bufferSize], bufferSize, rxEndPt);
+    }
 
     int bi = 0;
     uint64_t totalBytesReceived = 0; //for data rate calculation
@@ -221,6 +348,8 @@ void TRXLooper_USB::ReceivePacketsLoop()
                 case SDRDevice::StreamConfig::DataFormat::F32:
                     outputPkt->Scale<complex32f_t>(1, -1, mConfig.rxCount);
                     break;
+                default:
+                    break;
                 }
             }
 
@@ -238,19 +367,22 @@ void TRXLooper_USB::ReceivePacketsLoop()
         }
         // Re-submit this request to keep the queue full
         handles[bi] = comms->BeginDataXfer(&buffers[bi*bufferSize], bufferSize, rxEndPt);
-        bi = (bi + 1) & (batchCount-1);
+        bi = (bi + 1) % batchCount;
 
         t2 = std::chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        if (timePeriod >= 1000) {
+        if (timePeriod >= 1000)
+        {
             t1 = t2;
+
             float dataRate = 1000.0 * totalBytesReceived / timePeriod;
             printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
-            totalBytesReceived = 0;
-
             mRx.stats.dataRate_Bps = dataRate;
+
+            totalBytesReceived = 0;
         }
     }
+
     comms->AbortEndpointXfers(rxEndPt);
     mRx.stats.dataRate_Bps = 0;
 }
