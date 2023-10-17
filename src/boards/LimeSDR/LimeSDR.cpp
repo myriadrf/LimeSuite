@@ -425,17 +425,23 @@ int LimeSDR::Init()
 SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
 {
     assert(comms);
-    SDRDevice::Descriptor devInfo;
+    SDRDevice::Descriptor deviceDescriptor;
     try
     {
         LMS64CPacket pkt;
         pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
+
         int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
         if (sentBytes != sizeof(pkt))
+        {
             throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
+        }
+
         int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
         if (gotBytes != sizeof(pkt))
+        {
             throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
+        }
 
         LMS64CProtocol::FirmwareInfo info;
         if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
@@ -453,13 +459,16 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
             }
         }
         else
-            return devInfo;
-        devInfo.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
-        devInfo.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
-        devInfo.firmwareVersion = std::to_string(int(info.firmware));
-        devInfo.hardwareVersion = std::to_string(int(info.hardware));
-        devInfo.protocolVersion = std::to_string(int(info.protocol));
-        devInfo.serialNumber = info.boardSerialNumber;
+        {
+            return deviceDescriptor;
+        }
+
+        deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
+        deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
+        deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
+        deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
+        deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+        deviceDescriptor.serialNumber = info.boardSerialNumber;
 
         const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
         uint32_t data[4];
@@ -469,20 +478,20 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
         auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
         auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
 
-        devInfo.gatewareTargetBoard = GetDeviceName(boardID);
-        devInfo.gatewareVersion = std::to_string(int(gatewareVersion));
-        devInfo.gatewareRevision = std::to_string(int(gatewareRevision));
-        devInfo.hardwareVersion = std::to_string(int(hwVersion));
+        deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
+        deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
+        deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
+        deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
 
-        return devInfo;
+        return deviceDescriptor;
     }
     catch (...)
     {
         //lime::error("LimeSDR::GetDeviceInfo failed(%s)", e.what());
-        devInfo.name = GetDeviceName(LMS_DEV_UNKNOWN);
-        devInfo.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
+        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
+        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
     }
-    return devInfo;
+    return deviceDescriptor;
 }
 
 void LimeSDR::Reset()
