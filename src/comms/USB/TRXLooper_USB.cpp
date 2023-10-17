@@ -32,7 +32,7 @@ int TRXLooper_USB::TxSetup()
 {    
     char name[64];
     sprintf(name, "Tx%i_memPool", chipId);
-    const int upperAllocationLimit = 65536;//sizeof(complex32f_t) * mTx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
+    const int upperAllocationLimit = sizeof(complex32f_t) * mTx.packetsToBatch * mTx.samplesInPkt * 2 + SamplesPacketType::headerSize;
     mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
 
     return 0;
@@ -48,9 +48,9 @@ void TRXLooper_USB::TransmitPacketsLoop()
     conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
 
     //at this point FPGA has to be already configured to output samples
-    // const uint8_t chCount = mConfig.txCount;
+
     const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    uint samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;//mRx.samplesInPkt;
+    uint samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;
 
     const uint8_t batchCount = 8; // how many async reads to schedule
     const uint8_t packetsToBatch = mTx.packetsToBatch;
@@ -241,9 +241,6 @@ void TRXLooper_USB::TransmitPacketsLoop()
 void TRXLooper_USB::ReceivePacketsLoop()
 {
     //at this point FPGA has to be already configured to output samples
-    // const uint8_t chCount = mConfig.rxCount;
-    // const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    // const uint32_t samplesInPacket = (packed ? samples12InPkt : samples16InPkt) / chCount;
 
     DataConversion conversion;
     conversion.srcFormat = mConfig.linkFormat;
@@ -253,11 +250,11 @@ void TRXLooper_USB::ReceivePacketsLoop()
     typedef FPGA_DataPacket ReceivePacket;
 
     const uint8_t batchCount = 8; // how many async reads to schedule
-    const uint8_t packetsToBatch = mRx.packetsToBatch; // mConfig.extraConfig->rxPacketsInBatch;
+    const uint8_t packetsToBatch = mRx.packetsToBatch;
     const uint32_t bufferSize = packetsToBatch * sizeof(ReceivePacket);
     std::vector<int> handles(batchCount, -1);
     std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
-    const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;//mRx.samplesInPkt;
+    const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount; //mRx.samplesInPkt;
 
     const int outputSampleSize = mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
     const int32_t outputPktSize = SamplesPacketType::headerSize
@@ -289,7 +286,6 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     int bi = 0;
     uint64_t totalBytesReceived = 0; //for data rate calculation
-    // uint64_t lastTS = 0;
 
     SamplesPacketType* outputPkt = nullptr;
     int64_t expectedTS = 0;

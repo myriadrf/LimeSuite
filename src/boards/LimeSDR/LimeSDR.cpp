@@ -49,14 +49,10 @@ public:
     explicit USB_CSR_Pipe(FX3& port) : port(port) {};
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
     {
-        // lime::warning("LimeSDR USB_CSR_Pipe Write stub.");
-        // return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, timeout_ms);
         return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
     }
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
-        // lime::warning("LimeSDR USB_CSR_Pipe Read stub.");
-        // return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, timeout_ms);
         return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
     }
 protected:
@@ -74,6 +70,7 @@ void LimeSDR::CommsRouter::SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t co
 {
     SPI(mDefaultSlave, MOSI, MISO, count);
 }
+
 void LimeSDR::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
     USB_CSR_Pipe pipe(*port);
@@ -88,19 +85,17 @@ void LimeSDR::CommsRouter::SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uin
             throw std::logic_error("invalid SPI chip select");
     }
 }
+
 int LimeSDR::CommsRouter::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
-    lime::warning("LimeSDR CommsRouter I2CWrite stub.");
-    // PCIE_CSR_Pipe pipe(*port);
-    // return LMS64CProtocol::I2C_Write(pipe, address, data, length);
-    return 0;
+    USB_CSR_Pipe pipe(*port);
+    return LMS64CProtocol::I2C_Write(pipe, address, data, length);
 }
+
 int LimeSDR::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
 {
-    lime::warning("LimeSDR CommsRouter I2CRead stub.");
-    // PCIE_CSR_Pipe pipe(*port);
-    // return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
-    return 0;
+    USB_CSR_Pipe pipe(*port);
+    return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
 }
 
 const SDRDevice::Descriptor &LimeSDR::GetDescriptor()
@@ -156,33 +151,36 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
     mDeviceDescriptor.customParameters.push_back(cp_temperature);
 
     //must configure synthesizer before using LimeSDR
-    // if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
-    // {
-    //     std::shared_ptr<Si5351C> si5351module(new Si5351C());
-    //     si5351module->Initialize(conn);
-    //     si5351module->SetPLL(0, 25000000, 0);
-    //     si5351module->SetPLL(1, 25000000, 0);
-    //     si5351module->SetClock(0, 27000000, true, false);
-    //     si5351module->SetClock(1, 27000000, true, false);
-    //     for (int i = 2; i < 8; ++i)
-    //         si5351module->SetClock(i, 27000000, false, false);
-    //     Si5351C::Status status = si5351module->ConfigureClocks();
-    //     if (status != Si5351C::SUCCESS)
-    //     {
-    //         lime::warning("Failed to configure Si5351C");
-    //         return;
-    //     }
-    //     status = si5351module->UploadConfiguration();
-    //     if (status != Si5351C::SUCCESS)
-    //         lime::warning("Failed to upload Si5351C configuration");
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
-    // }
+    /*if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
+    {
+        std::shared_ptr<Si5351C> si5351module(new Si5351C());
+        si5351module->Initialize(conn);
+        si5351module->SetPLL(0, 25000000, 0);
+        si5351module->SetPLL(1, 25000000, 0);
+        si5351module->SetClock(0, 27000000, true, false);
+        si5351module->SetClock(1, 27000000, true, false);
+        for (int i = 2; i < 8; ++i)
+            si5351module->SetClock(i, 27000000, false, false);
+        Si5351C::Status status = si5351module->ConfigureClocks();
+        if (status != Si5351C::SUCCESS)
+        {
+            lime::warning("Failed to configure Si5351C");
+            return;
+        }
+        status = si5351module->UploadConfiguration();
+        if (status != Si5351C::SUCCESS)
+            lime::warning("Failed to upload Si5351C configuration");
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
+    }*/
 }
 
 LimeSDR::~LimeSDR()
 {
     if (mStreamers[0])
+    {
         delete mStreamers[0];
+    }
+    
     delete comms;
     delete mFPGA;
 }
@@ -659,59 +657,59 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
     }
 }
 
-// int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)
-// {
-    // assert(comms);
-    // LMS64CPacket pkt;
-    // int remainingBytes = length;
-    // const uint8_t* src = data;
-    // while (remainingBytes > 0)
-    // {
-    //     pkt.cmd = LMS64CProtocol::CMD_I2C_WR;
-    //     pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
-    //     pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
-    //     pkt.periphID = address;
-    //     memcpy(pkt.payload, src, pkt.blockCount);
-    //     src += pkt.blockCount;
-    //     remainingBytes -= pkt.blockCount;
-    //     int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
-    //     if (sent != sizeof(pkt))
-    //         throw std::runtime_error("I2C write failed");
-    //     int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+/*int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)
+{
+    assert(comms);
+    LMS64CPacket pkt;
+    int remainingBytes = length;
+    const uint8_t* src = data;
+    while (remainingBytes > 0)
+    {
+        pkt.cmd = LMS64CProtocol::CMD_I2C_WR;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
+        pkt.periphID = address;
+        memcpy(pkt.payload, src, pkt.blockCount);
+        src += pkt.blockCount;
+        remainingBytes -= pkt.blockCount;
+        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            throw std::runtime_error("I2C write failed");
+        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
 
-    //     if (recv < pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
-    //         throw std::runtime_error("I2C write failed");
-    // }
-    // return 0;
-// }
+        if (recv < pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
+            throw std::runtime_error("I2C write failed");
+    }
+    return 0;
+}*/
 
-// int LimeSDR::I2CRead(int address, uint8_t *data, uint32_t length)
-// {
-    // assert(comms);
-    // LMS64CPacket pkt;
-    // int remainingBytes = length;
-    // uint8_t* dest = data;
-    // while (remainingBytes > 0)
-    // {
-    //     pkt.cmd = LMS64CProtocol::CMD_I2C_RD;
-    //     pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
-    //     pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
-    //     pkt.periphID = address;
+/*int LimeSDR::I2CRead(int address, uint8_t *data, uint32_t length)
+{
+    assert(comms);
+    LMS64CPacket pkt;
+    int remainingBytes = length;
+    uint8_t* dest = data;
+    while (remainingBytes > 0)
+    {
+        pkt.cmd = LMS64CProtocol::CMD_I2C_RD;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
+        pkt.periphID = address;
 
-    //     int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
-    //     if (sent != sizeof(pkt))
-    //         throw std::runtime_error("I2C read failed");
-    //     int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            throw std::runtime_error("I2C read failed");
+        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
 
-    //     memcpy(dest, pkt.payload, pkt.blockCount);
-    //     dest += pkt.blockCount;
-    //     remainingBytes -= pkt.blockCount;
+        memcpy(dest, pkt.payload, pkt.blockCount);
+        dest += pkt.blockCount;
+        remainingBytes -= pkt.blockCount;
 
-    //     if (recv <= pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
-    //         throw std::runtime_error("I2C read failed");
-    // }
-    // return 0;
-// }
+        if (recv <= pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
+            throw std::runtime_error("I2C read failed");
+    }
+    return 0;
+}*/
 
 // There might be some leftover samples data still buffered in USB device
 // clear the USB buffers before streaming samples to avoid old data
@@ -740,9 +738,7 @@ int LimeSDR::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
     try {
         mStreamers[0] = new TRXLooper_USB(comms, mFPGA, mLMSChips[0], streamBulkInAddr, streamBulkOutAddr);
         mStreamers[0]->Setup(config);
-        // rxFIFO = new PacketsFIFO<FPGA_DataPacket>(1024*64);
-        // txFIFO = new PacketsFIFO<FPGA_DataPacket>(1024*64);
-        // mStreamers[0]->AssignFIFO(rxFIFO, txFIFO);
+
         return 0;
     }
     catch (std::logic_error &e) {
@@ -770,12 +766,7 @@ void LimeSDR::StreamStop(uint8_t moduleIndex)
         return;
 
     mStreamers[0]->Stop();
-    // if (txFIFO)
-    //     delete txFIFO;
-    // txFIFO = nullptr;
-    // if (rxFIFO)
-    //     delete rxFIFO;
-    // rxFIFO = nullptr;
+
     delete mStreamers[0];
     mStreamers[0] = nullptr;
 }

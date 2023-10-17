@@ -42,9 +42,6 @@ public:
 
     virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
 
-    // virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
-    // virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
-
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
 
     virtual void StreamStart(uint8_t moduleIndex) override;

@@ -26,7 +26,6 @@ set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boards/LimeSDR)
 set(LIMESDR_SOURCES
     ${THIS_SOURCE_DIR}/LimeSDREntry.cpp
     ${THIS_SOURCE_DIR}/LimeSDR.cpp
-    # ${THIS_SOURCE_DIR}/FPGA_SDR.cpp
 )
 
 set(LIMESDR_LIBRARIES
@@ -49,4 +48,4 @@ endif()
 ########################################################################
 target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${USB_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
 target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${LIMESDR_SOURCES})
-target_link_libraries(${MAIN_LIBRARY_NAME} ${LIMESDR_LIBRARIES})
+target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIMESDR_LIBRARIES})

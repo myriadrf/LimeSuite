@@ -86,9 +86,9 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_AT->GetValue() << 5;
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
-    auto SDR = static_cast<lime::LimeSDR*>(device);
+    auto sdr = static_cast<lime::LimeSDR*>(device);
 
-    if(SDR && SDR->WriteFPGARegister(addr, value)) 
+    if(sdr && sdr->WriteFPGARegister(addr, value)) 
     {
         lime::error("Board loopback change failed");
     }
@@ -109,9 +109,9 @@ void pnlLimeSDR::UpdatePanel()
     uint16_t addr = 0x0017;
     uint16_t value = 0;
 
-    auto SDR = static_cast<lime::LimeSDR*>(device);
+    auto sdr = static_cast<lime::LimeSDR*>(device);
 
-    if(SDR && (value = SDR->ReadFPGARegister(addr)) >= 0)
+    if(sdr && (value = sdr->ReadFPGARegister(addr)) >= 0)
     {
         chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
         chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
