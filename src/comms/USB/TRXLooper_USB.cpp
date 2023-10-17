@@ -78,20 +78,20 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
     // thread ready for work, just wait for stream enable
     {
-        std::unique_lock<std::mutex> lk(streamMutex);
+        std::unique_lock<std::mutex> lock(streamMutex);
         while (!mStreamEnabled && !mTx.terminate.load(std::memory_order_relaxed))
-            streamActive.wait_for(lk, std::chrono::milliseconds(100));
-        lk.unlock();
+            streamActive.wait_for(lock, std::chrono::milliseconds(100));
+        lock.unlock();
     }
 
     TxHeader* header = reinterpret_cast<TxHeader*>(&buffers[bi * bufferSize]);
     uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader) + payloadSize;
 
-    while (mTx.terminate.load(std::memory_order_relaxed) == false)
+    while (!mTx.terminate.load(std::memory_order_relaxed))
     {
         if(handles[bi] >= 0)
         {
-            if (comms->WaitForXfer(handles[bi], 1000) == true)
+            if (comms->WaitForXfer(handles[bi], 1000))
             {
                 int bytesSent = comms->FinishDataXfer(&buffers[bi*bufferSize], bufferSize, handles[bi]);
                 totalBytesSent += bytesSent;
@@ -106,7 +106,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             }
         }
 
-        if(!srcPkt || srcPkt->empty())
+        if(srcPkt == nullptr || srcPkt->empty())
         {
             if (srcPkt != nullptr)
             {
@@ -247,11 +247,9 @@ void TRXLooper_USB::ReceivePacketsLoop()
     conversion.destFormat = mConfig.format;
     conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
 
-    typedef FPGA_DataPacket ReceivePacket;
-
     const uint8_t batchCount = 8; // how many async reads to schedule
     const uint8_t packetsToBatch = mRx.packetsToBatch;
-    const uint32_t bufferSize = packetsToBatch * sizeof(ReceivePacket);
+    const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_DataPacket);
     std::vector<int> handles(batchCount, -1);
     std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount; //mRx.samplesInPkt;
@@ -267,14 +265,12 @@ void TRXLooper_USB::ReceivePacketsLoop()
     const int upperAllocationLimit = sizeof(complex32f_t) * packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mRx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
 
-    SDRDevice::StreamStats &stats = mRx.stats;
-
     // thread ready for work, just wait for stream enable
     {
-        std::unique_lock<std::mutex> lk(streamMutex);
+        std::unique_lock<std::mutex> lock(streamMutex);
         while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
-            streamActive.wait_for(lk, std::chrono::milliseconds(100));
-        lk.unlock();
+            streamActive.wait_for(lock, std::chrono::milliseconds(100));
+        lock.unlock();
     }
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -289,6 +285,8 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     SamplesPacketType* outputPkt = nullptr;
     int64_t expectedTS = 0;
+
+    SDRDevice::StreamStats &stats = mRx.stats;
 
     while (mRx.terminate.load(std::memory_order_relaxed) == false)
     {
@@ -315,14 +313,15 @@ void TRXLooper_USB::ReceivePacketsLoop()
             }
         }
 
-        for (uint8_t j = 0; j < bytesReceived / sizeof(ReceivePacket); ++j)
+        const uint8_t fullPacketsReceived = bytesReceived / sizeof(FPGA_DataPacket);
+        for (uint8_t j = 0; j < fullPacketsReceived; ++j)
         {
             if (outputPkt == nullptr)
             {
                 outputPkt = SamplesPacketType::ConstructSamplesPacket(mRx.memPool->Allocate(outputPktSize), samplesInPkt, outputSampleSize);
             }
 
-            const ReceivePacket* pkt = reinterpret_cast<ReceivePacket*>(&buffers[bi*bufferSize + sizeof(ReceivePacket)*j]);
+            const FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize + sizeof(FPGA_DataPacket)*j]);
 
             if (pkt->counter - expectedTS != 0)
             {

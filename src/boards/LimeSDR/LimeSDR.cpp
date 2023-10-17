@@ -100,18 +100,16 @@ int LimeSDR::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
 
 const SDRDevice::Descriptor &LimeSDR::GetDescriptor()
 {
-    static SDRDevice::Descriptor d;
+    static SDRDevice::Descriptor descriptor = GetDeviceInfo();
 
-    d = GetDeviceInfo();
-
-    d.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
+    descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
     RFSOCDescriptor soc;
     soc.channelCount = 2;
     soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
     soc.txPathNames = {"None", "Band1", "Band2"};
-    d.rfSOC.push_back(soc);
+    descriptor.rfSOC.push_back(soc);
 
-    return d;
+    return descriptor;
 }
 
 //control commands to be send via bulk port for boards v1.2 and later
