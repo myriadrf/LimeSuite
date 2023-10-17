@@ -143,8 +143,6 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
     mFPGA = new FPGA(spi_FPGA, spi_LMS7002M);
     mFPGA->SetConnection(&mFPGAComms);
 
-    // rxFIFOs.resize(1, nullptr);
-    // txFIFOs.resize(1, nullptr);
     mStreamers.resize(1, nullptr);
 
     mDeviceDescriptor.customParameters.push_back(cp_vctcxo_dac);
@@ -465,7 +463,6 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
         devInfo.protocolVersion = std::to_string(int(info.protocol));
         devInfo.serialNumber = info.boardSerialNumber;
 
-        // LMS64CProtocol::FPGAinfo gatewareInfo;
         const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
         uint32_t data[4];
         SPI(spi_FPGA, addrs, data, 4);
