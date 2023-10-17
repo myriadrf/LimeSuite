@@ -19,6 +19,8 @@
 namespace lime
 {
 
+static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
+
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams, ISPI* adfComms)
@@ -48,6 +50,8 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
     desc.memoryDevices.push_back({"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH});
+
+    desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i=0; i<mSubDevices.size(); ++i)
     {
         mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i]);
@@ -256,7 +260,10 @@ int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values,
     {
         int subModuleIndex = (ids[i] >> 8)-1;
         int id = ids[i] & 0xFF;
-        ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, units);
+        if (subModuleIndex >= 0)
+            ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, units);
+        else
+            ret |= mMainFPGAcomms->CustomParameterWrite(&id, &values[i], 1, units);
     }
     return ret;
 }
@@ -268,7 +275,10 @@ int LimeSDR_MMX8::CustomParameterRead(const int32_t *ids, double *values, const 
     {
         int subModuleIndex = (ids[i] >> 8)-1;
         int id = ids[i] & 0xFF;
-        ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, &units[i]);
+        if (subModuleIndex >= 0)
+            ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, &units[i]);
+        else
+            ret |= mMainFPGAcomms->CustomParameterRead(&id, &values[i], 1, &units[i]);
     }
     return ret;
 }
