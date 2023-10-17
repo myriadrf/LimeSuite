@@ -116,7 +116,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             if(!mTx.fifo->pop(&srcPkt, true, 100))
             {
                 std::this_thread::yield();
-                break;
+                continue;
             }
 
             if (mConfig.extraConfig != nullptr && mConfig.extraConfig->negateQ)
@@ -135,27 +135,20 @@ void TRXLooper_USB::TransmitPacketsLoop()
             }
         }
         
-        /*if (srcPkt->useTimestamp && mConfig.rxCount > 0)
+        if (srcPkt->useTimestamp && mConfig.rxCount > 0)
         {
-            int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
+            const int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
             const int64_t txAdvance = srcPkt->timestamp - rxNow;
 
-            if(mConfig.hintSampleRate)
-            {
-                int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
-                txTSAdvance.Add(timeAdvance);
-            }
-            else
-                txTSAdvance.Add(txAdvance);
             if(txAdvance <= 0)
             {
-                underrun.add(1);
-                ++stats.underrun;
+                printf("DROP\n");
+                ++mTx.stats.underrun;
                 mTx.memPool->Free(srcPkt);
                 srcPkt = nullptr;
-                break;
+                continue;
             }
-        }*/
+        }
 
         while(!srcPkt->empty())
         {
