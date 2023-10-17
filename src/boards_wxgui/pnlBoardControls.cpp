@@ -455,18 +455,18 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
             sizerAnalogRd->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
         }
     }
-    if (cmbBoardSelection->GetSelection() > 2)
-    {
-        txtDACTitle = new wxStaticText(pnlReadControls, wxID_ANY, _("VCTCXO DAC (permanent)"));
-        sizerAnalogRd->Add(txtDACTitle, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-        sizerDAC = new wxFlexGridSizer(0, 2, 0, 0);
-        txtDACValue = new wxTextCtrl(pnlReadControls, wxNewId(), _("128"), wxDefaultPosition, wxDefaultSize);
-        sizerDAC->Add(txtDACValue, 1, wxALIGN_CENTER_VERTICAL, 5);
-        btnDAC = new wxButton(pnlReadControls, wxNewId(), _("Write"), wxDefaultPosition, wxDefaultSize);
-        sizerDAC->Add(btnDAC, 1,  wxALIGN_CENTER_VERTICAL, 0);
-        Connect(btnDAC->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(pnlBoardControls::OnDACWrite), NULL, this);
-        sizerAnalogRd->Add(sizerDAC, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-    }
+    // if (cmbBoardSelection->GetSelection() > 2)
+    // {
+    //     txtDACTitle = new wxStaticText(pnlReadControls, wxID_ANY, _("VCTCXO DAC (permanent)"));
+    //     sizerAnalogRd->Add(txtDACTitle, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    //     sizerDAC = new wxFlexGridSizer(0, 2, 0, 0);
+    //     txtDACValue = new wxTextCtrl(pnlReadControls, wxNewId(), _("128"), wxDefaultPosition, wxDefaultSize);
+    //     sizerDAC->Add(txtDACValue, 1, wxALIGN_CENTER_VERTICAL, 5);
+    //     btnDAC = new wxButton(pnlReadControls, wxNewId(), _("Write"), wxDefaultPosition, wxDefaultSize);
+    //     sizerDAC->Add(btnDAC, 1,  wxALIGN_CENTER_VERTICAL, 0);
+    //     Connect(btnDAC->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(pnlBoardControls::OnDACWrite), NULL, this);
+    //     sizerAnalogRd->Add(sizerDAC, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    // }
 
     sizerAnalogRd->Layout();
 
