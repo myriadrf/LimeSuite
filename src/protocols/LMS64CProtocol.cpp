@@ -183,6 +183,47 @@ int FPGA_SPI(ISerialPort& port, const uint32_t* MOSI, uint32_t* MISO, size_t cou
     return SPI16(port, 0, CMD_BRDSPI_WR, MOSI, CMD_BRDSPI_RD, MISO, count, subDevice);
 }
 
+int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t subDevice)
+{
+    // only writes are supported
+    LMS64CPacket pkt;
+    pkt.cmd = CMD_ADF4002_WR;
+    pkt.status = STATUS_UNDEFINED;
+    pkt.blockCount = 0;
+    pkt.periphID = 0;
+    pkt.subDevice = subDevice;
+
+    size_t srcIndex = 0;
+    size_t destIndex = 0;
+    const int maxBlocks = 14;
+    const int blockSize = 3;
+    while (srcIndex < count) {
+        for (int i = 0; i < maxBlocks && srcIndex < count; ++i) {
+            int payloadOffset = pkt.blockCount * blockSize;
+            pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 16;
+            pkt.payload[payloadOffset + 1] = MOSI[srcIndex] >> 8;
+            pkt.payload[payloadOffset + 2] = MOSI[srcIndex];
+            ++pkt.blockCount;
+            ++srcIndex;
+        }
+
+        int sent = 0;
+        int recv = 0;
+
+        sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            return -1;
+
+        recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
+        if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
+            return -1;
+
+        pkt.blockCount = 0;
+        pkt.status = STATUS_UNDEFINED;
+    }
+    return 0;
+}
+
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* mosi, size_t count)
 {
     return -1;

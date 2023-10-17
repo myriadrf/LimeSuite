@@ -14,30 +14,14 @@
 #include "boards/LimeSDR_XTRX/LimeSDR_XTRX.h"
 #include "limesuite/DeviceNode.h"
 
-#include "mcu_program/common_src/lms7002m_calibrations.h"
-#include "mcu_program/common_src/lms7002m_filters.h"
-#include "MCU_BD.h"
-
 #include "math.h"
 
 namespace lime
 {
 
-// X3 board specific subdevice ids
-static constexpr uint8_t spi_LMS7002M_1 = 0;
-static constexpr uint8_t spi_LMS7002M_2 = 1;
-static constexpr uint8_t spi_LMS7002M_3 = 2;
-static constexpr uint8_t spi_FPGA = 3;
-
-static inline void ValidateChannel(uint8_t channel)
-{
-    if (channel > 2)
-        throw std::logic_error("invalid channel index");
-}
-
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams)
+LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams, ISPI* adfComms)
     : mTRXStreamPorts(trxStreams)
 {
     mMainFPGAcomms =  spiFPGA[8];
@@ -53,7 +37,13 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
+
     desc.socTree = new DeviceNode("X8", "SDRDevice", this);
+
+    mADF = new ADF4002();
+    // TODO: readback board's reference clock
+    mADF->Initialize(adfComms, 30.72e6);
+    desc.socTree->childs.push_back(new DeviceNode("ADF4002", "ADF4002", mADF));
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
