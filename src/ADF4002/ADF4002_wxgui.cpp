@@ -74,10 +74,12 @@ const long ADF4002_wxgui::ID_STATICTEXT16 = wxNewId();
 const long ADF4002_wxgui::ID_BUTTON1 = wxNewId();
 const long ADF4002_wxgui::ID_BUTTON2 = wxNewId();
 
-BEGIN_EVENT_TABLE(ADF4002_wxgui,wxFrame)
+BEGIN_EVENT_TABLE(ADF4002_wxgui,wxPanel)
 END_EVENT_TABLE()
 
-ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &title, const wxPoint& pos,const wxSize& size, int styles, wxString idname)
+ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent, wxWindowID id, const wxPoint& pos,const wxSize& size, int styles)
+    : ISOCPanel(parent, id, pos, size, styles)
+    , m_pModule(nullptr)
 {
     m_pModule = NULL;
     wxStaticBoxSizer* StaticBoxSizer2;
@@ -103,7 +105,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     wxFlexGridSizer* FlexGridSizer11;
     wxStaticBoxSizer* StaticBoxSizer5;
 
-    Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, _T("id"));
+    //Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, _T("id"));
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     FlexGridSizer1 = new wxFlexGridSizer(0, 2, 0, 0);
     StaticBoxSizer1 = new wxStaticBoxSizer(wxHORIZONTAL, this, _("ADF4002"));
@@ -418,20 +420,13 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     //*)
 }
 
-void ADF4002_wxgui::Initialize(SDRDevice *pSerPort)
+void ADF4002_wxgui::Initialize(lime::ADF4002* soc)
 {
-    m_pModule = new lime::ADF4002();
-    lmsControl = pSerPort;
-    if (lmsControl != nullptr)
-    {
-        double refclk = lmsControl->GetClockFreq(SDRDevice::ClockID::CLK_REFERENCE, 0);
-        txtFvco->SetValue(wxString::Format("%f", refclk/1e6));
-    }
+    m_pModule = soc;
 }
 
 ADF4002_wxgui::~ADF4002_wxgui()
 {
-    delete m_pModule;
 }
 
 void ADF4002_wxgui::SetGuiDefaults()
@@ -472,10 +467,7 @@ void ADF4002_wxgui::SetGuiDefaults()
 
 void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
 {
-    if (lmsControl == nullptr) {
-        wxMessageBox(_("Device not connected"), _("Error"));
-        return;
-    }
+    assert(m_pModule);
     //reference counter latch
     int ldp = cmbLDP->GetSelection();
     int abw = cmbABW->GetSelection();
@@ -529,29 +521,13 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
     lblFcomp->SetLabel( wxString::Format("%f", m_pModule->lblFcomp));
     lblFvco->SetLabel( wxString::Format("%f", m_pModule->lblFvco));
 
-    unsigned char data[12];
-    m_pModule->GetConfig(data);
-
-    vector<uint32_t> dataWr;
-    for(int i=0; i<12; i+=3)
-        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
-
-    // ADF4002 needs to be writen 4 values of 24 bits
-    try {
-        lmsControl->SPI(0x30, dataWr.data(), nullptr, 4);
-    }
-    catch (std::runtime_error &e) {
-        wxMessageBox(wxString::Format("ADF configuration failed:: %s", e.what()), _("Error"));
-    }
+    m_pModule->UploadConfig();
 }
 
 void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 {
-    if (lmsControl == nullptr) {
-        wxMessageBox(_("Device not connected"), _("Error"));
-        return;
-    }
- //reference counter latch
+    assert(m_pModule);
+    //reference counter latch
     int ldp = cmbLDP->GetSelection();
     int abw = cmbABW->GetSelection();
     int rCount = spinRCnt->GetValue();
@@ -598,18 +574,10 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
     txtFvco->GetValue().ToDouble(&fvco);
     spinNCnt->SetValue(nCounter);
     spinRCnt->SetValue(rCount);
-    unsigned char data[12];
-    m_pModule->GetConfig(data);
 
-    vector<uint32_t> dataWr;
-    for(int i=0; i<12; i+=3)
-        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+    if (m_pModule->UploadConfig() != 0)
+    {
+        wxMessageBox("ADF configuration failed");
+    }
 
-    // ADF4002 needs to be writen 4 values of 24 bits
-    try {
-        lmsControl->SPI(0x30, dataWr.data(), nullptr, 4);
-    }
-    catch (std::runtime_error &e) {
-        wxMessageBox(wxString::Format("ADF configuration failed:: %s", e.what()), _("Error"));
-    }
 }

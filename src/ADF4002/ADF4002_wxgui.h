@@ -26,12 +26,14 @@ class ADF4002;
 class SDRDevice;
 }
 
-class ADF4002_wxgui: public wxFrame
+#include "ISOCPanel.h"
+
+class ADF4002_wxgui: public ISOCPanel
 {
 public:
 
-    ADF4002_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title=_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int styles=wxDEFAULT_FRAME_STYLE, wxString idname="");
-    void Initialize(lime::SDRDevice *pSerPort);
+    ADF4002_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int styles=0);
+    void Initialize(lime::ADF4002 *soc);
     virtual ~ADF4002_wxgui();
 
     void SetGuiDefaults();
@@ -146,7 +148,6 @@ protected:
 
 private:
     lime::ADF4002* m_pModule;
-    lime::SDRDevice *lmsControl;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);
     void OnbtnUploadClick(wxCommandEvent& event);

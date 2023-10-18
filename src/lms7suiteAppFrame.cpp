@@ -403,6 +403,16 @@ ISOCPanel* CreateGUI(wxWindow* parent, const std::string& klass, void* socPtr)
         pnl->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
         return pnl;
     }
+    else if (klass == "ADF4002")
+    {
+        ADF4002_wxgui* pnl = new ADF4002_wxgui(parent, wxNewId());
+        pnl->Initialize(reinterpret_cast<lime::ADF4002*>(socPtr));
+        return pnl;
+    }
+    else
+    {
+        printf("Unrecognized device class(%s)\n", klass.c_str());
+    }
 
     return nullptr;
 }

@@ -5,6 +5,7 @@
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/IComms.h"
+#include "ADF4002/ADF4002.h"
 
 #include "protocols/LMS64CProtocol.h"
 
@@ -28,7 +29,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
 {
 public:
     LimeSDR_MMX8() = delete;
-    LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams);
+    LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams, ISPI* adfComms);
     virtual ~LimeSDR_MMX8();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -88,6 +89,7 @@ private:
     std::map<uint32_t, lime::LimeSDR_XTRX*> chipSelectToDevice;
     std::map<uint32_t, lime::LimeSDR_XTRX*> memorySelectToDevice;
     std::map<uint32_t, lime::LimeSDR_XTRX*> customParameterToDevice;
+    lime::ADF4002* mADF;
 };
 
 class LimeSDR_MMX8Entry : public DeviceRegistryEntry

@@ -7,16 +7,39 @@
 #include "ADF4002.h"
 
 #include <cmath>
+#include <vector>
+#include <assert.h>
 #include <string.h>
 
 using namespace lime;
 
-ADF4002::ADF4002()
+ADF4002::ADF4002() : mComms(nullptr)
 {
 }
 
 ADF4002::~ADF4002()
 {
+}
+
+void ADF4002::Initialize(ISPI* comms, double refClkHz)
+{
+    mComms = comms;
+    txtFref = refClkHz/1e6;
+}
+
+int ADF4002::UploadConfig()
+{
+    assert(mComms);
+    unsigned char data[12];
+    GetConfig(data);
+
+    std::vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    // ADF4002 needs to be writen 4 values of 24 bits
+    mComms->SPI(dataWr.data(), nullptr, 4);
+    return 0;
 }
 
 /** @brief Sets default values

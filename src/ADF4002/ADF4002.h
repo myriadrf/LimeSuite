@@ -9,6 +9,8 @@
 
 #include "limesuite/config.h"
 
+#include "limesuite/IComms.h"
+
 namespace lime{
 
 class LIME_API ADF4002
@@ -16,6 +18,8 @@ class LIME_API ADF4002
 public:
     ADF4002();
     ~ADF4002();
+    void Initialize(ISPI* comms, double refClkHz);
+    int UploadConfig();
 
     void SetFrefFvco(double Fref, double Fvco, int &rcount, int &ncount);
     void SetReferenceCounterLatch(int Ldp, int Abw, int refCounter);
@@ -63,6 +67,7 @@ public:
     double lblFvco;
 
 protected:
+    ISPI* mComms;
     unsigned char m_registers[12];
 };
 

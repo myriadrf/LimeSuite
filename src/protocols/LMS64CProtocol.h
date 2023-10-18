@@ -138,6 +138,7 @@ void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descr
 
 int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
 int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
+int ADF4002_SPI(ISerialPort& port, const uint32_t* mosi, size_t count, uint32_t subDevice = 0);
 
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
 int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
