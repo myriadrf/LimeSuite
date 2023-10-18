@@ -4,7 +4,6 @@
 #include <wx/panel.h>
 #include <wx/choice.h>
 #include <wx/spinctrl.h>
-
 class wxStaticText;
 class wxFlexGridSizer;
 class wxCheckBox;
@@ -34,7 +33,6 @@ protected:
 
     int chipSelect;
     lime::SDRDevice *device;
-
     DECLARE_EVENT_TABLE()
 };
 
