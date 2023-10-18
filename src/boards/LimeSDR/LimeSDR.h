@@ -27,8 +27,6 @@ public:
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
-    virtual const Descriptor &GetDescriptor() override;
-
     virtual int Init() override;
     virtual void Reset() override;
 
@@ -58,6 +56,9 @@ public:
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
     virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
     virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
+
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
 
     virtual int ReadFPGARegister(uint32_t address);
     virtual int WriteFPGARegister(uint32_t address, uint32_t value);

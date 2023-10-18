@@ -10,6 +10,8 @@
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
 #include "protocols/LMS64CProtocol.h"
+#include "limesuite/DeviceNode.h"
+#include "ADCUnits.h"
 
 #include <assert.h>
 #include <memory>
@@ -98,20 +100,6 @@ int LimeSDR::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
     return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
 }
 
-const SDRDevice::Descriptor &LimeSDR::GetDescriptor()
-{
-    static SDRDevice::Descriptor descriptor = GetDeviceInfo();
-
-    descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
-    RFSOCDescriptor soc;
-    soc.channelCount = 2;
-    soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
-    soc.txPathNames = {"None", "Band1", "Band2"};
-    descriptor.rfSOC.push_back(soc);
-
-    return descriptor;
-}
-
 //control commands to be send via bulk port for boards v1.2 and later
 static const std::set<uint8_t> commandsToBulkCtrlHw2 =
 {
@@ -135,16 +123,34 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
     mFPGAComms(static_cast<lime::FX3*>(conn), spi_FPGA),
     mLMSComms(static_cast<lime::FX3*>(conn), spi_LMS7002M)
 {
-    mLMSChips.push_back(new LMS7002M(spi_LMS7002M));
+    SDRDevice::Descriptor descriptor = GetDeviceInfo();
+
+    mLMSChips.push_back(new LMS7002M(&mLMSComms));
     mLMSChips[0]->SetConnection(&mLMSComms);
 
-    mFPGA = new FPGA(spi_FPGA, spi_LMS7002M);
-    mFPGA->SetConnection(&mFPGAComms);
+    mFPGA = new FPGA(&mFPGAComms, &mLMSComms);
+    FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
+    FPGA::GatewareToDescriptor(gw, descriptor);
 
     mStreamers.resize(1, nullptr);
 
-    mDeviceDescriptor.customParameters.push_back(cp_vctcxo_dac);
-    mDeviceDescriptor.customParameters.push_back(cp_temperature);
+    descriptor.customParameters.push_back(cp_vctcxo_dac);
+    descriptor.customParameters.push_back(cp_temperature);
+
+    descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
+
+    RFSOCDescriptor soc;
+    soc.channelCount = 2;
+    soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
+    soc.txPathNames = {"None", "Band1", "Band2"};
+    descriptor.rfSOC.push_back(soc);
+
+    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA", mFPGA);
+    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
+    descriptor.socTree = new DeviceNode("SDR-USB", "SDRDevice", this);
+    descriptor.socTree->childs.push_back(fpgaNode);
+
+    mDeviceDescriptor = descriptor;
 
     //must configure synthesizer before using LimeSDR
     /*if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
@@ -172,9 +178,18 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
 
 LimeSDR::~LimeSDR()
 {
+    auto LMSChip = mLMSChips.back();
+    mLMSChips.pop_back();
+
+    if (LMSChip) 
+    {
+        delete LMSChip;
+    }
+
     if (mStreamers[0])
     {
         delete mStreamers[0];
+        mStreamers[0] = nullptr;
     }
     
     delete comms;
@@ -870,6 +885,102 @@ int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIOWrite write failed");
+    }
+
+    return 0;
+}
+
+int LimeSDR::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
+{
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_ANALOG_VAL_WR;
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        pkt.payload[0] = ids[i];
+        uint8_t powerOf10 = 0;
+
+        if(values[i] > 65535.0 && (units != "")) 
+        {
+            powerOf10 = log10(values[i] / 65.536) / 3;
+        }
+
+        if (values[i] < 65.536 && (units != ""))
+        {
+            powerOf10 = log10(values[i] / 65535.0) / 3;
+        }
+
+        pkt.payload[1] = powerOf10;
+        uint16_t value = values[i] / pow(10, 3 * powerOf10);
+        pkt.payload[2] = value >> 8;
+        pkt.payload[3] = value & 0xFF;
+    }
+
+    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    if (sentBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::CustomParameterWrite write failed");
+    }
+
+    return 0;
+}
+
+int LimeSDR::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
+{
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_ANALOG_VAL_RD;
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        pkt.payload[i] = ids[i];
+    }
+
+    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    if (sentBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::CustomParameterRead write failed");
+    }
+
+    int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    if (gotBytes != sizeof(pkt))
+    {
+        throw std::runtime_error("LimeSDR::CustomParameterRead read failed");
+    }
+
+    assert(static_cast<size_t>(gotBytes) >= 4 * count);
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        int unitsIndex = pkt.payload[i * 4 + 1];
+        if(units)
+        {
+            if (unitsIndex & 0x0F)
+            {
+                const char adc_units_prefix[] = {
+                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
+                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
+
+                units[i] = adc_units_prefix[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
+            }
+            else
+            {
+                units[i] += adcUnits2string((unitsIndex & 0xF0) >> 4);
+            }
+        }
+
+        if((unitsIndex & 0xF0) >> 4 == eADC_UNITS::RAW)
+        {
+            values[i] = (uint16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+        }
+        else
+        {
+            values[i] = (int16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+
+            if((unitsIndex & 0xF0) >> 4 == eADC_UNITS::TEMPERATURE)
+            {
+                values[i] /= 10;
+            }
+        }
     }
 
     return 0;
