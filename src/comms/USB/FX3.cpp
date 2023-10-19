@@ -180,7 +180,7 @@ int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
 {
     long len = length;
     if (not IsConnected())
-        throw runtime_error("BulkTransfer: USB device is not connected");
+        throw runtime_error("ControlTransfer: USB device is not connected");
 
     assert(data);
 #ifdef __unix__

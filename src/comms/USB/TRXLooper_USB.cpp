@@ -40,14 +40,12 @@ int TRXLooper_USB::TxSetup()
 
 void TRXLooper_USB::TransmitPacketsLoop()
 {
-    printf("TransmitPacketsLoop\n");
+    //at this point FPGA has to be already configured to output samples
 
     DataConversion conversion;
     conversion.destFormat = mConfig.linkFormat;
     conversion.srcFormat = mConfig.format;
     conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
-
-    //at this point FPGA has to be already configured to output samples
 
     const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
     uint samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;
@@ -67,7 +65,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
     SamplesPacketType* srcPkt = nullptr;
 
-    bool sendBuffer = false;
+    bool isBufferFull = false;
     uint payloadSize = 0;
     uint bytesUsed = 0;
     uint packetsCreated = 0;
@@ -185,7 +183,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             }
             else
             {
-                sendBuffer = true;
+                isBufferFull = true;
             }
 
             const bool packetNotFull = payloadSize < maxPayloadSize;
@@ -194,19 +192,19 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
             if (packetsCreated >= packetsToBatch && !hasSpace)
             {
-                sendBuffer = true;
+                isBufferFull = true;
             }
 
             if (bytesUsed >= bufferSize)
             {
-                sendBuffer = true; // not enough space for more packets, need to flush
+                isBufferFull = true; // not enough space for more packets, need to flush
             }
 
-            if (sendBuffer)
+            if (isBufferFull)
             {        
                 handles[bi] = comms->BeginDataXfer(&buffers[bi*bufferSize], bufferSize, txEndPt);
                 bi = (bi + 1) % batchCount;
-                sendBuffer = false;
+                isBufferFull = false;
                 bytesUsed = 0;
                 payloadSize = 0;
                 packetsCreated = 0;
