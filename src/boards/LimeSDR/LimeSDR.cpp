@@ -42,8 +42,8 @@ static constexpr uint8_t streamBulkInAddr = 0x81;
 static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
 
-static const SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
-static const SDRDevice::CustomParameter cp_temperature = {"Board Temperature", 1, 0, 65535, true};
+static const SDRDevice::CustomParameter CP_VCTCXO_DAC = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
+static const SDRDevice::CustomParameter CP_TEMPERATURE = {"Board Temperature", 1, 0, 65535, true};
 
 static inline void ValidateChannel(uint8_t channel)
 {
@@ -69,8 +69,8 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
 
     mStreamers.resize(1, nullptr);
 
-    descriptor.customParameters.push_back(cp_vctcxo_dac);
-    descriptor.customParameters.push_back(cp_temperature);
+    descriptor.customParameters.push_back(CP_VCTCXO_DAC);
+    descriptor.customParameters.push_back(CP_TEMPERATURE);
 
     descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
 

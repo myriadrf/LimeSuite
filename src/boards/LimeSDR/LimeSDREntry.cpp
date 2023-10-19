@@ -174,6 +174,7 @@ class USB_CSR_Pipe : public ISerialPort
 {
 public:
     explicit USB_CSR_Pipe(FX3& port) : port(port) {};
+
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
     {    
         const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
@@ -185,6 +186,7 @@ public:
 
         return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, 1000);
     }
+
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
         const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
@@ -204,6 +206,7 @@ class LMS64C_LMS7002M_Over_USB : public IComms
 {
 public:
     LMS64C_LMS7002M_Over_USB(USB_CSR_Pipe& dataPort) : pipe(dataPort) {}
+
     virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::LMS7002M_SPI(pipe, 0, MOSI, MISO, count);
@@ -226,6 +229,7 @@ class LMS64C_FPGA_Over_USB : public IComms
 {
 public:
     LMS64C_FPGA_Over_USB(USB_CSR_Pipe &dataPort) : pipe(dataPort) {}
+
     void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         SPI(0, MOSI, MISO, count);
@@ -276,13 +280,11 @@ private:
 
 SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)
 {
-    FX3* usbComms = nullptr;
-
     const auto splitPos = handle.addr.find(":");
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos+1), nullptr, 16);
 
-    usbComms = new FX3(ctx);
+    FX3* usbComms = new FX3(ctx);
     if (usbComms->Connect(vid, pid, handle.serial) != 0)
     {
         delete usbComms;
