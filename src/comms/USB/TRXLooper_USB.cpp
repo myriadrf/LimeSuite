@@ -142,7 +142,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
     }
 
     TxHeader* header = reinterpret_cast<TxHeader*>(&buffers[bufferIndex * bufferSize]);
-    uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader) + payloadSize;
+    uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
 
     while (!mTx.terminate.load(std::memory_order_relaxed))
     {
@@ -200,10 +200,13 @@ void TRXLooper_USB::TransmitPacketsLoop()
             if (transferCount > 0)
             {
                 int samplesDataSize = Interleave(srcPkt, transferCount, conversion, payloadPtr);
-                payloadPtr = payloadPtr+samplesDataSize;
+
+                payloadPtr += samplesDataSize;
                 payloadSize += samplesDataSize;
                 bytesUsed += samplesDataSize;
+
                 header->SetPayloadSize(payloadSize == 4080 ? 0 : payloadSize);
+
                 assert(payloadSize > 0);
                 assert(payloadSize <= maxPayloadSize);
             }
@@ -421,12 +424,12 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
 void TRXLooper_USB::NegateQ(SamplesPacketType* packet, TRXDir direction)
 {
-    const int channelCount = direction == TRXDir::Rx ? mConfig.rxCount : mConfig.txCount;
-
     if (mConfig.extraConfig == nullptr || !mConfig.extraConfig->negateQ)
     {
         return;
     }
+
+    const int channelCount = direction == TRXDir::Rx ? mConfig.rxCount : mConfig.txCount;
 
     switch (mConfig.format)
     {
