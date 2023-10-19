@@ -19,6 +19,7 @@ class TRXLooper_USB : public lime::TRXLooper
     virtual void Setup(const lime::SDRDevice::StreamConfig &config) override;
 
   protected:
+    virtual int RxSetup() override;
     virtual void ReceivePacketsLoop() override;
 
     virtual int TxSetup() override;
@@ -27,6 +28,10 @@ class TRXLooper_USB : public lime::TRXLooper
     USBGeneric *comms;
     const uint8_t rxEndPt;
     const uint8_t txEndPt;
+  private:
+    bool GetSamplesPacket(SamplesPacketType** srcPkt);
+    bool SyncToTimestamp(SamplesPacketType** srcPkt);
+    void NegateQ(SamplesPacketType* packet, TRXDir direction);
 };
 
 } // namespace lime
