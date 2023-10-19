@@ -40,10 +40,10 @@ LimeSDREntry::LimeSDREntry() : DeviceRegistryEntry("LimeSDR")
 #ifdef __unix__
     if (ctx == nullptr) 
     {
-        int r = libusb_init(&ctx); //initialize the library for the session we just declared
-        if(r < 0)
+        int returnCode = libusb_init(&ctx); //initialize the library for the session we just declared
+        if (returnCode < 0)
         {
-            lime::error("Init Error %i", r); //there was an error
+            lime::error("Init Error %i", returnCode); //there was an error
         }
 #if LIBUSBX_API_VERSION < 0x01000106
         libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
@@ -207,13 +207,13 @@ public:
     virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::LMS7002M_SPI(pipe, 0, MOSI, MISO, count);
-        return;
     }
+
     virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-        return;
     }
+
     virtual int ResetDevice(int chipSelect) override
     {
         return LMS64CProtocol::DeviceReset(pipe, chipSelect);
@@ -230,6 +230,7 @@ public:
     {
         SPI(0, MOSI, MISO, count);
     }
+
     void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
     {
         LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);

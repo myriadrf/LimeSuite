@@ -20,6 +20,8 @@ TRXLooper_USB::~TRXLooper_USB() {}
 
 void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig &config)
 {
+    mConfig = config;
+
     if (config.txCount > 0)
     {
         TxSetup();
@@ -32,8 +34,15 @@ int TRXLooper_USB::TxSetup()
 {    
     char name[64];
     sprintf(name, "Tx%i_memPool", chipId);
-    const int upperAllocationLimit = sizeof(complex32f_t) * mTx.packetsToBatch * mTx.samplesInPkt * 2 + SamplesPacketType::headerSize;
-    mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
+
+    const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+    const int upperAllocationLimit =
+        sizeof(complex32f_t) * mTx.packetsToBatch * mTx.samplesInPkt * channelCount + 
+        SamplesPacketType::headerSize;
+
+    const int memPoolBlockCount = 1024;
+    const int memPoolAlignment = 4096;
+    mTx.memPool = new MemoryPool(memPoolBlockCount, upperAllocationLimit, memPoolAlignment, name);
 
     return 0;
 }
@@ -89,7 +98,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
     {
         if (handles[bi] >= 0)
         {
-            if (comms->WaitForXfer(handles[bi], 1000))
+            const int timeToWaitMs = 1000;
+            if (comms->WaitForXfer(handles[bi], timeToWaitMs))
             {
                 int bytesSent = comms->FinishDataXfer(&buffers[bi*bufferSize], bufferSize, handles[bi]);
                 totalBytesSent += bytesSent;
@@ -217,14 +227,16 @@ void TRXLooper_USB::TransmitPacketsLoop()
         }
         
         t2 = std::chrono::high_resolution_clock::now();
-        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 
-        if (timePeriod >= 1000)
+        if (timePeriod >= std::chrono::milliseconds(1000))
         {
             t1 = t2;
-            float dataRate = 1000.0 * totalBytesSent / timePeriod;
+
+            float dataRate = 1000.0 * totalBytesSent / timePeriod.count();
             printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
             totalBytesSent = 0;
+            
             mTx.stats.dataRate_Bps = dataRate;
         }
     }
@@ -292,7 +304,8 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
         if (handles[bi] >= 0)
         {
-            if (comms->WaitForXfer(handles[bi], 1000) == true)
+            const int timeToWaitMs = 1000;
+            if (comms->WaitForXfer(handles[bi], timeToWaitMs))
             {
                 bytesReceived = comms->FinishDataXfer(&buffers[bi*bufferSize], bufferSize, handles[bi]);
                 stats.packets++;
@@ -377,12 +390,13 @@ void TRXLooper_USB::ReceivePacketsLoop()
         bi = (bi + 1) % batchCount;
 
         t2 = std::chrono::high_resolution_clock::now();
-        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        if (timePeriod >= 1000)
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+        if (timePeriod >= std::chrono::milliseconds(1000))
         {
             t1 = t2;
 
-            float dataRate = 1000.0 * totalBytesReceived / timePeriod;
+            float dataRate = 1000.0 * totalBytesReceived / timePeriod.count();
             printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
             mRx.stats.dataRate_Bps = dataRate;
 

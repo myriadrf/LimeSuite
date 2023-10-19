@@ -61,7 +61,7 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
 void pnlLimeSDR::Initialize(lime::SDRDevice* pControl)
 {
     device = pControl;
-    if(device)
+    if (device)
     {
         auto controls = controlsSizer->GetChildren();
         for(auto i : controls)
@@ -88,7 +88,7 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
 
     auto sdr = static_cast<lime::LimeSDR*>(device);
 
-    if(sdr && sdr->WriteFPGARegister(addr, value)) 
+    if (sdr && sdr->WriteFPGARegister(addr, value)) 
     {
         lime::error("Board loopback change failed");
     }
@@ -111,7 +111,7 @@ void pnlLimeSDR::UpdatePanel()
 
     auto sdr = static_cast<lime::LimeSDR*>(device);
 
-    if(sdr && (value = sdr->ReadFPGARegister(addr)) >= 0)
+    if (sdr && (value = sdr->ReadFPGARegister(addr)) >= 0)
     {
         chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
         chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);

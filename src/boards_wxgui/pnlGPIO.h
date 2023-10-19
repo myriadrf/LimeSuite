@@ -27,7 +27,7 @@ protected:
     wxCheckBox* gpioOut[16];
 
     lime::SDRDevice *device;
-    int gpioCnt;
+    int gpioCount;
 };
 
 #endif
