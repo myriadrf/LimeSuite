@@ -22,7 +22,7 @@ class TRXLooper_USB;
 class LimeSDR : public LMS7002M_SDRDevice
 {
 public:
-    LimeSDR(lime::USBGeneric* conn);
+    LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* mStreamPort);
     virtual ~LimeSDR();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
@@ -63,29 +63,14 @@ public:
     virtual int ReadFPGARegister(uint32_t address);
     virtual int WriteFPGARegister(uint32_t address, uint32_t value);
   protected:
-    class CommsRouter : public ISPI, public II2C
-    {
-    public:
-        CommsRouter(FX3* port, uint32_t slaveID);
-        virtual ~CommsRouter();
-        virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
-        virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count);
-        virtual int I2CWrite(int address, const uint8_t *data, uint32_t length);
-        virtual int I2CRead(int addres, uint8_t *dest, uint32_t length);
-    private:
-        FX3* port;
-        uint32_t mDefaultSlave;
-    };
-
     int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
-    SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
     void SetSampleRate(double f_Hz, uint8_t oversample);
     static int UpdateFPGAInterface(void* userData);
-    USBGeneric* comms;
-    CommsRouter mFPGAComms;
-    CommsRouter mLMSComms;
 private:
+    USBGeneric* mStreamPort;
+    IComms *mlms7002mPort;
+    IComms *mfpgaPort;
 };
 
 class LimeSDREntry : public DeviceRegistryEntry
