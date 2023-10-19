@@ -215,11 +215,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 isBufferFull = true;
             }
 
-            const bool packetNotFull = payloadSize < maxPayloadSize;
-            const bool spaceAvailable = bufferSize - bytesUsed > 0;
-            const bool hasSpace = packetNotFull && spaceAvailable;
-
-            if ((packetsCreated >= packetsToBatch && !hasSpace) || (bytesUsed >= bufferSize))
+            if ((packetsCreated >= packetsToBatch && payloadSize >= maxPayloadSize) || (bytesUsed >= bufferSize))
             {
                 isBufferFull = true;
             }
