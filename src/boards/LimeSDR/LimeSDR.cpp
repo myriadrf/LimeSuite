@@ -141,6 +141,7 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
 
     mLMSChips.push_back(new LMS7002M(&mLMSComms));
     mLMSChips[0]->SetConnection(&mLMSComms);
+    mLMSChips[0]->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
 
     mFPGA = new FPGA(&mFPGAComms, &mLMSComms);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
@@ -343,6 +344,16 @@ void LimeSDR::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, 
     else
         mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0);
     mLMSChips[0]->ResetLogicregisters();
+}
+
+// Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
+int LimeSDR::UpdateFPGAInterface(void* userData)
+{
+    constexpr int chipIndex = 0;
+    assert(userData != nullptr);
+    LimeSDR* pthis = static_cast<LimeSDR*>(userData);
+    LMS7002M* soc = pthis->mLMSChips[chipIndex];
+    return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
 void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
@@ -1009,4 +1020,3 @@ int LimeSDR::WriteFPGARegister(uint32_t address, uint32_t value)
 {
     return mFPGA->WriteRegister(address, value);
 }
-

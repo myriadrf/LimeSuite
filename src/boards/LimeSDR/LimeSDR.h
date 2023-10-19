@@ -81,6 +81,7 @@ public:
     SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
     void SetSampleRate(double f_Hz, uint8_t oversample);
+    static int UpdateFPGAInterface(void* userData);
     USBGeneric* comms;
     CommsRouter mFPGAComms;
     CommsRouter mLMSComms;
