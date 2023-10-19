@@ -817,13 +817,13 @@ int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
 
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int sentBytes = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIODirRead write failed");
     }
 
-    int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int gotBytes = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (gotBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIODirRead read failed");
@@ -842,13 +842,13 @@ int LimeSDR::GPIORead(uint8_t *buffer, const size_t bufLength)
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
 
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int sentBytes = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIORead write failed");
     }
 
-    int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int gotBytes = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (gotBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIORead read failed");
@@ -867,7 +867,7 @@ int LimeSDR::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_WR;
 
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int sentBytes = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIODirWrite write failed");
@@ -881,7 +881,7 @@ int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_WR;
 
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int sentBytes = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::GPIOWrite write failed");
@@ -916,7 +916,7 @@ int LimeSDR::CustomParameterWrite(const int32_t *ids, const double *values, cons
         pkt.payload[3] = value & 0xFF;
     }
 
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int sentBytes = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::CustomParameterWrite write failed");
@@ -935,13 +935,13 @@ int LimeSDR::CustomParameterRead(const int32_t *ids, double *values, const size_
         pkt.payload[i] = ids[i];
     }
 
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int sentBytes = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::CustomParameterRead write failed");
     }
 
-    int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    int gotBytes = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (gotBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::CustomParameterRead read failed");
