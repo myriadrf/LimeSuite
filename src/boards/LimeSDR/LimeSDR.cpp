@@ -382,101 +382,84 @@ int LimeSDR::Init()
     return 0;
 }
 
-// SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
-// {
-//     assert(mStreamPort);
-//     SDRDevice::Descriptor deviceDescriptor;
+SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
+{
+    assert(mStreamPort);
+    SDRDevice::Descriptor deviceDescriptor;
 
-//     LMS64CProtocol::FirmwareInfo info;
-//     LMS64CProtocol::GetFirmwareInfo(*lms7002mPort, info);
+    LMS64CProtocol::FirmwareInfo info;
+    LMS64CProtocol::GetFirmwareInfo(reinterpret_cast<ISerialPort&>(mStreamPort), info);
 
-//     try
-//     {
-//         LMS64CPacket pkt;
-//         pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
+    try
+    {
+        LMS64CPacket pkt;
+        pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
 
-//         int sentBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
-//         if (sentBytes != sizeof(pkt))
-//         {
-//             throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
-//         }
+        int sentBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+        if (sentBytes != sizeof(pkt))
+        {
+            throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
+        }
 
-//         int gotBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
-//         if (gotBytes != sizeof(pkt))
-//         {
-//             throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
-//         }
+        int gotBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+        if (gotBytes != sizeof(pkt))
+        {
+            throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
+        }
 
-//         if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
-//         {
-//             info.firmware = pkt.payload[0];
-//             info.deviceId = pkt.payload[1] < LMS_DEV_COUNT ? static_cast<eLMS_DEV>(pkt.payload[1]) : LMS_DEV_UNKNOWN;
-//             info.protocol = pkt.payload[2];
-//             info.hardware = pkt.payload[3];
-//             info.expansionBoardId = pkt.payload[4] < EXP_BOARD_COUNT ? static_cast<eEXP_BOARD>(pkt.payload[4]) : EXP_BOARD_UNKNOWN;
-//             info.boardSerialNumber = 0;
-//             for (int i = 10; i < 18; i++)
-//             {
-//                 info.boardSerialNumber <<= 8;
-//                 info.boardSerialNumber |= pkt.payload[i];
-//             }
-//         }
-//         else
-//         {
-//             return deviceDescriptor;
-//         }
+        if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
+        {
+            info.firmware = pkt.payload[0];
+            info.deviceId = pkt.payload[1] < LMS_DEV_COUNT ? static_cast<eLMS_DEV>(pkt.payload[1]) : LMS_DEV_UNKNOWN;
+            info.protocol = pkt.payload[2];
+            info.hardware = pkt.payload[3];
+            info.expansionBoardId = pkt.payload[4] < EXP_BOARD_COUNT ? static_cast<eEXP_BOARD>(pkt.payload[4]) : EXP_BOARD_UNKNOWN;
+            info.boardSerialNumber = 0;
+            for (int i = 10; i < 18; i++)
+            {
+                info.boardSerialNumber <<= 8;
+                info.boardSerialNumber |= pkt.payload[i];
+            }
+        }
+        else
+        {
+            return deviceDescriptor;
+        }
 
-//         deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
-//         deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
-//         deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
-//         deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
-//         deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
-//         deviceDescriptor.serialNumber = info.boardSerialNumber;
+        deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
+        deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
+        deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
+        deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
+        deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+        deviceDescriptor.serialNumber = info.boardSerialNumber;
 
-//         const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
-//         uint32_t data[4];
-//         SPI(spi_FPGA, addrs, data, 4);
-//         auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-//         auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
-//         auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-//         auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
+        const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
+        uint32_t data[4];
+        SPI(spi_FPGA, addrs, data, 4);
+        auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+        auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
+        auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+        auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
 
-//         deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
-//         deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
-//         deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
-//         deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+        deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
+        deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
+        deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
+        deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
 
-//         return deviceDescriptor;
-//     }
-//     catch (...)
-//     {
-//         //lime::error("LimeSDR::GetDeviceInfo failed(%s)", e.what());
-//         deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
-//         deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
-//     }
-//     return deviceDescriptor;
-// }
+        return deviceDescriptor;
+    }
+    catch (...)
+    {
+        //lime::error("LimeSDR::GetDeviceInfo failed(%s)", e.what());
+        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
+        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
+    }
+    return deviceDescriptor;
+}
 
 void LimeSDR::Reset()
 {
-    mLMSChips[0]->ResetChip();
-    // lms7002mPort->ResetDevice(0);
-    // assert(mStreamPort);
-    // LMS64CPacket pkt;
-    // pkt.cmd = LMS64CProtocol::CMD_LMS7002_RST;
-    // pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
-    // pkt.blockCount = 1;
-    // pkt.periphID = spi_LMS7002M;
-    // const int LMS_RST_PULSE = 2;
-    // pkt.payload[0] = LMS_RST_PULSE;
-
-    // int sent = mStreamPort->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-    // if (sent != sizeof(pkt))
-    //     throw std::runtime_error("LMS Reset write failed");
-    // int recv = mStreamPort->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-
-    // if (recv >= pkt.headerSize && pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
-    //     throw std::runtime_error("LMS Reset read failed");
+    LMS64CProtocol::DeviceReset(reinterpret_cast<ISerialPort&>(mStreamPort), 0);
 }
 
 int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)

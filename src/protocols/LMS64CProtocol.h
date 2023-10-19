@@ -133,7 +133,7 @@ struct FirmwareInfo
     int protocol;
     uint64_t boardSerialNumber;
 };
-int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info);
+int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice = 0);
 void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descriptor);
 
 int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);

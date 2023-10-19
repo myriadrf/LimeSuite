@@ -64,11 +64,12 @@ public:
     virtual int WriteFPGARegister(uint32_t address, uint32_t value);
   protected:
     int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
+    SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
     void SetSampleRate(double f_Hz, uint8_t oversample);
     static int UpdateFPGAInterface(void* userData);
 private:
-    USBGeneric* mStreamPort;
+    USBGeneric *mStreamPort;
     IComms *mlms7002mPort;
     IComms *mfpgaPort;
 };
