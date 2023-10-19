@@ -45,17 +45,43 @@ static constexpr uint8_t spi_FPGA = 1;
 static const SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
 static const SDRDevice::CustomParameter cp_temperature = {"Board Temperature", 1, 0, 65535, true};
 
+//control commands to be send via bulk port for boards v1.2 and later
+static const std::set<uint8_t> commandsToBulkTransfer =
+{
+    LMS64CProtocol::CMD_BRDSPI_WR, LMS64CProtocol::CMD_BRDSPI_RD,
+    LMS64CProtocol::CMD_LMS7002_WR, LMS64CProtocol::CMD_LMS7002_RD,
+    LMS64CProtocol::CMD_ANALOG_VAL_WR, LMS64CProtocol::CMD_ANALOG_VAL_RD,
+    LMS64CProtocol::CMD_ADF4002_WR,
+    LMS64CProtocol::CMD_LMS7002_RST,
+    LMS64CProtocol::CMD_GPIO_DIR_WR, LMS64CProtocol::CMD_GPIO_DIR_RD,
+    LMS64CProtocol::CMD_GPIO_WR, LMS64CProtocol::CMD_GPIO_RD,
+};
+
 class USB_CSR_Pipe : public ISerialPort
 {
 public:
     explicit USB_CSR_Pipe(FX3& port) : port(port) {};
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
+    {    
+        const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
+
+        if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
+        {
+            return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
+        }
+
+        return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, 1000);
     }
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
-        return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
+        const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
+
+        if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
+        {
+            return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
+        }
+
+        return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, 1000);
     }
 protected:
     FX3& port;
@@ -99,18 +125,6 @@ int LimeSDR::CommsRouter::I2CRead(int address, uint8_t *dest, uint32_t length)
     USB_CSR_Pipe pipe(*port);
     return LMS64CProtocol::I2C_Read(pipe, address, dest, length);
 }
-
-//control commands to be send via bulk port for boards v1.2 and later
-static const std::set<uint8_t> commandsToBulkCtrlHw2 =
-{
-    LMS64CProtocol::CMD_BRDSPI_WR, LMS64CProtocol::CMD_BRDSPI_RD,
-    LMS64CProtocol::CMD_LMS7002_WR, LMS64CProtocol::CMD_LMS7002_RD,
-    LMS64CProtocol::CMD_ANALOG_VAL_WR, LMS64CProtocol::CMD_ANALOG_VAL_RD,
-    LMS64CProtocol::CMD_ADF4002_WR,
-    LMS64CProtocol::CMD_LMS7002_RST,
-    LMS64CProtocol::CMD_GPIO_DIR_WR, LMS64CProtocol::CMD_GPIO_DIR_RD,
-    LMS64CProtocol::CMD_GPIO_WR, LMS64CProtocol::CMD_GPIO_RD,
-};
 
 static inline void ValidateChannel(uint8_t channel)
 {
