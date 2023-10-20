@@ -6,7 +6,7 @@
 #include "Si5351C/Si5351C.h"
 #include "LMS64CProtocol.h"
 #include "Logger.h"
-#include "FPGA_common.h"
+#include "FPGA_Mini.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
 #include "protocols/LMS64CProtocol.h"
@@ -20,16 +20,50 @@
 #include <cmath>
 
 #ifdef __unix__
-    #include <libusb.h>
+    #include "libusb.h"
 #endif
 
 using namespace lime;
+
+static constexpr uint8_t spi_LMS7002M = 0;
+static constexpr uint8_t spi_FPGA = 1;
+
+static const SDRDevice::CustomParameter CP_VCTCXO_DAC = {"VCTCXO DAC (runtime)", 0, 0, 255, false};
 
 LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort)
     : mStreamPort(streamPort),
     mlms7002mPort(spiLMS),
     mfpgaPort(spiFPGA)
 {
+    SDRDevice::Descriptor descriptor = mDeviceDescriptor;
+    descriptor.name = "LimeSDR Mini";
+
+    mLMSChips.push_back(new LMS7002M(mlms7002mPort));
+    mLMSChips[0]->SetConnection(mlms7002mPort);
+
+    mFPGA = new FPGA_Mini(spiFPGA, spiLMS);
+    FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
+    FPGA::GatewareToDescriptor(gw, descriptor);
+
+    mStreamers.resize(1, nullptr);
+
+    descriptor.customParameters.push_back(CP_VCTCXO_DAC);
+
+    descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
+
+    RFSOCDescriptor soc;
+    soc.channelCount = 2;
+    soc.rxPathNames = {"NONE", "LNAH", "LNAL_NC", "LNAW", "Auto"};
+    soc.txPathNames = {"NONE", "BAND1", "BAND2", "Auto"};
+
+    descriptor.rfSOC.push_back(soc);
+
+    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA-Mini", mFPGA);
+    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
+    descriptor.socTree = new DeviceNode("SDR Mini", "SDRDevice", this);
+    descriptor.socTree->childs.push_back(fpgaNode);
+
+    mDeviceDescriptor = descriptor;
 }
 
 LimeSDR_Mini::~LimeSDR_Mini()

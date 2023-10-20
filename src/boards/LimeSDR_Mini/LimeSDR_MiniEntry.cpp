@@ -4,6 +4,7 @@
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
 #include "Logger.h"
+#include "USBCommon.h"
 
 #include "FX3.h"
 
@@ -151,10 +152,10 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
     return handles;
 }
 
-class USB_CSR_Pipe : public ISerialPort
+class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 {
 public:
-    explicit USB_CSR_Pipe(FX3& port) : port(port) {};
+    explicit USB_CSR_Pipe_Mini(FX3& port) : USB_CSR_Pipe(port) {};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
     {    
@@ -163,84 +164,6 @@ public:
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
     }
-protected:
-    FX3& port;
-};
-
-class LMS64C_LMS7002M_Over_USB : public IComms
-{
-public:
-    LMS64C_LMS7002M_Over_USB(USB_CSR_Pipe& dataPort) : pipe(dataPort) {}
-
-    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        LMS64CProtocol::LMS7002M_SPI(pipe, 0, MOSI, MISO, count);
-    }
-
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-    }
-
-    virtual int ResetDevice(int chipSelect) override
-    {
-        return LMS64CProtocol::DeviceReset(pipe, chipSelect);
-    };
-private:
-    USB_CSR_Pipe &pipe;
-};
-
-class LMS64C_FPGA_Over_USB : public IComms
-{
-public:
-    LMS64C_FPGA_Over_USB(USB_CSR_Pipe &dataPort) : pipe(dataPort) {}
-
-    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        SPI(0, MOSI, MISO, count);
-    }
-
-    void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
-    }
-
-    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override 
-    {
-        return LMS64CProtocol::GPIODirRead(pipe, buffer, bufLength);
-    }
-
-    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override 
-    {
-        return LMS64CProtocol::GPIORead(pipe, buffer, bufLength);
-    }
-
-    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override 
-    {
-        return LMS64CProtocol::GPIODirWrite(pipe, buffer, bufLength);
-    }
-
-    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override 
-    {
-        return LMS64CProtocol::GPIOWrite(pipe, buffer, bufLength);
-    }
-    
-    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override
-    {
-        return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
-    }
-
-    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override
-    {
-        return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
-    }
-
-    virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
-    {
-        return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
-    }
-private:
-    USB_CSR_Pipe &pipe;
 };
 
 SDRDevice *LimeSDR_MiniEntry::make(const DeviceHandle &handle)
@@ -258,7 +181,7 @@ SDRDevice *LimeSDR_MiniEntry::make(const DeviceHandle &handle)
         throw std::runtime_error(reason);
     }
 
-    USB_CSR_Pipe* USBPipe = new USB_CSR_Pipe(*usbComms);
+    USB_CSR_Pipe* USBPipe = new USB_CSR_Pipe_Mini(*usbComms);
 
     // protocol layer
     IComms* route_lms7002m = new LMS64C_LMS7002M_Over_USB(*USBPipe);

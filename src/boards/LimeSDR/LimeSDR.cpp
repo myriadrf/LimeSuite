@@ -113,14 +113,6 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
 
 LimeSDR::~LimeSDR()
 {
-    auto LMSChip = mLMSChips.back();
-    mLMSChips.pop_back();
-
-    if (LMSChip) 
-    {
-        delete LMSChip;
-    }
-
     if (mStreamers[0])
     {
         delete mStreamers[0];
