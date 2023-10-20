@@ -5,6 +5,7 @@
 #include "LitePCIe.h"
 #include "LimeSDR_XTRX.h"
 #include "protocols/LMS64CProtocol.h"
+#include "PCIeCommon.h"
 
 #include <fstream>
 #include <map>
@@ -77,69 +78,6 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
     }
     return handles;
 }
-
-class PCIE_CSR_Pipe : public ISerialPort
-{
-public:
-    explicit PCIE_CSR_Pipe(LitePCIe& port) : port(port) {};
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.WriteControl(data, length, timeout_ms);
-    }
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.ReadControl(data, length, timeout_ms);
-    }
-protected:
-    LitePCIe& port;
-};
-
-class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
-{
-public:
-    LMS64C_LMS7002M_Over_PCIe(LitePCIe* dataPort) : pipe(*dataPort) {}
-    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        SPI(0, MOSI, MISO, count);
-        return;
-    }
-    void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-        return;
-    }
-private:
-    PCIE_CSR_Pipe pipe;
-};
-
-class LMS64C_FPGA_Over_PCIe : public lime::IComms
-{
-public:
-    LMS64C_FPGA_Over_PCIe(LitePCIe* dataPort) : pipe(*dataPort) {}
-    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        SPI(0, MOSI, MISO, count);
-    }
-    void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
-    {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
-    }
-
-    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override
-    {
-        return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
-    };
-    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override
-    {
-        return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
-    }
-    virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
-    {
-        return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
-    }
-private:
-    PCIE_CSR_Pipe pipe;
-};
 
 SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle &handle)
 {
