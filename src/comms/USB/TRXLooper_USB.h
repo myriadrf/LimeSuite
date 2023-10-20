@@ -30,7 +30,6 @@ class TRXLooper_USB : public lime::TRXLooper
     const uint8_t txEndPt;
   private:
     bool GetSamplesPacket(SamplesPacketType** srcPkt);
-    bool SyncToTimestamp(SamplesPacketType** srcPkt);
     void NegateQ(SamplesPacketType* packet, TRXDir direction);
 };
 

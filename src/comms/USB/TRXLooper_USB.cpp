@@ -75,29 +75,6 @@ bool TRXLooper_USB::GetSamplesPacket(SamplesPacketType** srcPkt)
     return true;
 }
 
-bool TRXLooper_USB::SyncToTimestamp(SamplesPacketType** srcPkt)
-{
-    if (!(*srcPkt)->useTimestamp || mConfig.rxCount <= 0)
-    {
-        return true;
-    }
-
-    const int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
-    const int64_t txAdvance = (*srcPkt)->timestamp - rxNow;
-
-    if (txAdvance <= 0)
-    {
-        printf("DROP\n");
-        ++mTx.stats.underrun;
-        mTx.memPool->Free((*srcPkt));
-        (*srcPkt) = nullptr;
-
-        return false;
-    }
-
-    return true;
-}
-
 void TRXLooper_USB::TransmitPacketsLoop()
 {
     //at this point FPGA has to be already configured to output samples
@@ -169,11 +146,6 @@ void TRXLooper_USB::TransmitPacketsLoop()
             continue;
         }
         
-        if (!SyncToTimestamp(&srcPkt))
-        {
-            continue;
-        }
-
         while (!srcPkt->empty())
         {
             if ((payloadSize >= maxPayloadSize || payloadSize == samplesInPkt * bytesForFrame) && bytesUsed + sizeof(TxHeader) <= bufferSize)
