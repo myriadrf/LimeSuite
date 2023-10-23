@@ -217,7 +217,7 @@ set(LMS7SUITE_GUI_SOURCES
     boards_wxgui/pnlX3.cpp
     boards_wxgui/pnlXTRX.cpp
     # boards_wxgui/pnlQSpark.cpp
-    # boards_wxgui/pnluLimeSDR.cpp
+    boards_wxgui/pnluLimeSDR.cpp
     # boards_wxgui/pnlUltimateEVB.cpp
     # boards_wxgui/pnlBuffers.cpp
     # boards_wxgui/pnlCoreSDR.cpp
