@@ -453,6 +453,7 @@ int GPIODirRead(ISerialPort& port, uint8_t *buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
+    pkt.blockCount = bufLength;
 
     int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
@@ -478,6 +479,7 @@ int GPIORead(ISerialPort& port, uint8_t *buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
+    pkt.blockCount = bufLength;
 
     int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
@@ -503,11 +505,18 @@ int GPIODirWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLengt
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_WR;
+    pkt.blockCount = bufLength;
 
     int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
     {
         throw std::runtime_error("GPIODirWrite write failed");
+    }
+
+    int bytesReceived = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    if (bytesReceived < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+    {
+        throw std::runtime_error("GPIODirWrite read failed");
     }
 
     return 0;
@@ -517,11 +526,18 @@ int GPIOWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_WR;
+    pkt.blockCount = bufLength;
 
     int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
     {
         throw std::runtime_error("GPIOWrite write failed");
+    }
+
+    int bytesReceived = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    if (bytesReceived < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+    {
+        throw std::runtime_error("GPIOWrite read failed");
     }
 
     return 0;
