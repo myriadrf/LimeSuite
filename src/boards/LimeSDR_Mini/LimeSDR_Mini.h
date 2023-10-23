@@ -7,8 +7,6 @@
 #include <vector>
 #include <memory>
 
-#include "FT601/FT601.h"
-
 #include "dataTypes.h"
 namespace lime
 {

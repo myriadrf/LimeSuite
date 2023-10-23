@@ -6,7 +6,7 @@
 #include "Logger.h"
 #include "USBCommon.h"
 
-// #include "FX3.h"
+#include "FT601/FT601.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -152,10 +152,11 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
     return handles;
 }
 
-const int streamWrEp = 0x03;
-const int streamRdEp = 0x83;
-const int ctrlWrEp = 0x02;
-const int ctrlRdEp = 0x82;
+static constexpr int streamBulkWriteAddr = 0x03;
+static constexpr int streamBulkReadAddr = 0x83;
+
+static constexpr int ctrlBulkWriteAddr = 0x02;
+static constexpr int ctrlBulkReadAddr = 0x82;
 
 class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 {
@@ -164,10 +165,12 @@ public:
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
     {    
+        return port.BulkTransfer(ctrlBulkWriteAddr, const_cast<uint8_t *>(data), length, timeout_ms);
     }
 
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
+        return port.BulkTransfer(ctrlBulkReadAddr, data, length, timeout_ms);
     }
 protected:
     FT601& port;

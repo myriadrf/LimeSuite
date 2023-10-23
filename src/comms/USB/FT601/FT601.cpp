@@ -282,7 +282,7 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int
     len = actualTransferred;
     if (status != 0)
     {
-        printf("FX3::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n", endPointAddr, libusb_error_name(status), actualTransferred, length);
+        printf("FT601::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n", endPointAddr, libusb_error_name(status), actualTransferred, length);
     }
 #endif
     return len;
