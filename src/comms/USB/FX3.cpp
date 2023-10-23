@@ -6,6 +6,7 @@
 #include <thread>
 #include <chrono>
 #include <assert.h>
+#include <mutex>
 
 using namespace std;
 using namespace lime;
@@ -179,7 +180,7 @@ int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
 {
     long len = length;
     if (not IsConnected())
-        throw runtime_error("BulkTransfer: USB device is not connected");
+        throw runtime_error("ControlTransfer: USB device is not connected");
 
     assert(data);
 #ifdef __unix__
@@ -236,8 +237,10 @@ static void process_libusbtransfer(libusb_transfer *trans)
     @param streamBulkInAddr endpoint index?
     @return handle of transfer context
 */
-int FX3::BeginDataXfer(const uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
+int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 {
+    std::unique_lock<std::mutex> lock{contextsLock};
+
     int i = 0;
     bool contextFound = false;
     //find not used context
@@ -248,10 +251,12 @@ int FX3::BeginDataXfer(const uint8_t *buffer, uint32_t length, uint8_t endPointA
         }
     }
     if (!contextFound) {
-        printf("No contexts left for reading data\n");
+        printf("No contexts left for reading or sending data, address %i\n", endPointAddr);
         return -1;
     }
     contexts[i].used = true;
+
+    lock.unlock();
 #ifndef __unix__
     if (InEndPt[endPointAddr & 0xF]) {
         contexts[i].EndPt = InEndPt[endPointAddr & 0xF];
@@ -261,13 +266,13 @@ int FX3::BeginDataXfer(const uint8_t *buffer, uint32_t length, uint8_t endPointA
     return i;
 #else
     libusb_transfer *tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, (unsigned char *)buffer, length,
+    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length,
                               process_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
     int status = libusb_submit_transfer(tr);
     if (status != 0) {
-        printf("BEGIN DATA READING %s", libusb_error_name(status));
+        printf("BEGIN DATA READING %s\n", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -307,7 +312,7 @@ bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     @param contextHandle handle of which context to finish
     @return negative values failure, positive number of bytes received
 */
-int FX3::FinishDataXfer(const uint8_t *buffer, uint32_t length, int contextHandle)
+int FX3::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
 {
     if (contextHandle >= 0 && contexts[contextHandle].used == true) {
 #ifndef __unix__

@@ -133,7 +133,7 @@ struct FirmwareInfo
     int protocol;
     uint64_t boardSerialNumber;
 };
-int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info);
+int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice = 0);
 void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descriptor);
 
 int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
@@ -142,6 +142,11 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* mosi, size_t count, uint32_t 
 
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
 int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
+
+int GPIODirRead(ISerialPort& port, uint8_t *buffer, const size_t bufLength);
+int GPIORead(ISerialPort& port, uint8_t *buffer, const size_t bufLength);
+int GPIODirWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength);
+int GPIOWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength);
 
 int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *values, const size_t count, const std::string& units, uint32_t subDevice = 0);
 int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, const size_t count, std::string* units, uint32_t subDevice = 0);

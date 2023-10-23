@@ -2,6 +2,7 @@
 #include "lms7suiteEvents.h"
 #include "Logger.h"
 #include "pnlGPIO.h"
+#include "LimeSDR.h"
 
 #include <wx/sizer.h>
 
@@ -13,7 +14,7 @@ END_EVENT_TABLE()
 
 pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
 {
-    lmsControl = nullptr;
+    device = nullptr;
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
@@ -57,17 +58,17 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     Bind(WRITE_ALL_VALUES, &pnlLimeSDR::OnWriteAll, this, this->GetId());
 }
 
-void pnlLimeSDR::Initialize(lms_device_t* pControl)
+void pnlLimeSDR::Initialize(lime::SDRDevice* pControl)
 {
-    lmsControl = pControl;
-    if(lmsControl)
+    device = pControl;
+    if (device)
     {
         auto controls = controlsSizer->GetChildren();
         for(auto i : controls)
             i->GetWindow()->Enable();
     }
 
-    pnl_gpio->Initialize(lmsControl);
+    pnl_gpio->Initialize(device);
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
     Layout();
@@ -85,8 +86,12 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_AT->GetValue() << 5;
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
-    if(lmsControl && LMS_WriteFPGAReg(lmsControl, addr, value))
-    lime::error("Board loopback cahnge failed");
+    auto sdr = static_cast<lime::LimeSDR*>(device);
+
+    if (sdr && sdr->WriteFPGARegister(addr, value)) 
+    {
+        lime::error("Board loopback change failed");
+    }
 }
 
 pnlLimeSDR::~pnlLimeSDR()
@@ -103,7 +108,10 @@ void pnlLimeSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(lmsControl && LMS_ReadFPGAReg(lmsControl, addr, &value)==0)
+
+    auto sdr = static_cast<lime::LimeSDR*>(device);
+
+    if (sdr && (value = sdr->ReadFPGARegister(addr)) >= 0)
     {
         chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
         chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
@@ -129,4 +137,3 @@ void pnlLimeSDR::OnWriteAll(wxCommandEvent &event)
     pnl_gpio->OnUsrGPIODirChange(event);
     pnl_gpio->OnUsrGPIOChange(event);
 }
-

@@ -48,4 +48,4 @@ endif()
 ########################################################################
 target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${USB_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
 target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${LIMESDR_SOURCES})
-target_link_libraries(${MAIN_LIBRARY_NAME} ${LIMESDR_LIBRARIES})
+target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIMESDR_LIBRARIES})

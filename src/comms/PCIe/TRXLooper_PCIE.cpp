@@ -246,7 +246,7 @@ public:
 
     inline bool hasSpace() const {
         const bool packetNotFull = payloadSize < maxPayloadSize;
-        const int spaceAvailable = mCapacity-bytesUsed > sizeof(TxHeader);
+        const bool spaceAvailable = mCapacity-bytesUsed > sizeof(TxHeader);
         return packetNotFull && spaceAvailable;
     }
 

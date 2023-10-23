@@ -25,9 +25,9 @@ public:
         uint8_t* data, uint32_t length,
         int32_t timeout_ms = defaultTimeout) = 0;
 
-    virtual int BeginDataXfer(const uint8_t *buffer, uint32_t length, uint8_t endPointAddr) = 0;
+    virtual int BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr) = 0;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) = 0;
-    virtual int FinishDataXfer(const uint8_t *buffer, uint32_t length, int contextHandle) = 0;
+    virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) = 0;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) = 0;
 };
 

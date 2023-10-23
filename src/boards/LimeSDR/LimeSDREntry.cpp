@@ -1,7 +1,8 @@
 #include "LimeSDR.h"
 #include "DeviceExceptions.h"
-#include "DeviceRegistry.h"
-#include "DeviceHandle.h"
+#include "limesuite/DeviceRegistry.h"
+#include "limesuite/DeviceHandle.h"
+#include "protocols/LMS64CProtocol.h"
 #include "Logger.h"
 
 #include "FX3.h"
@@ -14,7 +15,18 @@
 #include <mutex>
 #endif
 
+#define CTR_W_REQCODE 0xC1
+#define CTR_W_VALUE 0x0000
+#define CTR_W_INDEX 0x0000
+
+#define CTR_R_REQCODE 0xC0
+#define CTR_R_VALUE 0x0000
+#define CTR_R_INDEX 0x0000
+
 using namespace lime;
+
+static constexpr uint8_t ctrlBulkOutAddr = 0x0F;
+static constexpr uint8_t ctrlBulkInAddr = 0x8F;
 
 static libusb_context* ctx; //a libusb session
 
@@ -26,14 +38,19 @@ void __loadLimeSDR(void) //TODO fixme replace with LoadLibrary/dlopen
 LimeSDREntry::LimeSDREntry() : DeviceRegistryEntry("LimeSDR")
 {
 #ifdef __unix__
-    int r = libusb_init(&ctx); //initialize the library for the session we just declared
-    if(r < 0)
-        lime::error("Init Error %i", r); //there was an error
+    if (ctx == nullptr) 
+    {
+        int returnCode = libusb_init(&ctx); //initialize the library for the session we just declared
+        if (returnCode < 0)
+        {
+            lime::error("Init Error %i", returnCode); //there was an error
+        }
 #if LIBUSBX_API_VERSION < 0x01000106
-    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+        libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
 #else
-    libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, 3); //set verbosity level to 3, as suggested in the documentation
+        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); //set verbosity level to info, as suggested in the documentation
 #endif
+    }
 
 #endif
 }
@@ -48,6 +65,11 @@ LimeSDREntry::~LimeSDREntry()
 std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
 {
     std::vector<DeviceHandle> handles;
+
+    if (!hint.media.empty() && hint.media.find("USB") == std::string::npos)
+    {
+        return handles;
+    }
 
 #ifndef __unix__
     CCyUSBDevice device;
@@ -137,15 +159,132 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
     return handles;
 }
 
+static const std::set<uint8_t> commandsToBulkTransfer =
+{
+    LMS64CProtocol::CMD_BRDSPI_WR, LMS64CProtocol::CMD_BRDSPI_RD,
+    LMS64CProtocol::CMD_LMS7002_WR, LMS64CProtocol::CMD_LMS7002_RD,
+    LMS64CProtocol::CMD_ANALOG_VAL_WR, LMS64CProtocol::CMD_ANALOG_VAL_RD,
+    LMS64CProtocol::CMD_ADF4002_WR,
+    LMS64CProtocol::CMD_LMS7002_RST,
+    LMS64CProtocol::CMD_GPIO_DIR_WR, LMS64CProtocol::CMD_GPIO_DIR_RD,
+    LMS64CProtocol::CMD_GPIO_WR, LMS64CProtocol::CMD_GPIO_RD,
+};
+
+class USB_CSR_Pipe : public ISerialPort
+{
+public:
+    explicit USB_CSR_Pipe(FX3& port) : port(port) {};
+
+    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
+    {    
+        const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
+
+        if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
+        {
+            return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
+        }
+
+        return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, 1000);
+    }
+
+    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
+    {
+        const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
+
+        if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
+        {
+            return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
+        }
+
+        return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, 1000);
+    }
+protected:
+    FX3& port;
+};
+
+class LMS64C_LMS7002M_Over_USB : public IComms
+{
+public:
+    LMS64C_LMS7002M_Over_USB(USB_CSR_Pipe& dataPort) : pipe(dataPort) {}
+
+    virtual void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        LMS64CProtocol::LMS7002M_SPI(pipe, 0, MOSI, MISO, count);
+    }
+
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
+    }
+
+    virtual int ResetDevice(int chipSelect) override
+    {
+        return LMS64CProtocol::DeviceReset(pipe, chipSelect);
+    };
+private:
+    USB_CSR_Pipe &pipe;
+};
+
+class LMS64C_FPGA_Over_USB : public IComms
+{
+public:
+    LMS64C_FPGA_Over_USB(USB_CSR_Pipe &dataPort) : pipe(dataPort) {}
+
+    void SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        SPI(0, MOSI, MISO, count);
+    }
+
+    void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override
+    {
+        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+    }
+
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override 
+    {
+        return LMS64CProtocol::GPIODirRead(pipe, buffer, bufLength);
+    }
+
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override 
+    {
+        return LMS64CProtocol::GPIORead(pipe, buffer, bufLength);
+    }
+
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override 
+    {
+        return LMS64CProtocol::GPIODirWrite(pipe, buffer, bufLength);
+    }
+
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override 
+    {
+        return LMS64CProtocol::GPIOWrite(pipe, buffer, bufLength);
+    }
+    
+    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override
+    {
+        return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
+    }
+
+    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override
+    {
+        return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
+    }
+
+    virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
+    {
+        return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
+    }
+private:
+    USB_CSR_Pipe &pipe;
+};
+
 SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)
 {
-    FX3* usbComms = nullptr;
-
     const auto splitPos = handle.addr.find(":");
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos+1), nullptr, 16);
 
-    usbComms = new FX3();
+    FX3* usbComms = new FX3(ctx);
     if (usbComms->Connect(vid, pid, handle.serial) != 0)
     {
         delete usbComms;
@@ -153,5 +292,12 @@ SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)
         sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
         throw std::runtime_error(reason);
     }
-    return new LimeSDR(usbComms);//ctx, handle.addr, handle.serial, handle.index);
+
+    USB_CSR_Pipe* USBPipe = new USB_CSR_Pipe(*usbComms);
+
+    // protocol layer
+    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_USB(*USBPipe);
+    IComms* route_fpga = new LMS64C_FPGA_Over_USB(*USBPipe);
+
+    return new LimeSDR(route_lms7002m, route_fpga, usbComms);
 }

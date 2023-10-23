@@ -7,6 +7,7 @@
 #ifndef LMS7API_H
 #define LMS7API_H
 
+#include "limesuite/commonTypes.h"
 #include "limesuite/config.h"
 #include "limesuite/LMS7002M_parameters.h"
 #include <cstdint>
@@ -21,12 +22,6 @@ class LMS7002M_RegistersMap;
 class MCU_BD;
 class BinSearchParam;
 class GridSearchParam;
-
-enum Dir
-{
-    Rx = 0,
-    Tx = 1
-};
 
 struct RSSI_measurements
 {
@@ -143,7 +138,7 @@ public:
      * @param channel true for the transmit size, false for receive
      * @param enable true to enable, false to disable
      */
-    int EnableChannel(Dir dir, const uint8_t channel, const bool enable);
+    int EnableChannel(TRXDir dir, const uint8_t channel, const bool enable);
 
     ///@name Registers writing and reading
     int UploadAll();

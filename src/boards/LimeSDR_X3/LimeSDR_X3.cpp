@@ -606,7 +606,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
                 if ( socIndex == 1 ) // LMS2 uses external ADC/DAC
                     EnableChannelLMS2(chip, (TRXDir)dir, ch, trx.enabled);
                 else
-                    chip->EnableChannel((Dir)dir, ch, trx.enabled);
+                    chip->EnableChannel((TRXDir)dir, ch, trx.enabled);
 
                 if(socIndex == 0)
                     LMS1SetPath((TRXDir)dir, ch, trx.path);

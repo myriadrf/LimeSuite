@@ -3,12 +3,15 @@
 #include "USBGeneric.h"
 #include "LMSBoards.h"
 #include "limesuite/LMS7002M.h"
-#include "Si5351C.h"
+#include "Si5351C/Si5351C.h"
 #include "LMS64CProtocol.h"
 #include "Logger.h"
 #include "FPGA_common.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
+#include "protocols/LMS64CProtocol.h"
+#include "limesuite/DeviceNode.h"
+#include "ADCUnits.h"
 
 #include <assert.h>
 #include <memory>
@@ -17,10 +20,8 @@
 #include <cmath>
 
 #ifdef __unix__
-    #include "libusb.h"
+    #include <libusb.h>
 #endif
-
-using namespace lime;
 
 #define CTR_W_REQCODE 0xC1
 #define CTR_W_VALUE 0x0000
@@ -41,30 +42,8 @@ static constexpr uint8_t streamBulkInAddr = 0x81;
 static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
 
-const SDRDevice::Descriptor &LimeSDR::GetDescriptor() const
-{
-    static SDRDevice::Descriptor d;
-    d.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
-    RFSOCDescripion soc;
-    soc.channelCount = 2;
-    soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
-    soc.txPathNames = {"None", "Band1", "Band2"};
-    d.rfSOC.push_back(soc);
-
-    return d;
-}
-
-//control commands to be send via bulk port for boards v1.2 and later
-static const std::set<uint8_t> commandsToBulkCtrlHw2 =
-{
-    CMD_BRDSPI_WR, CMD_BRDSPI_RD,
-    CMD_LMS7002_WR, CMD_LMS7002_RD,
-    CMD_ANALOG_VAL_WR, CMD_ANALOG_VAL_RD,
-    CMD_ADF4002_WR,
-    CMD_LMS7002_RST,
-    CMD_GPIO_DIR_WR, CMD_GPIO_DIR_RD,
-    CMD_GPIO_WR, CMD_GPIO_RD,
-};
+static const SDRDevice::CustomParameter CP_VCTCXO_DAC = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
+static const SDRDevice::CustomParameter CP_TEMPERATURE = {"Board Temperature", 1, 0, 65535, true};
 
 static inline void ValidateChannel(uint8_t channel)
 {
@@ -72,22 +51,45 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
-LimeSDR::LimeSDR(lime::USBGeneric *conn)
-    : comms(conn)
+LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort)
+    : mStreamPort(streamPort),
+    mlms7002mPort(spiLMS),
+    mfpgaPort(spiFPGA)
 {
-    mLMSChips.push_back(new LMS7002M(spi_LMS7002M));
-    mLMSChips[0]->SetConnection(this);
+    SDRDevice::Descriptor descriptor = mDeviceDescriptor;
+    descriptor.name = "LimeSDR-USB";
 
-    mFPGA = std::unique_ptr<FPGA>(new FPGA(spi_FPGA, spi_LMS7002M));
-    mFPGA->SetConnection(this);
+    mLMSChips.push_back(new LMS7002M(mlms7002mPort));
+    mLMSChips[0]->SetConnection(mlms7002mPort);
+    mLMSChips[0]->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
 
-    rxFIFOs.resize(1, nullptr);
-    txFIFOs.resize(1, nullptr);
+    mFPGA = new FPGA(spiFPGA, spiLMS);
+    FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
+    FPGA::GatewareToDescriptor(gw, descriptor);
+
     mStreamers.resize(1, nullptr);
 
+    descriptor.customParameters.push_back(CP_VCTCXO_DAC);
+    descriptor.customParameters.push_back(CP_TEMPERATURE);
+
+    descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
+
+    RFSOCDescriptor soc;
+    soc.channelCount = 2;
+    soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
+    soc.txPathNames = {"None", "Band1", "Band2"};
+    descriptor.rfSOC.push_back(soc);
+
+    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA", mFPGA);
+    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
+    descriptor.socTree = new DeviceNode("SDR-USB", "SDRDevice", this);
+    descriptor.socTree->childs.push_back(fpgaNode);
+
+    mDeviceDescriptor = descriptor;
+
     //must configure synthesizer before using LimeSDR
-    //if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
-    /*{
+    /*if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
+    {
         std::shared_ptr<Si5351C> si5351module(new Si5351C());
         si5351module->Initialize(conn);
         si5351module->SetPLL(0, 25000000, 0);
@@ -111,9 +113,22 @@ LimeSDR::LimeSDR(lime::USBGeneric *conn)
 
 LimeSDR::~LimeSDR()
 {
+    auto LMSChip = mLMSChips.back();
+    mLMSChips.pop_back();
+
+    if (LMSChip) 
+    {
+        delete LMSChip;
+    }
+
     if (mStreamers[0])
+    {
         delete mStreamers[0];
-    delete comms;
+        mStreamers[0] = nullptr;
+    }
+    
+    delete mStreamPort;
+    delete mFPGA;
 }
 
 // Verify and configure given settings
@@ -135,33 +150,33 @@ static inline const std::string strFormat(const char *format, ...)
     return std::string(ctemp);
 }
 
-void LimeSDR::Configure(const SDRConfig cfg, uint8_t moduleIndex = 0)
+void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
     try {
         // only 2 channels is available on LimeSDR
         for (int i = 2; i < SDRDevice::MAX_CHANNEL_COUNT; ++i)
-            if (cfg.channel[i].rxEnabled || cfg.channel[i].txEnabled)
+            if (cfg.channel[i].rx.enabled || cfg.channel[i].tx.enabled)
                 throw std::logic_error("too many channels enabled, LimeSDR has only 2");
 
         // MIMO necessary checks
         {
             const ChannelConfig &chA = cfg.channel[0];
             const ChannelConfig &chB = cfg.channel[1];
-            const bool rxMIMO = chA.rxEnabled && chB.rxEnabled;
-            const bool txMIMO = chA.txEnabled && chB.txEnabled;
+            const bool rxMIMO = chA.rx.enabled && chB.rx.enabled;
+            const bool txMIMO = chA.tx.enabled && chB.tx.enabled;
             if (rxMIMO || txMIMO) {
                 // MIMO sample rates have to match
-                if (rxMIMO && chA.rxSampleRate != chB.rxSampleRate)
+                if (rxMIMO && chA.rx.sampleRate != chB.rx.sampleRate)
                     throw std::logic_error("Non matching Rx MIMO channels sampling rate");
-                if (txMIMO && chA.txSampleRate != chB.txSampleRate)
+                if (txMIMO && chA.tx.sampleRate != chB.tx.sampleRate)
                     throw std::logic_error("Non matching Tx MIMO channels sampling rate");
 
                 // LMS7002M MIMO A&B channels share LO, but can be offset by NCO
                 // TODO: check if they are withing NCO range
-                const double rxLOdiff = chA.rxCenterFrequency - chB.rxCenterFrequency;
+                const double rxLOdiff = chA.rx.centerFrequency - chB.rx.centerFrequency;
                 if (rxMIMO && rxLOdiff > 0)
                     throw std::logic_error("MIMO: channels Rx LO too far apart");
-                const double txLOdiff = chA.txCenterFrequency - chB.txCenterFrequency;
+                const double txLOdiff = chA.tx.centerFrequency - chB.tx.centerFrequency;
                 if (txMIMO && txLOdiff > 0)
                     throw std::logic_error("MIMO: channels Rx LO too far apart");
             }
@@ -173,18 +188,18 @@ void LimeSDR::Configure(const SDRConfig cfg, uint8_t moduleIndex = 0)
         const double maxLO = 3.8e9;
         for (int i = 0; i < 2; ++i) {
             const ChannelConfig &ch = cfg.channel[i];
-            rxUsed |= ch.rxEnabled;
-            txUsed |= ch.txEnabled;
-            if (ch.rxEnabled && not InRange(ch.rxCenterFrequency, minLO, maxLO))
+            rxUsed |= ch.rx.enabled;
+            txUsed |= ch.tx.enabled;
+            if (ch.rx.enabled && not InRange(ch.rx.centerFrequency, minLO, maxLO))
                 throw std::logic_error(strFormat("Rx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.rxCenterFrequency, minLO, maxLO));
-            if (ch.txEnabled && not InRange(ch.txCenterFrequency, minLO, maxLO))
+                                                 ch.rx.centerFrequency, minLO, maxLO));
+            if (ch.tx.enabled && not InRange(ch.tx.centerFrequency, minLO, maxLO))
                 throw std::logic_error(strFormat("Tx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.txCenterFrequency, minLO, maxLO));
+                                                 ch.tx.centerFrequency, minLO, maxLO));
 
-            if (ch.rxEnabled && not InRange(ch.rxPath, 0, 5))
+            if (ch.rx.enabled && not InRange(ch.rx.path, 0, 5))
                 throw std::logic_error(strFormat("Rx ch%i invalid path", i));
-            if (ch.txEnabled && not InRange(ch.txPath, 1, 2))
+            if (ch.tx.enabled && not InRange(ch.tx.path, 1, 2))
                 throw std::logic_error(strFormat("Tx ch%i invalid path", i));
         }
 
@@ -194,30 +209,30 @@ void LimeSDR::Configure(const SDRConfig cfg, uint8_t moduleIndex = 0)
             mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
         if (rxUsed)
-            mLMSChips[0]->SetFrequencySX(false, cfg.channel[0].rxCenterFrequency);
+            mLMSChips[0]->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
         if (txUsed)
-            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].rxCenterFrequency);
+            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].rx.centerFrequency);
 
         for (int i = 0; i < 2; ++i) {
             const ChannelConfig &ch = cfg.channel[i];
             mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
-            mLMSChips[0]->EnableChannel(Rx, i, ch.rxEnabled);
-            mLMSChips[0]->EnableChannel(Tx, i, ch.txEnabled);
+            mLMSChips[0]->EnableChannel(Rx, i, ch.rx.enabled);
+            mLMSChips[0]->EnableChannel(Tx, i, ch.tx.enabled);
 
-            mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rxPath));
-            if(ch.rxPath == 4)
+            mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
+            if(ch.rx.path == 4)
                 mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
-            mLMSChips[0]->SetBandTRF(ch.txPath);
+            mLMSChips[0]->SetBandTRF(ch.tx.path);
             // TODO: set gains, filters...
         }
         mLMSChips[0]->SetActiveChannel(LMS7002M::ChA);
         // sampling rate
         double sampleRate;
         if (rxUsed)
-            sampleRate = cfg.channel[0].rxSampleRate;
+            sampleRate = cfg.channel[0].rx.sampleRate;
         else
-            sampleRate = cfg.channel[0].txSampleRate;
-        SetSampleRate(sampleRate, cfg.channel[0].rxOversample);
+            sampleRate = cfg.channel[0].tx.sampleRate;
+        SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR config: %s\n", e.what());
@@ -249,6 +264,16 @@ void LimeSDR::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, 
     else
         mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0);
     mLMSChips[0]->ResetLogicregisters();
+}
+
+// Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
+int LimeSDR::UpdateFPGAInterface(void* userData)
+{
+    constexpr int chipIndex = 0;
+    assert(userData != nullptr);
+    LimeSDR* pthis = static_cast<LimeSDR*>(userData);
+    LMS7002M* soc = pthis->mLMSChips[chipIndex];
+    return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
 void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
@@ -357,29 +382,38 @@ int LimeSDR::Init()
     return 0;
 }
 
-SDRDevice::DeviceInfo LimeSDR::GetDeviceInfo(void)
+SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
 {
-    assert(comms);
-    SDRDevice::DeviceInfo devInfo;
+    assert(mStreamPort);
+    SDRDevice::Descriptor deviceDescriptor;
+
+    LMS64CProtocol::FirmwareInfo info;
+    LMS64CProtocol::GetFirmwareInfo(reinterpret_cast<ISerialPort&>(mStreamPort), info);
+
     try
     {
-        LMS64CProtocol::LMS64CPacket pkt;
-        pkt.cmd = CMD_GET_INFO;
-        int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (sentBytes != sizeof(pkt))
-            throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
-        int gotBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (gotBytes != sizeof(pkt))
-            throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
+        LMS64CPacket pkt;
+        pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
 
-        LMS64CProtocol::LMSinfo info;
-        if (pkt.status == STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
+        int sentBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+        if (sentBytes != sizeof(pkt))
+        {
+            throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
+        }
+
+        int gotBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
+        if (gotBytes != sizeof(pkt))
+        {
+            throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
+        }
+
+        if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
         {
             info.firmware = pkt.payload[0];
-            info.device = pkt.payload[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.payload[1] : LMS_DEV_UNKNOWN;
+            info.deviceId = pkt.payload[1] < LMS_DEV_COUNT ? static_cast<eLMS_DEV>(pkt.payload[1]) : LMS_DEV_UNKNOWN;
             info.protocol = pkt.payload[2];
             info.hardware = pkt.payload[3];
-            info.expansion = pkt.payload[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.payload[4] : EXP_BOARD_UNKNOWN;
+            info.expansionBoardId = pkt.payload[4] < EXP_BOARD_COUNT ? static_cast<eEXP_BOARD>(pkt.payload[4]) : EXP_BOARD_UNKNOWN;
             info.boardSerialNumber = 0;
             for (int i = 10; i < 18; i++)
             {
@@ -388,59 +422,47 @@ SDRDevice::DeviceInfo LimeSDR::GetDeviceInfo(void)
             }
         }
         else
-            return devInfo;
-        devInfo.deviceName = GetDeviceName(info.device);
-        devInfo.expansionName = GetExpansionBoardName(info.expansion);
-        devInfo.firmwareVersion = std::to_string(int(info.firmware));
-        devInfo.hardwareVersion = std::to_string(int(info.hardware));
-        devInfo.protocolVersion = std::to_string(int(info.protocol));
-        devInfo.boardSerialNumber = info.boardSerialNumber;
+        {
+            return deviceDescriptor;
+        }
 
-        LMS64CProtocol::FPGAinfo gatewareInfo;
+        deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
+        deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
+        deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
+        deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
+        deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+        deviceDescriptor.serialNumber = info.boardSerialNumber;
+
         const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
         uint32_t data[4];
         SPI(spi_FPGA, addrs, data, 4);
-        gatewareInfo.boardID = (eLMS_DEV)data[0];//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-        gatewareInfo.gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
-        gatewareInfo.gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-        gatewareInfo.hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
+        auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+        auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
+        auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+        auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
 
-        devInfo.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gatewareInfo.boardID));
-        devInfo.gatewareVersion = std::to_string(int(gatewareInfo.gatewareVersion));
-        devInfo.gatewareRevision = std::to_string(int(gatewareInfo.gatewareRevision));
-        devInfo.hardwareVersion = std::to_string(int(gatewareInfo.hwVersion));
-        return devInfo;
+        deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
+        deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
+        deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
+        deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+
+        return deviceDescriptor;
     }
     catch (...)
     {
         //lime::error("LimeSDR::GetDeviceInfo failed(%s)", e.what());
-        devInfo.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
-        devInfo.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
+        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
+        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
     }
-    return devInfo;
+    return deviceDescriptor;
 }
 
 void LimeSDR::Reset()
 {
-    assert(comms);
-    LMS64CProtocol::LMS64CPacket pkt;
-    pkt.cmd = CMD_LMS7002_RST;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 1;
-    pkt.periphID = spi_LMS7002M;
-    const int LMS_RST_PULSE = 2;
-    pkt.payload[0] = LMS_RST_PULSE;
-
-    int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t *)&pkt, sizeof(pkt), 100);
-    if (sent != sizeof(pkt))
-        throw std::runtime_error("LMS Reset write failed");
-    int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t *)&pkt, sizeof(pkt), 100);
-
-    if (recv >= pkt.headerSize && pkt.status != STATUS_COMPLETED_CMD)
-        throw std::runtime_error("LMS Reset read failed");
+    LMS64CProtocol::DeviceReset(reinterpret_cast<ISerialPort&>(mStreamPort), 0);
 }
 
-int LimeSDR::EnableChannel(Dir dir, uint8_t channel, bool enabled)
+int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)
 {
     int ret = mLMSChips[0]->EnableChannel(dir, channel, enabled);
     if (dir == Tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
@@ -487,20 +509,20 @@ void LimeSDR::EnableCache(bool enable)
         mFPGA->EnableValuesCache(enable);
 }
 
-static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSize,
+static void printPacket(const LMS64CPacket &pkt, uint8_t blockSize,
                         const char *prefix)
 {
     printf("%s", prefix);
     int i = 0;
     for (; i < 8; ++i)
-        printf("%02X ", ((uint8_t *)&pkt)[i]);
+        printf("%02X ", reinterpret_cast<const uint8_t *>(&pkt)[i]);
     for (; i < 8 + pkt.blockCount * blockSize; i += blockSize) {
         int j = 0;
         for (; j < blockSize / 2; ++j)
-            printf("%02X", ((uint8_t *)&pkt)[i + j]);
+            printf("%02X", reinterpret_cast<const uint8_t *>(&pkt)[i + j]);
         printf(" ");
         for (; j < blockSize; ++j)
-            printf("%02X", ((uint8_t *)&pkt)[i + j]);
+            printf("%02X", reinterpret_cast<const uint8_t *>(&pkt)[i + j]);
         printf(" ");
     }
     printf("\n");
@@ -508,10 +530,10 @@ static void printPacket(const LMS64CProtocol::LMS64CPacket &pkt, uint8_t blockSi
 
 void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
-    assert(comms);
+    assert(mStreamPort);
     assert(MOSI);
-    LMS64CProtocol::LMS64CPacket pkt;
-    pkt.status = STATUS_UNDEFINED;
+    LMS64CPacket pkt;
+    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     pkt.blockCount = 0;
     pkt.periphID = chipSelect;
 
@@ -529,10 +551,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
             if (isWrite) {
                 switch (chipSelect) {
                 case spi_LMS7002M:
-                    pkt.cmd = CMD_LMS7002_WR;
+                    pkt.cmd = LMS64CProtocol::CMD_LMS7002_WR;
                     break;
                 case spi_FPGA:
-                    pkt.cmd = CMD_BRDSPI_WR;
+                    pkt.cmd = LMS64CProtocol::CMD_BRDSPI_WR;
                     break;
                 default:
                     throw std::logic_error("LimeSDR SPI invalid SPI chip select");
@@ -546,10 +568,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
             else {
                 switch (chipSelect) {
                 case spi_LMS7002M:
-                    pkt.cmd = CMD_LMS7002_RD;
+                    pkt.cmd = LMS64CProtocol::CMD_LMS7002_RD;
                     break;
                 case spi_FPGA:
-                    pkt.cmd = CMD_BRDSPI_RD;
+                    pkt.cmd = LMS64CProtocol::CMD_BRDSPI_RD;
                     break;
                 default:
                     throw std::logic_error("LimeSDR SPI invalid SPI chip select");
@@ -564,14 +586,14 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
 
         // flush packet
         //printPacket(pkt, 4, "Wr:");
-        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int sent = mStreamPort->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("SPI failed");
 
-        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int recv = mStreamPort->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
-        if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == STATUS_COMPLETED_CMD) {
+        if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD) {
             for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i) {
                 //MISO[destIndex] = 0;
                 //MISO[destIndex] = pkt.payload[0] << 24;
@@ -583,80 +605,81 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uin
         else
             throw std::runtime_error("SPI failed");
         pkt.blockCount = 0;
-        pkt.status = STATUS_UNDEFINED;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     }
 }
 
-int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)
+/*int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)
 {
     assert(comms);
-    LMS64CProtocol::LMS64CPacket pkt;
+    LMS64CPacket pkt;
     int remainingBytes = length;
     const uint8_t* src = data;
     while (remainingBytes > 0)
     {
-        pkt.cmd = CMD_I2C_WR;
-        pkt.status = STATUS_UNDEFINED;
-        pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
+        pkt.cmd = LMS64CProtocol::CMD_I2C_WR;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
         pkt.periphID = address;
         memcpy(pkt.payload, src, pkt.blockCount);
         src += pkt.blockCount;
         remainingBytes -= pkt.blockCount;
-        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int sent = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("I2C write failed");
-        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int recv = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
 
-        if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+        if (recv < pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
             throw std::runtime_error("I2C write failed");
     }
     return 0;
-}
+}*/
 
-int LimeSDR::I2CRead(int address, uint8_t *data, uint32_t length)
+/*int LimeSDR::I2CRead(int address, uint8_t *data, uint32_t length)
 {
     assert(comms);
-    LMS64CProtocol::LMS64CPacket pkt;
+    LMS64CPacket pkt;
     int remainingBytes = length;
     uint8_t* dest = data;
     while (remainingBytes > 0)
     {
-        pkt.cmd = CMD_I2C_RD;
-        pkt.status = STATUS_UNDEFINED;
-        pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
+        pkt.cmd = LMS64CProtocol::CMD_I2C_RD;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
         pkt.periphID = address;
 
-        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int sent = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("I2C read failed");
-        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        int recv = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
 
         memcpy(dest, pkt.payload, pkt.blockCount);
         dest += pkt.blockCount;
         remainingBytes -= pkt.blockCount;
 
-        if (recv <= pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+        if (recv <= pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
             throw std::runtime_error("I2C read failed");
     }
     return 0;
-}
+}*/
 
 // There might be some leftover samples data still buffered in USB device
 // clear the USB buffers before streaming samples to avoid old data
 void LimeSDR::ResetUSBFIFO()
 {
-    LMS64CProtocol::LMS64CPacket pkt;
-    pkt.cmd = CMD_USB_FIFO_RST;
-    pkt.status = STATUS_UNDEFINED;
+    LMS64CPacket pkt;
+    pkt.cmd = LMS64CProtocol::CMD_USB_FIFO_RST;
+    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     pkt.blockCount = 1;
     pkt.payload[0] = 0;
-    int sentBytes = comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE,
-                                           CTR_W_INDEX, (uint8_t *)&pkt, sizeof(pkt), 100);
+
+    int sentBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE,
+                                           CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
         throw std::runtime_error("LimeSDR::ResetUSBFIFO write failed");
     int gotBytes =
-        comms->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE,
-                               CTR_R_VALUE, CTR_R_INDEX, (uint8_t *)&pkt, sizeof(pkt), 100);
+        mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE,
+                               CTR_R_VALUE, CTR_R_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (gotBytes != sizeof(pkt))
         throw std::runtime_error("LimeSDR::ResetUSBFIFO read failed");
 }
@@ -666,11 +689,9 @@ int LimeSDR::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
     if (mStreamers[0])
         return -1; // already running
     try {
-        mStreamers[0] = new TRXLooper_USB(comms, mFPGA.get(), mLMSChips[0], streamBulkInAddr, streamBulkOutAddr);
+        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkInAddr, streamBulkOutAddr);
         mStreamers[0]->Setup(config);
-        rxFIFOs[0] = new PacketsFIFO<FPGA_DataPacket>(1024*64);
-        txFIFOs[0] = new PacketsFIFO<FPGA_DataPacket>(1024*64);
-        mStreamers[0]->AssignFIFO(rxFIFOs[0], txFIFOs[0]);
+
         return 0;
     }
     catch (std::logic_error &e) {
@@ -698,29 +719,69 @@ void LimeSDR::StreamStop(uint8_t moduleIndex)
         return;
 
     mStreamers[0]->Stop();
-    if (txFIFOs[0])
-        delete txFIFOs[0];
-    txFIFOs[0] = nullptr;
-    if (rxFIFOs[0])
-        delete rxFIFOs[0];
-    rxFIFOs[0] = nullptr;
+
     delete mStreamers[0];
     mStreamers[0] = nullptr;
 }
 
-void LimeSDR::StreamStatus(uint8_t channel, SDRDevice::StreamStats &status)
+void LimeSDR::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
 {
-    // if (rxFIFO) {
-    //     status.rxFIFO_filled = rxFIFO->Usage();
-    //     status.rxDataRate_Bps = mStreamers[0]->GetDataRate(false);
-    // }
-    // if (txFIFO) {
-    //     status.txFIFO_filled = txFIFO->Usage();
-    //     status.txDataRate_Bps = mStreamers[0]->GetDataRate(true);
-    // }
+    if (rx)
+    {
+        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Rx);
+        rx->FIFO_filled = stats.FIFO_filled;
+        rx->dataRate_Bps = stats.dataRate_Bps;
+    }
+
+    if (tx)
+    {
+        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Tx);
+        tx->FIFO_filled = stats.FIFO_filled;
+        tx->dataRate_Bps = stats.dataRate_Bps;
+    }
 }
 
 void *LimeSDR::GetInternalChip(uint32_t index)
 {
     return mLMSChips.at(index);
+}
+
+int LimeSDR::GPIODirRead(uint8_t *buffer, const size_t bufLength)
+{
+    return mfpgaPort->GPIODirRead(buffer, bufLength);
+}
+
+int LimeSDR::GPIORead(uint8_t *buffer, const size_t bufLength)
+{
+    return mfpgaPort->GPIORead(buffer, bufLength);
+}
+
+int LimeSDR::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    return mfpgaPort->GPIODirWrite(buffer, bufLength);
+}
+
+int LimeSDR::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    return mfpgaPort->GPIOWrite(buffer, bufLength);
+}
+
+int LimeSDR::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
+{
+    return mfpgaPort->CustomParameterWrite(ids, values, count, units);
+}
+
+int LimeSDR::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
+{
+    return mfpgaPort->CustomParameterRead(ids, values, count, units);
+}
+
+int LimeSDR::ReadFPGARegister(uint32_t address)
+{
+    return mFPGA->ReadRegister(address);
+}
+
+int LimeSDR::WriteFPGARegister(uint32_t address, uint32_t value)
+{
+    return mFPGA->WriteRegister(address, value);
 }

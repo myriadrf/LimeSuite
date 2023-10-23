@@ -485,9 +485,9 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
     // const uint16_t MODE = 0 << 5; // 0-TRXIQ, 1-JESD207 (not impelemented)
     // const uint16_t smpl_width =
     //     cfg.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 2 : 0;
-
     // printf("TRIQ:%i, DDR_EN:%i, MIMO_EN:%i\n", TRIQ_PULSE, DDR_EN, MIMO_EN);
     // const uint16_t reg8 = MIMO_EN | TRIQ_PULSE | DDR_EN | MODE | smpl_width;
+    
     uint16_t mode = 0x0100;
     if (lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)))
         mode = 0x0040;
@@ -551,12 +551,17 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig &cfg)
 
 void TRXLooper::Start()
 {
+    mRx.fifo->clear();
+    mTx.fifo->clear();
+
     fpga->StartStreaming();
+
     {
         std::lock_guard<std::mutex> lock (streamMutex);
         mStreamEnabled = true;
         streamActive.notify_all();
     }
+
     steamClockStart = steady_clock::now();
     //int64_t startPoint = std::chrono::time_point_cast<std::chrono::microseconds>(pcStreamStart).time_since_epoch().count();
     //printf("Stream%i start %lius\n", chipId, startPoint);

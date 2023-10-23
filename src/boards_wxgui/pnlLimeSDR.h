@@ -1,7 +1,7 @@
 #ifndef PNL_LIMESDR_H
 #define PNL_LIMESDR_H
 
-#include "lime/LimeSuite.h"
+#include "limesuite/SDRDevice.h"
 #include <wx/panel.h>
 
 class wxFlexGridSizer;
@@ -18,7 +18,7 @@ class pnlLimeSDR : public wxPanel
 {
 public:
     pnlLimeSDR(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = wxEmptyString);
-    void Initialize(lms_device_t* pControl);
+    void Initialize(lime::SDRDevice* pControl);
     virtual ~pnlLimeSDR();
     virtual void UpdatePanel();
     void OnGPIOChange(wxCommandEvent &event);
@@ -35,7 +35,10 @@ protected:
     wxCheckBox* chkTX2_2_LB_AT;
     wxFlexGridSizer* controlsSizer;
     wxFlexGridSizer* mainSizer;
-    lms_device_t *lmsControl;
+
+    int chipSelect;
+    lime::SDRDevice *device;
+    
     DECLARE_EVENT_TABLE()
 };
 

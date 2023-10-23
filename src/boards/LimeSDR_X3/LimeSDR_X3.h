@@ -10,7 +10,6 @@
 #include <vector>
 #include <array>
 
-#include "PacketsFIFO.h"
 #include "dataTypes.h"
 
 namespace lime

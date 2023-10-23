@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <set>
 #include "limesuite/IComms.h"
+#include "limesuite/commonTypes.h"
 #include "cpp-feather-ini-parser/INI.h"
 #include <cmath>
 #include <iostream>
@@ -264,7 +265,7 @@ size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
     return this->GetActiveChannel(fromChip) == ChB ? 1 : 0;
 }
 
-int LMS7002M::EnableChannel(Dir dir, const uint8_t channel, const bool enable)
+int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable)
 {
     ChannelScope scope(this, channel);
 

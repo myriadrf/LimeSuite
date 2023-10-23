@@ -133,10 +133,10 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-#include(comms/USB/CMakeLists.txt)
+include(comms/USB/CMakeLists.txt)
 include(comms/PCIe/CMakeLists.txt)
 
-#include(boards/LimeSDR/CMakeLists.txt)
+include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_X3/CMakeLists.txt)
 include(boards/LimeSDR_XTRX/CMakeLists.txt)
 include(boards/MMX8/CMakeLists.txt)
@@ -223,8 +223,8 @@ set(LMS7SUITE_GUI_SOURCES
     # boards_wxgui/pnlLimeNetMicro.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     windowFunction.cpp
-    #boards_wxgui/pnlLimeSDR.cpp
-    #boards_wxgui/pnlGPIO.cpp
+    boards_wxgui/pnlLimeSDR.cpp
+    boards_wxgui/pnlGPIO.cpp
     GUI/CommsToDevice.cpp
     GUI/DeviceConnectionPanel.cpp
     GUI/events.cpp

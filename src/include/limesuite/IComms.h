@@ -49,6 +49,11 @@ public:
 
     bool IsOpen();
 
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) { return -1; };
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) { return -1; };
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) { return -1; };
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) { return -1; };
+
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) { return -1; };
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) { return -1; };
 
