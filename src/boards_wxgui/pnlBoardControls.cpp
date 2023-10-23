@@ -266,7 +266,6 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
             wxMessageBox(_("Error reading board parameters"), _("Warning"));
             return;
         }
-        mParameters[i].channel = ids[i];
         mParameters[i].units = units;
         mParameters[i].value = value;
     }
