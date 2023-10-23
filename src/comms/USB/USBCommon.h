@@ -3,19 +3,27 @@
 
 #include "limesuite/IComms.h"
 #include "LMS64CProtocol.h"
-#include "FX3.h"
 
-using namespace lime;
+namespace lime
+{
+
+class USBTransferContext
+{
+public:
+    explicit USBTransferContext() : used(false) {};
+    virtual ~USBTransferContext() {};
+    virtual bool reset() = 0;
+
+    bool used;
+};
 
 class USB_CSR_Pipe : public ISerialPort
 {
 public:
-    explicit USB_CSR_Pipe(FX3& port) : port(port) {};
+    explicit USB_CSR_Pipe() {};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override = 0;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override = 0;
-protected:
-    FX3& port;
 };
 
 class LMS64C_LMS7002M_Over_USB : public IComms
@@ -51,5 +59,7 @@ public:
 private:
     USB_CSR_Pipe &pipe;
 };
+
+}
 
 #endif // USBCOMMON_H

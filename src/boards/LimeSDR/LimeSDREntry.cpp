@@ -6,7 +6,7 @@
 #include "Logger.h"
 #include "USBCommon.h"
 
-#include "FX3.h"
+#include "FX3/FX3.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -174,7 +174,7 @@ static const std::set<uint8_t> commandsToBulkTransfer =
 class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
 {
 public:
-    explicit USB_CSR_Pipe_SDR(FX3& port) : USB_CSR_Pipe(port) {};
+    explicit USB_CSR_Pipe_SDR(FX3& port) : USB_CSR_Pipe(), port(port) {};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
     {    
@@ -199,6 +199,8 @@ public:
 
         return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, 1000);
     }
+protected:
+    FX3& port;
 };
 
 SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)

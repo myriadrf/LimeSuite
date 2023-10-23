@@ -6,7 +6,7 @@
 #include "Logger.h"
 #include "USBCommon.h"
 
-#include "FX3.h"
+// #include "FX3.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -152,10 +152,15 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
     return handles;
 }
 
+const int streamWrEp = 0x03;
+const int streamRdEp = 0x83;
+const int ctrlWrEp = 0x02;
+const int ctrlRdEp = 0x82;
+
 class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 {
 public:
-    explicit USB_CSR_Pipe_Mini(FX3& port) : USB_CSR_Pipe(port) {};
+    explicit USB_CSR_Pipe_Mini(FT601& port) : USB_CSR_Pipe(), port(port) {};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
     {    
@@ -164,6 +169,8 @@ public:
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
     }
+protected:
+    FT601& port;
 };
 
 SDRDevice *LimeSDR_MiniEntry::make(const DeviceHandle &handle)
@@ -172,7 +179,7 @@ SDRDevice *LimeSDR_MiniEntry::make(const DeviceHandle &handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos+1), nullptr, 16);
 
-    FX3* usbComms = new FX3(ctx);
+    FT601* usbComms = new FT601(ctx);
     if (usbComms->Connect(vid, pid, handle.serial) != 0)
     {
         delete usbComms;

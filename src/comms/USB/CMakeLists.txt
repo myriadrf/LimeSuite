@@ -1,32 +1,27 @@
 ########################################################################
 ## Support for USB STREAM connection
 ########################################################################
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/comms/USB)
 
-if(WIN32)
-    find_package(CyAPI)
-    set(USB_FOUND ${CYAPI_FOUND})
-    set(USB_INCLUDE_DIRS ${CYAPI_INCLUDE_DIRS})
-    set(USB_LIBRARIES ${CYAPI_LIBRARIES} SetupAPI)
-elseif(UNIX)
-    find_package(libusb-1.0)
-    set(USB_FOUND ${LIBUSB_1_FOUND})
-    set(USB_INCLUDE_DIRS ${LIBUSB_1_INCLUDE_DIRS})
-    set(USB_LIBRARIES ${LIBUSB_1_LIBRARIES})
-endif()
+include(${THIS_SOURCE_DIR}/FT601/CMakeLists.txt)
+include(${THIS_SOURCE_DIR}/FX3/CMakeLists.txt)
 
 message(STATUS "USB_INCLUDE_DIRS: ${USB_INCLUDE_DIRS}")
 message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
 
-set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/comms/USB)
-
 set(CONNECTION_FX3_SOURCES
-    ${THIS_SOURCE_DIR}/FX3.cpp
+    ${THIS_SOURCE_DIR}/FX3/FX3.cpp
+)
+
+set(CONNECTION_FT601_SOURCES
+    ${THIS_SOURCE_DIR}/FT601/FT601.cpp
 )
 
 set(COMMS_USB_SOURCES
     ${THIS_SOURCE_DIR}/TRXLooper_USB.cpp
     ${THIS_SOURCE_DIR}/USBCommon.cpp
     ${CONNECTION_FX3_SOURCES}
+    ${CONNECTION_FT601_SOURCES}
 )
 
 set(CONNECTION_FX3_LIBRARIES

@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "FX3.h"
+#include "FT601/FT601.h"
 
 #include "dataTypes.h"
 namespace lime

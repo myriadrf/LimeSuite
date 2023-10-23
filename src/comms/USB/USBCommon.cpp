@@ -1,5 +1,8 @@
 #include "USBCommon.h"
 
+namespace lime
+{
+
 LMS64C_LMS7002M_Over_USB::LMS64C_LMS7002M_Over_USB(USB_CSR_Pipe& dataPort) : pipe(dataPort) {}
 
 void LMS64C_LMS7002M_Over_USB::SPI(const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
@@ -62,4 +65,6 @@ int LMS64C_FPGA_Over_USB::CustomParameterRead(const int32_t *ids, double *values
 int LMS64C_FPGA_Over_USB::ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
 {
     return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
+}
+
 }

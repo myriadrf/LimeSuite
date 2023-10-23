@@ -4,7 +4,7 @@
 
 if(WIN32)
     set(USB_FOUND TRUE)
-    set(USB_INCLUDE_DIRS  ${THIS_SOURCE_DIR}/FTD3XXLibrary)
+    set(USB_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/FTD3XXLibrary)
 
     #library directory based on x64 vs x86
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
