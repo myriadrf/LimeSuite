@@ -104,8 +104,6 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
     FT_SetPipeTimeout(mFTHandle, ctrlBulkReadAddr, 500);
     FT_SetPipeTimeout(mFTHandle, streamBulkReadAddr, 0);
     FT_SetPipeTimeout(mFTHandle, streamBulkWriteAddr, 0);
-    isConnected = true;
-    return 0;
 #else
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
@@ -200,9 +198,10 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
     FT_FlushPipe(ctrlBulkReadAddr);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
-    isConnected = true;
-    return 0;
 #endif
+    isConnected = true;
+    contexts = new USBTransferContext_FT601[USB_MAX_CONTEXTS];
+    return 0;
 }
 
 bool FT601::IsConnected()
@@ -219,6 +218,7 @@ void FT601::Disconnect()
     {
         FT_FlushPipe(streamBulkReadAddr);
         FT_FlushPipe(ctrlBulkReadAddr);
+        libusb_release_interface(dev_handle, 0);
         libusb_release_interface(dev_handle, 1);
         libusb_close(dev_handle);
         dev_handle = 0;

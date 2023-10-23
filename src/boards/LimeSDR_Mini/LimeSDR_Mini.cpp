@@ -25,6 +25,12 @@
 
 using namespace lime;
 
+static constexpr int streamBulkWriteAddr = 0x03;
+static constexpr int streamBulkReadAddr = 0x83;
+
+static constexpr int ctrlBulkWriteAddr = 0x02;
+static constexpr int ctrlBulkReadAddr = 0x82;
+
 static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
 
@@ -68,7 +74,14 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
 
 LimeSDR_Mini::~LimeSDR_Mini()
 {
-    lime::error("LimeSDR_Mini::~LimeSDR_Mini stub");
+    if (mStreamers[0])
+    {
+        delete mStreamers[0];
+        mStreamers[0] = nullptr;
+    }
+    
+    delete mStreamPort;
+    delete mFPGA;
 }
 
 // Verify and configure given settings
@@ -202,12 +215,12 @@ void LimeSDR_Mini::Reset()
 
 double LimeSDR_Mini::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
-    lime::error("LimeSDR_Mini::GetClockFreq stub");
+    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel);
 }
 
 void LimeSDR_Mini::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    lime::error("LimeSDR_Mini::SetClockFreq stub");
+    mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
 }
 
 void LimeSDR_Mini::Synchronize(bool toChip)
@@ -227,65 +240,111 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO
 
 int LimeSDR_Mini::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
 {
-    lime::error("LimeSDR_Mini::StreamSetup stub");
+    if (mStreamers[0])
+    {
+        return -1; // already running
+    }
+
+    try
+    {
+        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkReadAddr, streamBulkWriteAddr);
+        mStreamers[0]->Setup(config);
+
+        return 0;
+    }
+    catch (std::logic_error &e)
+    {
+        return -1;
+    }
+    catch (std::runtime_error &e)
+    {
+        return -1;
+    }
 }
 
 void LimeSDR_Mini::StreamStart(uint8_t moduleIndex)
 {
-    lime::error("LimeSDR_Mini::StreamStart stub");
+    if (mStreamers[0])
+    {
+        mStreamers[0]->Start();
+    }
+    else
+    {
+        throw std::runtime_error("Stream not setup");
+    }
 }
 
 void LimeSDR_Mini::StreamStop(uint8_t moduleIndex)
 {
-    lime::error("LimeSDR_Mini::StreamStop stub");
+    if (!mStreamers[0])
+    {
+        return;
+    }
+
+    mStreamers[0]->Stop();
+
+    delete mStreamers[0];
+    mStreamers[0] = nullptr;
 }
 
 void LimeSDR_Mini::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
 {
-    lime::error("LimeSDR_Mini::StreamStatus stub");
+    if (rx)
+    {
+        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Rx);
+        rx->FIFO_filled = stats.FIFO_filled;
+        rx->dataRate_Bps = stats.dataRate_Bps;
+    }
+
+    if (tx)
+    {
+        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Tx);
+        tx->FIFO_filled = stats.FIFO_filled;
+        tx->dataRate_Bps = stats.dataRate_Bps;
+    }
 }
 
 void *LimeSDR_Mini::GetInternalChip(uint32_t index)
 {
-    lime::error("LimeSDR_Mini::GetInternalChip stub");
+    return mLMSChips.at(index);
 }
 
 int LimeSDR_Mini::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 {
-    lime::error("LimeSDR_Mini::GPIODirRead stub");
+    return mfpgaPort->GPIODirRead(buffer, bufLength);
 }
 
 int LimeSDR_Mini::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
-    lime::error("LimeSDR_Mini::GPIORead stub");
+    return mfpgaPort->GPIORead(buffer, bufLength);
 }
 
 int LimeSDR_Mini::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    lime::error("LimeSDR_Mini::GPIODirWrite stub");
+    return mfpgaPort->GPIODirWrite(buffer, bufLength);
 }
 
 int LimeSDR_Mini::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    lime::error("LimeSDR_Mini::GPIOWrite stub");
+    return mfpgaPort->GPIOWrite(buffer, bufLength);
 }
 
 int LimeSDR_Mini::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
-    lime::error("LimeSDR_Mini::CustomParameterWrite stub");
+    return mfpgaPort->CustomParameterWrite(ids, values, count, units);
 }
 
 int LimeSDR_Mini::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
 {
-    lime::error("LimeSDR_Mini::CustomParameterRead stub");
+    return mfpgaPort->CustomParameterRead(ids, values, count, units);
 }
 
 int LimeSDR_Mini::ReadFPGARegister(uint32_t address)
 {
-    lime::error("LimeSDR_Mini::ReadFPGARegister stub");
+    return mFPGA->ReadRegister(address);
 }
 
 int LimeSDR_Mini::WriteFPGARegister(uint32_t address, uint32_t value)
 {
-    lime::error("LimeSDR_Mini::WriteFPGARegister stub");
+    return mFPGA->WriteRegister(address, value);
 }
