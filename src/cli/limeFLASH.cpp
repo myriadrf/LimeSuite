@@ -23,6 +23,9 @@ static int32_t FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
     const auto memoryDevices = device->GetDescriptor().memoryDevices;
     if (!targetName)
     {
+        // if name is not specified, but only single choice is available, use that.
+        if (memoryDevices.size() == 1)
+            return memoryDevices.front().id;
         cerr << "specify memory device target, -t, --target :" << endl;
         for (const SDRDevice::DataStorage &mem : memoryDevices)
             cerr << "\t" <<  mem.name << endl;
