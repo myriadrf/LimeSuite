@@ -518,10 +518,6 @@ enum // TODO: replace
 
 void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
 {
-    // RF switch controls are toggled for both channels, use channel 0 as the deciding source.
-    if(chan != 0)
-        return;
-
     uint16_t sw_addr = 0x000A;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
     lime::LMS7002M* lms = mLMSChips.at(0);
@@ -541,8 +537,6 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             sw_val |= 1 << 4;
         else if (path == LMS_PATH_TX2)
             sw_val &= ~(1 << 4);
-
-        mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetBandTRF(path);
     }
     else
@@ -564,9 +558,11 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             sw_val |= 2 << 2;
         else if(path == LMS_PATH_LNAL)
             sw_val |= 1 << 2;
-        mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetPathRFE(lime::LMS7002M::PathRFE(path));
     }
+    // RF switch controls are toggled for both channels, use channel 0 as the deciding source.
+    if (chan == 0)
+        mFPGA->WriteRegister(sw_addr, sw_val);
 }
 
 int LimeSDR_XTRX::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
