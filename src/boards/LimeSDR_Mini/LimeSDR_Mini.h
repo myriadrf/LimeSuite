@@ -62,6 +62,7 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual int WriteFPGARegister(uint32_t address, uint32_t value);
   protected:
     void SetSampleRate(double f_Hz, uint8_t oversample);
+    SDRDevice::Descriptor GetDeviceInfo();
   private:
     USBGeneric *mStreamPort;
     IComms *mlms7002mPort;

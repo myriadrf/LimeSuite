@@ -57,8 +57,7 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
     mlms7002mPort(spiLMS),
     mfpgaPort(spiFPGA)
 {
-    SDRDevice::Descriptor descriptor = mDeviceDescriptor;
-    descriptor.name = GetDeviceName(LMS_DEV_LIMESDR);
+    SDRDevice::Descriptor descriptor = GetDeviceInfo();
 
     mLMSChips.push_back(new LMS7002M(mlms7002mPort));
     mLMSChips[0]->SetConnection(mlms7002mPort);
@@ -355,7 +354,6 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     SDRDevice::Descriptor deviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo info;
-    LMS64CProtocol::GetFirmwareInfo(reinterpret_cast<ISerialPort&>(mStreamPort), info);
 
     try
     {
