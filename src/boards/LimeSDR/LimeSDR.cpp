@@ -9,6 +9,7 @@
 #include "FPGA_common.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
+#include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
 #include "ADCUnits.h"
@@ -145,54 +146,28 @@ static inline const std::string strFormat(const char *format, ...)
 void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
     try {
-        // only 2 channels is available on LimeSDR
-        for (int i = 2; i < SDRDevice::MAX_CHANNEL_COUNT; ++i)
-            if (cfg.channel[i].rx.enabled || cfg.channel[i].tx.enabled)
-                throw std::logic_error("too many channels enabled, LimeSDR has only 2");
+        std::vector<std::string> errors;
+        bool isValidConfig = LMS7002M_Validate(cfg, errors);
 
-        // MIMO necessary checks
+        if (!isValidConfig)
         {
-            const ChannelConfig &chA = cfg.channel[0];
-            const ChannelConfig &chB = cfg.channel[1];
-            const bool rxMIMO = chA.rx.enabled && chB.rx.enabled;
-            const bool txMIMO = chA.tx.enabled && chB.tx.enabled;
-            if (rxMIMO || txMIMO) {
-                // MIMO sample rates have to match
-                if (rxMIMO && chA.rx.sampleRate != chB.rx.sampleRate)
-                    throw std::logic_error("Non matching Rx MIMO channels sampling rate");
-                if (txMIMO && chA.tx.sampleRate != chB.tx.sampleRate)
-                    throw std::logic_error("Non matching Tx MIMO channels sampling rate");
+            std::stringstream ss;
 
-                // LMS7002M MIMO A&B channels share LO, but can be offset by NCO
-                // TODO: check if they are withing NCO range
-                const double rxLOdiff = chA.rx.centerFrequency - chB.rx.centerFrequency;
-                if (rxMIMO && rxLOdiff > 0)
-                    throw std::logic_error("MIMO: channels Rx LO too far apart");
-                const double txLOdiff = chA.tx.centerFrequency - chB.tx.centerFrequency;
-                if (txMIMO && txLOdiff > 0)
-                    throw std::logic_error("MIMO: channels Rx LO too far apart");
+            for (const auto& err : errors)
+            {
+                ss << err << std::endl;
             }
+            
+            throw std::logic_error(ss.str());
         }
+
         bool rxUsed = false;
         bool txUsed = false;
-        // individual channel validation
-        const double minLO = 30e6; // LO can be lowest 30e6, 100e3 could be achieved using NCO
-        const double maxLO = 3.8e9;
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 2; ++i)
+        {
             const ChannelConfig &ch = cfg.channel[i];
             rxUsed |= ch.rx.enabled;
             txUsed |= ch.tx.enabled;
-            if (ch.rx.enabled && not InRange(ch.rx.centerFrequency, minLO, maxLO))
-                throw std::logic_error(strFormat("Rx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.rx.centerFrequency, minLO, maxLO));
-            if (ch.tx.enabled && not InRange(ch.tx.centerFrequency, minLO, maxLO))
-                throw std::logic_error(strFormat("Tx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.tx.centerFrequency, minLO, maxLO));
-
-            if (ch.rx.enabled && not InRange(ch.rx.path, 0, 5))
-                throw std::logic_error(strFormat("Rx ch%i invalid path", i));
-            if (ch.tx.enabled && not InRange(ch.tx.path, 1, 2))
-                throw std::logic_error(strFormat("Tx ch%i invalid path", i));
         }
 
         // config validation complete, now do the actual configuration

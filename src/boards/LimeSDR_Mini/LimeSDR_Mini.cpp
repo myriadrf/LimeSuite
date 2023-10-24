@@ -9,6 +9,7 @@
 #include "FPGA_Mini.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
+#include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
 #include "ADCUnits.h"
@@ -58,7 +59,7 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
     descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
 
     RFSOCDescriptor soc;
-    soc.channelCount = 2;
+    soc.channelCount = 1;
     soc.rxPathNames = {"NONE", "LNAH", "LNAL_NC", "LNAW", "Auto"};
     soc.txPathNames = {"NONE", "BAND1", "BAND2", "Auto"};
 
@@ -105,12 +106,122 @@ static inline const std::string strFormat(const char *format, ...)
 
 void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
-    lime::error("LimeSDR_Mini::Configure stub");
+    try
+    {
+        std::vector<std::string> errors;
+        bool isValidConfig = LMS7002M_Validate(cfg, errors, 1);
+
+        if (!isValidConfig)
+        {
+            std::stringstream ss;
+
+            for (const auto& err : errors)
+            {
+                ss << err << std::endl;
+            }
+            
+            throw std::logic_error(ss.str());
+        }
+
+        bool rxUsed = false;
+        bool txUsed = false;
+        for (int i = 0; i < 2; ++i)
+        {
+            const ChannelConfig &ch = cfg.channel[i];
+            rxUsed |= ch.rx.enabled;
+            txUsed |= ch.tx.enabled;
+        }
+
+        // config validation complete, now do the actual configuration
+
+        if (cfg.referenceClockFreq != 0)
+        {
+            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
+        }
+
+        if (rxUsed)
+        {
+            mLMSChips[0]->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
+        }
+
+        if (txUsed)
+        {
+            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].rx.centerFrequency);
+        }
+
+        for (int i = 0; i < 2; ++i)
+        {
+            const ChannelConfig &ch = cfg.channel[i];
+            mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
+            mLMSChips[0]->EnableChannel(Rx, i, ch.rx.enabled);
+            mLMSChips[0]->EnableChannel(Tx, i, ch.tx.enabled);
+
+            mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
+
+            if(ch.rx.path == 4)
+            {
+                mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
+            }
+
+            mLMSChips[0]->SetBandTRF(ch.tx.path);
+            // TODO: set gains, filters...
+        }
+
+        mLMSChips[0]->SetActiveChannel(LMS7002M::ChA);
+        // sampling rate
+        double sampleRate;
+        
+        if (rxUsed)
+        {
+            sampleRate = cfg.channel[0].rx.sampleRate;
+        }
+        else
+        {
+            sampleRate = cfg.channel[0].tx.sampleRate;
+        }
+
+        SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+    } //try
+    catch (std::logic_error &e)
+    {
+        printf("LimeSDR config: %s\n", e.what());
+        throw;
+    }
+    catch (std::runtime_error &e)
+    {
+        throw;
+    }
 }
 
 void LimeSDR_Mini::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
 {
-    lime::error("LimeSDR_Mini::SetFPGAInterfaceFreq stub");
+    assert(mFPGA);
+    double fpgaTxPLL = mLMSChips[0]->GetReferenceClk_TSP(Tx);
+
+    if (interp != 7)
+    {
+        uint8_t siso = mLMSChips[0]->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        fpgaTxPLL /= std::pow(2, interp + siso);
+    }
+
+    double fpgaRxPLL = mLMSChips[0]->GetReferenceClk_TSP(Rx);
+    if (dec != 7)
+    {
+        uint8_t siso = mLMSChips[0]->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
+        fpgaRxPLL /= std::pow(2, dec + siso);
+    }
+
+    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360)
+    {
+        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0);
+        return;
+    }
+    else
+    {
+        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0);
+    }
+
+    mLMSChips[0]->ResetLogicregisters();
 }
 
 int LimeSDR_Mini::Init()
@@ -183,27 +294,27 @@ int LimeSDR_Mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-    // bool auto_path[2] = {auto_tx_path, auto_rx_path};
-    // auto_tx_path = false;
-    // auto_rx_path = false;
+    /*bool auto_path[2] = {auto_tx_path, auto_rx_path};
+    auto_tx_path = false;
+    auto_rx_path = false;
     
-    // if(SetFrequency(true, 0, GetFrequency(true, 0)) != 0)
-    // {
-    //     return -1;
-    // }
+    if(SetFrequency(true, 0, GetFrequency(true, 0)) != 0)
+    {
+        return -1;
+    }
 
-    // if(SetFrequency(false, 0, GetFrequency(false, 0)) != 0)
-    // {
-    //     return -1;
-    // }
+    if(SetFrequency(false, 0, GetFrequency(false, 0)) != 0)
+    {
+        return -1;
+    }
 
-    // auto_tx_path = auto_path[0];
-    // auto_rx_path = auto_path[1];
+    auto_tx_path = auto_path[0];
+    auto_rx_path = auto_path[1];
 
-    // if (SetRate(15.36e6, 1) != 0)
-    // {
-    //     return -1;
-    // }
+    if (SetRate(15.36e6, 1) != 0)
+    {
+        return -1;
+    }*/
 
     return 0;
 }
@@ -225,17 +336,185 @@ void LimeSDR_Mini::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 
 void LimeSDR_Mini::Synchronize(bool toChip)
 {
-    lime::error("LimeSDR_Mini::Synchronize stub");
+    if (toChip)
+    {
+        if (mLMSChips[0]->UploadAll() == 0)
+        {
+            mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
+            //ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000); // TODO: implement
+        }
+    }
+    else
+    {
+        mLMSChips[0]->DownloadAll();
+    }
 }
 
 void LimeSDR_Mini::EnableCache(bool enable)
 {
-    lime::error("LimeSDR_Mini::EnableCache stub");
+    mLMSChips[0]->EnableValuesCache(enable);
+
+    if (mFPGA)
+    {
+        mFPGA->EnableValuesCache(enable);
+    }
 }
 
 void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {
-    lime::error("LimeSDR_Mini::SPI stub");
+    assert(mStreamPort);
+    assert(MOSI);
+    LMS64CPacket pkt;
+    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+    pkt.blockCount = 0;
+    pkt.periphID = chipSelect;
+
+    size_t srcIndex = 0;
+    size_t destIndex = 0;
+    const int maxBlocks = 14;
+    while (srcIndex < count)
+    {
+        // fill packet with same direction operations
+        const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
+
+        for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
+        {
+            const bool isWrite = MOSI[srcIndex] & (1 << 31);
+
+            if (isWrite != willDoWrite)
+            {
+                break; // change between write/read, flush packet
+            }
+
+            if (isWrite)
+            {
+                switch (chipSelect)
+                {
+                case spi_LMS7002M:
+                    pkt.cmd = LMS64CProtocol::CMD_LMS7002_WR;
+                    break;
+                case spi_FPGA:
+                    pkt.cmd = LMS64CProtocol::CMD_BRDSPI_WR;
+                    break;
+                default:
+                    throw std::logic_error("LimeSDR SPI invalid SPI chip select");
+                }
+
+                int payloadOffset = pkt.blockCount * 4;
+                pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 24;
+                pkt.payload[payloadOffset + 1] = MOSI[srcIndex] >> 16;
+                pkt.payload[payloadOffset + 2] = MOSI[srcIndex] >> 8;
+                pkt.payload[payloadOffset + 3] = MOSI[srcIndex];
+            }
+            else
+            {
+                switch (chipSelect)
+                {
+                case spi_LMS7002M:
+                    pkt.cmd = LMS64CProtocol::CMD_LMS7002_RD;
+                    break;
+                case spi_FPGA:
+                    pkt.cmd = LMS64CProtocol::CMD_BRDSPI_RD;
+                    break;
+                default:
+                    throw std::logic_error("LimeSDR SPI invalid SPI chip select");
+                }
+
+                int payloadOffset = pkt.blockCount * 2;
+                pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 8;
+                pkt.payload[payloadOffset + 1] = MOSI[srcIndex];
+            }
+
+            ++pkt.blockCount;
+            ++srcIndex;
+        }
+
+        // flush packet
+        //printPacket(pkt, 4, "Wr:");
+        int sent = mStreamPort->BulkTransfer(ctrlBulkWriteAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+        {
+            throw std::runtime_error("SPI failed");
+        }
+
+        int recv = mStreamPort->BulkTransfer(ctrlBulkReadAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        //printPacket(pkt, 4, "Rd:");
+
+        if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD)
+        {
+            for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i)
+            {
+                //MISO[destIndex] = 0;
+                //MISO[destIndex] = pkt.payload[0] << 24;
+                //MISO[destIndex] |= pkt.payload[1] << 16;
+                MISO[destIndex] = (pkt.payload[i * 4 + 2] << 8) | pkt.payload[i * 4 + 3];
+                ++destIndex;
+            }
+        }
+        else
+        {
+            throw std::runtime_error("SPI failed");
+        }
+
+        pkt.blockCount = 0;
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+    }
+}
+
+void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
+{
+    const bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
+    uint8_t decimation = 7;     // HBD_OVR_RXTSP=7 - bypass
+    uint8_t interpolation = 7;  // HBI_OVR_TXTSP=7 - bypass
+    double cgenFreq = f_Hz * 4; // AI AQ BI BQ
+    // TODO:
+    // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
+    // {
+    //     if (rx_channels[i].cF_offset_nco != 0.0 || tx_channels[i].cF_offset_nco != 0.0)
+    //     {
+    //         bypass = false;
+    //         break;
+    //     }
+    // }
+    if (!bypass)
+    {
+        if (oversample == 0)
+        {
+            const int n = lime::LMS7002M::CGEN_MAX_FREQ / (cgenFreq);
+            oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2;
+        }
+
+        decimation = 4;
+        if (oversample <= 16)
+        {
+            const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
+            decimation = decTbl[oversample];
+        }
+        interpolation = decimation;
+        cgenFreq *= 2 << decimation;
+    }
+
+    if (bypass)
+    {
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", f_Hz / 1e6,
+               cgenFreq / 1e6);
+    }
+    else
+    {
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
+               cgenFreq / 1e6, decimation + 1, interpolation + 1); // dec/inter ratio is 2^(value+1)
+    }
+
+    mLMSChips[0]->SetFrequencyCGEN(cgenFreq);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips[0]->SetInterfaceFrequency(mLMSChips[0]->GetFrequencyCGEN(), interpolation, decimation);
+
+    SetFPGAInterfaceFreq(interpolation, decimation, 999, 999); // TODO: default phase
 }
 
 int LimeSDR_Mini::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)

@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include <assert.h>
 #include "dataTypes.h"
+#include "DeviceExceptions.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -286,6 +287,11 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int
     }
 #endif
     return len;
+}
+
+int32_t FT601::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout)
+{
+    throw(OperationNotSupported("ControlTransfer not supported on FT601 connections."));
 }
 
 #ifdef __unix__
