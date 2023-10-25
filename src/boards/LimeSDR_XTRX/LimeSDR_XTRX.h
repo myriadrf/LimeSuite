@@ -52,7 +52,7 @@ protected:
     static int LMS1_UpdateFPGAInterface(void* userData);
 
     enum class ePathLMS1_Rx {
-        NONE = 0, LNAH = 1, LNAL = 2
+        NONE = 0, LNAH = 1, LNAL = 2, LNAW = 3
     };
     enum class ePathLMS1_Tx {
         NONE = 0, BAND1 = 1, BAND2 = 2
