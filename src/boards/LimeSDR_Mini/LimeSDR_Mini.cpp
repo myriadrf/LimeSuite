@@ -190,7 +190,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
     } //try
     catch (std::logic_error &e)
     {
-        printf("LimeSDR config: %s\n", e.what());
+        printf("LimeSDR_Mini config: %s\n", e.what());
         throw;
     }
     catch (std::runtime_error &e)

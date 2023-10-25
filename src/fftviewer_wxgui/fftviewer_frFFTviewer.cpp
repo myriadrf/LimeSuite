@@ -54,10 +54,14 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     {
         cmbMode->SetSelection(0);
         cmbMode->Disable();
+
+        cmbChannelVisibility->SetSelection(0);
+        cmbChannelVisibility->Disable();
     }
     else
     {
         cmbMode->Enable();
+        cmbChannelVisibility->Enable();
     }
 
     cmbRFSOC->SetSelection(0);
@@ -227,7 +231,12 @@ void fftviewer_frFFTviewer::StopStreaming()
     spinFFTsize->Enable();
     chkCaptureToFile->Enable();
     spinCaptureCount->Enable();
-    cmbChannelVisibility->Enable();
+
+    uint8_t channelCount = device->GetDescriptor().rfSOC.at(0).channelCount;
+    if (channelCount > 1)
+    {
+        cmbChannelVisibility->Enable();
+    }
 }
 
 void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
