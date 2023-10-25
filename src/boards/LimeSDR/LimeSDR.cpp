@@ -380,6 +380,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
             info.hardware = pkt.payload[3];
             info.expansionBoardId = pkt.payload[4] < EXP_BOARD_COUNT ? static_cast<eEXP_BOARD>(pkt.payload[4]) : EXP_BOARD_UNKNOWN;
             info.boardSerialNumber = 0;
+
             for (int i = 10; i < 18; i++)
             {
                 info.boardSerialNumber <<= 8;
@@ -419,6 +420,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
         deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
         deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
     }
+
     return deviceDescriptor;
 }
 

@@ -46,11 +46,13 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
 
     mLMSChips.push_back(new LMS7002M(mlms7002mPort));
     mLMSChips[0]->SetConnection(mlms7002mPort);
+    mLMSChips[0]->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
 
     mFPGA = new FPGA_Mini(spiFPGA, spiLMS);
+
     double refClk = mFPGA->DetectRefClk();
     mLMSChips[0]->SetReferenceClk_SX(false, refClk);
-    mLMSChips[0]->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
+    
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, descriptor);
 
@@ -676,22 +678,70 @@ void *LimeSDR_Mini::GetInternalChip(uint32_t index)
 
 int LimeSDR_Mini::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 {
-    return mfpgaPort->GPIODirRead(buffer, bufLength);
+    if (!buffer || bufLength == 0)
+    {
+        return -1;
+    }
+
+    const uint32_t addr = 0xC4;
+    uint32_t value;
+
+    int ret = mFPGA->ReadRegisters(&addr, &value, 1);
+    buffer[0] = value;
+
+    if (bufLength > 1)
+    {
+        buffer[1] = (value >> 8);
+    }
+
+    return ret;
 }
 
 int LimeSDR_Mini::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
-    return mfpgaPort->GPIORead(buffer, bufLength);
+    if (!buffer || bufLength == 0)
+    {
+        return -1;
+    }
+
+    const uint32_t addr = 0xC2;
+    uint32_t value;
+
+    int ret = mFPGA->ReadRegisters(&addr, &value, 1);
+    buffer[0] = value;
+
+    if (bufLength > 1)
+    {
+        buffer[1] = (value >> 8);
+    }
+
+    return ret;
 }
 
 int LimeSDR_Mini::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    return mfpgaPort->GPIODirWrite(buffer, bufLength);
+    if (!buffer || bufLength == 0)
+    {
+        return -1;
+    }
+
+    const uint32_t addr = 0xC4;
+    const uint32_t value = (bufLength == 1) ? buffer[0] : buffer[0] | (buffer[1] << 8);
+
+    return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
 int LimeSDR_Mini::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    return mfpgaPort->GPIOWrite(buffer, bufLength);
+    if (!buffer || bufLength == 0)
+    {
+        return -1;
+    }
+
+    const uint32_t addr = 0xC6;
+    const uint32_t value = (bufLength == 1) ? buffer[0] : buffer[0] | (buffer[1] << 8);
+
+    return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
 int LimeSDR_Mini::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)

@@ -199,6 +199,16 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
     FT_FlushPipe(ctrlBulkReadAddr);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
+
+    if (FT_SetStreamPipe(streamBulkWriteAddr, sizeof(FPGA_DataPacket)) != 0)
+    {
+        return -1;
+    }
+
+    if (FT_SetStreamPipe(streamBulkReadAddr, sizeof(FPGA_DataPacket)) != 0)
+    {
+        return -1;
+    }
 #endif
     isConnected = true;
     contexts = new USBTransferContext_FT601[USB_MAX_CONTEXTS];
@@ -368,7 +378,6 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
     if (endPointAddr == streamBulkReadAddr)
     {
         ftStatus = FT_ReadPipe(mFTHandle, streamBulkReadAddr, buffer, length, &ulActual, &contexts[i].inOvLap);
-        
     }
     else
     {
