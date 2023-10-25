@@ -469,7 +469,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
 
     sizerAnalogRd->Layout();
 
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI))// || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI) || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
     {
         pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
         pnl->Initialize(mDevice);

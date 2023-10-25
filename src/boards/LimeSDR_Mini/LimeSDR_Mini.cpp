@@ -48,6 +48,9 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
     mLMSChips[0]->SetConnection(mlms7002mPort);
 
     mFPGA = new FPGA_Mini(spiFPGA, spiLMS);
+    double refClk = mFPGA->DetectRefClk();
+    mLMSChips[0]->SetReferenceClk_SX(false, refClk);
+    mLMSChips[0]->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, descriptor);
 
@@ -458,6 +461,16 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO
         pkt.blockCount = 0;
         pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     }
+}
+
+// Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
+int LimeSDR_Mini::UpdateFPGAInterface(void* userData)
+{
+    constexpr int chipIndex = 0;
+    assert(userData != nullptr);
+    LimeSDR_Mini* pthis = static_cast<LimeSDR_Mini*>(userData);
+    LMS7002M* soc = pthis->mLMSChips[chipIndex];
+    return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
 void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)

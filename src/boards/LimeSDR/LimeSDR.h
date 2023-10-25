@@ -8,8 +8,8 @@
 #include <memory>
 
 #include "FX3/FX3.h"
-
 #include "dataTypes.h"
+
 namespace lime
 {
 
@@ -29,8 +29,6 @@ public:
 
     virtual int Init() override;
     virtual void Reset() override;
-
-    //virtual double GetRate(Dir dir, uint8_t channel) const override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
