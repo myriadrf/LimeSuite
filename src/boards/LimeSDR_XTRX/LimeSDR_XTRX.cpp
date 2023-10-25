@@ -547,7 +547,7 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             case ePathLMS1_Rx::NONE : path = LMS7002M::PATH_RFE_NONE; break;
             case ePathLMS1_Rx::LNAH : path = LMS7002M::PATH_RFE_LNAH; break;
             case ePathLMS1_Rx::LNAL : path = LMS7002M::PATH_RFE_LNAL; break;
-            //case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
+            case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
             default: throw std::logic_error("Invalid LMS1 Rx path");
         }
 
