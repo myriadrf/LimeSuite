@@ -199,16 +199,6 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
     FT_FlushPipe(ctrlBulkReadAddr);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
-
-    if (FT_SetStreamPipe(streamBulkWriteAddr, sizeof(FPGA_DataPacket)) != 0)
-    {
-        return -1;
-    }
-
-    if (FT_SetStreamPipe(streamBulkReadAddr, sizeof(FPGA_DataPacket)) != 0)
-    {
-        return -1;
-    }
 #endif
     isConnected = true;
     contexts = new USBTransferContext_FT601[USB_MAX_CONTEXTS];
@@ -501,6 +491,57 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
             FinishDataXfer(nullptr, 0, i);
         }
     }
+}
+
+int FT601::ResetStreamBuffers()
+{
+#ifndef __unix__
+    if (FT_AbortPipe(mFTHandle, streamBulkReadAddr) != FT_OK)
+    {
+        return -1;
+    }
+
+    if (FT_AbortPipe(mFTHandle, streamBulkWriteAddr) != FT_OK)
+    {
+        return -1;
+    }
+
+    if (FT_FlushPipe(mFTHandle, streamBulkReadAddr) != FT_OK)
+    {
+        return -1;
+    }
+
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamBulkReadAddr, sizeof(FPGA_DataPacket)) != 0)
+    {
+        return -1;
+    }
+
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamBulkWriteAddr, sizeof(FPGA_DataPacket)) != 0)
+    {
+        return -1;
+    }
+#else
+    if (FT_FlushPipe(streamBulkWriteAddr) != 0)
+    {
+        return -1;
+    }
+
+    if (FT_FlushPipe(streamBulkReadAddr) != 0)
+    {
+        return -1;
+    }
+
+    if (FT_SetStreamPipe(streamBulkWriteAddr, sizeof(FPGA_DataPacket)) != 0)
+    {
+        return -1;
+    }
+
+    if (FT_SetStreamPipe(streamBulkReadAddr, sizeof(FPGA_DataPacket)) != 0)
+    {
+        return -1;
+    }
+#endif
+    return 0;
 }
 
 #ifndef __unix__

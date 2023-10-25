@@ -87,6 +87,7 @@ public:
     virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 
+    int ResetStreamBuffers();
   protected:
     static const int USB_MAX_CONTEXTS {16}; //maximum number of contexts for asynchronous transfers
 

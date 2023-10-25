@@ -13,6 +13,7 @@
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
 #include "ADCUnits.h"
+#include "FT601/FT601.h"
 
 #include <assert.h>
 #include <memory>
@@ -614,6 +615,9 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
 
     try
     {
+        auto connection = static_cast<FT601*>(mStreamPort);
+        connection->ResetStreamBuffers();
+
         mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkReadAddr, streamBulkWriteAddr);
         mStreamers[0]->Setup(config);
 
