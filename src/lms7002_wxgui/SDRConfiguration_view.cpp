@@ -131,24 +131,53 @@ SOCConfig_view::SOCConfig_view(
 void SOCConfig_view::Setup(SDRDevice *device, int index)
 {
     sdrDevice = device;
-    if(!device)
+
+    if (!device)
+    {
         return;
+    }
+
     const SDRDevice::RFSOCDescriptor &descriptor = device->GetDescriptor().rfSOC.at(index);
     socIndex = index;
     gui.titledBox->SetLabel(descriptor.name.c_str());
+
     wxArrayString rxPathNames;
     for (const auto& name : descriptor.rxPathNames)
+    {
         rxPathNames.Add(name.c_str());
+    }
+
     wxArrayString txPathNames;
     for (const auto& name : descriptor.txPathNames)
+    {
         txPathNames.Add(name.c_str());
-    for (int i=0; i<descriptor.channelCount; ++i)
+    }
+
+    for (int i = 0; i < descriptor.channelCount; ++i)
     {
         gui.rx[i].path->Set(rxPathNames);
         gui.rx[i].path->SetSelection(rxPathNames.size() > 0 ? 1 : 0);
 
         gui.tx[i].path->Set(txPathNames);
         gui.tx[i].path->SetSelection(txPathNames.size() > 0 ? 1 : 0);
+    }
+
+    for (int i = 1; i >= descriptor.channelCount; i--)
+    {
+        gui.rx[i].enable->Hide();
+        gui.tx[i].enable->Hide();
+
+        gui.rx[i].path->Hide();
+        gui.tx[i].path->Hide();
+
+        gui.rx[i].gain->Hide();
+        gui.tx[i].gain->Hide();
+
+        gui.rx[i].lpf->Hide();
+        gui.tx[i].lpf->Hide();
+
+        gui.rx[i].nco->Hide();
+        gui.tx[i].nco->Hide();
     }
 }
 

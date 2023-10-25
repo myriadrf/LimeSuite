@@ -75,6 +75,7 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
     descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
 
     RFSOCDescriptor soc;
+    soc.name = "LMS";
     soc.channelCount = 2;
     soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
     soc.txPathNames = {"None", "Band1", "Band2"};

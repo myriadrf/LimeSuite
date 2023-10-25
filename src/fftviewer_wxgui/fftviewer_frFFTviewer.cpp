@@ -22,6 +22,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 {
     StopStreaming();
     device = pDataPort;
+
     if (!device)
     {
         btnStartStop->Disable();
@@ -32,8 +33,33 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     lmsIndex = 0;
     cmbRFSOC->Clear();
     const SDRDevice::Descriptor &desc = device->GetDescriptor();
-    for (size_t i=0; i<desc.rfSOC.size(); ++i)
+
+    for (size_t i = 0; i < desc.rfSOC.size(); ++i)
+    {
         cmbRFSOC->Append(desc.rfSOC[i].name.c_str());
+    }
+
+    if (desc.rfSOC.size() <= 1)
+    {
+        cmbRFSOC->SetSelection(0);
+        cmbRFSOC->Disable();
+    }
+    else
+    {
+        cmbRFSOC->Enable();
+    }
+
+    uint8_t channelCount = desc.rfSOC.at(0).channelCount;
+    if (channelCount <= 1)
+    {
+        cmbMode->SetSelection(0);
+        cmbMode->Disable();
+    }
+    else
+    {
+        cmbMode->Enable();
+    }
+
     cmbRFSOC->SetSelection(0);
     SetNyquistFrequency();
 

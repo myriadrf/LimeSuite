@@ -53,7 +53,7 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
 
     double refClk = mFPGA->DetectRefClk();
     mLMSChips[0]->SetReferenceClk_SX(false, refClk);
-    
+
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, descriptor);
 
@@ -64,6 +64,7 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
     descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
 
     RFSOCDescriptor soc;
+    soc.name = "LMS";
     soc.channelCount = 1;
     soc.rxPathNames = {"NONE", "LNAH", "LNAL_NC", "LNAW", "Auto"};
     soc.txPathNames = {"NONE", "BAND1", "BAND2", "Auto"};
