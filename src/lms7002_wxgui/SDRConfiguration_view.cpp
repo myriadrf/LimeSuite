@@ -165,7 +165,9 @@ void SOCConfig_view::Setup(SDRDevice *device, int index)
     for (int i = 1; i >= descriptor.channelCount; i--)
     {
         gui.rx[i].enable->Hide();
+        gui.rx[i].enable->SetValue(false);
         gui.tx[i].enable->Hide();
+        gui.tx[i].enable->SetValue(false);
 
         gui.rx[i].path->Hide();
         gui.tx[i].path->Hide();
