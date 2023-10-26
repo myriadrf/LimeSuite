@@ -424,32 +424,6 @@ void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
         trxPort->Close();
 }
 
-void LimeSDR_XTRX::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
-{
-    assert(mFPGA);
-    LMS7002M* mLMSChip = mLMSChips[0];
-    double fpgaTxPLL = mLMSChip->GetReferenceClk_TSP(Tx);
-    if (interp != 7) {
-        uint8_t siso = mLMSChip->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        fpgaTxPLL /= std::pow(2, interp + siso);
-    }
-    double fpgaRxPLL = mLMSChip->GetReferenceClk_TSP(Rx);
-    if (dec != 7) {
-        uint8_t siso = mLMSChip->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
-        fpgaRxPLL /= std::pow(2, dec + siso);
-    }
-
-    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360) {
-        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0) != 0)
-            throw std::runtime_error("Failed to configure FPGA interface");
-        return;
-    }
-    else
-        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0) != 0)
-            throw std::runtime_error("Failed to configure FPGA interface");
-    mLMSChips[0]->ResetLogicregisters();
-}
-
 void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
     if (rxDecimation != 0 && txInterpolation/rxDecimation > 4)
@@ -488,7 +462,6 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
     lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
                cgenFreq / 1e6, 1+hbd_ovr, 1+hbi_ovr);
     LMS7002M* mLMSChip = mLMSChips[0];
-    mLMSChip->SetFrequencyCGEN(cgenFreq);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
     if (rxDecimation != 0)
         mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2 - std::log2(txInterpolation/rxDecimation));
@@ -501,8 +474,6 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
     mLMSChip->SetInterfaceFrequency(cgenFreq, hbi_ovr, hbd_ovr);
-
-    SetFPGAInterfaceFreq(hbi_ovr, hbd_ovr, 999, 999); // TODO: default phase
 }
 
 enum // TODO: replace

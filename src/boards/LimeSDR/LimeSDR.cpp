@@ -243,29 +243,6 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
     }
 }
 
-void LimeSDR::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
-{
-    assert(mFPGA);
-    double fpgaTxPLL = mLMSChips[0]->GetReferenceClk_TSP(Tx);
-    if (interp != 7) {
-        uint8_t siso = mLMSChips[0]->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        fpgaTxPLL /= std::pow(2, interp + siso);
-    }
-    double fpgaRxPLL = mLMSChips[0]->GetReferenceClk_TSP(Rx);
-    if (dec != 7) {
-        uint8_t siso = mLMSChips[0]->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
-        fpgaRxPLL /= std::pow(2, dec + siso);
-    }
-
-    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360) {
-        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0);
-        return;
-    }
-    else
-        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0);
-    mLMSChips[0]->ResetLogicregisters();
-}
-
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
 int LimeSDR::UpdateFPGAInterface(void* userData)
 {
@@ -312,16 +289,13 @@ void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
         lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
                cgenFreq / 1e6, decimation+1, interpolation+1); // dec/inter ratio is 2^(value+1)
 
-    mLMSChips[0]->SetFrequencyCGEN(cgenFreq);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[0]->SetInterfaceFrequency(mLMSChips[0]->GetFrequencyCGEN(), interpolation, decimation);
-
-    SetFPGAInterfaceFreq(interpolation, decimation, 999, 999); // TODO: default phase
+    mLMSChips[0]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
 
 int LimeSDR::Init()
