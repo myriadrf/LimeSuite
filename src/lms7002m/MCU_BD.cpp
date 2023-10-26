@@ -130,7 +130,7 @@ unsigned short MCU_BD:: mSPI_read(
 {// returns 16 bit value
     if(m_serPort == nullptr)
         return 0;
-    uint32_t wrdata = addr_reg << 16;
+    uint32_t wrdata = addr_reg;
     uint32_t rddata = 0;
     m_serPort->SPI(&wrdata, &rddata, 1);
 
@@ -587,9 +587,9 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
 #endif
     try {
         const auto timeout = std::chrono::milliseconds(100);
-        const uint32_t controlAddr = 0x0002 << 16;
-        const uint32_t statusReg = 0x0003 << 16;
-        const uint32_t addrDTM = 0x0004 << 16; //data to MCU
+        const uint32_t controlAddr = 0x0002;
+        const uint32_t statusReg = 0x0003;
+        const uint32_t addrDTM = 0x0004; //data to MCU
         const uint16_t EMTPY_WRITE_BUFF = 1 << 0;
         const uint16_t PROGRAMMED = 1 << 6;
         const uint8_t fifoLen = 64;
@@ -597,8 +597,8 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
         uint32_t rddata = 0;
         bool abort = false;
         //reset MCU, set mode
-    wrdata[0] = (1 << 31) | controlAddr | 0;
-    wrdata[1] = (1 << 31) | controlAddr | (mode & 0x3);
+    wrdata[0] = (1 << 31) | controlAddr << 16 | 0;
+    wrdata[1] = (1 << 31) | controlAddr << 16 | (mode & 0x3);
 
     m_serPort->SPI(wrdata, nullptr, 2);
 
@@ -623,7 +623,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
 
         //write 32 bytes into FIFO
         for(uint8_t j=0; j<fifoLen; ++j)
-            wrdata[j] = (1 << 31) | addrDTM | buffer[i+j];
+            wrdata[j] = (1 << 31) | addrDTM << 16 | buffer[i+j];
 
         m_serPort->SPI(wrdata, nullptr, fifoLen);
         if(callback)
