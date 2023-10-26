@@ -443,6 +443,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     // Find VCO that satisfies most outputs with integer dividers
     uint64_t bestFreqVCO = std::max_element(desiredVCO.begin(), desiredVCO.end(),
         [] (const pair<uint64_t, uint8_t> &p1, const pair<uint64_t, uint8_t> &p2) {
+            if (p1.second == p2.second)
+                return p1.first < p2.first; // sort by VCO frequency
             return p1.second < p2.second;
         }
     )->first;
