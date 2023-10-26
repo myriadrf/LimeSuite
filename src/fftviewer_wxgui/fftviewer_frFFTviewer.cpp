@@ -39,29 +39,30 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
         cmbRFSOC->Append(desc.rfSOC[i].name.c_str());
     }
 
-    if (desc.rfSOC.size() <= 1)
-    {
-        cmbRFSOC->SetSelection(0);
-        cmbRFSOC->Disable();
-    }
-    else
-    {
-        cmbRFSOC->Enable();
-    }
-
     uint8_t channelCount = desc.rfSOC.at(0).channelCount;
     if (channelCount <= 1)
     {
+        cmbMode->Clear();
+        cmbMode->Append("SISO");
         cmbMode->SetSelection(0);
-        cmbMode->Disable();
 
+        cmbChannelVisibility->Clear();
+        cmbChannelVisibility->Append("A");
         cmbChannelVisibility->SetSelection(0);
-        cmbChannelVisibility->Disable();
     }
     else
     {
-        cmbMode->Enable();
-        cmbChannelVisibility->Enable();
+        cmbMode->Clear();
+        constexpr uint8_t modeChoicesItemCount = 2;
+        const std::array<wxString, modeChoicesItemCount> modeChoices {"SISO", "MIMO"};
+        cmbMode->Append(modeChoicesItemCount, modeChoices.data());
+        cmbMode->SetSelection(0);
+
+        cmbChannelVisibility->Clear();
+        constexpr uint8_t channelVisibilityChoicesItemCount = 3;
+        const std::array<wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices {"A", "B", "A&B"};
+        cmbChannelVisibility->Append(channelVisibilityChoicesItemCount, channelVisibilityChoices.data());
+        cmbChannelVisibility->SetSelection(0);
     }
 
     cmbRFSOC->SetSelection(0);
