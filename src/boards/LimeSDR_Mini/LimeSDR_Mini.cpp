@@ -86,7 +86,7 @@ LimeSDR_Mini::~LimeSDR_Mini()
         delete mStreamers[0];
         mStreamers[0] = nullptr;
     }
-    
+
     delete mStreamPort;
     delete mFPGA;
 }
@@ -125,7 +125,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             {
                 ss << err << std::endl;
             }
-            
+
             throw std::logic_error(ss.str());
         }
 
@@ -176,7 +176,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
         mLMSChips[0]->SetActiveChannel(LMS7002M::ChA);
         // sampling rate
         double sampleRate;
-        
+
         if (rxUsed)
         {
             sampleRate = cfg.channel[0].rx.sampleRate;
@@ -197,37 +197,6 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
     {
         throw;
     }
-}
-
-void LimeSDR_Mini::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
-{
-    assert(mFPGA);
-    double fpgaTxPLL = mLMSChips[0]->GetReferenceClk_TSP(Tx);
-
-    if (interp != 7)
-    {
-        uint8_t siso = mLMSChips[0]->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        fpgaTxPLL /= std::pow(2, interp + siso);
-    }
-
-    double fpgaRxPLL = mLMSChips[0]->GetReferenceClk_TSP(Rx);
-    if (dec != 7)
-    {
-        uint8_t siso = mLMSChips[0]->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
-        fpgaRxPLL /= std::pow(2, dec + siso);
-    }
-
-    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360)
-    {
-        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0);
-        return;
-    }
-    else
-    {
-        mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0);
-    }
-
-    mLMSChips[0]->ResetLogicregisters();
 }
 
 int LimeSDR_Mini::Init()
@@ -289,6 +258,7 @@ int LimeSDR_Mini::Init()
         return -1;
     }
 
+
     lms->EnableChannel(TRXDir::Tx, 0, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
@@ -303,7 +273,7 @@ int LimeSDR_Mini::Init()
     /*bool auto_path[2] = {auto_tx_path, auto_rx_path};
     auto_tx_path = false;
     auto_rx_path = false;
-    
+
     if(SetFrequency(true, 0, GetFrequency(true, 0)) != 0)
     {
         return -1;
@@ -479,7 +449,7 @@ int LimeSDR_Mini::UpdateFPGAInterface(void* userData)
 
 void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
 {
-    const bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
+    const bool bypass = (oversample <= 1);
     uint8_t decimation = 7;     // HBD_OVR_RXTSP=7 - bypass
     uint8_t interpolation = 7;  // HBI_OVR_TXTSP=7 - bypass
     double cgenFreq = f_Hz * 4; // AI AQ BI BQ
@@ -521,16 +491,20 @@ void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
                cgenFreq / 1e6, decimation + 1, interpolation + 1); // dec/inter ratio is 2^(value+1)
     }
 
-    mLMSChips[0]->SetFrequencyCGEN(cgenFreq);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR, 1);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR, 1);
+    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML, !bypass);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[0]->SetInterfaceFrequency(mLMSChips[0]->GetFrequencyCGEN(), interpolation, decimation);
-
-    SetFPGAInterfaceFreq(interpolation, decimation, 999, 999); // TODO: default phase
+    if (bypass)
+        mLMSChips[0]->SetInterfaceFrequency(f_Hz*4, 7, 7);
+    else
+        mLMSChips[0]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
 
 SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)

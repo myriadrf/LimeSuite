@@ -77,29 +77,19 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     if (!phaseSearch)
     {
         return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
-    }   
-    
+    }
+
     std::vector<uint32_t> dataRd;
     std::vector<uint32_t> dataWr;
     dataWr.resize(spiAddr.size());
     dataRd.resize(spiAddr.size());
 
     //backup registers
-    dataWr[0] = (uint32_t(0x0020) << 16);
+    dataWr[0] = 0x0020;
     lms7002mPort->SPI(dataWr.data(), &reg20, 1);
-    // connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, 0);
-
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
-    // connection->WriteLMS7002MSPI(dataWr.data(), 1, 0);
-
-    for (int i = 0; i < bakRegCnt; ++i)
-    {
-        dataWr[i] = (spiAddr[i] << 16);
-    }
-
-    lms7002mPort->SPI(dataWr.data(), dataRd.data(), bakRegCnt);
-    // connection->ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, 0);
+    lms7002mPort->SPI(spiAddr.data(), dataRd.data(), bakRegCnt);
 
     {   //Config Rx
         const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4,
@@ -112,7 +102,6 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         }
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
-        // connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, 0);
     }
 
     bool phaseSearchSuccess = false;
@@ -127,7 +116,6 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         clocks[1] = clocks[0];
         clocks[2] = clocks[0];
         clocks[3] = clocks[0];
-
         if (SetPllFrequency(0, rxRate_Hz, clocks, 4) == 0)
         {
             phaseSearchSuccess = true;
@@ -147,7 +135,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         {
             dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
         }
-        
+
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
         // connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, 0);
 
@@ -161,7 +149,6 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             clocks[2] = clocks[0];
             clocks[3] = clocks[0];
             WriteRegister(0x000A, 0x0200);
-
             if (SetPllFrequency(0, txRate_Hz, clocks, 4)==0)
             {
                 phaseSearchSuccess = true;
@@ -199,7 +186,6 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
         return -1;
     }
-
     return 0;
 }
 
