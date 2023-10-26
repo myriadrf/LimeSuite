@@ -52,8 +52,9 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
-LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort)
+LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, lime::ISerialPort* commsPort)
     : mStreamPort(streamPort),
+    mSerialPort(commsPort),
     mlms7002mPort(spiLMS),
     mfpgaPort(spiFPGA)
 {
@@ -122,6 +123,9 @@ LimeSDR::~LimeSDR()
     
     delete mStreamPort;
     delete mFPGA;
+    delete mSerialPort;
+    delete mlms7002mPort;
+    delete mfpgaPort;
 }
 
 // Verify and configure given settings
@@ -355,10 +359,16 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     SDRDevice::Descriptor deviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo info;
+    int returnCode = LMS64CProtocol::GetFirmwareInfo(*mSerialPort, info);
+
+    if (returnCode != 0)
+    {
+        return deviceDescriptor;
+    }
 
     try
     {
-        LMS64CPacket pkt;
+        /*LMS64CPacket pkt;
         pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
 
         int sentBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
@@ -391,7 +401,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
         else
         {
             return deviceDescriptor;
-        }
+        }*/
 
         deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
         deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
@@ -427,7 +437,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
 
 void LimeSDR::Reset()
 {
-    LMS64CProtocol::DeviceReset(reinterpret_cast<ISerialPort&>(mStreamPort), 0);
+    LMS64CProtocol::DeviceReset(*mSerialPort, 0);
 }
 
 int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)

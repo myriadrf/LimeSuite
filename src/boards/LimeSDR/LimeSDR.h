@@ -4,6 +4,7 @@
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
+#include "protocols/LMS64CProtocol.h"
 #include <vector>
 #include <memory>
 
@@ -22,7 +23,7 @@ class TRXLooper_USB;
 class LimeSDR : public LMS7002M_SDRDevice
 {
 public:
-    LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* mStreamPort);
+    LimeSDR(IComms* spiLMS, IComms* spiFPGA, USBGeneric* mStreamPort, ISerialPort* commsPort);
     virtual ~LimeSDR();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
@@ -68,6 +69,7 @@ public:
     static int UpdateFPGAInterface(void* userData);
 private:
     USBGeneric *mStreamPort;
+    ISerialPort *mSerialPort;
     IComms *mlms7002mPort;
     IComms *mfpgaPort;
 };
