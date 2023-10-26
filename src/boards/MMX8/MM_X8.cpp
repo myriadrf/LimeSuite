@@ -247,12 +247,6 @@ void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
     return mSubDevices[index]->GetInternalChip(0);
 }
 
-void LimeSDR_MMX8::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
-{
-    for (size_t i=0; i<mSubDevices.size(); ++i)
-        mSubDevices[i]->SetFPGAInterfaceFreq(interp, dec, txPhase, rxPhase);
-}
-
 int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
 {
     int ret = 0;

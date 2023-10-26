@@ -304,7 +304,6 @@ public:
     virtual void SetMessageLogCallback(LogCallbackType callback) {};
 
     virtual void *GetInternalChip(uint32_t index) { return nullptr; };
-    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase) = 0;
 
     typedef bool(*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) { return -1; };
