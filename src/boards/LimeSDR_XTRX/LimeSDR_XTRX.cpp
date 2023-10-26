@@ -308,6 +308,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
         mConfigInProgress = false;
+        LMS1_UpdateFPGAInterface(this);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_XTRX config: %s\n", e.what());

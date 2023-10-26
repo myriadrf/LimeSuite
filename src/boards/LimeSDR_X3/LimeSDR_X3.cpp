@@ -494,6 +494,7 @@ void LimeSDR_X3::PostConfigure(const SDRConfig& cfg, uint8_t socIndex)
         switch(socIndex)
         {
             case 0:
+                LMS1_UpdateFPGAInterface(this);
                 LMS1_PA_Enable(c, ch.tx.enabled);
                 break;
             case 1:
@@ -668,8 +669,8 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), 2);
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
-        PostConfigure(cfg, socIndex);
         mConfigInProgress = false;
+        PostConfigure(cfg, socIndex);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_X3 config: %s\n", e.what());
