@@ -296,7 +296,7 @@ bool FullStreamTxRx(SDRDevice &dev, bool MIMO)
                 sumi += i*i;
                 float q = dest[0][j*20].q;
                 sumq += q*q;
-                float ampl = sqrt(pow(i, 2) + pow(q, 2));
+                // float ampl = sqrt(pow(i, 2) + pow(q, 2));
             }
             float rmsI = sqrt(sumi/cnt);
             float rmsQ = sqrt(sumq/cnt);

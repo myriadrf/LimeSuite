@@ -20,7 +20,7 @@
 using namespace std;
 using namespace lime;
 
-static uint8_t addrSi5351 = 0x20;
+// static uint8_t addrSi5351 = 0x20;
 
 /// Splits float into fraction integers A + B/C
 void realToFrac(const float real, int &A, int &B, int &C)

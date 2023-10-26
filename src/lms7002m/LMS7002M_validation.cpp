@@ -13,7 +13,7 @@ static std::string strFormat(const char *format, ...)
     char buff[4096];
     va_list args;
     va_start(args, format);
-    int ret = vsnprintf(buff, sizeof(buff), format, args);
+    vsnprintf(buff, sizeof(buff), format, args);
     va_end(args);
     return std::move(std::string(buff));
 }

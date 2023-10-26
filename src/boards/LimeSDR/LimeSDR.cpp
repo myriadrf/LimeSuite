@@ -11,7 +11,6 @@
 #include "limesuite/LMS7002M_parameters.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
-#include "ADCUnits.h"
 
 #include <assert.h>
 #include <memory>
@@ -509,7 +508,7 @@ void LimeSDR::EnableCache(bool enable)
         mFPGA->EnableValuesCache(enable);
 }
 
-static void printPacket(const LMS64CPacket &pkt, uint8_t blockSize,
+/*static void printPacket(const LMS64CPacket &pkt, uint8_t blockSize,
                         const char *prefix)
 {
     printf("%s", prefix);
@@ -526,7 +525,7 @@ static void printPacket(const LMS64CPacket &pkt, uint8_t blockSize,
         printf(" ");
     }
     printf("\n");
-}
+}*/
 
 void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
 {

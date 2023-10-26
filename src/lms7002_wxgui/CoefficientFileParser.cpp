@@ -172,7 +172,7 @@ void Parser::saveToFile(const char * filename, const float *coefficients, int cC
     fstream fout;
     fout.open(filename, ios::out);
 
-    char fname[80];
+    char fname[81];
     char *name_pos = 0;
 
     name_pos = strrchr((char*)filename, '\\');
@@ -184,6 +184,7 @@ void Parser::saveToFile(const char * filename, const float *coefficients, int cC
     if(name_pos != NULL)
     {
         strncpy(fname, name_pos+1, 80);
+		fname[80] = '\0';
         fout << fname << endl;
     }
     else

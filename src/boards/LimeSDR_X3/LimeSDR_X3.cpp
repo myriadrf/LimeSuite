@@ -12,7 +12,6 @@
 #include "FPGA_X3.h"
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
-#include "protocols/ADCUnits.h"
 #include "limesuite/DeviceNode.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"

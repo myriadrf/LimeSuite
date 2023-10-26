@@ -194,7 +194,6 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t 
     pkt.subDevice = subDevice;
 
     size_t srcIndex = 0;
-    size_t destIndex = 0;
     const int maxBlocks = 14;
     const int blockSize = 3;
     while (srcIndex < count) {
