@@ -188,8 +188,6 @@ int main(int argc, char** argv)
         }
     }
 
-    config.channel[1] = config.channel[0];
-
     auto handles = DeviceRegistry::enumerate();
     if (handles.size() == 0)
     {
@@ -246,12 +244,17 @@ int main(int argc, char** argv)
                 cerr << "Error loading file: " << configFilepath << endl;
                 return -1;
             }
+
+            for (int i=0; i<device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)
+                config.channel[i] = config.channel[0];
         }
         device->Configure(config, moduleId);
     } catch (std::runtime_error &e) {
         cerr << "Config failed: " << e.what() << endl;
         return EXIT_FAILURE;
     }
+
+    DeviceRegistry::freeDevice(device);
 
     return EXIT_SUCCESS;
 }
