@@ -38,8 +38,9 @@ static constexpr uint8_t spi_FPGA = 1;
 
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = {"VCTCXO DAC (runtime)", 0, 0, 255, false};
 
-LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort)
+LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, ISerialPort* commsPort)
     : mStreamPort(streamPort),
+    mSerialPort(commsPort),
     mlms7002mPort(spiLMS),
     mfpgaPort(spiFPGA)
 {
@@ -297,7 +298,7 @@ int LimeSDR_Mini::Init()
 
 void LimeSDR_Mini::Reset()
 {
-    LMS64CProtocol::DeviceReset(reinterpret_cast<ISerialPort&>(mStreamPort), 0);
+    LMS64CProtocol::DeviceReset(*mSerialPort, 0);
 }
 
 double LimeSDR_Mini::GetClockFreq(uint8_t clk_id, uint8_t channel)
@@ -513,71 +514,36 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
     SDRDevice::Descriptor deviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo info;
+    int returnCode = LMS64CProtocol::GetFirmwareInfo(*mSerialPort, info);
 
-    try
+    if (returnCode != 0)
     {
-        LMS64CPacket pkt;
-        pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
-
-        int sentBytes = mStreamPort->BulkTransfer(ctrlBulkWriteAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-        if (sentBytes != sizeof(pkt))
-        {
-            throw std::runtime_error("LimeSDR_Mini::GetDeviceInfo write failed");
-        }
-
-        int gotBytes = mStreamPort->BulkTransfer(ctrlBulkReadAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-        if (gotBytes != sizeof(pkt))
-        {
-            throw std::runtime_error("LimeSDR_Mini::GetDeviceInfo read failed");
-        }
-
-        if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
-        {
-            info.firmware = pkt.payload[0];
-            info.deviceId = pkt.payload[1] < LMS_DEV_COUNT ? static_cast<eLMS_DEV>(pkt.payload[1]) : LMS_DEV_UNKNOWN;
-            info.protocol = pkt.payload[2];
-            info.hardware = pkt.payload[3];
-            info.expansionBoardId = pkt.payload[4] < EXP_BOARD_COUNT ? static_cast<eEXP_BOARD>(pkt.payload[4]) : EXP_BOARD_UNKNOWN;
-            info.boardSerialNumber = 0;
-            for (int i = 10; i < 18; i++)
-            {
-                info.boardSerialNumber <<= 8;
-                info.boardSerialNumber |= pkt.payload[i];
-            }
-        }
-        else
-        {
-            return deviceDescriptor;
-        }
-
-        deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
-        deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
-        deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
-        deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
-        deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
-        deviceDescriptor.serialNumber = info.boardSerialNumber;
-
-        const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
-        uint32_t data[4];
-        SPI(spi_FPGA, addrs, data, 4);
-        auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-        auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
-        auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-        auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
-
-        deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
-        deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
-        deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
-        deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
+        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
 
         return deviceDescriptor;
     }
-    catch (...)
-    {
-        //lime::error("LimeSDR_Mini::GetDeviceInfo failed(%s)", e.what());
-        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
-        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
-    }
+
+    deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
+    deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
+    deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
+    deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
+    deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+    deviceDescriptor.serialNumber = info.boardSerialNumber;
+
+    const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
+    uint32_t data[4];
+    SPI(spi_FPGA, addrs, data, 4);
+    auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+    auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
+    auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+    auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
+
+    deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
+    deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
+    deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
+    deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+
     return deviceDescriptor;
 }
 
