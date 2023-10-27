@@ -208,10 +208,10 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
         if (cfg.referenceClockFreq != 0)
             mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
-        if (rxUsed)
+        if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
             mLMSChips[0]->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
-        if (txUsed)
-            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].rx.centerFrequency);
+        if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
+            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
 
         for (int i = 0; i < 2; ++i) {
             const ChannelConfig &ch = cfg.channel[i];
@@ -232,7 +232,8 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             sampleRate = cfg.channel[0].rx.sampleRate;
         else
             sampleRate = cfg.channel[0].tx.sampleRate;
-        SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+        if (sampleRate > 0)
+            SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR config: %s\n", e.what());
