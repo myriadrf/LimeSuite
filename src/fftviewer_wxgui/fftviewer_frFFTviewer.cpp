@@ -52,17 +52,17 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     }
     else
     {
-        cmbMode->Clear();
         constexpr uint8_t modeChoicesItemCount = 2;
         const std::array<wxString, modeChoicesItemCount> modeChoices {"SISO", "MIMO"};
-        cmbMode->Append(modeChoicesItemCount, modeChoices.data());
+        cmbMode->Set(modeChoicesItemCount, modeChoices.data());
         cmbMode->SetSelection(0);
+        cmbMode->GetContainingSizer()->Layout(); // update the width of the box
 
-        cmbChannelVisibility->Clear();
         constexpr uint8_t channelVisibilityChoicesItemCount = 3;
         const std::array<wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices {"A", "B", "A&B"};
-        cmbChannelVisibility->Append(channelVisibilityChoicesItemCount, channelVisibilityChoices.data());
+        cmbChannelVisibility->Set(channelVisibilityChoicesItemCount, channelVisibilityChoices.data());
         cmbChannelVisibility->SetSelection(0);
+        cmbChannelVisibility->GetContainingSizer()->Layout(); // update the width of the box
     }
 
     cmbRFSOC->SetSelection(0);
@@ -232,12 +232,7 @@ void fftviewer_frFFTviewer::StopStreaming()
     spinFFTsize->Enable();
     chkCaptureToFile->Enable();
     spinCaptureCount->Enable();
-
-    uint8_t channelCount = device->GetDescriptor().rfSOC.at(0).channelCount;
-    if (channelCount > 1)
-    {
-        cmbChannelVisibility->Enable();
-    }
+    cmbChannelVisibility->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
