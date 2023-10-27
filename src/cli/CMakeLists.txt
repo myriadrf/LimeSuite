@@ -31,4 +31,10 @@ set_target_properties(limeTRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINAR
 target_include_directories(limeTRX PUBLIC ${LIME_SUITE_INCLUDES})
 target_link_libraries(limeTRX PUBLIC ${MAIN_LIBRARY_NAME})
 
-install(TARGETS limeDevice limeSPI limeFLASH limeTRX DESTINATION bin)
+install(TARGETS
+    limeDevice
+    limeSPI
+    limeFLASH
+    limeTRX
+    DESTINATION bin
+)
