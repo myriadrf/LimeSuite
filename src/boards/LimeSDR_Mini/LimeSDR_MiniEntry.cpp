@@ -18,11 +18,11 @@
 
 using namespace lime;
 
-static libusb_context* ctx; //a libusb session
+static libusb_context* ctx; // A libusb session
 
-void __loadLimeSDR_Mini(void) //TODO fixme replace with LoadLibrary/dlopen
+void __loadLimeSDR_Mini(void) // TODO: fixme replace with LoadLibrary/dlopen
 {
-    static LimeSDR_MiniEntry limesdr_miniSupport; // self register on initialization
+    static LimeSDR_MiniEntry limesdr_miniSupport; // Self register on initialization
 }
 
 LimeSDR_MiniEntry::LimeSDR_MiniEntry() : DeviceRegistryEntry("LimeSDR_Mini")
@@ -30,15 +30,15 @@ LimeSDR_MiniEntry::LimeSDR_MiniEntry() : DeviceRegistryEntry("LimeSDR_Mini")
 #ifdef __unix__
     if (ctx == nullptr) 
     {
-        int returnCode = libusb_init(&ctx); //initialize the library for the session we just declared
+        int returnCode = libusb_init(&ctx); // Initialize the library for the session we just declared
         if (returnCode < 0)
         {
-            lime::error("Init Error %i", returnCode); //there was an error
+            lime::error("Init Error %i", returnCode); // There was an error
         }
 #if LIBUSBX_API_VERSION < 0x01000106
-        libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+        libusb_set_debug(ctx, 3); // Set verbosity level to 3, as suggested in the documentation
 #else
-        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); //set verbosity level to info, as suggested in the documentation
+        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); // Set verbosity level to info, as suggested in the documentation
 #endif
     }
 
@@ -82,14 +82,14 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
                 handle.name = Description;
                 handle.index = i;
                 handle.serial = SerialNumber;
-                //add handle conditionally, filter by serial number
+                // Add handle conditionally, filter by serial number
                 if (hint.serial.empty() || handle.serial.find(hint.serial) != std::string::npos)
                     handles.push_back(handle);
             }
         }
     }
 #else
-    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
+    libusb_device **devs; // Pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0) {
@@ -97,47 +97,68 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
         return handles;
     }
 
-    for(int i=0; i<usbDeviceCount; ++i)
+    for (int i = 0; i < usbDeviceCount; ++i)
     {
         libusb_device_descriptor desc;
         int r = libusb_get_device_descriptor(devs[i], &desc);
-        if(r<0)
+        if (r < 0)
+        {
             lime::error("failed to get device description");
+        }
+
         int pid = desc.idProduct;
         int vid = desc.idVendor;
 
         if (vid == 0x0403 && pid == 0x601F)
         {
             libusb_device_handle *tempDev_handle(nullptr);
-            if(libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
+            if (libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
+            {
                 continue;
+            }
 
             DeviceHandle handle;
 
             //check operating speed
             int speed = libusb_get_device_speed(devs[i]);
-            if(speed == LIBUSB_SPEED_HIGH)
+            if (speed == LIBUSB_SPEED_HIGH)
+            {
                 handle.media = "USB 2.0";
-            else if(speed == LIBUSB_SPEED_SUPER)
+            }
+            else if (speed == LIBUSB_SPEED_SUPER)
+            {
                 handle.media = "USB 3.0";
+            }
             else
+            {
                 handle.media = "USB";
+            }
 
             //read device name
             char data[255];
             r = libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, sizeof(data));
-            if(r > 0) handle.name = std::string(data, size_t(r));
+            if (r > 0)
+            {
+                handle.name = std::string(data, size_t(r));
+            }
 
             r = std::sprintf(data, "%.4x:%.4x", int(vid), int(pid));
-            if (r > 0) handle.addr = std::string(data, size_t(r));
+            if (r > 0) 
+            {
+                handle.addr = std::string(data, size_t(r));
+            }
 
             if (desc.iSerialNumber > 0)
             {
                 r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
-                if(r<0)
+                if (r < 0)
+                {
                     lime::error("failed to get serial number");
+                }
                 else
+                {
                     handle.serial = std::string(data, size_t(r));
+                }
             }
             libusb_close(tempDev_handle);
 

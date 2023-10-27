@@ -137,7 +137,6 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         }
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
-        // connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, 0);
 
         for (int i = 0; i < 10; i++)    //attempt phase search 10 times
         {
@@ -173,11 +172,9 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     }
 
     lms7002mPort->SPI(dataWr.data(), nullptr, bakRegCnt);
-    // connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
-    // connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
     WriteRegister(0x000A, 0);
 
