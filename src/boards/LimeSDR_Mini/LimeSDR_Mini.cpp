@@ -37,6 +37,7 @@ static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
 
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = {"VCTCXO DAC (runtime)", 0, 0, 255, false};
+static const SDRDevice::CustomParameter CP_TEMPERATURE = {"Board Temperature", 1, 0, 65535, true};
 
 LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, ISerialPort* commsPort)
     : mStreamPort(streamPort),
@@ -61,6 +62,11 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
     mStreamers.resize(1, nullptr);
 
     descriptor.customParameters.push_back(CP_VCTCXO_DAC);
+
+    if (descriptor.name == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
+    {
+        descriptor.customParameters.push_back(CP_TEMPERATURE);
+    }
 
     descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
 
