@@ -36,5 +36,6 @@ install(TARGETS
     limeSPI
     limeFLASH
     limeTRX
+    limeConfig
     DESTINATION bin
 )
