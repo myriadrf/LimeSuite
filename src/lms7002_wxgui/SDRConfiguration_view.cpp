@@ -27,7 +27,7 @@ SOCConfig_view::SOCConfig_view(
         for (const auto& name : titles)
             rxGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
-        for (int i=0; i<2; ++i)
+        for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
             ChannelConfigGUI& fields = gui.rx[i];
             fields.enable = new wxCheckBox(base, wxNewId(), (i == 0) ? "RxA" : "RxB");
@@ -97,7 +97,7 @@ SOCConfig_view::SOCConfig_view(
         for (auto name : titles)
             txGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
-        for (int i=0; i<2; ++i)
+        for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
             ChannelConfigGUI& fields = gui.tx[i];
             fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));;
@@ -162,7 +162,7 @@ void SOCConfig_view::Setup(SDRDevice *device, int index)
         gui.tx[i].path->SetSelection(txPathNames.size() > 0 ? 1 : 0);
     }
 
-    for (int i = 1; i >= descriptor.channelCount; i--)
+    for (int i = MAX_GUI_CHANNELS_COUNT - 1; i >= descriptor.channelCount; i--)
     {
         gui.rx[i].enable->Hide();
         gui.rx[i].enable->SetValue(false);
@@ -204,7 +204,7 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
         return value;
     };
 
-    for(int i=0; i<2; ++i)
+    for(int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
     {
         const double multiplier = 1e6; // convert from GUI MHz to Hz
         SDRDevice::ChannelConfig &ch = config.channel[i];
