@@ -718,11 +718,18 @@ int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
 
     if (tuneDynamicValues)
     {
-        TuneVCO(VCO_CGEN);
-        TuneVCO(VCO_SXT);
-        TuneVCO(VCO_SXR);
-        if (mCallback_onCGENChange)
-            return mCallback_onCGENChange(mCallback_onCGENChange_userData);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        if (!Get_SPI_Reg_bits(LMS7param(PD_VCO)))
+            TuneVCO(VCO_SXT);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        if (!Get_SPI_Reg_bits(LMS7param(PD_VCO)))
+            TuneVCO(VCO_SXR);
+        if (!Get_SPI_Reg_bits(LMS7param(PD_VCO_CGEN)))
+        {
+            TuneVCO(VCO_CGEN);
+            if (mCallback_onCGENChange)
+                return mCallback_onCGENChange(mCallback_onCGENChange_userData);
+        }
     }
     this->SetActiveChannel(ChA);
     return 0;
