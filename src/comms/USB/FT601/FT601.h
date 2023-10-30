@@ -25,42 +25,13 @@ public:
     {
 #ifndef __unix__
         context = NULL;
-#else
-        transfer = libusb_alloc_transfer(0);
-        bytesXfered = 0;
-        done = 0;
 #endif
     }
 
-    ~USBTransferContext_FT601()
-    {
-#ifdef __unix__
-        if (transfer)
-        {
-            libusb_free_transfer(transfer);
-        }
-#endif
-    }
-
-    bool reset()
-    {
-        if (used)
-        {
-            return false;
-        }
-
-        return true;
-    }
 #ifndef __unix__
     PUCHAR context;
     OVERLAPPED inOvLap;
     uint8_t endPointAddr;
-#else
-    libusb_transfer* transfer;
-    long bytesXfered;
-    std::atomic<bool> done;
-    std::mutex transferLock;
-    std::condition_variable cv;
 #endif
 };
 

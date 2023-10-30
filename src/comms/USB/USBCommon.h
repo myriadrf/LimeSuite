@@ -6,6 +6,8 @@
 #include "limesuite/DeviceHandle.h"
 #include "limesuite/DeviceRegistry.h"
 
+#include <atomic>
+#include <condition_variable>
 #include <set>
 
 #ifdef __unix__
@@ -18,11 +20,19 @@ namespace lime
 class USBTransferContext
 {
 public:
-    explicit USBTransferContext() : used(false) {};
-    virtual ~USBTransferContext() {};
-    virtual bool reset() = 0;
+    explicit USBTransferContext();
+    virtual ~USBTransferContext();
+    virtual bool Reset();
 
     bool used;
+
+#ifdef __unix__
+    libusb_transfer* transfer;
+    long bytesXfered;
+    std::atomic<bool> done;
+    std::mutex transferLock;
+    std::condition_variable cv;
+#endif
 };
 
 struct VidPid

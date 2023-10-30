@@ -23,8 +23,6 @@
 namespace lime
 {
 
-/** @brief Wrapper class for holding USB asynchronous transfers contexts
-*/
 class USBTransferContext_FX3 : public USBTransferContext
 {
 public:
@@ -36,26 +34,23 @@ public:
         inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
         context = NULL;
         EndPt = nullptr;
-#else
-        transfer = libusb_alloc_transfer(0);
-        bytesXfered = 0;
-        done = 0;
 #endif
     }
+
+#ifndef __unix__
     ~USBTransferContext_FX3()
     {
-#ifndef __unix__
         CloseHandle(inOvLap->hEvent);
         delete inOvLap;
-#else
-        if (transfer)
-            libusb_free_transfer(transfer);
-#endif
     }
-    bool reset()
+#endif
+
+    bool Reset() override
     {
         if(used)
+        {
             return false;
+        }
 #ifndef __unix__
         CloseHandle(inOvLap->hEvent);
         memset(inOvLap, 0, sizeof(OVERLAPPED));
@@ -63,16 +58,11 @@ public:
 #endif
         return true;
     }
+
 #ifndef __unix__
     PUCHAR context;
     CCyUSBEndPoint* EndPt;
     OVERLAPPED* inOvLap;
-#else
-    libusb_transfer* transfer;
-    long bytesXfered;
-    std::atomic<bool> done;
-    std::mutex transferLock;
-    std::condition_variable cv;
 #endif
 };
 

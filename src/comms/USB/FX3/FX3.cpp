@@ -364,7 +364,7 @@ int FX3::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
 #else
         length = contexts[contextHandle].bytesXfered;
         contexts[contextHandle].used = false;
-        contexts[contextHandle].reset();
+        contexts[contextHandle].Reset();
         return length;
 #endif
     }
