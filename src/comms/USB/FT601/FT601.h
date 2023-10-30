@@ -1,72 +1,60 @@
-#pragma once
-#include "USBGeneric.h"
+#ifndef FT601_H
+#define FT601_H
 
-#include <vector>
-#include <set>
-#include <string>
-#include <atomic>
-#include <memory>
-#include <thread>
-#include <ciso646>
+#include "USBCommon.h"
+#include "USBGeneric.h"
 
 #ifndef __unix__
 #include "windows.h"
-#include "CyAPI.h"
+#include "FTD3XXLibrary/FTD3XX.h"
 #else
 #include <libusb.h>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <atomic>
 #endif
 
-namespace lime
+namespace lime 
 {
 
-/** @brief Wrapper class for holding USB asynchronous transfers contexts
-*/
-class USBTransferContext
+class USBTransferContext_FT601 : public USBTransferContext
 {
 public:
-    USBTransferContext() : used(false)
+    USBTransferContext_FT601() : USBTransferContext()
     {
 #ifndef __unix__
-        inOvLap = new OVERLAPPED;
-        memset(inOvLap, 0, sizeof(OVERLAPPED));
-        inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
         context = NULL;
-        EndPt = nullptr;
 #else
         transfer = libusb_alloc_transfer(0);
         bytesXfered = 0;
         done = 0;
 #endif
     }
-    ~USBTransferContext()
+
+    ~USBTransferContext_FT601()
     {
-#ifndef __unix__
-        CloseHandle(inOvLap->hEvent);
-        delete inOvLap;
-#else
+#ifdef __unix__
         if (transfer)
+        {
             libusb_free_transfer(transfer);
+        }
 #endif
     }
+
     bool reset()
     {
-        if(used)
+        if (used)
+        {
             return false;
-#ifndef __unix__
-        CloseHandle(inOvLap->hEvent);
-        memset(inOvLap, 0, sizeof(OVERLAPPED));
-        inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
-#endif
+        }
+
         return true;
     }
-    bool used;
 #ifndef __unix__
     PUCHAR context;
-    CCyUSBEndPoint* EndPt;
-    OVERLAPPED* inOvLap;
+    OVERLAPPED inOvLap;
+    uint8_t endPointAddr;
 #else
     libusb_transfer* transfer;
     long bytesXfered;
@@ -76,11 +64,11 @@ public:
 #endif
 };
 
-class FX3 : public USBGeneric
+class FT601 : public USBGeneric
 {
 public:
-    FX3(void* usbContext = nullptr);
-    virtual ~FX3();
+    FT601(void* usbContext = nullptr);
+    virtual ~FT601();
 
     virtual bool Connect(uint16_t vid, uint16_t pid, const std::string &serial = "") override;
     virtual bool IsConnected() override;
@@ -99,15 +87,22 @@ public:
     virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 
+    int ResetStreamBuffers();
   protected:
-    static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
+    static const int USB_MAX_CONTEXTS {16}; //maximum number of contexts for asynchronous transfers
 
-    USBTransferContext* contexts;
+    USBTransferContext_FT601* contexts;
     std::mutex contextsLock;
 
     bool isConnected;
 
-#ifdef __unix__
+#ifndef __unix__
+    FT_HANDLE mFTHandle;
+    int ReinitPipe(unsigned char ep);
+#else
+    int FT_SetStreamPipe(unsigned char ep, size_t size);
+    int FT_FlushPipe(unsigned char ep);
+    uint32_t mUsbCounter;
     libusb_device_handle* dev_handle; //a device handle
     libusb_context* ctx; //a libusb session
     void handle_libusb_events();
@@ -115,3 +110,5 @@ public:
 };
 
 }
+
+#endif // FT601_H

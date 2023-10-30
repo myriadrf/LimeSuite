@@ -22,6 +22,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 {
     StopStreaming();
     device = pDataPort;
+
     if (!device)
     {
         btnStartStop->Disable();
@@ -32,8 +33,38 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     lmsIndex = 0;
     cmbRFSOC->Clear();
     const SDRDevice::Descriptor &desc = device->GetDescriptor();
-    for (size_t i=0; i<desc.rfSOC.size(); ++i)
+
+    for (size_t i = 0; i < desc.rfSOC.size(); ++i)
+    {
         cmbRFSOC->Append(desc.rfSOC[i].name.c_str());
+    }
+
+    uint8_t channelCount = desc.rfSOC.at(0).channelCount;
+    if (channelCount <= 1)
+    {
+        cmbMode->Clear();
+        cmbMode->Append("SISO");
+        cmbMode->SetSelection(0);
+
+        cmbChannelVisibility->Clear();
+        cmbChannelVisibility->Append("A");
+        cmbChannelVisibility->SetSelection(0);
+    }
+    else
+    {
+        constexpr uint8_t modeChoicesItemCount = 2;
+        const std::array<wxString, modeChoicesItemCount> modeChoices {"SISO", "MIMO"};
+        cmbMode->Set(modeChoicesItemCount, modeChoices.data());
+        cmbMode->SetSelection(0);
+        cmbMode->GetContainingSizer()->Layout(); // update the width of the box
+
+        constexpr uint8_t channelVisibilityChoicesItemCount = 3;
+        const std::array<wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices {"A", "B", "A&B"};
+        cmbChannelVisibility->Set(channelVisibilityChoicesItemCount, channelVisibilityChoices.data());
+        cmbChannelVisibility->SetSelection(0);
+        cmbChannelVisibility->GetContainingSizer()->Layout(); // update the width of the box
+    }
+
     cmbRFSOC->SetSelection(0);
     SetNyquistFrequency();
 

@@ -1,5 +1,5 @@
-#ifndef LIME_LIMESDR_H
-#define LIME_LIMESDR_H
+#ifndef LIME_LIMESDR_MINI_H
+#define LIME_LIMESDR_MINI_H
 
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
@@ -9,7 +9,6 @@
 #include <memory>
 
 #include "dataTypes.h"
-
 namespace lime
 {
 
@@ -19,11 +18,11 @@ class Streamer;
 class FPGA;
 class TRXLooper_USB;
 
-class LimeSDR : public LMS7002M_SDRDevice
+class LimeSDR_Mini : public LMS7002M_SDRDevice
 {
-public:
-    LimeSDR(IComms* spiLMS, IComms* spiFPGA, USBGeneric* mStreamPort, ISerialPort* commsPort);
-    virtual ~LimeSDR();
+  public:
+    LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* mStreamPort, ISerialPort* commsPort);
+    virtual ~LimeSDR_Mini();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
@@ -58,27 +57,25 @@ public:
     virtual int ReadFPGARegister(uint32_t address);
     virtual int WriteFPGARegister(uint32_t address, uint32_t value);
   protected:
-    int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
-    SDRDevice::Descriptor GetDeviceInfo();
-    void ResetUSBFIFO();
     void SetSampleRate(double f_Hz, uint8_t oversample);
+    SDRDevice::Descriptor GetDeviceInfo();
     static int UpdateFPGAInterface(void* userData);
-private:
+  private:
     USBGeneric *mStreamPort;
     ISerialPort *mSerialPort;
     IComms *mlms7002mPort;
     IComms *mfpgaPort;
 };
 
-class LimeSDREntry : public DeviceRegistryEntry
+class LimeSDR_MiniEntry : public DeviceRegistryEntry
 {
 public:
-    LimeSDREntry();
-    virtual ~LimeSDREntry();
+    LimeSDR_MiniEntry();
+    virtual ~LimeSDR_MiniEntry();
     std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
     SDRDevice* make(const DeviceHandle& handle) override;
 };
 
 }
 
-#endif	/* LIME_LIMESDR_H */
+#endif	/* LIME_LIMESDR_MINI_H */

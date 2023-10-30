@@ -9,6 +9,7 @@
 #include "FPGA_common.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"
+#include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
 #include "ADCUnits.h"
@@ -51,13 +52,13 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
-LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort)
+LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, lime::ISerialPort* commsPort)
     : mStreamPort(streamPort),
+    mSerialPort(commsPort),
     mlms7002mPort(spiLMS),
     mfpgaPort(spiFPGA)
 {
-    SDRDevice::Descriptor descriptor = mDeviceDescriptor;
-    descriptor.name = "LimeSDR-USB";
+    SDRDevice::Descriptor descriptor = GetDeviceInfo();
 
     mLMSChips.push_back(new LMS7002M(mlms7002mPort));
     mLMSChips[0]->SetConnection(mlms7002mPort);
@@ -75,6 +76,7 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
     descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
 
     RFSOCDescriptor soc;
+    soc.name = "LMS";
     soc.channelCount = 2;
     soc.rxPathNames = {"None", "LNAH", "LNAL", "LNAW"};
     soc.txPathNames = {"None", "Band1", "Band2"};
@@ -113,14 +115,6 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
 
 LimeSDR::~LimeSDR()
 {
-    auto LMSChip = mLMSChips.back();
-    mLMSChips.pop_back();
-
-    if (LMSChip) 
-    {
-        delete LMSChip;
-    }
-
     if (mStreamers[0])
     {
         delete mStreamers[0];
@@ -129,6 +123,9 @@ LimeSDR::~LimeSDR()
     
     delete mStreamPort;
     delete mFPGA;
+    delete mSerialPort;
+    delete mlms7002mPort;
+    delete mfpgaPort;
 }
 
 // Verify and configure given settings
@@ -153,54 +150,28 @@ static inline const std::string strFormat(const char *format, ...)
 void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
     try {
-        // only 2 channels is available on LimeSDR
-        for (int i = 2; i < SDRDevice::MAX_CHANNEL_COUNT; ++i)
-            if (cfg.channel[i].rx.enabled || cfg.channel[i].tx.enabled)
-                throw std::logic_error("too many channels enabled, LimeSDR has only 2");
+        std::vector<std::string> errors;
+        bool isValidConfig = LMS7002M_Validate(cfg, errors);
 
-        // MIMO necessary checks
+        if (!isValidConfig)
         {
-            const ChannelConfig &chA = cfg.channel[0];
-            const ChannelConfig &chB = cfg.channel[1];
-            const bool rxMIMO = chA.rx.enabled && chB.rx.enabled;
-            const bool txMIMO = chA.tx.enabled && chB.tx.enabled;
-            if (rxMIMO || txMIMO) {
-                // MIMO sample rates have to match
-                if (rxMIMO && chA.rx.sampleRate != chB.rx.sampleRate)
-                    throw std::logic_error("Non matching Rx MIMO channels sampling rate");
-                if (txMIMO && chA.tx.sampleRate != chB.tx.sampleRate)
-                    throw std::logic_error("Non matching Tx MIMO channels sampling rate");
+            std::stringstream ss;
 
-                // LMS7002M MIMO A&B channels share LO, but can be offset by NCO
-                // TODO: check if they are withing NCO range
-                const double rxLOdiff = chA.rx.centerFrequency - chB.rx.centerFrequency;
-                if (rxMIMO && rxLOdiff > 0)
-                    throw std::logic_error("MIMO: channels Rx LO too far apart");
-                const double txLOdiff = chA.tx.centerFrequency - chB.tx.centerFrequency;
-                if (txMIMO && txLOdiff > 0)
-                    throw std::logic_error("MIMO: channels Rx LO too far apart");
+            for (const auto& err : errors)
+            {
+                ss << err << std::endl;
             }
+            
+            throw std::logic_error(ss.str());
         }
+
         bool rxUsed = false;
         bool txUsed = false;
-        // individual channel validation
-        const double minLO = 30e6; // LO can be lowest 30e6, 100e3 could be achieved using NCO
-        const double maxLO = 3.8e9;
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 2; ++i)
+        {
             const ChannelConfig &ch = cfg.channel[i];
             rxUsed |= ch.rx.enabled;
             txUsed |= ch.tx.enabled;
-            if (ch.rx.enabled && not InRange(ch.rx.centerFrequency, minLO, maxLO))
-                throw std::logic_error(strFormat("Rx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.rx.centerFrequency, minLO, maxLO));
-            if (ch.tx.enabled && not InRange(ch.tx.centerFrequency, minLO, maxLO))
-                throw std::logic_error(strFormat("Tx ch%i LO (%g) out of range [%g:%g]", i,
-                                                 ch.tx.centerFrequency, minLO, maxLO));
-
-            if (ch.rx.enabled && not InRange(ch.rx.path, 0, 5))
-                throw std::logic_error(strFormat("Rx ch%i invalid path", i));
-            if (ch.tx.enabled && not InRange(ch.tx.path, 1, 2))
-                throw std::logic_error(strFormat("Tx ch%i invalid path", i));
         }
 
         // config validation complete, now do the actual configuration
@@ -363,78 +334,42 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     SDRDevice::Descriptor deviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo info;
-    LMS64CProtocol::GetFirmwareInfo(reinterpret_cast<ISerialPort&>(mStreamPort), info);
+    int returnCode = LMS64CProtocol::GetFirmwareInfo(*mSerialPort, info);
 
-    try
+    if (returnCode != 0)
     {
-        LMS64CPacket pkt;
-        pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
-
-        int sentBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (sentBytes != sizeof(pkt))
-        {
-            throw std::runtime_error("LimeSDR::GetDeviceInfo write failed");
-        }
-
-        int gotBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, (uint8_t*)&pkt, sizeof(pkt), 1000);
-        if (gotBytes != sizeof(pkt))
-        {
-            throw std::runtime_error("LimeSDR::GetDeviceInfo read failed");
-        }
-
-        if (pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD && gotBytes >= pkt.headerSize)
-        {
-            info.firmware = pkt.payload[0];
-            info.deviceId = pkt.payload[1] < LMS_DEV_COUNT ? static_cast<eLMS_DEV>(pkt.payload[1]) : LMS_DEV_UNKNOWN;
-            info.protocol = pkt.payload[2];
-            info.hardware = pkt.payload[3];
-            info.expansionBoardId = pkt.payload[4] < EXP_BOARD_COUNT ? static_cast<eEXP_BOARD>(pkt.payload[4]) : EXP_BOARD_UNKNOWN;
-            info.boardSerialNumber = 0;
-            for (int i = 10; i < 18; i++)
-            {
-                info.boardSerialNumber <<= 8;
-                info.boardSerialNumber |= pkt.payload[i];
-            }
-        }
-        else
-        {
-            return deviceDescriptor;
-        }
-
-        deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
-        deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
-        deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
-        deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
-        deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
-        deviceDescriptor.serialNumber = info.boardSerialNumber;
-
-        const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
-        uint32_t data[4];
-        SPI(spi_FPGA, addrs, data, 4);
-        auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-        auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
-        auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-        auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
-
-        deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
-        deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
-        deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
-        deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
+        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
 
         return deviceDescriptor;
     }
-    catch (...)
-    {
-        //lime::error("LimeSDR::GetDeviceInfo failed(%s)", e.what());
-        deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
-        deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
-    }
+
+    deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
+    deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
+    deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
+    deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
+    deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+    deviceDescriptor.serialNumber = info.boardSerialNumber;
+
+    const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
+    uint32_t data[4];
+    SPI(spi_FPGA, addrs, data, 4);
+    auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+    auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
+    auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+    auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
+
+    deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
+    deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
+    deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
+    deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+
     return deviceDescriptor;
 }
 
 void LimeSDR::Reset()
 {
-    LMS64CProtocol::DeviceReset(reinterpret_cast<ISerialPort&>(mStreamPort), 0);
+    LMS64CProtocol::DeviceReset(*mSerialPort, 0);
 }
 
 int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)

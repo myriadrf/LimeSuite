@@ -140,6 +140,7 @@ include(boards/LimeSDR/CMakeLists.txt)
 include(boards/LimeSDR_X3/CMakeLists.txt)
 include(boards/LimeSDR_XTRX/CMakeLists.txt)
 include(boards/MMX8/CMakeLists.txt)
+include(boards/LimeSDR_Mini/CMakeLists.txt)
 
 # configure_file(
 #     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
@@ -216,7 +217,7 @@ set(LMS7SUITE_GUI_SOURCES
     boards_wxgui/pnlX3.cpp
     boards_wxgui/pnlXTRX.cpp
     # boards_wxgui/pnlQSpark.cpp
-    # boards_wxgui/pnluLimeSDR.cpp
+    boards_wxgui/pnluLimeSDR.cpp
     # boards_wxgui/pnlUltimateEVB.cpp
     # boards_wxgui/pnlBuffers.cpp
     # boards_wxgui/pnlCoreSDR.cpp

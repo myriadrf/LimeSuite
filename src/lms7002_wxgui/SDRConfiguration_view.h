@@ -16,6 +16,8 @@
 
 #include "GUI/ISOCPanel.h"
 
+constexpr int MAX_GUI_CHANNELS_COUNT = 2;
+
 struct ChannelConfigGUI
 {
   wxCheckBox* enable;
@@ -34,8 +36,8 @@ struct SDRConfigGUI
   wxTextCtrl* sampleRate;
   wxChoice* decimation;
   wxChoice* interpolation;
-  ChannelConfigGUI rx[2];
-  ChannelConfigGUI tx[2];
+  ChannelConfigGUI rx[MAX_GUI_CHANNELS_COUNT];
+  ChannelConfigGUI tx[MAX_GUI_CHANNELS_COUNT];
 };
 
 class SOCConfig_view : public wxPanel

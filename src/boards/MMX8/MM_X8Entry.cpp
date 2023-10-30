@@ -4,6 +4,7 @@
 
 #include "LitePCIe.h"
 #include "MM_X8.h"
+#include "PCIeCommon.h"
 
 #include <fstream>
 #include <map>
@@ -75,22 +76,6 @@ std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle &hint)
     }
     return handles;
 }
-
-class PCIE_CSR_Pipe : public ISerialPort
-{
-public:
-    explicit PCIE_CSR_Pipe(LitePCIe& port) : port(port) {};
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.WriteControl(data, length, timeout_ms);
-    }
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.ReadControl(data, length, timeout_ms);
-    }
-protected:
-    LitePCIe& port;
-};
 
 class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 {
