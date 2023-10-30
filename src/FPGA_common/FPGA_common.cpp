@@ -994,12 +994,13 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
         SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
     }
 
+    WriteRegister(0xFFFF, 1 << chipIndex);
+    uint16_t reg_000A = ReadRegister(0x000A);
+    WriteRegister(0x000A, reg_000A & ~(RX_EN | TX_EN | TX_PTRN_EN | RX_PTRN_EN)); // clear test patterns
     {
         std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484, 0x8001};
         if (bypassTx)spiData[5] ^= 0x80;
         if (bypassRx)spiData[5] ^= 0x9;
-        WriteRegister(0xFFFF, 1 << chipIndex);
-        WriteRegister(0x000A, 0x0000);
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
@@ -1015,9 +1016,9 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
     clocks[1] = clocks[0];
     clocks[1].index = 1;
     clocks[1].findPhase = true;
+    WriteRegister(0x000A, reg_000A | TX_PTRN_EN);
     for (int i = 0; i < 10; i++)  //attempt phase search 10 times
     {
-        WriteRegister(0x000A, TX_PTRN_EN);
         if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)==0)
         {
             phaseSearchSuccess = true;
@@ -1059,8 +1060,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
     WriteLMS7002MSPI(dataWr.data(), k);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
-    WriteRegister(0x000A, 0);
-
+    WriteRegister(0x000A, reg_000A);
     return status;
 }
 

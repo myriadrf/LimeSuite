@@ -494,6 +494,7 @@ void LimeSDR_X3::PostConfigure(const SDRConfig& cfg, uint8_t socIndex)
         switch(socIndex)
         {
             case 0:
+                LMS1_UpdateFPGAInterface(this);
                 LMS1_PA_Enable(c, ch.tx.enabled);
                 break;
             case 1:
@@ -546,9 +547,9 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
-        if (rxUsed)
+        if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
             chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
-        if (txUsed)
+        if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
             chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
         if(tddMode)
             chip->EnableSXTDD(true);
@@ -562,11 +563,11 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             sampleRate = cfg.channel[0].rx.sampleRate;
         else
             sampleRate = cfg.channel[0].tx.sampleRate;
-        if(socIndex == 0)
+        if(socIndex == 0 && sampleRate > 0)
         {
             LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
         }
-        else if(socIndex == 1) {
+        else if(socIndex == 1 && sampleRate > 0) {
             Equalizer::Config eqCfg;
             for(int i=0; i<2; ++i)
             {
@@ -582,7 +583,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             mEqualizer->Configure(eqCfg);
             LMS2_SetSampleRate(sampleRate, cfg.channel[0].tx.oversample);
         }
-        else if(socIndex == 2) {
+        else if(socIndex == 2 && sampleRate > 0) {
             LMS3_SetSampleRate_ExternalDAC(cfg.channel[0].rx.sampleRate, cfg.channel[1].rx.sampleRate);
         }
 
@@ -668,8 +669,8 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), 2);
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
-        PostConfigure(cfg, socIndex);
         mConfigInProgress = false;
+        PostConfigure(cfg, socIndex);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_X3 config: %s\n", e.what());

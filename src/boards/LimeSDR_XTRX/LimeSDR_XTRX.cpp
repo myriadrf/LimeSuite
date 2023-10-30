@@ -219,9 +219,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
-        if (rxUsed)
+        if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
             chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
-        if (txUsed)
+        if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
             chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
         if(tddMode)
             chip->EnableSXTDD(true);
@@ -254,7 +254,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             sampleRate = cfg.channel[0].rx.sampleRate;
         else
             sampleRate = cfg.channel[0].tx.sampleRate;
-        LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
+        if (sampleRate > 0)
+            LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
 
         for (int i = 0; i < 2; ++i) {
             chip->SetActiveChannel(i==0 ? LMS7002M::ChA : LMS7002M::ChB);
@@ -308,6 +309,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
         mConfigInProgress = false;
+        if (sampleRate > 0)
+            LMS1_UpdateFPGAInterface(this);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_XTRX config: %s\n", e.what());
