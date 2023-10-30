@@ -5,6 +5,7 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
+#include "USBCommon.h"
 #include <vector>
 #include <memory>
 
@@ -67,13 +68,14 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     IComms *mfpgaPort;
 };
 
-class LimeSDR_MiniEntry : public DeviceRegistryEntry
+class LimeSDR_MiniEntry : public USBEntry
 {
 public:
     LimeSDR_MiniEntry();
-    virtual ~LimeSDR_MiniEntry();
-    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-    SDRDevice* make(const DeviceHandle& handle) override;
+#ifndef __unix__
+    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
+#endif
+    virtual SDRDevice* make(const DeviceHandle& handle) override;
 };
 
 }

@@ -3,6 +3,14 @@
 
 #include "limesuite/IComms.h"
 #include "LMS64CProtocol.h"
+#include "limesuite/DeviceHandle.h"
+#include "limesuite/DeviceRegistry.h"
+
+#include <set>
+
+#ifdef __unix__
+#include <libusb.h>
+#endif
 
 namespace lime
 {
@@ -15,6 +23,37 @@ public:
     virtual bool reset() = 0;
 
     bool used;
+};
+
+struct VidPid
+{
+    uint16_t vid;
+    uint16_t pid;
+
+    bool operator<(const VidPid& other) const
+    {
+        if (vid == other.vid)
+        {
+            return pid < other.pid;
+        }
+
+        return vid < other.vid;
+    }
+};
+
+class USBEntry : public DeviceRegistryEntry
+{
+public:
+    USBEntry(const std::string &name, std::set<VidPid> deviceIds);
+    virtual ~USBEntry();
+
+    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint);
+protected:
+#ifdef __unix__
+    static libusb_context* ctx; 
+#endif
+private:
+    std::set<VidPid> mDeviceIds;
 };
 
 class USB_CSR_Pipe : public ISerialPort
