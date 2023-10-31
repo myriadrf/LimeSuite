@@ -20,7 +20,14 @@
 #include <cmath>
 
 #ifdef __unix__
-    #include <libusb.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+#include <libusb.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 #endif
 
 #define CTR_W_REQCODE 0xC1

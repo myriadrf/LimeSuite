@@ -12,7 +12,6 @@
 #include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
-#include "ADCUnits.h"
 #include "FT601/FT601.h"
 
 #include <assert.h>
