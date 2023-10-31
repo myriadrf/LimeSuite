@@ -1,7 +1,7 @@
 #ifndef PNL_ULIMESDR_H
 #define PNL_ULIMESDR_H
 
-#include "lime/LimeSuite.h"
+#include "limesuite/SDRDevice.h"
 #include <wx/panel.h>
 
 class wxChoice;
@@ -14,7 +14,7 @@ class pnluLimeSDR : public wxPanel
 {
 public:
     pnluLimeSDR(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = wxEmptyString);
-    void Initialize(lms_device_t *pControl);
+    void Initialize(lime::SDRDevice *device);
     virtual ~pnluLimeSDR();
     virtual void UpdatePanel();
     void OnLoopbackChange(wxCommandEvent &event);
@@ -30,7 +30,9 @@ protected:
     wxChoice* cmbRxPath;
     wxChoice* cmbTxPath;
     wxStaticText* txtLB;
-    lms_device_t *lmsControl;
+
+    lime::SDRDevice *device;
+    
     DECLARE_EVENT_TABLE()
 };
 

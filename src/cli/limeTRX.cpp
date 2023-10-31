@@ -553,6 +553,7 @@ int main(int argc, char** argv)
     // some sleep for GNU plot data to flush, otherwise sometimes cout spams  gnuplot "invalid command"
     this_thread::sleep_for(std::chrono::milliseconds(500));
 #endif
+    device->StreamStop(chipIndex);
     DeviceRegistry::freeDevice(device);
 
     rxFile.close();

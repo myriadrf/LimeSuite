@@ -219,9 +219,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
-        if (rxUsed)
+        if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
             chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
-        if (txUsed)
+        if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
             chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
         if(tddMode)
             chip->EnableSXTDD(true);
@@ -254,7 +254,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             sampleRate = cfg.channel[0].rx.sampleRate;
         else
             sampleRate = cfg.channel[0].tx.sampleRate;
-        LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
+        if (sampleRate > 0)
+            LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
 
         for (int i = 0; i < 2; ++i) {
             chip->SetActiveChannel(i==0 ? LMS7002M::ChA : LMS7002M::ChB);
@@ -308,6 +309,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
         mConfigInProgress = false;
+        if (sampleRate > 0)
+            LMS1_UpdateFPGAInterface(this);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_XTRX config: %s\n", e.what());
@@ -424,32 +427,6 @@ void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
         trxPort->Close();
 }
 
-void LimeSDR_XTRX::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
-{
-    assert(mFPGA);
-    LMS7002M* mLMSChip = mLMSChips[0];
-    double fpgaTxPLL = mLMSChip->GetReferenceClk_TSP(Tx);
-    if (interp != 7) {
-        uint8_t siso = mLMSChip->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        fpgaTxPLL /= std::pow(2, interp + siso);
-    }
-    double fpgaRxPLL = mLMSChip->GetReferenceClk_TSP(Rx);
-    if (dec != 7) {
-        uint8_t siso = mLMSChip->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
-        fpgaRxPLL /= std::pow(2, dec + siso);
-    }
-
-    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360) {
-        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0) != 0)
-            throw std::runtime_error("Failed to configure FPGA interface");
-        return;
-    }
-    else
-        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0) != 0)
-            throw std::runtime_error("Failed to configure FPGA interface");
-    mLMSChips[0]->ResetLogicregisters();
-}
-
 void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
     if (rxDecimation != 0 && txInterpolation/rxDecimation > 4)
@@ -488,7 +465,6 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
     lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
                cgenFreq / 1e6, 1+hbd_ovr, 1+hbi_ovr);
     LMS7002M* mLMSChip = mLMSChips[0];
-    mLMSChip->SetFrequencyCGEN(cgenFreq);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
     if (rxDecimation != 0)
         mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2 - std::log2(txInterpolation/rxDecimation));
@@ -501,8 +477,6 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
     mLMSChip->SetInterfaceFrequency(cgenFreq, hbi_ovr, hbd_ovr);
-
-    SetFPGAInterfaceFreq(hbi_ovr, hbd_ovr, 999, 999); // TODO: default phase
 }
 
 enum // TODO: replace
@@ -518,10 +492,6 @@ enum // TODO: replace
 
 void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
 {
-    // RF switch controls are toggled for both channels, use channel 0 as the deciding source.
-    if(chan != 0)
-        return;
-
     uint16_t sw_addr = 0x000A;
     uint16_t sw_val = mFPGA->ReadRegister(sw_addr);
     lime::LMS7002M* lms = mLMSChips.at(0);
@@ -541,8 +511,6 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             sw_val |= 1 << 4;
         else if (path == LMS_PATH_TX2)
             sw_val &= ~(1 << 4);
-
-        mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetBandTRF(path);
     }
     else
@@ -553,7 +521,7 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             case ePathLMS1_Rx::NONE : path = LMS7002M::PATH_RFE_NONE; break;
             case ePathLMS1_Rx::LNAH : path = LMS7002M::PATH_RFE_LNAH; break;
             case ePathLMS1_Rx::LNAL : path = LMS7002M::PATH_RFE_LNAL; break;
-            //case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
+            case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
             default: throw std::logic_error("Invalid LMS1 Rx path");
         }
 
@@ -564,9 +532,11 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
             sw_val |= 2 << 2;
         else if(path == LMS_PATH_LNAL)
             sw_val |= 1 << 2;
-        mFPGA->WriteRegister(sw_addr, sw_val);
         lms->SetPathRFE(lime::LMS7002M::PathRFE(path));
     }
+    // RF switch controls are toggled for both channels, use channel 0 as the deciding source.
+    if (chan == 0)
+        mFPGA->WriteRegister(sw_addr, sw_val);
 }
 
 int LimeSDR_XTRX::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)

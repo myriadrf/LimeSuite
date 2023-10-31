@@ -31,6 +31,8 @@ struct LMS64CPacket
 class ISerialPort
 {
 public:
+    virtual ~ISerialPort(){};
+
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
 };

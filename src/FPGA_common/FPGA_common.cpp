@@ -56,6 +56,8 @@ private:
 const int RX_EN = 1; //controls both receiver and transmitter
 const int TX_EN = 1 << 1; //used for wfm playback from fpga
 const int STREAM_LOAD = 1 << 2;
+const int RX_PTRN_EN = 1 << 8;
+const int TX_PTRN_EN = 1 << 9;
 
 // 0x0009
 const int SMPL_NR_CLR = 1; // rising edge clears
@@ -98,6 +100,7 @@ static bool HasFPGAClockPhaseSearch(uint8_t targetDevice, uint8_t version, uint8
         case LMS_DEV_LIMESDR_QPCIE:
             return ver_rev > 0x102;
         case LMS_DEV_LIMESDR_CORE_SDR:
+        case LMS_DEV_LIMESDRMINI:
         case LMS_DEV_LIMESDRMINI_V2:
         case LMS_DEV_LIMESDR_X3:
         case LMS_DEV_LIMESDR_XTRX:
@@ -177,10 +180,7 @@ int FPGA::WriteLMS7002MSPI(const uint32_t *data, uint32_t length)
 
 int FPGA::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, uint32_t length)
 {
-    std::vector<uint32_t> spiBuf(length);
-    for (uint32_t i = 0; i < length; ++i)
-        spiBuf[i] = writeData[i] >> 16;
-    lms7002mPort->SPI(spiBuf.data(), readData, length);
+    lms7002mPort->SPI(writeData, readData, length);
     return 0;
 }
 
@@ -292,7 +292,7 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
 
         if (!done)
         {
-            if ((chrono::high_resolution_clock::now() - t1) < timeout)
+            if ((chrono::high_resolution_clock::now() - t1) > timeout)
             {
                 lime::warning("%s timeout", title);
                 return ETIME;
@@ -346,6 +346,8 @@ int FPGA::SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSe
         if(status != 0)
             return status;
     }
+    else
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     if (WriteRegister(0x0023, reg23val & ~PHCFG_START) != 0) // redundant clear
         ReportError(EIO, "FPGA SetPllClock: failed to write registers");
@@ -373,7 +375,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         ReportError(ERANGE, "FPGA SetPllFrequency: PLL index(%i) out of range [0-15]", pllIndex);
 
     //check if all clocks are above 5MHz
-    const double PLLlowerLimit = 10e6;
+    const double PLLlowerLimit = 5e6;
     if(inputFreq < PLLlowerLimit)
         return ReportError(ERANGE, "FPGA SetPllFrequency: PLL[%i] input frequency must be >=%g MHz", pllIndex, PLLlowerLimit/1e6);
     for(int i=0; i<clockCount; ++i)
@@ -408,6 +410,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if (status != 0)
                 return status;
         }
+        else
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         batch.WriteRegister(0x0023, reg23val & ~PLLRST_START); // redundant clear
     }
 
@@ -439,6 +443,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     // Find VCO that satisfies most outputs with integer dividers
     uint64_t bestFreqVCO = std::max_element(desiredVCO.begin(), desiredVCO.end(),
         [] (const pair<uint64_t, uint8_t> &p1, const pair<uint64_t, uint8_t> &p2) {
+            if (p1.second == p2.second)
+                return p1.first < p2.first; // sort by VCO frequency
             return p1.second < p2.second;
         }
     )->first;
@@ -496,7 +502,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     batch.WriteRegister(0x0028, c15_c8_odds_byps);
     batch.Flush();
 
-    WriteRegister(0x0023, reg23val | PLLCFG_START);
+    if (clockCount != 4 || clocks->index == 3) // TODO: this seems to be LimeSDR-Mini specific
+        WriteRegister(0x0023, reg23val | PLLCFG_START);
     if (waitForDone) //wait for config to activate
     {
         char title[64]; sprintf(title, "FPGA PLL[%i] PLLCFG_START", pllIndex);
@@ -504,6 +511,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         if (status != 0)
             return status;
     }
+    else
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     WriteRegister(0x0023, reg23val & ~PLLCFG_START); // redundant clear
 
     for(int i=0; i<clockCount; ++i)
@@ -836,7 +845,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
     lime::FPGA::FPGA_PLL_clock clocks[2];
     int status = 0;
 
-    const uint32_t addr = (0x02A<<16);
+    const uint32_t addr = 0x002A;
     uint32_t val;
     val = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(&val, 1);
@@ -912,18 +921,16 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
     dataRdA.resize(bakRegCnt);
     dataRdB.clear();
     //backup registers
-    dataWr[0] = (uint32_t(0x0020) << 16);
+    dataWr[0] = 0x0020;
     ReadLMS7002MSPI(dataWr.data(), &reg20, 1);
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
-    for (int i = 0; i < bakRegCnt; ++i)
-        dataWr[i] = (spiAddr[i] << 16);
-    ReadLMS7002MSPI(dataWr.data(),dataRdA.data(), bakRegCnt);
+    ReadLMS7002MSPI(spiAddr.data(),dataRdA.data(), bakRegCnt);
 
     {
-        const uint32_t addr = (0x02A<<16);
+        const uint32_t addr = 0x002A;
         uint32_t val;
         ReadLMS7002MSPI(&addr, &val, 1);
         bypassTx = (val&0xF0) == 0x00;
@@ -935,7 +942,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
 
     for (int i = 0; i < bakRegCnt; ++i)
         if (spiAddr[i] >= 0x100)
-            dataRdB.push_back(spiAddr[i] << 16);
+            dataRdB.push_back(spiAddr[i]);
     ReadLMS7002MSPI(dataRdB.data(), dataRdB.data(), dataRdB.size());
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; //msbit 1=SPI write
@@ -987,12 +994,13 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
         SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
     }
 
+    WriteRegister(0xFFFF, 1 << chipIndex);
+    uint16_t reg_000A = ReadRegister(0x000A);
+    WriteRegister(0x000A, reg_000A & ~(RX_EN | TX_EN | TX_PTRN_EN | RX_PTRN_EN)); // clear test patterns
     {
         std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484, 0x8001};
         if (bypassTx)spiData[5] ^= 0x80;
         if (bypassRx)spiData[5] ^= 0x9;
-        WriteRegister(0xFFFF, 1 << chipIndex);
-        WriteRegister(0x000A, 0x0000);
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
@@ -1008,9 +1016,9 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
     clocks[1] = clocks[0];
     clocks[1].index = 1;
     clocks[1].findPhase = true;
+    WriteRegister(0x000A, reg_000A | TX_PTRN_EN);
     for (int i = 0; i < 10; i++)  //attempt phase search 10 times
     {
-        WriteRegister(0x000A, 0x0200);
         if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)==0)
         {
             phaseSearchSuccess = true;
@@ -1052,8 +1060,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
     WriteLMS7002MSPI(dataWr.data(), k);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
-    WriteRegister(0x000A, 0);
-
+    WriteRegister(0x000A, reg_000A);
     return status;
 }
 
@@ -1150,3 +1157,4 @@ void FPGA::GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descrip
 }
 
 } //namespace lime
+

@@ -67,7 +67,6 @@ public:
     virtual void SetMessageLogCallback(LogCallbackType callback) override;
 
     virtual void *GetInternalChip(uint32_t index);
-    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase) = 0;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 

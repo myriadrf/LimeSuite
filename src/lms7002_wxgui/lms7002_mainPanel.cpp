@@ -319,7 +319,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     }
     try {
          if (chip->LoadConfig(dlg.GetPath().To8BitData()) != 0)
-            throw;
+            wxMessageBox(_("Failed to load file"), _("Warning"));
     }
     catch (std::runtime_error &e)
     {

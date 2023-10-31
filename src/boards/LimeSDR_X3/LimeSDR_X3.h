@@ -44,8 +44,6 @@ public:
     virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
-                                      double rxPhase) override;
     virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
     virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
 

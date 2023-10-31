@@ -493,6 +493,7 @@ void LimeSDR_X3::PostConfigure(const SDRConfig& cfg, uint8_t socIndex)
         switch(socIndex)
         {
             case 0:
+                LMS1_UpdateFPGAInterface(this);
                 LMS1_PA_Enable(c, ch.tx.enabled);
                 break;
             case 1:
@@ -545,9 +546,9 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
-        if (rxUsed)
+        if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
             chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
-        if (txUsed)
+        if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
             chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
         if(tddMode)
             chip->EnableSXTDD(true);
@@ -561,11 +562,11 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             sampleRate = cfg.channel[0].rx.sampleRate;
         else
             sampleRate = cfg.channel[0].tx.sampleRate;
-        if(socIndex == 0)
+        if(socIndex == 0 && sampleRate > 0)
         {
             LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
         }
-        else if(socIndex == 1) {
+        else if(socIndex == 1 && sampleRate > 0) {
             Equalizer::Config eqCfg;
             for(int i=0; i<2; ++i)
             {
@@ -581,7 +582,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             mEqualizer->Configure(eqCfg);
             LMS2_SetSampleRate(sampleRate, cfg.channel[0].tx.oversample);
         }
-        else if(socIndex == 2) {
+        else if(socIndex == 2 && sampleRate > 0) {
             LMS3_SetSampleRate_ExternalDAC(cfg.channel[0].rx.sampleRate, cfg.channel[1].rx.sampleRate);
         }
 
@@ -667,8 +668,8 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), 2);
         chip->Modify_SPI_Reg_bits(LMS7param(TX_MUX), txMux);
 
-        PostConfigure(cfg, socIndex);
         mConfigInProgress = false;
+        PostConfigure(cfg, socIndex);
     } //try
     catch (std::logic_error &e) {
         printf("LimeSDR_X3 config: %s\n", e.what());
@@ -818,32 +819,6 @@ void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
         trxPort->Close();
 }
 
-void LimeSDR_X3::SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase, double rxPhase)
-{
-    assert(mFPGA);
-    LMS7002M* mLMSChip = mLMSChips[0];
-    double fpgaTxPLL = mLMSChip->GetReferenceClk_TSP(Tx);
-    if (interp != 7) {
-        uint8_t siso = mLMSChip->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        fpgaTxPLL /= std::pow(2, interp + siso);
-    }
-    double fpgaRxPLL = mLMSChip->GetReferenceClk_TSP(Rx);
-    if (dec != 7) {
-        uint8_t siso = mLMSChip->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
-        fpgaRxPLL /= std::pow(2, dec + siso);
-    }
-
-    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360) {
-        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0) != 0)
-            throw std::runtime_error("Failed to configure FPGA interface");
-        return;
-    }
-    else
-        if(mFPGA->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase, rxPhase, 0) != 0)
-            throw std::runtime_error("Failed to configure FPGA interface");
-    mLMSChips[0]->ResetLogicregisters();
-}
-
 void LimeSDR_X3::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation)
 {
     if (rxDecimation == 0)
@@ -888,7 +863,6 @@ void LimeSDR_X3::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t t
     lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
                cgenFreq / 1e6, 1+hbd_ovr, 1+hbi_ovr);
     LMS7002M* mLMSChip = mLMSChips[0];
-    mLMSChip->SetFrequencyCGEN(cgenFreq);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2 - std::log2(txInterpolation/rxDecimation));
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
@@ -898,8 +872,6 @@ void LimeSDR_X3::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t t
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
     mLMSChip->SetInterfaceFrequency(cgenFreq, hbi_ovr, hbd_ovr);
-
-    SetFPGAInterfaceFreq(hbi_ovr, hbd_ovr, 999, 999); // TODO: default phase
 }
 
 enum // TODO: replace

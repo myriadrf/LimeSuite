@@ -4,12 +4,12 @@
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
+#include "protocols/LMS64CProtocol.h"
 #include <vector>
 #include <memory>
 
-#include <FX3.h>
-
 #include "dataTypes.h"
+
 namespace lime
 {
 
@@ -22,15 +22,13 @@ class TRXLooper_USB;
 class LimeSDR : public LMS7002M_SDRDevice
 {
 public:
-    LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* mStreamPort);
+    LimeSDR(IComms* spiLMS, IComms* spiFPGA, USBGeneric* mStreamPort, ISerialPort* commsPort);
     virtual ~LimeSDR();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
     virtual int Init() override;
     virtual void Reset() override;
-
-    //virtual double GetRate(Dir dir, uint8_t channel) const override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
@@ -48,9 +46,6 @@ public:
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
     virtual void *GetInternalChip(uint32_t index) override;
-
-    virtual void SetFPGAInterfaceFreq(uint8_t interp, uint8_t dec, double txPhase,
-                                      double rxPhase) override;
 
     virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
@@ -70,6 +65,7 @@ public:
     static int UpdateFPGAInterface(void* userData);
 private:
     USBGeneric *mStreamPort;
+    ISerialPort *mSerialPort;
     IComms *mlms7002mPort;
     IComms *mfpgaPort;
 };

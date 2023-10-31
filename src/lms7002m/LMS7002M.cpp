@@ -718,11 +718,18 @@ int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
 
     if (tuneDynamicValues)
     {
-        TuneVCO(VCO_CGEN);
-        TuneVCO(VCO_SXT);
-        TuneVCO(VCO_SXR);
-        if (mCallback_onCGENChange)
-            return mCallback_onCGENChange(mCallback_onCGENChange_userData);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        if (!Get_SPI_Reg_bits(LMS7param(PD_VCO)))
+            TuneVCO(VCO_SXT);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        if (!Get_SPI_Reg_bits(LMS7param(PD_VCO)))
+            TuneVCO(VCO_SXR);
+        if (!Get_SPI_Reg_bits(LMS7param(PD_VCO_CGEN)))
+        {
+            TuneVCO(VCO_CGEN);
+            if (mCallback_onCGENChange)
+                return mCallback_onCGENChange(mCallback_onCGENChange_userData);
+        }
     }
     this->SetActiveChannel(ChA);
     return 0;
@@ -2628,14 +2635,6 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         return status;
     Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
 
-    //clock rate already set because the readback frequency is pretty-close,
-    //dont set the cgen frequency again to save time due to VCO selection
-    //const auto freqDiff = std::abs(this->GetFrequencyCGEN() - cgen_freq_Hz);
-    //if (not this->GetCGENLocked() or freqDiff > 10.0)
-    {
-        status = SetFrequencyCGEN(cgen_freq_Hz);
-        if (status != 0) return status;
-    }
     auto siso =  Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
     int mclk2src = Get_SPI_Reg_bits(LMS7param(MCLK2SRC));
     if (decimation == 7 || (decimation == 0 && siso == 0)) //bypass
@@ -2688,6 +2687,14 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }
 
+    //clock rate already set because the readback frequency is pretty-close,
+    //dont set the cgen frequency again to save time due to VCO selection
+    // const auto freqDiff = std::abs(this->GetFrequencyCGEN() - cgen_freq_Hz);
+    // if (not this->GetCGENLocked() or freqDiff > 10.0)
+    {
+        status = SetFrequencyCGEN(cgen_freq_Hz);
+        if (status != 0) return status;
+    }
     return status;
 }
 

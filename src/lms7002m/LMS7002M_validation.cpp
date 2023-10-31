@@ -23,9 +23,8 @@ static inline bool InRange(double val, double min, double max)
     return val >= min ? val <= max : false;
 }
 
-bool LMS7002M_Validate(const SDRDevice::SDRConfig &cfg, std::vector<std::string>& errors)
+bool LMS7002M_Validate(const SDRDevice::SDRConfig &cfg, std::vector<std::string>& errors, const int lms7002_chCount)
 {
-    static constexpr int lms7002_chCount = 2;
     errors.clear();
 
     // channel count check
