@@ -31,8 +31,6 @@
 #include "pnlBoardControls.h"
 #include "LMSBoards.h"
 #include <sstream>
-#include "pnlAPI.h"
-//#include "limeRFE_wxgui.h"
 #include "SPI_wxgui.h"
 #include "GUI/events.h"
 #include "GUI/ISOCPanel.h"
