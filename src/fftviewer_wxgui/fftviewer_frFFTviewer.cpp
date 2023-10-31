@@ -12,6 +12,7 @@
 #include "limesuite/SDRDevice.h"
 #include "limesuite/complex.h"
 #include "Logger.h"
+#include <array>
 
 using namespace std;
 using namespace lime;
