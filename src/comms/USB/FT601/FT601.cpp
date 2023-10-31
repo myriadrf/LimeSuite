@@ -1,7 +1,7 @@
 #include "FT601.h"
 #include <thread>
 #include "Logger.h"
-#include <assert.h>
+#include <cassert>
 #include "dataTypes.h"
 #include "DeviceExceptions.h"
 
@@ -23,63 +23,16 @@ static constexpr int streamBulkReadAddr = 0x83;
 static constexpr int ctrlBulkWriteAddr = 0x02;
 static constexpr int ctrlBulkReadAddr = 0x82;
 
-static int activeUSBconnections = 0;
-static std::thread gUSBProcessingThread;
-
-#ifdef __unix__
-void FT601::handle_libusb_events()
-{
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-
-    while (activeUSBconnections > 0)
-    {
-        int returnCode = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
-
-        if (returnCode != 0)
-        {
-            lime::error("error libusb_handle_events %s", libusb_strerror(static_cast<libusb_error>(returnCode)));
-        }
-    }
-}
-#endif // __UNIX__
-
-FT601::FT601(void *usbContext) : contexts(nullptr), isConnected(false)
-{
-    isConnected = false;
-#ifdef __unix__
-    dev_handle = nullptr;
-    ctx = reinterpret_cast<libusb_context*>(usbContext);
-
-    if (activeUSBconnections == 0)
-    {
-        ++activeUSBconnections;
-        gUSBProcessingThread = std::thread(&FT601::handle_libusb_events, this);
-    }
-    else
-    {
-        ++activeUSBconnections;
-    }
-#endif
-}
+FT601::FT601(void *usbContext) : USBGeneric(usbContext) {}
 
 FT601::~FT601()
 {
     Disconnect();
-    --activeUSBconnections;
-
-    if (activeUSBconnections == 0)
-    {
-        if (gUSBProcessingThread.joinable())
-        {
-            gUSBProcessingThread.join();
-        }
-    }
 }
 
 bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
 {
+    Disconnect();
 #ifndef __unix__
     DWORD devCount;
     FT_STATUS ftStatus = FT_OK;
@@ -106,139 +59,39 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
     FT_SetPipeTimeout(mFTHandle, streamBulkReadAddr, 0);
     FT_SetPipeTimeout(mFTHandle, streamBulkWriteAddr, 0);
 #else
-    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
-    int usbDeviceCount = libusb_get_device_list(ctx, &devs);
-
-    if (usbDeviceCount < 0)
-    {
-        return ReportError(-1, "libusb_get_device_list failed: %s", libusb_strerror(static_cast<libusb_error>(usbDeviceCount)));
-    }
-
-    for (int i = 0; i < usbDeviceCount; ++i)
-    {
-        libusb_device_descriptor desc;
-        int returnCode = libusb_get_device_descriptor(devs[i], &desc);
-
-        if (returnCode < 0)
-        {
-            lime::error("failed to get device description");
-            continue;
-        }
-
-        if (desc.idProduct != pid || desc.idVendor != vid)
-        {
-            continue;
-        }
-
-        if (libusb_open(devs[i], &dev_handle) != 0)
-        {
-            continue;
-        }
-
-        std::string foundSerial;
-
-        if (desc.iSerialNumber > 0)
-        {
-            char data[255];
-            int stringLength = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(data), sizeof(data));
-
-            if (stringLength < 0)
-            {
-                lime::error("failed to get serial number");
-            }
-            else
-            {
-                foundSerial = std::string(data, static_cast<size_t>(stringLength));
-            }
-        }
-
-        if (serial == foundSerial) // found it
-        {
-            break;
-        }
-
-        libusb_close(dev_handle);
-        dev_handle = nullptr;
-    }
-
-    libusb_free_device_list(devs, 1);
-
-    if (dev_handle == nullptr)
-    {
-        return ReportError(ENODEV, "libusb_open failed");
-    }
-
-    if (libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
-    {
-        lime::debug("Kernel Driver Active");
-
-        if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
-        {
-            lime::debug("Kernel Driver Detached!");
-        }
-    }
-
-    int returnCode = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
-    if (returnCode < 0)
-    {
-        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(static_cast<libusb_error>(returnCode)));
-    }
-
-    returnCode = libusb_claim_interface(dev_handle, 1); // claim interface 1 of device
-    if (returnCode < 0)
-    {
-        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(static_cast<libusb_error>(returnCode)));
-    }
-    lime::debug("Claimed Interface");
-
-    if (libusb_reset_device(dev_handle) != 0)
-    {
-        return ReportError(-1, "USB reset failed", libusb_strerror(static_cast<libusb_error>(returnCode)));
-    }
+    USBGeneric::Connect(vid, pid, serial);
 
     FT_FlushPipe(ctrlBulkReadAddr);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
 #endif
-    isConnected = true;
     contexts = new USBTransferContext_FT601[USB_MAX_CONTEXTS];
     return 0;
 }
 
-bool FT601::IsConnected()
-{
-    return isConnected;
-}
-
 void FT601::Disconnect()
 {
+    USBGeneric::Disconnect();
 #ifndef __unix__
     FT_Close(mFTHandle);
 #else
-    if (dev_handle != 0)
+    if (dev_handle != nullptr)
     {
         FT_FlushPipe(streamBulkReadAddr);
         FT_FlushPipe(ctrlBulkReadAddr);
         libusb_release_interface(dev_handle, 0);
         libusb_release_interface(dev_handle, 1);
         libusb_close(dev_handle);
-        dev_handle = 0;
+        dev_handle = nullptr;
     }
 #endif
-    isConnected = false;
 }
 
 int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32_t timeout_ms)
 {
-    long len = 0;
-    if (not IsConnected())
-    {
-        throw std::runtime_error("BulkTransfer: USB device is not connected");
-    }
-
-    assert(data);
-
-#ifndef __unix__
+#ifdef __unix__
+    return USBGeneric::BulkTransfer(endPointAddr, data, length, timeout_ms);
+#else
     ULONG ulBytesTransferred = 0;
     FT_STATUS ftStatus = FT_OK;
     OVERLAPPED vOverlapped = { 0 };
@@ -277,16 +130,7 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int
 
     FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
     return ulBytesTransferred;
-#else
-    int actualTransferred = 0;
-    int status = libusb_bulk_transfer(dev_handle, endPointAddr, data, length, &actualTransferred, timeout_ms);
-    len = actualTransferred;
-    if (status != 0)
-    {
-        printf("FT601::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n", endPointAddr, libusb_error_name(status), actualTransferred, length);
-    }
 #endif
-    return len;
 }
 
 int32_t FT601::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout)
@@ -294,138 +138,70 @@ int32_t FT601::ControlTransfer(int requestType, int request, int value, int inde
     throw(OperationNotSupported("ControlTransfer not supported on FT601 connections."));
 }
 
-#ifdef __unix__
-/** @brief Function for handling libusb callbacks
-*/
-static void process_libusbtransfer(libusb_transfer *trans)
-{
-    USBTransferContext_FT601 *context = static_cast<USBTransferContext_FT601 *>(trans->user_data);
-    std::unique_lock<std::mutex> lck(context->transferLock);
-    switch (trans->status) {
-    case LIBUSB_TRANSFER_CANCELLED:
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_COMPLETED:
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_ERROR:
-        lime::error("USB TRANSFER ERROR");
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_TIMED_OUT:
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_OVERFLOW:
-        lime::error("USB transfer overflow");
-        break;
-    case LIBUSB_TRANSFER_STALL:
-        lime::error("USB transfer stalled");
-        break;
-    case LIBUSB_TRANSFER_NO_DEVICE:
-        lime::error("USB transfer no device");
-        context->done.store(true);
-        break;
-    }
-    lck.unlock();
-    context->cv.notify_one();
-}
-#endif
-
 int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 {
-    std::unique_lock<std::mutex> lock {contextsLock};
+#ifdef __unix__
+    return USBGeneric::BeginDataXfer(buffer, length, endPointAddr);
+#else
+    int index = GetUSBContextIndex();
 
-    int i = 0;
-    bool contextFound = false;
-    //find not used context
-    for (i = 0; i < USB_MAX_CONTEXTS; i++)
+    if (index < 0)
     {
-        if (!contexts[i].used) 
-        {
-            contextFound = true;
-            break;
-        }
-    }
-
-    if (!contextFound) 
-    {
-        printf("No contexts left for reading or sending data, address %i\n", endPointAddr);
         return -1;
     }
 
-    contexts[i].used = true;
-
-    lock.unlock();
-#ifndef __unix__
 	ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
-    FT_InitializeOverlapped(mFTHandle, &contexts[i].inOvLap);
+    FT_InitializeOverlapped(mFTHandle, &contexts[index].inOvLap);
 
     if (endPointAddr == streamBulkReadAddr)
     {
-        ftStatus = FT_ReadPipe(mFTHandle, streamBulkReadAddr, buffer, length, &ulActual, &contexts[i].inOvLap);
+        ftStatus = FT_ReadPipe(mFTHandle, streamBulkReadAddr, buffer, length, &ulActual, &contexts[index].inOvLap);
     }
     else
     {
-        ftStatus = FT_WritePipe(mFTHandle, streamBulkWriteAddr, buffer, length, &ulActual, &contexts[i].inOvLap);
+        ftStatus = FT_WritePipe(mFTHandle, streamBulkWriteAddr, buffer, length, &ulActual, &contexts[index].inOvLap);
     }
 
-    contexts[i].endPointAddr = endPointAddr;
+    contexts[index].endPointAddr = endPointAddr;
 
     if (ftStatus != FT_IO_PENDING)
     {
         lime::error("ERROR BEGIN DATA TRANSFER %d", ftStatus);
-        contexts[i].used = false;
+        contexts[index].used = false;
         return -1;
     }
-#else
-    libusb_transfer *tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length, process_libusbtransfer, &contexts[i], 0);
-    contexts[i].done = false;
-    contexts[i].bytesXfered = 0;
-    int status = libusb_submit_transfer(tr);
-    if (status != 0)
-    {
-        printf("BEGIN DATA READING %s\n", libusb_error_name(status));
-        contexts[i].used = false;
-        return -1;
-    }
+
+    return index;
 #endif
-    return i;
 }
 
 bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 {    
+#ifdef __unix__
+    return USBGeneric::WaitForXfer(contextHandle, timeout_ms);
+#else
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-#ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
 
         if (dwRet == WAIT_OBJECT_0)
         {
             return true;
         }
-#else
-        //blocking not to waste CPU
-        std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
-        return contexts[contextHandle].cv.wait_for(lck, std::chrono::milliseconds(timeout_ms), [&]() {
-            return contexts[contextHandle].done.load();
-        });
-#endif
     }
 
     return true; //there is nothing to wait for (signal wait finished)
+#endif
 }
 
 int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
 {
+#ifdef __unix__
+    return USBGeneric::FinishDataXfer(buffer, length, contextHandle);
+#else
     if (contextHandle >= 0 && contexts[contextHandle].used == true) 
     {
-#ifndef __unix__
         ULONG ulActualBytesTransferred;
         FT_STATUS ftStatus = FT_OK;
 
@@ -443,20 +219,17 @@ int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
         FT_ReleaseOverlapped(mFTHandle, &contexts[contextHandle].inOvLap);
         contexts[contextHandle].used = false;
         return length;
-#else
-        length = contexts[contextHandle].bytesXfered;
-        contexts[contextHandle].used = false;
-        contexts[contextHandle].Reset();
-        return length;
-#endif
     }
     
     return 0;
+#endif
 }
 
 void FT601::AbortEndpointXfers(uint8_t endPointAddr)
 {
-#ifndef __unix__
+#ifdef __unix__
+    USBGeneric::AbortEndpointXfers(endPointAddr);
+#else
     FT_AbortPipe(mFTHandle, endPointAddr);
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
@@ -474,23 +247,9 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
     }
 
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, endPointAddr, sizeof(FPGA_DataPacket));
-#else
-    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-    {
-        if (contexts[i].used && contexts[i].transfer->endpoint == endPointAddr)
-        {
-            libusb_cancel_transfer(contexts[i].transfer);
-        }
-    }
+
+    WaitForXfers(endPointAddr);
 #endif
-    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-    {
-        if (contexts[i].used)
-        {
-            WaitForXfer(i, 250);
-            FinishDataXfer(nullptr, 0, i);
-        }
-    }
 }
 
 int FT601::ResetStreamBuffers()

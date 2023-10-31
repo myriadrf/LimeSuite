@@ -73,35 +73,13 @@ public:
     virtual ~FX3();
 
     virtual bool Connect(uint16_t vid, uint16_t pid, const std::string &serial = "") override;
-    virtual bool IsConnected() override;
     virtual void Disconnect() override;
-
-    virtual int32_t BulkTransfer(uint8_t endPoint, uint8_t *data, int length,
-        int32_t timeout = USBGeneric::defaultTimeout) override;
-
-    virtual int32_t ControlTransfer(int requestType, int request, int value, int index,
-        uint8_t* data, uint32_t length,
-        int32_t timeout = USBGeneric::defaultTimeout) override;
 
     virtual int BeginDataXfer(uint8_t *buffer, uint32_t length,
                               uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
     virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
-
-  protected:
-    static const int USB_MAX_CONTEXTS {16}; //maximum number of contexts for asynchronous transfers
-
-    USBTransferContext_FX3* contexts;
-    std::mutex contextsLock;
-
-    bool isConnected;
-
-#ifdef __unix__
-    libusb_device_handle* dev_handle; //a device handle
-    libusb_context* ctx; //a libusb session
-    void handle_libusb_events();
-#endif
 };
 
 }

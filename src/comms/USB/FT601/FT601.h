@@ -1,5 +1,4 @@
-#ifndef FT601_H
-#define FT601_H
+#pragma once
 
 #include "USBCommon.h"
 #include "USBGeneric.h"
@@ -42,7 +41,6 @@ public:
     virtual ~FT601();
 
     virtual bool Connect(uint16_t vid, uint16_t pid, const std::string &serial = "") override;
-    virtual bool IsConnected() override;
     virtual void Disconnect() override;
 
     virtual int32_t BulkTransfer(uint8_t endPoint, uint8_t *data, int length,
@@ -60,13 +58,6 @@ public:
 
     int ResetStreamBuffers();
   protected:
-    static const int USB_MAX_CONTEXTS {16}; //maximum number of contexts for asynchronous transfers
-
-    USBTransferContext_FT601* contexts;
-    std::mutex contextsLock;
-
-    bool isConnected;
-
 #ifndef __unix__
     FT_HANDLE mFTHandle;
     int ReinitPipe(unsigned char ep);
@@ -74,12 +65,7 @@ public:
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);
     uint32_t mUsbCounter;
-    libusb_device_handle* dev_handle; //a device handle
-    libusb_context* ctx; //a libusb session
-    void handle_libusb_events();
 #endif
 };
 
 }
-
-#endif // FT601_H
