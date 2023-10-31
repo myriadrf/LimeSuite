@@ -75,11 +75,13 @@ public:
     virtual bool Connect(uint16_t vid, uint16_t pid, const std::string &serial = "") override;
     virtual void Disconnect() override;
 
+#ifndef __unix__
     virtual int BeginDataXfer(uint8_t *buffer, uint32_t length,
                               uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
     virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
+#endif
 };
 
 }

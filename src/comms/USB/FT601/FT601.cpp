@@ -87,11 +87,9 @@ void FT601::Disconnect()
 #endif
 }
 
+#ifndef __unix__
 int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32_t timeout_ms)
 {
-#ifdef __unix__
-    return USBGeneric::BulkTransfer(endPointAddr, data, length, timeout_ms);
-#else
     ULONG ulBytesTransferred = 0;
     FT_STATUS ftStatus = FT_OK;
     OVERLAPPED vOverlapped = { 0 };
@@ -130,19 +128,17 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int
 
     FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
     return ulBytesTransferred;
-#endif
 }
+#endif
 
 int32_t FT601::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout)
 {
     throw(OperationNotSupported("ControlTransfer not supported on FT601 connections."));
 }
 
+#ifndef __unix__
 int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 {
-#ifdef __unix__
-    return USBGeneric::BeginDataXfer(buffer, length, endPointAddr);
-#else
     int index = GetUSBContextIndex();
 
     if (index < 0)
@@ -173,14 +169,10 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
     }
 
     return index;
-#endif
 }
 
 bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 {    
-#ifdef __unix__
-    return USBGeneric::WaitForXfer(contextHandle, timeout_ms);
-#else
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
@@ -192,14 +184,10 @@ bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     }
 
     return true; //there is nothing to wait for (signal wait finished)
-#endif
 }
 
 int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
 {
-#ifdef __unix__
-    return USBGeneric::FinishDataXfer(buffer, length, contextHandle);
-#else
     if (contextHandle >= 0 && contexts[contextHandle].used == true) 
     {
         ULONG ulActualBytesTransferred;
@@ -222,14 +210,10 @@ int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
     }
     
     return 0;
-#endif
 }
 
 void FT601::AbortEndpointXfers(uint8_t endPointAddr)
 {
-#ifdef __unix__
-    USBGeneric::AbortEndpointXfers(endPointAddr);
-#else
     FT_AbortPipe(mFTHandle, endPointAddr);
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
@@ -249,8 +233,8 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, endPointAddr, sizeof(FPGA_DataPacket));
 
     WaitForXfers(endPointAddr);
-#endif
 }
+#endif
 
 int FT601::ResetStreamBuffers()
 {

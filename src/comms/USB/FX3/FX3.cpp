@@ -39,11 +39,9 @@ void FX3::Disconnect()
 #endif
 }
 
+#ifndef __unix__
 int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 {
-#ifdef __unix__
-    return USBGeneric::BeginDataXfer(buffer, length, endPointAddr);
-#else
     int index = GetUSBContextIndex();
 
     if (index < 0)
@@ -59,14 +57,10 @@ int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
     }
 
     return index;
-#endif
 }
 
 bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 {
-#ifdef __unix__
-    return USBGeneric::WaitForXfer(contextHandle, timeout_ms);
-#else
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
         int status = 0;
@@ -76,14 +70,10 @@ bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     }
 
     return true; //there is nothing to wait for (signal wait finished)
-#endif
 }
 
 int FX3::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
 {
-#ifdef __unix__
-    return USBGeneric::FinishDataXfer(buffer, length, contextHandle);
-#else
     if (contextHandle >= 0 && contexts[contextHandle].used == true) 
     {
         int status = 0;
@@ -97,14 +87,10 @@ int FX3::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
     }
     
     return 0;
-#endif
 }
 
 void FX3::AbortEndpointXfers(uint8_t endPointAddr)
 {
-#ifdef __unix__
-    USBGeneric::AbortEndpointXfers(endPointAddr);
-#else
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
         if (InEndPt[i] && InEndPt[i]->Address == endPointAddr) 
@@ -114,5 +100,5 @@ void FX3::AbortEndpointXfers(uint8_t endPointAddr)
     }
 
     WaitForXfers(endPointAddr);
-#endif
 }
+#endif
