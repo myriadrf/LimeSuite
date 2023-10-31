@@ -15,6 +15,7 @@
 #include <vector>
 #include <chrono>
 #include <mutex>
+#include <array>
 
 extern "C" {
 #include "trx_driver.h"
