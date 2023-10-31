@@ -2,10 +2,10 @@ set(oglGraph_src_files
 	dlgMarkers.cpp
 	GLFont.cpp
 	OpenGLGraph.cpp
-	glew/glew.c
+	${PROJECT_SOURCE_DIR}/external/glew/glew.c
 )
-include_directories(glew)
-include_directories(glew/GL)
+
+include_directories(${PROJECT_SOURCE_DIR}/external/glew)
 
 #ignore warnings about narrowing: static font header
 if(CMAKE_COMPILER_IS_GNUCXX)

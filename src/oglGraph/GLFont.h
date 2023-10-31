@@ -1,7 +1,7 @@
 #ifndef GL_FONT_H
 #define GL_FONT_H
 
-#include "glew/GL/glew.h"
+#include "GL/glew.h"
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
 #else
