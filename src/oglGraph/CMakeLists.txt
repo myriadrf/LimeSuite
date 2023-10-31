@@ -5,8 +5,6 @@ set(oglGraph_src_files
 	${PROJECT_SOURCE_DIR}/external/glew/glew.c
 )
 
-include_directories(${PROJECT_SOURCE_DIR}/external/glew)
-
 #ignore warnings about narrowing: static font header
 if(CMAKE_COMPILER_IS_GNUCXX)
 	add_definitions(-Wno-narrowing)
@@ -29,6 +27,7 @@ message(STATUS "OPENGL_LIBRARIES: ${OPENGL_LIBRARIES}")
 target_include_directories(oglGraph PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${OPENGL_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/external/glew
 )
 
 if (APPLE)
