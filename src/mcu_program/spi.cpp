@@ -4,11 +4,13 @@
 static lime::LMS7002M* serPort;
 
 extern float bandwidthRF;
+extern float RefClk;
 
 void SetupCalibrations(lime::LMS7002M* chip, double BW)
 {
     serPort = chip;
     bandwidthRF = BW;
+    RefClk = chip->GetReferenceClk_SX(false);
 }
 
 #include <vector>
