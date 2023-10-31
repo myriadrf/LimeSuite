@@ -16,9 +16,10 @@ namespace lime {
 
 void DeviceConnectionPanel::EnumerateDevicesToChoice()
 {
-    wxChoice *choice = cmbDevHandle;
+    wxChoice* choice = cmbDevHandle;
     choice->Clear();
-    try {
+    try
+    {
         std::vector<lime::DeviceHandle> handles;
         handles = lime::DeviceRegistry::enumerate();
 
@@ -36,8 +37,8 @@ void DeviceConnectionPanel::EnumerateDevicesToChoice()
             choice->Enable();
             btnDisconnect->Enable();
         }
-    }
-    catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         choice->Disable();
     }
 }
@@ -45,7 +46,7 @@ void DeviceConnectionPanel::EnumerateDevicesToChoice()
 DeviceConnectionPanel::DeviceConnectionPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : wxPanel(parent, id, pos, size, style, "DeviceConnectionPanel")
 {
-    wxBoxSizer *szBox = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* szBox = new wxBoxSizer(wxHORIZONTAL);
 
     szBox->Add(new wxStaticText(this, wxID_ANY, _("Device:")), 0, wxALIGN_CENTER_VERTICAL, 0);
     cmbDevHandle = new wxChoice(this, wxNewId());
@@ -69,7 +70,6 @@ DeviceConnectionPanel::DeviceConnectionPanel(wxWindow* parent, wxWindowID id, co
 
 DeviceConnectionPanel::~DeviceConnectionPanel()
 {
-
 }
 
 void DeviceConnectionPanel::SendDisconnectEvent(wxCommandEvent& inEvent)
@@ -87,5 +87,4 @@ void DeviceConnectionPanel::SendHandleChangeEvent(wxCommandEvent& inEvent)
     ProcessWindowEvent(event);
 }
 
-
-}
+} // namespace lime

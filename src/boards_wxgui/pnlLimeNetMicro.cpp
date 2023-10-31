@@ -15,12 +15,12 @@ using namespace std;
 BEGIN_EVENT_TABLE(pnlLimeNetMicro, wxPanel)
 END_EVENT_TABLE()
 
-static const std::vector<uint16_t> rxSwVal  = {0x0502, 0x0602, 0x0101, 0x0201, 0x0600, 0x0500};
-static const std::vector<uint16_t> rxSwMask = {0x0702, 0x0702, 0x0701, 0x0701, 0x0702, 0x0702};
-static const std::vector<uint16_t> txSwVal  = {0x5000, 0x6000, 0x6001, 0x5001, 0x1000, 0x2000};
-static const std::vector<uint16_t> txSwMask = {0x7001, 0x7001, 0x7001, 0x7001, 0x7002, 0x7002};
+static const std::vector<uint16_t> rxSwVal = { 0x0502, 0x0602, 0x0101, 0x0201, 0x0600, 0x0500 };
+static const std::vector<uint16_t> rxSwMask = { 0x0702, 0x0702, 0x0701, 0x0701, 0x0702, 0x0702 };
+static const std::vector<uint16_t> txSwVal = { 0x5000, 0x6000, 0x6001, 0x5001, 0x1000, 0x2000 };
+static const std::vector<uint16_t> txSwMask = { 0x7001, 0x7001, 0x7001, 0x7001, 0x7002, 0x7002 };
 
-pnlLimeNetMicro::pnlLimeNetMicro(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
+pnlLimeNetMicro::pnlLimeNetMicro(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
 {
     lmsControl = nullptr;
 
@@ -72,7 +72,7 @@ void pnlLimeNetMicro::Initialize(lms_device_t* pControl)
         uint16_t reg3 = 0;
         if (LMS_ReadFPGAReg(lmsControl, 0x3, &reg3) == LMS_SUCCESS)
         {
-            int bom_ver = reg3>>4;
+            int bom_ver = reg3 >> 4;
             int hw_ver = reg3 & 0xF;
             if (hw_ver == 3 && bom_ver != 1)
             {
@@ -106,7 +106,7 @@ void pnlLimeNetMicro::OnLoopbackChange(wxCommandEvent& event)
 
     uint16_t reg3 = 0;
     LMS_ReadFPGAReg(lmsControl, 0x3, &reg3);
-    int bom_ver = reg3>>4;
+    int bom_ver = reg3 >> 4;
     int hw_ver = reg3 & 0xF;
 
     if (hw_ver == 3 && bom_ver != 1)
@@ -119,7 +119,7 @@ void pnlLimeNetMicro::OnLoopbackChange(wxCommandEvent& event)
             if ((value & txSwMask[cmbTxPath->GetSelection()]) != txSwVal[cmbTxPath->GetSelection()])
             {
                 for (unsigned index = 0; index < txSwVal.size(); index++)
-                    if (txSwVal[index] == (value&txSwMask[index]))
+                    if (txSwVal[index] == (value & txSwMask[index]))
                     {
                         cmbTxPath->SetSelection(index);
                         break;
@@ -134,21 +134,20 @@ void pnlLimeNetMicro::OnLoopbackChange(wxCommandEvent& event)
             if ((value & rxSwMask[cmbRxPath->GetSelection()]) != rxSwVal[cmbRxPath->GetSelection()])
             {
                 for (unsigned index = 0; index < rxSwVal.size(); index++)
-                    if (rxSwVal[index] == (value&rxSwMask[index]))
+                    if (rxSwVal[index] == (value & rxSwMask[index]))
                     {
                         cmbRxPath->SetSelection(index);
                         break;
                     }
             }
         }
-
     }
     else
     {
-        value |= cmbRxPath->GetSelection() == 1 ? 1<<9 : 1<<8;
-        value |= cmbTxPath->GetSelection() == 1 ? 1<<13 : 1<<12;
+        value |= cmbRxPath->GetSelection() == 1 ? 1 << 9 : 1 << 8;
+        value |= cmbTxPath->GetSelection() == 1 ? 1 << 13 : 1 << 12;
     }
-    if(LMS_WriteFPGAReg(lmsControl,addr, value))
+    if (LMS_WriteFPGAReg(lmsControl, addr, value))
         wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
 }
 
@@ -156,26 +155,26 @@ void pnlLimeNetMicro::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(LMS_ReadFPGAReg(lmsControl,addr, &value))
+    if (LMS_ReadFPGAReg(lmsControl, addr, &value))
     {
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     uint16_t reg3 = 0;
     LMS_ReadFPGAReg(lmsControl, 0x3, &reg3);
-    int bom_ver = reg3>>4;
+    int bom_ver = reg3 >> 4;
     int hw_ver = reg3 & 0xF;
 
     if (hw_ver == 3 && bom_ver != 1)
     {
         for (unsigned index = 0; index < txSwVal.size(); index++)
-        if (txSwVal[index] == (value&txSwMask[index]))
+            if (txSwVal[index] == (value & txSwMask[index]))
             {
                 cmbTxPath->SetSelection(index);
                 break;
             }
         for (unsigned index = 0; index < rxSwVal.size(); index++)
-        if (rxSwVal[index] == (value&rxSwMask[index]))
+            if (rxSwVal[index] == (value & rxSwMask[index]))
             {
                 cmbRxPath->SetSelection(index);
                 break;
@@ -189,12 +188,12 @@ void pnlLimeNetMicro::UpdatePanel()
     pnl_gpio->UpdatePanel();
 }
 
-void pnlLimeNetMicro::OnReadAll(wxCommandEvent &event)
+void pnlLimeNetMicro::OnReadAll(wxCommandEvent& event)
 {
     UpdatePanel();
 }
 
-void pnlLimeNetMicro::OnWriteAll(wxCommandEvent &event)
+void pnlLimeNetMicro::OnWriteAll(wxCommandEvent& event)
 {
     OnLoopbackChange(event);
     pnl_gpio->OnUsrGPIODirChange(event);

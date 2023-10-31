@@ -10,9 +10,10 @@ using namespace lime;
 
 int LMS7002M::CalibrateInternalADC(int clkDiv)
 {
-    if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
+    if (Get_SPI_Reg_bits(LMS7_MASK) == 0)
         return ReportError(ENOTSUP, "Operation not supported");
-    if (!controlPort){
+    if (!controlPort)
+    {
         lime::error("No device connected");
         return -1;
     }
@@ -31,9 +32,9 @@ int LMS7002M::CalibrateInternalADC(int clkDiv)
 
     uint8_t bias = Get_SPI_Reg_bits(LMS7_RSSI_BIAS);
     uint16_t regValue = SPI_read(0x0601, true);
-    while( ((regValue >> 5) & 0x1) != 1)
+    while (((regValue >> 5) & 0x1) != 1)
     {
-        if(bias > 31)
+        if (bias > 31)
         {
             lime::error("Temperature internal ADC calibration failed");
             return -2;
@@ -50,9 +51,10 @@ int LMS7002M::CalibrateInternalADC(int clkDiv)
 
 int LMS7002M::CalibrateRP_BIAS()
 {
-    if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
+    if (Get_SPI_Reg_bits(LMS7_MASK) == 0)
         return ReportError(ENOTSUP, "Operation not supported");
-    if (!controlPort){
+    if (!controlPort)
+    {
         lime::error("No device connected");
         return -1;
     }
@@ -68,10 +70,10 @@ int LMS7002M::CalibrateRP_BIAS()
     uint16_t Vref = (reg606 >> 8) & 0xFF;
     uint16_t Vptat = reg606 & 0xFF;
 
-    if(Vref > Vptat)
+    if (Vref > Vptat)
     {
         uint16_t rpCalib = Get_SPI_Reg_bits(LMS7_RP_CALIB_BIAS, true);
-        while(Vref > Vptat)
+        while (Vref > Vptat)
         {
             --rpCalib;
             Modify_SPI_Reg_bits(LMS7_RP_CALIB_BIAS, rpCalib);
@@ -80,10 +82,10 @@ int LMS7002M::CalibrateRP_BIAS()
             Vptat = reg606 & 0xFF;
         }
     }
-    if(Vref < Vptat)
+    if (Vref < Vptat)
     {
         uint16_t rpCalib = Get_SPI_Reg_bits(LMS7_RP_CALIB_BIAS, true);
-        while(Vref < Vptat)
+        while (Vref < Vptat)
         {
             ++rpCalib;
             Modify_SPI_Reg_bits(LMS7_RP_CALIB_BIAS, rpCalib);
@@ -92,6 +94,6 @@ int LMS7002M::CalibrateRP_BIAS()
             Vptat = reg606 & 0xFF;
         }
     }
-    Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux );
+    Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
     return 0;
 }

@@ -18,53 +18,60 @@
 
 constexpr int MAX_GUI_CHANNELS_COUNT = 2;
 
-struct ChannelConfigGUI
-{
-  wxCheckBox* enable;
-  wxChoice* path;
-  wxChoice* gain;
-  wxTextCtrl* lpf;
-  wxTextCtrl* nco;
+struct ChannelConfigGUI {
+    wxCheckBox* enable;
+    wxChoice* path;
+    wxChoice* gain;
+    wxTextCtrl* lpf;
+    wxTextCtrl* nco;
 };
 
-struct SDRConfigGUI
-{
-  wxStaticBox* titledBox;
-  wxTextCtrl* rxLO;
-  wxTextCtrl* txLO;
-  wxCheckBox* tdd;
-  wxTextCtrl* sampleRate;
-  wxChoice* decimation;
-  wxChoice* interpolation;
-  ChannelConfigGUI rx[MAX_GUI_CHANNELS_COUNT];
-  ChannelConfigGUI tx[MAX_GUI_CHANNELS_COUNT];
+struct SDRConfigGUI {
+    wxStaticBox* titledBox;
+    wxTextCtrl* rxLO;
+    wxTextCtrl* txLO;
+    wxCheckBox* tdd;
+    wxTextCtrl* sampleRate;
+    wxChoice* decimation;
+    wxChoice* interpolation;
+    ChannelConfigGUI rx[MAX_GUI_CHANNELS_COUNT];
+    ChannelConfigGUI tx[MAX_GUI_CHANNELS_COUNT];
 };
 
 class SOCConfig_view : public wxPanel
 {
-public:
-  SOCConfig_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
-  void Setup(lime::SDRDevice *sdrDevice, int index);
-  void UpdateGUI(const lime::SDRDevice::SDRConfig &config);
+  public:
+    SOCConfig_view(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxTAB_TRAVERSAL);
+    void Setup(lime::SDRDevice* sdrDevice, int index);
+    void UpdateGUI(const lime::SDRDevice::SDRConfig& config);
 
-  void SubmitConfig(wxCommandEvent &event);
-protected:
-  SDRConfigGUI gui;
-  lime::SDRDevice *sdrDevice;
-  int socIndex;
+    void SubmitConfig(wxCommandEvent& event);
+
+  protected:
+    SDRConfigGUI gui;
+    lime::SDRDevice* sdrDevice;
+    int socIndex;
 };
 
 class SDRConfiguration_view : public ISOCPanel
 {
   public:
-    SDRConfiguration_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
-    void Setup(lime::SDRDevice *device);
+    SDRConfiguration_view(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxTAB_TRAVERSAL);
+    void Setup(lime::SDRDevice* device);
 
   protected:
     SDRConfiguration_view() = delete;
     std::vector<SOCConfig_view*> socGUI;
-    lime::SDRDevice *sdrDevice;
-    wxFlexGridSizer *mainSizer;
+    lime::SDRDevice* sdrDevice;
+    wxFlexGridSizer* mainSizer;
 };
 
 #endif // LIME_SDR_CONFIGURATION_VIEW

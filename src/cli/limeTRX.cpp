@@ -11,7 +11,7 @@
 #include <mutex>
 #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
-#include "gnuPlotPipe.h"
+    #include "gnuPlotPipe.h"
 #endif
 
 using namespace lime;
@@ -20,7 +20,8 @@ using namespace std;
 std::mutex globalGnuPlotMutex; // seems multiple plot pipes can't be used concurently
 
 bool stopProgram(false);
-void intHandler(int dummy) {
+void intHandler(int dummy)
+{
     //std::cerr << "Stoppping\n";
     stopProgram = true;
 }
@@ -68,8 +69,7 @@ static int printHelp(void)
     return EXIT_SUCCESS;
 }
 
-enum Args
-{
+enum Args {
     HELP = 'h',
     DEVICE = 'd',
     CHIP = 'c',
@@ -88,18 +88,17 @@ enum Args
 
 class FFTPlotter
 {
-public:
+  public:
     FFTPlotter(float sampleRate, int fftSize, bool persistent)
-        : plot(persistent), sampleRate(sampleRate), doWork(false)
+        : plot(persistent)
+        , sampleRate(sampleRate)
+        , doWork(false)
     {
         bins.resize(fftSize);
-        plot.writef("set xrange[%f:%f]\n set yrange[%i:%i]\n", -sampleRate/2, sampleRate/2, -120, 0);
+        plot.writef("set xrange[%f:%f]\n set yrange[%i:%i]\n", -sampleRate / 2, sampleRate / 2, -120, 0);
         plot.flush();
     }
-    ~FFTPlotter()
-    {
-        Stop();
-    }
+    ~FFTPlotter() { Stop(); }
 
     void Start()
     {
@@ -126,11 +125,11 @@ public:
         plotDataReady.notify_one();
     }
 
-private:
+  private:
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
-        while(doWork)
+        while (doWork)
         {
             if (plotDataReady.wait_for(lk, std::chrono::milliseconds(2000)) == std::cv_status::timeout)
             {
@@ -143,10 +142,10 @@ private:
             std::unique_lock<std::mutex> glk(globalGnuPlotMutex);
             plot.write("plot '-' with lines\n");
             const int fftSize = bins.size();
-            for (int j = fftSize/2; j < fftSize; ++j)
-                plot.writef("%f %f\n", sampleRate*(j-fftSize)/fftSize, bins[j]);
-            for (int j = 0; j < fftSize/2; ++j)
-                plot.writef("%f %f\n", sampleRate*j/fftSize, bins[j]);
+            for (int j = fftSize / 2; j < fftSize; ++j)
+                plot.writef("%f %f\n", sampleRate * (j - fftSize) / fftSize, bins[j]);
+            for (int j = 0; j < fftSize / 2; ++j)
+                plot.writef("%f %f\n", sampleRate * j / fftSize, bins[j]);
             plot.write("e\n");
             plot.flush();
         }
@@ -163,17 +162,15 @@ private:
 
 class ConstellationPlotter
 {
-public:
+  public:
     ConstellationPlotter(int range, bool persistent)
-        : plot(persistent), doWork(false)
+        : plot(persistent)
+        , doWork(false)
     {
         plot.writef("set size square\n set xrange[%i:%i]\n set yrange[%i:%i]\n", -range, range, -range, range);
         plot.flush();
     }
-    ~ConstellationPlotter()
-    {
-        Stop();
-    }
+    ~ConstellationPlotter() { Stop(); }
 
     void Start()
     {
@@ -200,11 +197,11 @@ public:
         plotDataReady.notify_one();
     }
 
-private:
+  private:
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
-        while(doWork)
+        while (doWork)
         {
             if (plotDataReady.wait_for(lk, std::chrono::milliseconds(2000)) == std::cv_status::timeout)
             {
@@ -249,23 +246,21 @@ int main(int argc, char** argv)
     bool repeater = false;
     int64_t repeaterDelay = 0;
     SDRDevice::StreamConfig::DataFormat linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
-    static struct option long_options[] = {
-        {"help", no_argument, 0, Args::HELP},
-        {"device", required_argument, 0, Args::DEVICE},
-        {"chip", required_argument, 0, Args::CHIP},
-        {"input", required_argument, 0, Args::INPUT},
-        {"output", required_argument, 0, Args::OUTPUT},
-        {"looptx", no_argument, 0, Args::LOOPTX},
-        {"samplesCount", required_argument, 0, Args::SAMPLES_COUNT},
-        {"time", required_argument, 0, Args::TIME},
-        {"fft", no_argument, 0, Args::FFT},
-        {"constellation", no_argument, 0, Args::CONSTELLATION},
-        {"log", required_argument, 0, Args::LOG},
-        {"mimo", optional_argument, 0, Args::MIMO},
-        {"repeater", optional_argument, 0, Args::REPEATER},
-        {"linkFormat", required_argument, 0, Args::LINKFORMAT},
-        {0, 0, 0,  0}
-    };
+    static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
+        { "device", required_argument, 0, Args::DEVICE },
+        { "chip", required_argument, 0, Args::CHIP },
+        { "input", required_argument, 0, Args::INPUT },
+        { "output", required_argument, 0, Args::OUTPUT },
+        { "looptx", no_argument, 0, Args::LOOPTX },
+        { "samplesCount", required_argument, 0, Args::SAMPLES_COUNT },
+        { "time", required_argument, 0, Args::TIME },
+        { "fft", no_argument, 0, Args::FFT },
+        { "constellation", no_argument, 0, Args::CONSTELLATION },
+        { "log", required_argument, 0, Args::LOG },
+        { "mimo", optional_argument, 0, Args::MIMO },
+        { "repeater", optional_argument, 0, Args::REPEATER },
+        { "linkFormat", required_argument, 0, Args::LINKFORMAT },
+        { 0, 0, 0, 0 } };
 
     int long_index = 0;
     int option = 0;
@@ -276,19 +271,29 @@ int main(int argc, char** argv)
         case Args::HELP:
             return printHelp();
         case Args::DEVICE:
-            if (optarg != NULL) devName = optarg;
+            if (optarg != NULL)
+                devName = optarg;
             break;
         case Args::CHIP:
-            if (optarg != NULL) chipIndex = stoi(optarg);
+            if (optarg != NULL)
+                chipIndex = stoi(optarg);
             break;
         case Args::OUTPUT:
-            if (optarg != NULL) {rx = true; rxFilename = optarg; }
+            if (optarg != NULL)
+            {
+                rx = true;
+                rxFilename = optarg;
+            }
             break;
         case Args::LOOPTX:
             loopTx = true;
             break;
         case Args::INPUT:
-            if (optarg != NULL) {tx = true; txFilename = optarg; }
+            if (optarg != NULL)
+            {
+                tx = true;
+                txFilename = optarg;
+            }
             break;
         case Args::SAMPLES_COUNT:
             samplesToCollect = stoi(optarg);
@@ -296,10 +301,17 @@ int main(int argc, char** argv)
         case Args::TIME:
             workTime = stoi(optarg);
             break;
-        case Args::FFT: showFFT = true; break;
-        case Args::CONSTELLATION: showConstelation = true; break;
+        case Args::FFT:
+            showFFT = true;
+            break;
+        case Args::CONSTELLATION:
+            showConstelation = true;
+            break;
         case Args::LOG:
-            if (optarg != NULL) {logVerbosity = strToLogLevel(optarg); }
+            if (optarg != NULL)
+            {
+                logVerbosity = strToLogLevel(optarg);
+            }
             break;
         case Args::MIMO:
             if (optarg != NULL)
@@ -310,7 +322,10 @@ int main(int argc, char** argv)
         case Args::REPEATER:
             repeater = true;
             tx = true;
-            if (optarg != NULL) {repeaterDelay = stoi(optarg); }
+            if (optarg != NULL)
+            {
+                repeaterDelay = stoi(optarg);
+            }
             break;
         case Args::LINKFORMAT:
             if (optarg != NULL)
@@ -359,25 +374,26 @@ int main(int argc, char** argv)
     device->SetMessageLogCallback(LogCallback);
     //device->Init();
 
-    try {
+    try
+    {
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
         stream.rxCount = rx ? channelCount : 0; // rx channels count
-        for (int i=0; i<channelCount; ++i)
+        for (int i = 0; i < channelCount; ++i)
             stream.rxChannels[i] = i;
         stream.txCount = tx ? channelCount : 0;
-        for (int i=0; i<channelCount; ++i)
+        for (int i = 0; i < channelCount; ++i)
             stream.txChannels[i] = i;
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = linkFormat;
         device->StreamSetup(stream, chipIndex);
-    }
-    catch ( std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         return -1;
-    }
-    catch ( std::logic_error &e) {
+    } catch (std::logic_error& e)
+    {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         return -1;
     }
@@ -386,7 +402,7 @@ int main(int argc, char** argv)
 
     const int fftSize = 16384;
     std::vector<complex16_t> rxData[2];
-    for (int i=0; i<2; ++i)
+    for (int i = 0; i < 2; ++i)
         rxData[i].resize(fftSize);
 
     std::vector<complex16_t> txData;
@@ -400,11 +416,11 @@ int main(int argc, char** argv)
             cerr << "Failed to open file: " << txFilename << endl;
             return -1;
         }
-        inputFile.seekg (0,std::ios_base::end);
+        inputFile.seekg(0, std::ios_base::end);
         auto cnt = inputFile.tellg();
-        inputFile.seekg (0,std::ios_base::beg);
+        inputFile.seekg(0, std::ios_base::beg);
         cerr << "File size : " << cnt << " bytes." << endl;
-        txData.resize(cnt/sizeof(complex16_t));
+        txData.resize(cnt / sizeof(complex16_t));
         inputFile.read((char*)txData.data(), cnt);
         inputFile.close();
     }
@@ -441,7 +457,7 @@ int main(int argc, char** argv)
     SDRDevice::StreamMeta rxMeta;
     SDRDevice::StreamMeta txMeta;
     txMeta.useTimestamp = true;
-    txMeta.timestamp = sampleRate/100; // send tx samples 10ms after start
+    txMeta.timestamp = sampleRate / 100; // send tx samples 10ms after start
 
     if (showFFT)
         fftplot.Start();
@@ -460,17 +476,17 @@ int main(int argc, char** argv)
         if (samplesToCollect != 0 && totalSamplesReceived > samplesToCollect)
             break;
 
-        int toSend = txData.size()-txSent > fftSize ? fftSize : txData.size()-txSent;
+        int toSend = txData.size() - txSent > fftSize ? fftSize : txData.size() - txSent;
         if (tx && !repeater)
         {
             if (loopTx && toSend == 0)
             {
                 txSent = 0;
-                toSend = txData.size()-txSent > fftSize ? fftSize : txData.size()-txSent;
+                toSend = txData.size() - txSent > fftSize ? fftSize : txData.size() - txSent;
             }
             if (toSend > 0)
             {
-                const complex16_t* txSamples[2] = {&txData[txSent], &txData[txSent]};
+                const complex16_t* txSamples[2] = { &txData[txSent], &txData[txSent] };
                 int samplesSent = device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
                 if (samplesSent > 0)
                 {
@@ -480,14 +496,14 @@ int main(int argc, char** argv)
             }
         }
 
-        complex16_t* rxSamples[2] = {rxData[0].data(), rxData[1].data()};
+        complex16_t* rxSamples[2] = { rxData[0].data(), rxData[1].data() };
         int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
 
         if (tx && repeater)
         {
-            txMeta.timestamp = rxMeta.timestamp+samplesRead+repeaterDelay;
+            txMeta.timestamp = rxMeta.timestamp + samplesRead + repeaterDelay;
             txMeta.useTimestamp = true;
             txMeta.flush = true;
             int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesRead, &txMeta);
@@ -497,11 +513,11 @@ int main(int argc, char** argv)
         totalSamplesReceived += samplesRead;
         if (rxFilename)
         {
-            rxFile.write((char*)rxSamples[0], samplesRead*sizeof(lime::complex16_t));
+            rxFile.write((char*)rxSamples[0], samplesRead * sizeof(lime::complex16_t));
         }
 
         t2 = std::chrono::high_resolution_clock::now();
-        const bool doUpdate = t2-t1 > std::chrono::milliseconds(500);
+        const bool doUpdate = t2 - t1 > std::chrono::milliseconds(500);
         if (doUpdate)
             t1 = t2;
 
@@ -511,15 +527,16 @@ int main(int argc, char** argv)
             {
                 for (unsigned i = 0; i < fftSize; ++i)
                 {
-                    m_fftCalcIn[i].r = rxSamples[0][i].i/32768.0;
-                    m_fftCalcIn[i].i = rxSamples[0][i].q/32768.0;
+                    m_fftCalcIn[i].r = rxSamples[0][i].i / 32768.0;
+                    m_fftCalcIn[i].i = rxSamples[0][i].q / 32768.0;
                 }
                 kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
-                for (unsigned int i = 0; i<fftSize; ++i)
+                for (unsigned int i = 0; i < fftSize; ++i)
                 {
-                    float amplitude = ((m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*fftSize));
+                    float amplitude =
+                        ((m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i) / (fftSize * fftSize));
 
-                    float output = amplitude > 0 ? 10*log10(amplitude) : -150;
+                    float output = amplitude > 0 ? 10 * log10(amplitude) : -150;
                     fftBins[i] = output;
                     // exlude DC from amplitude comparison, the 0 bin
                     if (output > peakAmplitude && i > 0)
@@ -532,7 +549,9 @@ int main(int argc, char** argv)
                     peakFrequency = peakFrequency - sampleRate;
 
                 printf("Samples received: %li, Peak amplitude %.2f dBFS @ %.3f MHz\n",
-                    totalSamplesReceived, peakAmplitude, (frequencyLO+peakFrequency)/1e6);
+                    totalSamplesReceived,
+                    peakAmplitude,
+                    (frequencyLO + peakFrequency) / 1e6);
                 peakAmplitude = -1000;
 #ifdef USE_GNU_PLOT
                 fftplot.SubmitData(fftBins);

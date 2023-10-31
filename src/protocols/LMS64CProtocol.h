@@ -11,10 +11,9 @@
 #include "LMSBoards.h"
 #include "limesuite/SDRDevice.h"
 
-namespace lime{
+namespace lime {
 
-struct LMS64CPacket
-{
+struct LMS64CPacket {
     static constexpr int size = 64;
     static constexpr int payloadSize = 56;
     static constexpr int headerSize = size - payloadSize;
@@ -30,18 +29,16 @@ struct LMS64CPacket
 
 class ISerialPort
 {
-public:
+  public:
     virtual ~ISerialPort(){};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
 };
 
-namespace LMS64CProtocol
-{
+namespace LMS64CProtocol {
 
-enum eCMD_LMS
-{
+enum eCMD_LMS {
     CMD_GET_INFO = 0x00,
     CMD_LMS6002_RST = 0x10,
     ///Writes data to SI5356 synthesizer via I2C
@@ -86,8 +83,8 @@ enum eCMD_LMS
     CMD_ALTERA_FPGA_GW_WR = 0x53,
     CMD_ALTERA_FPGA_GW_RD = 0x54,
 
-    CMD_BRDSPI_WR = 0x55,//16 bit spi for stream, dataspark control
-    CMD_BRDSPI_RD = 0x56,//16 bit spi for stream, dataspark control
+    CMD_BRDSPI_WR = 0x55, //16 bit spi for stream, dataspark control
+    CMD_BRDSPI_RD = 0x56, //16 bit spi for stream, dataspark control
     CMD_BRDSPI8_WR = 0x57, //8 + 8 bit spi for stream, dataspark control
     CMD_BRDSPI8_RD = 0x58, //8 + 8 bit spi for stream, dataspark control
 
@@ -104,8 +101,7 @@ enum eCMD_LMS
     CMD_MEMORY_RD = 0x8D
 };
 
-enum eCMD_STATUS
-{
+enum eCMD_STATUS {
     STATUS_UNDEFINED,
     STATUS_COMPLETED_CMD,
     STATUS_UNKNOWN_CMD,
@@ -117,8 +113,7 @@ enum eCMD_STATUS
     STATUS_COUNT
 };
 
-enum ProgramWriteTarget
-{
+enum ProgramWriteTarget {
     HPM,
     FX3, //
     FPGA, // prog_modes: 0-bitstream to FPGA, 1-to FLASH, 2-bitstream from FLASH
@@ -126,8 +121,7 @@ enum ProgramWriteTarget
     PROGRAM_WRITE_TARGET_COUNT
 };
 
-struct FirmwareInfo
-{
+struct FirmwareInfo {
     int deviceId;
     int expansionBoardId;
     int firmware;
@@ -138,26 +132,38 @@ struct FirmwareInfo
 int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice = 0);
 void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descriptor);
 
-int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
-int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t *miso, size_t count, uint32_t subDevice = 0);
+int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t* miso, size_t count, uint32_t subDevice = 0);
+int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t* miso, size_t count, uint32_t subDevice = 0);
 int ADF4002_SPI(ISerialPort& port, const uint32_t* mosi, size_t count, uint32_t subDevice = 0);
 
 int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
 int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
 
-int GPIODirRead(ISerialPort& port, uint8_t *buffer, const size_t bufLength);
-int GPIORead(ISerialPort& port, uint8_t *buffer, const size_t bufLength);
-int GPIODirWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength);
-int GPIOWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength);
+int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
+int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
+int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
+int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
 
-int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *values, const size_t count, const std::string& units, uint32_t subDevice = 0);
-int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, const size_t count, std::string* units, uint32_t subDevice = 0);
+int CustomParameterWrite(ISerialPort& port,
+    const int32_t* ids,
+    const double* values,
+    const size_t count,
+    const std::string& units,
+    uint32_t subDevice = 0);
+int CustomParameterRead(
+    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::string* units, uint32_t subDevice = 0);
 
-typedef bool(*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
-int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mode, ProgramWriteTarget device, ProgressCallback callback = nullptr, uint32_t subDevice = 0);
+typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
+int ProgramWrite(ISerialPort& port,
+    const char* data,
+    size_t length,
+    int prog_mode,
+    ProgramWriteTarget device,
+    ProgressCallback callback = nullptr,
+    uint32_t subDevice = 0);
 
 int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice = 0);
 
-}
+} // namespace LMS64CProtocol
 
-}
+} // namespace lime

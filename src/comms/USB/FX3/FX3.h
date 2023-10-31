@@ -11,24 +11,24 @@
 #include <ciso646>
 
 #ifndef __unix__
-#include "windows.h"
-#include "CyAPI.h"
+    #include "windows.h"
+    #include "CyAPI.h"
 #else
-#include <libusb.h>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
+    #include <libusb.h>
+    #include <mutex>
+    #include <condition_variable>
+    #include <chrono>
 #endif
 
-namespace lime
-{
+namespace lime {
 
 /** @brief Wrapper class for holding USB asynchronous transfers contexts
 */
 class USBTransferContext_FX3 : public USBTransferContext
 {
-public:
-    USBTransferContext_FX3() : USBTransferContext()
+  public:
+    USBTransferContext_FX3()
+        : USBTransferContext()
     {
 #ifndef __unix__
         inOvLap = new OVERLAPPED;
@@ -54,7 +54,7 @@ public:
     }
     bool reset()
     {
-        if(used)
+        if (used)
             return false;
 #ifndef __unix__
         CloseHandle(inOvLap->hEvent);
@@ -78,29 +78,32 @@ public:
 
 class FX3 : public USBGeneric
 {
-public:
+  public:
     FX3(void* usbContext = nullptr);
     virtual ~FX3();
 
-    virtual bool Connect(uint16_t vid, uint16_t pid, const std::string &serial = "") override;
+    virtual bool Connect(uint16_t vid, uint16_t pid, const std::string& serial = "") override;
     virtual bool IsConnected() override;
     virtual void Disconnect() override;
 
-    virtual int32_t BulkTransfer(uint8_t endPoint, uint8_t *data, int length,
+    virtual int32_t BulkTransfer(
+        uint8_t endPoint, uint8_t* data, int length, int32_t timeout = USBGeneric::defaultTimeout) override;
+
+    virtual int32_t ControlTransfer(int requestType,
+        int request,
+        int value,
+        int index,
+        uint8_t* data,
+        uint32_t length,
         int32_t timeout = USBGeneric::defaultTimeout) override;
 
-    virtual int32_t ControlTransfer(int requestType, int request, int value, int index,
-        uint8_t* data, uint32_t length,
-        int32_t timeout = USBGeneric::defaultTimeout) override;
-
-    virtual int BeginDataXfer(uint8_t *buffer, uint32_t length,
-                              uint8_t endPointAddr) override;
+    virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
-    virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
+    virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 
   protected:
-    static const int USB_MAX_CONTEXTS {16}; //maximum number of contexts for asynchronous transfers
+    static const int USB_MAX_CONTEXTS{ 16 }; //maximum number of contexts for asynchronous transfers
 
     USBTransferContext_FX3* contexts;
     std::mutex contextsLock;
@@ -114,4 +117,4 @@ public:
 #endif
 };
 
-}
+} // namespace lime

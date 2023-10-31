@@ -10,9 +10,8 @@ class ISPI;
 
 class Equalizer
 {
-public:
-    struct Config
-    {
+  public:
+    struct Config {
         struct CFR // (Crest Factor Reduction) controls
         {
             bool bypass;
@@ -33,25 +32,24 @@ public:
         bool bypassRxEqualizer[2];
         bool bypassTxEqualizer[2];
 
-        Config() {
-            memset(this, 0, sizeof(Config));
-        }
+        Config() { memset(this, 0, sizeof(Config)); }
     };
 
     Equalizer(ISPI* comms, uint32_t spiBusAddr);
     ~Equalizer();
-    void Configure(const Equalizer::Config &cfg);
+    void Configure(const Equalizer::Config& cfg);
 
     void SetOversample(uint8_t oversample);
     uint8_t GetOversample();
-private:
-    ISPI *m_Comms;
-    uint32_t mSPIbusAddr;
-    void WriteRegister(const Register &reg, uint16_t value);
-    uint16_t ReadRegister(const Register &reg);
 
-    void SetFIRCoefficients(const int16_t *coefficients, uint16_t count);
+  private:
+    ISPI* m_Comms;
+    uint32_t mSPIbusAddr;
+    void WriteRegister(const Register& reg, uint16_t value);
+    uint16_t ReadRegister(const Register& reg);
+
+    void SetFIRCoefficients(const int16_t* coefficients, uint16_t count);
     void UpdateHannCoeff(uint16_t Filt_N);
 };
 
-}
+} // namespace lime

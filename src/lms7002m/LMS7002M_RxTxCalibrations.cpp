@@ -8,7 +8,7 @@
 #include "LMSBoards.h"
 
 #ifndef NDEBUG
-#define LMS_VERBOSE_OUTPUT
+    #define LMS_VERBOSE_OUTPUT
 #endif
 
 #ifdef LMS_VERBOSE_OUTPUT
@@ -39,7 +39,7 @@ using namespace lime;
 //     int mLoopbackState;
 // };
 
-static uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
+static uint8_t GetExtLoopPair(lime::LMS7002M& ctr, bool calibratingTx)
 {
     uint8_t loopPair = 0;
     // TODO;
@@ -72,15 +72,17 @@ static inline int16_t signextIqCorr(const uint16_t regVal)
 const double TrxCalib_RF_LimitLow = 2.5e6;
 const double TrxCalib_RF_LimitHigh = 120e6;
 
-static const char cSquaresLine[] =
-    "############################################################\n";
-static const char cDashLine[] =
-    "------------------------------------------------------------\n";
+static const char cSquaresLine[] = "############################################################\n";
+static const char cDashLine[] = "------------------------------------------------------------\n";
 
 #define verbose_printf(...) \
-    do { if (verboseEnabled) {\
-        fprintf(stderr, __VA_ARGS__);\
-    }} while (0)
+    do \
+    { \
+        if (verboseEnabled) \
+        { \
+            fprintf(stderr, __VA_ARGS__); \
+        } \
+    } while (0)
 
 static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& param)
 {
@@ -91,7 +93,7 @@ static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& par
     uint16_t value = lmsControl->SPI_read(param.address, true);
     lmsControl->SPI_write(param.address, value & ~0xC000);
     int16_t result = (value & mask);
-    if(value& (mask+1))
+    if (value & (mask + 1))
         result *= -1;
     return result;
 }
@@ -174,7 +176,7 @@ static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
 */
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
 */
-uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
+uint32_t LMS7002M::GetRSSI(RSSI_measurements* measurements)
 {
     //delay to make sure RSSI gets enough samples to refresh before reading it
     this_thread::sleep_for(chrono::microseconds(50));
@@ -191,20 +193,22 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz)
     {
-        lime::warning("Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitLow/1e6, bandwidth_Hz/1e6);
+        lime::warning(
+            "Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitLow / 1e6, bandwidth_Hz / 1e6);
         bandwidth_Hz = TrxCalib_RF_LimitLow;
     }
     else if (bandwidth_Hz > TrxCalib_RF_LimitHigh)
     {
-        lime::warning("Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh/1e6, bandwidth_Hz/1e6);
+        lime::warning(
+            "Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh / 1e6, bandwidth_Hz / 1e6);
         bandwidth_Hz = TrxCalib_RF_LimitHigh;
     }
-    if(controlPort == nullptr)
+    if (controlPort == nullptr)
         return ReportError(EINVAL, "Tx Calibration: Device not connected");
     auto beginTime = std::chrono::high_resolution_clock::now();
     int status;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
-    if(ch == 0 || ch == 3)
+    if (ch == 0 || ch == 3)
         return ReportError(EINVAL, "Tx Calibration: Incorrect channel selection MAC %i", ch);
 
     //caching variables
@@ -212,24 +216,23 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     uint8_t channel = ch == 1 ? 0 : 1;
     int band = Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF) ? 0 : 1;
 
-    int dccorri(0), dccorrq(0), gcorri(0), gcorrq(0),phaseOffset(0);
-    verbose_printf("Tx calibration using MCU %s loopback\n",
-                    useExtLoopback ? "EXTERNAL" : "INTERNAL");
+    int dccorri(0), dccorrq(0), gcorri(0), gcorrq(0), phaseOffset(0);
+    verbose_printf("Tx calibration using MCU %s loopback\n", useExtLoopback ? "EXTERNAL" : "INTERNAL");
     verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i\n",
-                    channel ? "B" : "A",
-                    txFreq/1e6,
-                    bandwidth_Hz/1e6,
-                    band ? "BAND2" : "BAND1",
-                    Get_SPI_Reg_bits(LMS7_CG_IAMP_TBB));
+        channel ? "B" : "A",
+        txFreq / 1e6,
+        bandwidth_Hz / 1e6,
+        band ? "BAND2" : "BAND1",
+        Get_SPI_Reg_bits(LMS7_CG_IAMP_TBB));
 
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
-    verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
-        mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full":"unknown");
-    if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+    verbose_printf(
+        "Current MCU firmware: %i, %s\n", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
+    if (mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         verbose_printf("Uploading DC/IQ calibration firmware\n");
         status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
-        if(status != 0)
+        if (status != 0)
             return status;
     }
 
@@ -241,8 +244,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
 
     {
-       //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
-        if(useExtLoopback)
+        //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
+        if (useExtLoopback)
         {
             // TODO:
             // status = SetExtLoopback(controlPort, ch, true, true);
@@ -253,13 +256,13 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         }
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
-        if(status != MCU_BD::MCU_NO_ERROR)
+        if (status != MCU_BD::MCU_NO_ERROR)
             return ReportError(EINVAL, "Tx Calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache
-    const std::vector<uint16_t> regsToSync = {0x0208, 0x05C0};
-    for(const auto addr : regsToSync)
+    const std::vector<uint16_t> regsToSync = { 0x0208, 0x05C0 };
+    for (const auto addr : regsToSync)
         this->SPI_read(addr, true);
 
     //need to read back calibration results
@@ -274,8 +277,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     verbose_printf("---+-----+------+------\n");
     verbose_printf("I: | %3i | %4i | %i\n", dccorri, gcorri, phaseOffset);
     verbose_printf("Q: | %3i | %4i |\n", dccorrq, gcorrq);
-    int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::high_resolution_clock::now()-beginTime).count();
+    int32_t duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - beginTime).count();
     verbose_printf("Duration: %i ms\n", duration);
     return 0;
 }
@@ -287,15 +290,17 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz)
     {
-        lime::warning("Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitLow/1e6, bandwidth_Hz/1e6);
+        lime::warning(
+            "Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitLow / 1e6, bandwidth_Hz / 1e6);
         bandwidth_Hz = TrxCalib_RF_LimitLow;
     }
     else if (bandwidth_Hz > TrxCalib_RF_LimitHigh)
     {
-        lime::warning("Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh/1e6, bandwidth_Hz/1e6);
+        lime::warning(
+            "Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh / 1e6, bandwidth_Hz / 1e6);
         bandwidth_Hz = TrxCalib_RF_LimitHigh;
     }
-    if(controlPort == nullptr)
+    if (controlPort == nullptr)
         return ReportError(ENODEV, "Rx Calibration: Device not connected");
 #ifdef LMS_VERBOSE_OUTPUT
     auto beginTime = std::chrono::high_resolution_clock::now();
@@ -303,40 +308,51 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     int status;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
-    if(ch == 0 || ch == 3)
+    if (ch == 0 || ch == 3)
         return ReportError(EINVAL, "Rx Calibration: Incorrect channel selection MAC %i", ch);
     uint8_t channel = ch == 1 ? 0 : 1;
     uint8_t lna = (uint8_t)Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
     double rxFreq = GetFrequencySX(Rx);
 
     const char* lnaName;
-    switch(lna)
+    switch (lna)
     {
-        case 0: lnaName = "none"; break;
-        case 1: lnaName = "LNAH"; break;
-        case 2: lnaName = "LNAL"; break;
-        case 3: lnaName = "LNAW"; break;
-        default: lnaName = "none"; break;
+    case 0:
+        lnaName = "none";
+        break;
+    case 1:
+        lnaName = "LNAH";
+        break;
+    case 2:
+        lnaName = "LNAL";
+        break;
+    case 3:
+        lnaName = "LNAW";
+        break;
+    default:
+        lnaName = "none";
+        break;
     }
-    verbose_printf("Rx calibration using %s loopback\n",
-        (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
+    verbose_printf("Rx calibration using %s loopback\n", (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-                ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
-                bandwidth_Hz/1e6, lnaName,
-                Get_SPI_Reg_bits(LMS7_G_PGA_RBB),
-                Get_SPI_Reg_bits(LMS7_G_LNA_RFE),
-                Get_SPI_Reg_bits(LMS7_G_TIA_RFE));
+        ch == Channel::ChA ? "A" : "B",
+        rxFreq / 1e6,
+        bandwidth_Hz / 1e6,
+        lnaName,
+        Get_SPI_Reg_bits(LMS7_G_PGA_RBB),
+        Get_SPI_Reg_bits(LMS7_G_LNA_RFE),
+        Get_SPI_Reg_bits(LMS7_G_TIA_RFE));
 
     int dcoffi(0), dcoffq(0), gcorri(0), gcorrq(0), phaseOffset(0);
     //check if MCU has correct firmware
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
-    verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
-        mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
-    if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+    verbose_printf(
+        "Current MCU firmware: %i, %s\n", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
+    if (mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         verbose_printf("Uploading DC/IQ calibration firmware\n");
         status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
-        if(status != 0)
+        if (status != 0)
             return status;
     }
 
@@ -349,7 +365,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     {
         //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
-        if(useExtLoopback)
+        if (useExtLoopback)
         {
             // TODO:
             // status = SetExtLoopback(controlPort, ch, true, false);
@@ -361,13 +377,13 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);
         status = mcuControl->WaitForMCU(1000);
-        if(status != MCU_BD::MCU_NO_ERROR)
+        if (status != MCU_BD::MCU_NO_ERROR)
             return ReportError(EINVAL, "Rx calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache
-    const std::vector<uint16_t> regsToSync = {0x040C, 0x05C0};
-    for(const auto addr : regsToSync)
+    const std::vector<uint16_t> regsToSync = { 0x040C, 0x05C0 };
+    for (const auto addr : regsToSync)
         this->SPI_read(addr, true);
 
     //read back for cache input and print
@@ -383,8 +399,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     verbose_printf("I: | %3i | %4i | %i\n", dcoffi, gcorri, phaseOffset);
     verbose_printf("Q: | %3i | %4i |\n", dcoffq, gcorrq);
 #ifdef LMS_VERBOSE_OUTPUT
-    int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::high_resolution_clock::now()-beginTime).count();
+    int32_t duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - beginTime).count();
     verbose_printf("Duration: %i ms\n", duration);
 #endif //LMS_VERBOSE_OUTPUT
     return 0;
@@ -397,7 +413,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 */
 int LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
 {
-    if(tx)
+    if (tx)
     {
         Modify_SPI_Reg_bits(LMS7_DC_REG_TXTSP, I);
         Modify_SPI_Reg_bits(LMS7_TSGDCLDI_TXTSP, 0);

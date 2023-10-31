@@ -12,20 +12,21 @@ class wxGrid;
 class wxBoxSizer;
 class wxGridEvent;
 
-class dlgViewIRAM: public wxDialog
+class dlgViewIRAM : public wxDialog
 {
-	public:
+  public:
+    dlgViewIRAM(
+        wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
+    virtual ~dlgViewIRAM();
 
-		dlgViewIRAM(wxWindow* parent,wxWindowID id=wxID_ANY,const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize);
-		virtual ~dlgViewIRAM();
+    wxGrid* Grid1;
+    void InitGridData(const unsigned char* data);
 
-		wxGrid* Grid1;
-		void InitGridData(const unsigned char *data);
-	protected:
-		static const long ID_GRID1;
+  protected:
+    static const long ID_GRID1;
 
-	private:
-		DECLARE_EVENT_TABLE()
+  private:
+    DECLARE_EVENT_TABLE()
 };
 
 #endif

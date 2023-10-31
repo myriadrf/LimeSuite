@@ -9,7 +9,7 @@ namespace lime {
 
 class MemoryPool
 {
-public:
+  public:
     MemoryPool(int blockCount, int blockSize, int alignment, const char* name);
     ~MemoryPool();
 
@@ -17,7 +17,7 @@ public:
     void Free(void* ptr);
     int32_t MaxAllocSize() const { return mBlockSize; };
 
-private:
+  private:
     std::string name;
     int allocCnt;
     int freeCnt;
@@ -28,5 +28,5 @@ private:
     std::set<void*> ownedAddresses;
 };
 
-}
+} // namespace lime
 #endif

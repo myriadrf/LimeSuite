@@ -9,9 +9,8 @@ namespace lime {
 
 class Profiler;
 
-struct ProfilerEvent
-{
-public:
+struct ProfilerEvent {
+  public:
     int64_t startNano;
     int32_t duration;
     uint8_t category;
@@ -20,7 +19,7 @@ public:
 
 class ProfilerScope
 {
-public:
+  public:
     ProfilerScope() = delete;
     ProfilerScope(Profiler* p, const char* title, uint8_t cat = 0);
     ~ProfilerScope();
@@ -31,11 +30,11 @@ public:
 
 class Profiler
 {
-public:
+  public:
     Profiler();
     ~Profiler();
 
-    void Add(const ProfilerEvent &s);
+    void Add(const ProfilerEvent& s);
     void Done();
 
     pid_t mPID;
@@ -47,7 +46,7 @@ public:
 
 class ProfilerCollection
 {
-public:
+  public:
     ProfilerCollection();
     ~ProfilerCollection();
 
@@ -58,6 +57,6 @@ public:
 
 double GetTimeSinceStartup();
 
-}
+} // namespace lime
 
 #endif // LIME_PROFILER_H

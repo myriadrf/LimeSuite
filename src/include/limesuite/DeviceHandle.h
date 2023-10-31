@@ -18,11 +18,11 @@ namespace lime {
  */
 class LIME_API DeviceHandle
 {
-public:
+  public:
     DeviceHandle(void);
 
     //! Create from serialized string with key=value pairs
-    DeviceHandle(const std::string &args);
+    DeviceHandle(const std::string& args);
 
     /*!
      * The connection media type.
@@ -52,8 +52,8 @@ public:
     std::string ToString(void) const;
 };
 
-}
+} // namespace lime
 //! Check two connection handles for equality
-bool operator==(const lime::DeviceHandle &lhs, const lime::DeviceHandle &rhs);
+bool operator==(const lime::DeviceHandle& lhs, const lime::DeviceHandle& rhs);
 
 #endif

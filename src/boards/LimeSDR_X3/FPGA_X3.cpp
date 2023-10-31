@@ -8,16 +8,18 @@
 
 #include "Register.h"
 
-namespace lime
-{
+namespace lime {
 
-FPGA_X3::FPGA_X3(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI) : FPGA(fpgaSPI, lms7002mSPI) {}
+FPGA_X3::FPGA_X3(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI)
+    : FPGA(fpgaSPI, lms7002mSPI)
+{
+}
 
 int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
     lime::FPGA::FPGA_PLL_clock clocks[2];
 
-    std::cerr<< "FPGA_X3" << std::endl;
+    std::cerr << "FPGA_X3" << std::endl;
     printf("Phases : tx phase %f rx phase %f \n", txPhase, rxPhase);
 
     clocks[0].index = 0;
@@ -25,7 +27,7 @@ int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase
     clocks[1].index = 1;
     clocks[1].outFrequency = rxRate_Hz;
     clocks[1].phaseShift_deg = rxPhase;
-     if (FPGA_X3::SetPllFrequency(1, rxRate_Hz, clocks, 2)!=0)
+    if (FPGA_X3::SetPllFrequency(1, rxRate_Hz, clocks, 2) != 0)
         return -1;
 
     clocks[0].index = 0;
@@ -33,7 +35,7 @@ int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase
     clocks[1].index = 1;
     clocks[1].outFrequency = txRate_Hz;
     clocks[1].phaseShift_deg = txPhase;
-    if (FPGA_X3::SetPllFrequency(0, txRate_Hz, clocks, 2)!=0)  //B.J.
+    if (FPGA_X3::SetPllFrequency(0, txRate_Hz, clocks, 2) != 0) //B.J.
         return -1;
 
     return 0;
@@ -49,7 +51,7 @@ int FPGA_X3::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPG
 
 int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
-    if(channel == 1 || channel == 2)
+    if (channel == 1 || channel == 2)
         return 0;
     return FPGA::SetInterfaceFreq(txRate_Hz, rxRate_Hz, channel);
 }

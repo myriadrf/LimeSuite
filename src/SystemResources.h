@@ -11,8 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace lime
-{
+namespace lime {
 
 /*!
  * Get the root installation directory for the library.
@@ -53,7 +52,7 @@ LIME_API std::vector<std::string> listImageSearchPaths(void);
  * @param name a unique name for the resource file including file extension
  * @return the full filesystem path to the resource if it exists or empty
  */
-LIME_API std::string locateImageResource(const std::string &name);
+LIME_API std::string locateImageResource(const std::string& name);
 
 /*!
  * Download an image resource given only the file name.
@@ -61,8 +60,8 @@ LIME_API std::string locateImageResource(const std::string &name);
  * @param name a unique name for the resource file including file extension
  * @return 0 for success or error code upon error
  */
-LIME_API int downloadImageResource(const std::string &name);
+LIME_API int downloadImageResource(const std::string& name);
 
-}
+} // namespace lime
 
 #endif //LIMESUITE_SYSTEM_RESOURCES_H

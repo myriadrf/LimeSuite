@@ -21,14 +21,20 @@ class wxChoice;
 
 class LMS_Programing_wxgui : public IModuleFrame
 {
-public:
-    LMS_Programing_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY,const wxString& title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=wxDEFAULT_DIALOG_STYLE, wxString name = wxEmptyString);
+  public:
+    LMS_Programing_wxgui(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = _(""),
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        int style = wxDEFAULT_DIALOG_STYLE,
+        wxString name = wxEmptyString);
     virtual ~LMS_Programing_wxgui();
 
-    virtual bool Initialize(lime::SDRDevice *device) override;
+    virtual bool Initialize(lime::SDRDevice* device) override;
     virtual void Update() override;
 
-protected:
+  protected:
     wxChoice* cmbDevice;
     wxStaticText* lblProgressPercent;
     wxStaticText* StaticText2;
@@ -57,7 +63,7 @@ protected:
     static const long ID_CHOICE2;
     static const long ID_CHOICE1;
 
-private:
+  private:
     void OnbtnOpenClick(wxCommandEvent& event);
     void OnbtnStartProgrammingClick(wxCommandEvent& event);
     void OnAbortProgramming(wxCommandEvent& event);
@@ -66,7 +72,7 @@ private:
     void OnProgramingStatusUpdate(wxCommandEvent& event);
     void OnProgramingFinished(wxCommandEvent& event);
 
-protected:
+  protected:
     DECLARE_EVENT_TABLE()
 };
 

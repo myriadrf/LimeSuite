@@ -17,102 +17,108 @@
 #include "lms.h"
 #include "dfilter.h"
 
-#define CPREC		16	/* Coefficients precision */
-#define CSDPREC		16	/* CSD Coefficients precision */
+#define CPREC 16 /* Coefficients precision */
+#define CSDPREC 16 /* CSD Coefficients precision */
 
 /* *********************************************************************** */
-int gfir_lms(hr, hi, hcsd, n, w1, w2, a1, a2, cprec, csdprec, correction)
-  struct dfilter *hr, *hi, *hcsd;
+int gfir_lms(hr, hi, hcsd, n, w1, w2, a1, a2, cprec, csdprec, correction) struct dfilter *hr, *hi, *hcsd;
 int n;
 double w1, w2, a1, a2;
 int cprec;
 int csdprec;
 double (*correction)();
 {
-  double *weights, *desired, *w;
-  int i, points;
-  double deltaw;
+    double *weights, *desired, *w;
+    int i, points;
+    double deltaw;
 
-  int **bincode, **csdcode, **csdcoder, **xpx, **xmx, **x;
+    int **bincode, **csdcode, **csdcoder, **xpx, **xmx, **x;
 
-  /* Points on a frequency grid */
-  points = LMS_POINTS/2;
+    /* Points on a frequency grid */
+    points = LMS_POINTS / 2;
 
-  /* Allocate memory */
-  weights = (double *) calloc(2*points, sizeof(double));
-  desired = (double *) calloc(2*points, sizeof(double));
-  w = (double *) calloc(2*points, sizeof(double));
+    /* Allocate memory */
+    weights = (double*)calloc(2 * points, sizeof(double));
+    desired = (double*)calloc(2 * points, sizeof(double));
+    w = (double*)calloc(2 * points, sizeof(double));
 
-  bincode = (int **) calloc(n, sizeof(int *));
-  for(i=0; i<n; i++) bincode[i] = (int *) calloc(cprec+1, sizeof(int));
+    bincode = (int**)calloc(n, sizeof(int*));
+    for (i = 0; i < n; i++)
+        bincode[i] = (int*)calloc(cprec + 1, sizeof(int));
 
-  csdcode = (int **) calloc(n, sizeof(int *));
-  for(i=0; i<n; i++) csdcode[i] = (int *) calloc(cprec+1, sizeof(int));
+    csdcode = (int**)calloc(n, sizeof(int*));
+    for (i = 0; i < n; i++)
+        csdcode[i] = (int*)calloc(cprec + 1, sizeof(int));
 
-  csdcoder = (int **) calloc(n, sizeof(int *));
-  for(i=0; i<n; i++) csdcoder[i] = (int *) calloc(cprec+1, sizeof(int));
+    csdcoder = (int**)calloc(n, sizeof(int*));
+    for (i = 0; i < n; i++)
+        csdcoder[i] = (int*)calloc(cprec + 1, sizeof(int));
 
-  xpx = (int **) calloc(n, sizeof(int *));
-  for(i=0; i<n; i++) xpx[i] = (int *) calloc(cprec+1, sizeof(int));
+    xpx = (int**)calloc(n, sizeof(int*));
+    for (i = 0; i < n; i++)
+        xpx[i] = (int*)calloc(cprec + 1, sizeof(int));
 
-  xmx = (int **) calloc(n, sizeof(int *));
-  for(i=0; i<n; i++) xmx[i] = (int *) calloc(cprec+1, sizeof(int));
+    xmx = (int**)calloc(n, sizeof(int*));
+    for (i = 0; i < n; i++)
+        xmx[i] = (int*)calloc(cprec + 1, sizeof(int));
 
-  x = (int **) calloc(n, sizeof(int *));
-  for(i=0; i<n; i++) x[i] = (int *) calloc(cprec+1, sizeof(int));
+    x = (int**)calloc(n, sizeof(int*));
+    for (i = 0; i < n; i++)
+        x[i] = (int*)calloc(cprec + 1, sizeof(int));
 
-  /* Configure the filter with infinite precision coefficients */
-  hr->m = n-1;
-  hr->n = 0;
-  hr->a = (double *) calloc(n, sizeof(double));
-  hr->b = (double *)calloc(1, sizeof(double));
-  hr->b[0] = 1.0;
-  hr->nw = 2*points;
-  hr->w = w;
+    /* Configure the filter with infinite precision coefficients */
+    hr->m = n - 1;
+    hr->n = 0;
+    hr->a = (double*)calloc(n, sizeof(double));
+    hr->b = (double*)calloc(1, sizeof(double));
+    hr->b[0] = 1.0;
+    hr->nw = 2 * points;
+    hr->w = w;
 
-  /* Configure the filter with integer coefficients */
-  hi->m = n-1;
-  hi->n = 0;
-  hi->a = (double *) calloc(n, sizeof(double));
-  hi->b = (double *)calloc(1, sizeof(double));
-  hi->b[0] = 1.0;
-  hi->nw = 2*points;
-  hi->w = w;
+    /* Configure the filter with integer coefficients */
+    hi->m = n - 1;
+    hi->n = 0;
+    hi->a = (double*)calloc(n, sizeof(double));
+    hi->b = (double*)calloc(1, sizeof(double));
+    hi->b[0] = 1.0;
+    hi->nw = 2 * points;
+    hi->w = w;
 
-  /* Configure the filter with CSD coefficients */
-  hcsd->m = n-1;
-  hcsd->n = 0;
-  hcsd->a = (double *) calloc(n, sizeof(double));
-  hcsd->b = (double *)calloc(1, sizeof(double));
-  hcsd->b[0] = 1.0;
-  hcsd->nw = 2*points;
-  hcsd->w = w;
+    /* Configure the filter with CSD coefficients */
+    hcsd->m = n - 1;
+    hcsd->n = 0;
+    hcsd->a = (double*)calloc(n, sizeof(double));
+    hcsd->b = (double*)calloc(1, sizeof(double));
+    hcsd->b[0] = 1.0;
+    hcsd->nw = 2 * points;
+    hcsd->w = w;
 
-  if(1) {
-    int p1, p2;
-    /* Construct grid, desired response and weighting function */
-    /* 0-w1 band */
-    p1 = points/4;
-    deltaw = w1/(double)(p1-1);
-    for(i=0; i<p1; i++) {
-      w[i] = (double)(i)*deltaw;
-      desired[i] = a1*(correction)(w[i]);
-      weights[i] =  1.0; //0.003;
+    if (1)
+    {
+        int p1, p2;
+        /* Construct grid, desired response and weighting function */
+        /* 0-w1 band */
+        p1 = points / 4;
+        deltaw = w1 / (double)(p1 - 1);
+        for (i = 0; i < p1; i++)
+        {
+            w[i] = (double)(i)*deltaw;
+            desired[i] = a1 * (correction)(w[i]);
+            weights[i] = 1.0; //0.003;
+        }
+        /* w2-0.5 band */
+        p2 = 2 * points - p1;
+        deltaw = (0.5 - w2) / (double)(p2 - 1);
+        for (i = 0; i < p2; i++)
+        {
+            w[i + p1] = w2 + (double)(i)*deltaw;
+            desired[i + p1] = a2 * (correction)(w[i + p1]);
+            weights[i + p1] = 0.0001; //1.0;
+        }
     }
-    /* w2-0.5 band */
-    p2 = 2*points - p1;
-    deltaw = (0.5-w2)/(double)(p2-1);
-    for(i=0; i<p2; i++) {
-      w[i+p1] = w2 + (double)(i)*deltaw;
-      desired[i+p1] = a2*(correction)(w[i+p1]);
-      weights[i+p1] = 0.0001; //1.0;
-    }
-  }
 
-  /* Do LMS optimization */
-  lms(hr->a, hi->a, hcsd->a, n, w, desired, 
-      weights, 2*points, cprec, csdprec, POSITIVE,
-      bincode, csdcode, csdcoder);
+    /* Do LMS optimization */
+    lms(hr->a, hi->a, hcsd->a, n, w, desired, weights, 2 * points, cprec, csdprec, POSITIVE, bincode, csdcode, csdcoder);
 
 #if 0
   /* Print the results */
@@ -131,29 +137,50 @@ double (*correction)();
   if(n%2) printf("\th(%2d) = %-10g\n", n/2, hcsd->a[n/2]);
 #endif
 
+    /* Ready to exit */
+    free(weights);
+    free(desired);
+    free(w);
+    for (i = 0; i < n; i++)
+    {
+        free(bincode[i]);
+    }
+    free(bincode);
+    for (i = 0; i < n; i++)
+    {
+        free(csdcode[i]);
+    }
+    free(csdcode);
+    for (i = 0; i < n; i++)
+    {
+        free(csdcoder[i]);
+    }
+    free(csdcoder);
+    for (i = 0; i < n; i++)
+    {
+        free(xpx[i]);
+    }
+    free(xpx);
+    for (i = 0; i < n; i++)
+    {
+        free(xmx[i]);
+    }
+    free(xmx);
+    for (i = 0; i < n; i++)
+    {
+        free(x[i]);
+    }
+    free(x);
 
-  /* Ready to exit */
-  free(weights);
-  free(desired);
-  free(w);
-  for(i=0; i<n; i++) { free(bincode[i]); } free(bincode);
-  for(i=0; i<n; i++) { free(csdcode[i]); } free(csdcode);
-  for(i=0; i<n; i++) { free(csdcoder[i]); } free(csdcoder);
-  for(i=0; i<n; i++) { free(xpx[i]); } free(xpx);
-  for(i=0; i<n; i++) { free(xmx[i]); } free(xmx);
-  for(i=0; i<n; i++) { free(x[i]); } free(x);
-
-  return 0; 
+    return 0;
 }
 
-
-void GenerateFilter(int n, double w1, double w2, double a1, double a2, double *coefs)
+void GenerateFilter(int n, double w1, double w2, double a1, double a2, double* coefs)
 {
     int i;
-	struct dfilter hr, hi, hcsd;	/* Filter transfer functions */
-	/* Find the filter coefficients */
-	gfir_lms (&hr, &hi, &hcsd, n, w1, w2, a1, a2, CPREC, CSDPREC, NONE); 
-        for (i = 0; i < n; i++)
-            coefs[i] = hi.a[i];
-       
- }
+    struct dfilter hr, hi, hcsd; /* Filter transfer functions */
+    /* Find the filter coefficients */
+    gfir_lms(&hr, &hi, &hcsd, n, w1, w2, a1, a2, CPREC, CSDPREC, NONE);
+    for (i = 0; i < n; i++)
+        coefs[i] = hi.a[i];
+}

@@ -15,55 +15,55 @@
 #include "TRXLooper.h"
 #include "limesuite/complex.h"
 
-namespace lime
-{
+namespace lime {
 class ISPI;
 
 class FPGA
 {
-public:
-  FPGA(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI);
-  virtual ~FPGA(){};
+  public:
+    FPGA(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI);
+    virtual ~FPGA(){};
 
-  int StartStreaming();
-  int StopStreaming();
-  int ResetTimestamp();
+    int StartStreaming();
+    int StopStreaming();
+    int ResetTimestamp();
 
-  struct FPGA_PLL_clock
-  {
-      FPGA_PLL_clock()
-      {
-          findPhase = false;
-          bypass = false;
-          phaseShift_deg = 0;
-          index = 0;
-      }
-      double outFrequency;
-      double phaseShift_deg;
-      uint8_t index;
-      bool bypass;
-      bool findPhase;
-      double rd_actualFrequency;
-  };
+    struct FPGA_PLL_clock {
+        FPGA_PLL_clock()
+        {
+            findPhase = false;
+            bypass = false;
+            phaseShift_deg = 0;
+            index = 0;
+        }
+        double outFrequency;
+        double phaseShift_deg;
+        uint8_t index;
+        bool bypass;
+        bool findPhase;
+        double rd_actualFrequency;
+    };
 
     virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0);
     virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0);
     double DetectRefClk(double fx3Clk = 100e6);
 
     static int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
-    static int FPGAPacketPayload2SamplesFloat(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples);
-    static int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
-    static int Samples2FPGAPacketPayloadFloat(const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
+    static int FPGAPacketPayload2SamplesFloat(
+        const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples);
+    static int Samples2FPGAPacketPayload(
+        const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
+    static int Samples2FPGAPacketPayloadFloat(
+        const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
     virtual void EnableValuesCache(bool enabled);
-    virtual int WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt);
-    virtual int ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt);
+    virtual int WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt);
+    virtual int ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);
     int WriteRegister(uint32_t addr, uint32_t val);
     int ReadRegister(uint32_t addr);
-    int WriteLMS7002MSPI(const uint32_t *addr, uint32_t length);
-    int ReadLMS7002MSPI(const uint32_t *addr, uint32_t *values, uint32_t length);
+    int WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
+    int ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);
 
-    struct GatewareInfo
-    {
+    struct GatewareInfo {
         int boardID;
         int version;
         int revision;
@@ -81,10 +81,10 @@ public:
 
   private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
-    int SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t &reg23val);
+    int SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val);
     bool useCache;
     std::map<uint16_t, uint16_t> regsCache;
 };
 
-}
+} // namespace lime
 #endif // FPGA_COMMON_H

@@ -22,28 +22,28 @@ static constexpr Register RX_EQU_BYP(0x00AC, 5, 5, 0, 0);
 static constexpr Register RX_DCLOOP_BYP(0x00AC, 8, 8, 0, 0);
 static constexpr Register RX_DCLOOP_AVG(0x00A4, 2, 0, 0, 0);
 
-static constexpr Register TX_HB_BYP (0x0088, 0, 0, 1, 0);
-static constexpr Register TX_HB_DEL (0x0088, 1, 1, 0, 0);
-static constexpr Register SLEEP_CFR (0x0088, 2, 2, 1, 0);
+static constexpr Register TX_HB_BYP(0x0088, 0, 0, 1, 0);
+static constexpr Register TX_HB_DEL(0x0088, 1, 1, 0, 0);
+static constexpr Register SLEEP_CFR(0x0088, 2, 2, 1, 0);
 static constexpr Register BYPASS_CFR(0x0088, 3, 3, 1, 0);
-static constexpr Register ODD_CFR   (0x0088, 4, 4, 1, 0);
+static constexpr Register ODD_CFR(0x0088, 4, 4, 1, 0);
 static constexpr Register BYPASSGAIN_CFR(0x0088, 5, 5, 1, 0);
-static constexpr Register SLEEP_FIR (0x0088, 6, 6, 1, 0);
+static constexpr Register SLEEP_FIR(0x0088, 6, 6, 1, 0);
 static constexpr Register BYPASS_FIR(0x0088, 7, 7, 1, 0);
 
-static constexpr Register ODD_FIR      (0x0088, 8, 8, 0, 0);
+static constexpr Register ODD_FIR(0x0088, 8, 8, 0, 0);
 static constexpr Register TX_PHCORR_BYP(0x0088, 9, 9, 0, 0);
-static constexpr Register TX_GCORR_BYP (0x0088, 10, 10, 0, 0);
+static constexpr Register TX_GCORR_BYP(0x0088, 10, 10, 0, 0);
 static constexpr Register TX_DCCORR_BYP(0x0088, 11, 11, 0, 0);
-static constexpr Register TX_ISINC_BYP (0x0088, 12, 12, 1, 0);
-static constexpr Register TX_EQU_BYP   (0x0088, 13, 13, 1, 0);
-static constexpr Register TX_INVERTQ   (0x0088, 15, 15, 0, 0);
+static constexpr Register TX_ISINC_BYP(0x0088, 12, 12, 1, 0);
+static constexpr Register TX_EQU_BYP(0x0088, 13, 13, 1, 0);
+static constexpr Register TX_INVERTQ(0x0088, 15, 15, 0, 0);
 
-static constexpr Register TX_GCORRQ    (0x0081, 11, 0, 2047, 0);
-static constexpr Register TX_GCORRI    (0x0082, 11, 0, 2047, 0);
-static constexpr Register TX_PHCORR    (0x0083, 11, 0, 0, 1);
-static constexpr Register TX_DCCORRI   (0x0084, 15, 0, 0, 0);
-static constexpr Register TX_DCCORRQ   (0x0085, 15, 0, 0, 0);
+static constexpr Register TX_GCORRQ(0x0081, 11, 0, 2047, 0);
+static constexpr Register TX_GCORRI(0x0082, 11, 0, 2047, 0);
+static constexpr Register TX_PHCORR(0x0083, 11, 0, 0, 1);
+static constexpr Register TX_DCCORRI(0x0084, 15, 0, 0, 0);
+static constexpr Register TX_DCCORRQ(0x0085, 15, 0, 0, 0);
 static constexpr Register thresholdSpin(0x0086, 15, 0, 0, 0);
 static constexpr Register thresholdGain(0x0087, 15, 0, 0, 0);
 static constexpr Register CFR_ORDER(0x008C, 7, 0, 0, 0); // dummy register
@@ -56,7 +56,9 @@ static constexpr Register cmbInsel(0x0080, 2, 2, 0, 0);
 
 static constexpr Register MAC(0xFFFF, 1, 0, 0, 0);
 
-Equalizer::Equalizer(ISPI* comms, uint32_t spiBusAddr) : m_Comms(comms), mSPIbusAddr(spiBusAddr)
+Equalizer::Equalizer(ISPI* comms, uint32_t spiBusAddr)
+    : m_Comms(comms)
+    , mSPIbusAddr(spiBusAddr)
 {
 }
 
@@ -64,7 +66,7 @@ Equalizer::~Equalizer()
 {
 }
 
-void Equalizer::WriteRegister(const Register &reg, uint16_t value)
+void Equalizer::WriteRegister(const Register& reg, uint16_t value)
 {
     uint32_t mosi = reg.address;
     uint32_t miso = 0;
@@ -77,7 +79,7 @@ void Equalizer::WriteRegister(const Register &reg, uint16_t value)
     m_Comms->SPI(mSPIbusAddr, &mosi, nullptr, 1);
 }
 
-uint16_t Equalizer::ReadRegister(const Register &reg)
+uint16_t Equalizer::ReadRegister(const Register& reg)
 {
     uint32_t mosi = reg.address;
     uint32_t miso = 0;
@@ -86,17 +88,17 @@ uint16_t Equalizer::ReadRegister(const Register &reg)
     return (miso & regMask) >> reg.lsb;
 }
 
-void Equalizer::Configure(const Equalizer::Config &state)
+void Equalizer::Configure(const Equalizer::Config& state)
 {
     // TODO: batch writes
-    for(uint8_t ch=0; ch<2; ++ch)
+    for (uint8_t ch = 0; ch < 2; ++ch)
     {
-        WriteRegister(MAC, ch+1);
+        WriteRegister(MAC, ch + 1);
         WriteRegister(RX_EQU_BYP, state.bypassRxEqualizer[ch]);
         WriteRegister(TX_EQU_BYP, state.bypassTxEqualizer[ch]);
 
-        const Config::CFR &cfr = state.cfr[ch];
-        const Config::FIR &fir = state.fir[ch];
+        const Config::CFR& cfr = state.cfr[ch];
+        const Config::FIR& fir = state.fir[ch];
 
         const bool useOversample = std::min(cfr.interpolation, uint8_t(2)) != 1;
 
@@ -108,7 +110,7 @@ void Equalizer::Configure(const Equalizer::Config &state)
         WriteRegister(BYPASSGAIN_CFR, cfr.bypassGain);
 
         assert(fir.coefficientsCount <= 32);
-        if(fir.coefficients)
+        if (fir.coefficients)
             SetFIRCoefficients(fir.coefficients, fir.coefficientsCount);
         // WriteRegister(ODD_FIR, fir.coefficientsCount % 2); // set in SetFIRCoefficients
         WriteRegister(SLEEP_FIR, fir.sleep);
@@ -159,9 +161,9 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
     while (i < MaxFilt_N)
     {
         addr = (2 << 15) + (maddressf0 << 6) + (msb << 4) + lsb;
-        mosi.push_back((1<<31) | addr << 16 | data);
+        mosi.push_back((1 << 31) | addr << 16 | data);
         addr = (2 << 15) + (maddressf1 << 6) + (msb << 4) + lsb;
-        mosi.push_back((1<<31) | addr << 16 | data);
+        mosi.push_back((1 << 31) | addr << 16 | data);
         if (lsb >= NN) // 15
         {
             lsb = 0;
@@ -184,7 +186,7 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
             data = w[(uint16_t)((Filt_N + 1) / 2 + i)];
         else
             data = 0;
-        mosi.push_back((1<<31) | addr << 16 | data);
+        mosi.push_back((1 << 31) | addr << 16 | data);
         if (lsb >= NN) // 15
         {
             lsb = 0;
@@ -212,7 +214,7 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
         else
             data = 0;
 
-        mosi.push_back((1<<31) | addr << 16 | data);
+        mosi.push_back((1 << 31) | addr << 16 | data);
         if (lsb >= NN) // 3
         {
             lsb = 0;
@@ -236,7 +238,7 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
     //WriteRegister(RESET_N, 1);
 }
 
-void Equalizer::SetFIRCoefficients(const int16_t *coefficients, uint16_t count)
+void Equalizer::SetFIRCoefficients(const int16_t* coefficients, uint16_t count)
 {
     const int maxCoefCount = 32;
     assert(count <= 32);
@@ -327,9 +329,9 @@ void Equalizer::SetOversample(uint8_t oversample)
 
     const bool useOversample = oversample != 1;
     // TODO: batch writes
-    for(uint8_t ch=0; ch<2; ++ch)
+    for (uint8_t ch = 0; ch < 2; ++ch)
     {
-        WriteRegister(MAC, ch+1);
+        WriteRegister(MAC, ch + 1);
         WriteRegister(TX_HB_BYP, !useOversample);
         WriteRegister(TX_HB_DEL, useOversample);
     }
@@ -338,9 +340,9 @@ void Equalizer::SetOversample(uint8_t oversample)
 uint8_t Equalizer::GetOversample()
 {
     const int ch = 0;
-    WriteRegister(MAC, ch+1);
+    WriteRegister(MAC, ch + 1);
     int bypass = ReadRegister(TX_HB_BYP);
     int delay = ReadRegister(TX_HB_DEL);
-// TODO: Warn if bypass and delay are incompatible
+    // TODO: Warn if bypass and delay are incompatible
     return (delay && !bypass) ? 2 : 1;
 }

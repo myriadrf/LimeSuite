@@ -3,10 +3,10 @@
 using namespace std;
 using namespace lime;
 
-SDRDevice *device = nullptr;
+SDRDevice* device = nullptr;
 bool terminateProgress(false);
 
-void inthandler (int sig)
+void inthandler(int sig)
 {
     if (terminateProgress == true)
     {
@@ -27,8 +27,8 @@ static int32_t FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
         if (memoryDevices.size() == 1)
             return memoryDevices.front().id;
         cerr << "specify memory device target, -t, --target :" << endl;
-        for (const SDRDevice::DataStorage &mem : memoryDevices)
-            cerr << "\t" <<  mem.name << endl;
+        for (const SDRDevice::DataStorage& mem : memoryDevices)
+            cerr << "\t" << mem.name << endl;
         return -1;
     }
 
@@ -39,15 +39,15 @@ static int32_t FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
     }
 
     cerr << "Device does not contain target device (" << targetName << "). Available list:" << endl;
-    for (const SDRDevice::DataStorage &mem : memoryDevices)
-        cerr << "\t" <<  mem.name << endl;
+    for (const SDRDevice::DataStorage& mem : memoryDevices)
+        cerr << "\t" << mem.name << endl;
     return -1;
 }
 
 static auto lastProgressUpdate = std::chrono::steady_clock::now();
 bool progressCallBack(size_t bsent, size_t btotal, const char* statusMessage)
 {
-    float percentage = 100.0*bsent/btotal;
+    float percentage = 100.0 * bsent / btotal;
     const bool hasCompleted = bsent == btotal;
     auto now = std::chrono::steady_clock::now();
     // no need to spam the text with each callback
@@ -81,7 +81,6 @@ bool progressCallBack(size_t bsent, size_t btotal, const char* statusMessage)
             else
                 cout << "Invalid option(" << answer << "), [y/n]: ";
         }
-
     }
     return false;
 }
@@ -99,35 +98,37 @@ static int printHelp(void)
     return EXIT_SUCCESS;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     char* filePath = nullptr;
     char* devName = nullptr;
     char* targetName = nullptr;
-    signal (SIGINT, inthandler);
+    signal(SIGINT, inthandler);
 
-    static struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
-        {"device", required_argument, 0, 'd'},
-        {"target", required_argument, 0, 't'},
-        {0, 0, 0, 0}
-    };
+    static struct option long_options[] = { { "help", no_argument, 0, 'h' },
+        { "device", required_argument, 0, 'd' },
+        { "target", required_argument, 0, 't' },
+        { 0, 0, 0, 0 } };
 
     int long_index = 0;
     int option = 0;
     std::string target;
 
-    while ((option = getopt_long_only (argc, argv, "", long_options, &long_index)) != -1)
+    while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
     {
         switch (option)
         {
-        case 'h': 
-            return printHelp ();
+        case 'h':
+            return printHelp();
         case 'd':
-            if (optarg != NULL) devName = optarg;
+            if (optarg != NULL)
+                devName = optarg;
             break;
         case 't':
-            if (optarg != NULL) { targetName = optarg; }
+            if (optarg != NULL)
+            {
+                targetName = optarg;
+            }
             break;
         }
     }
@@ -137,7 +138,7 @@ int main(int argc, char **argv)
     else
     {
         cerr << "File path not specified." << endl;
-        printHelp ();
+        printHelp();
         return -1;
     }
 
@@ -175,18 +176,18 @@ int main(int argc, char **argv)
     std::vector<char> data;
     std::ifstream inputFile;
     inputFile.open(filePath, std::ifstream::in | std::ifstream::binary);
-    if  (!inputFile)
+    if (!inputFile)
     {
         cerr << "Failed to open file: " << filePath << endl;
         return EXIT_FAILURE;
     }
-    inputFile.seekg (0,std::ios_base::end);
+    inputFile.seekg(0, std::ios_base::end);
     auto cnt = inputFile.tellg();
-    inputFile.seekg (0,std::ios_base::beg);
+    inputFile.seekg(0, std::ios_base::beg);
     cerr << "File size : " << cnt << " bytes." << endl;
     data.resize(cnt);
     inputFile.read(data.data(), cnt);
-    inputFile.close ();
+    inputFile.close();
 
     cerr << "Memory device id : " << memorySelect << endl;
     if (device->UploadMemory(memorySelect, data.data(), data.size(), progressCallBack) != 0)
@@ -200,4 +201,3 @@ int main(int argc, char **argv)
         cerr << "Programming completed." << endl;
     return EXIT_SUCCESS;
 }
-

@@ -59,8 +59,7 @@ static int printHelp(void)
     return EXIT_SUCCESS;
 }
 
-enum Args
-{
+enum Args {
     HELP = 'h',
     DEVICE = 'd',
     CHIP = 'c',
@@ -95,29 +94,27 @@ int main(int argc, char** argv)
     config.channel[0].rx.oversample = 2;
     config.channel[0].tx.oversample = 2;
 
-    static struct option long_options[] = {
-        {"help", no_argument, 0, Args::HELP},
-        {"device", required_argument, 0, Args::DEVICE},
-        {"chip", required_argument, 0, Args::CHIP},
-        {"log", required_argument, 0, Args::LOG},
-        {"initialize", no_argument, 0, Args::INIT},
-        {"refclk", required_argument, 0, Args::REFCLK},
-        {"samplerate", required_argument, 0, Args::SAMPLERATE},
-        {"rxen", required_argument, 0, Args::RXEN},
-        {"rxlo", required_argument, 0, Args::RXLO},
-        {"rxpath", required_argument, 0, Args::RXPATH},
-        {"rxlpf", required_argument, 0, Args::RXLPF},
-        {"rxoversample", required_argument, 0, Args::RXOVERSAMPLE},
-        {"rxtestsignal", required_argument, 0, Args::RXTESTSIGNAL},
-        {"txen", required_argument, 0, Args::TXEN},
-        {"txlo", required_argument, 0, Args::TXLO},
-        {"txpath", required_argument, 0, Args::TXPATH},
-        {"txlpf", required_argument, 0, Args::TXLPF},
-        {"txoversample", required_argument, 0, Args::TXOVERSAMPLE},
-        {"txtestsignal", required_argument, 0, Args::TXTESTSIGNAL},
-        {"ini", required_argument, 0, Args::INIFILE},
-        {0, 0, 0,  0}
-    };
+    static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
+        { "device", required_argument, 0, Args::DEVICE },
+        { "chip", required_argument, 0, Args::CHIP },
+        { "log", required_argument, 0, Args::LOG },
+        { "initialize", no_argument, 0, Args::INIT },
+        { "refclk", required_argument, 0, Args::REFCLK },
+        { "samplerate", required_argument, 0, Args::SAMPLERATE },
+        { "rxen", required_argument, 0, Args::RXEN },
+        { "rxlo", required_argument, 0, Args::RXLO },
+        { "rxpath", required_argument, 0, Args::RXPATH },
+        { "rxlpf", required_argument, 0, Args::RXLPF },
+        { "rxoversample", required_argument, 0, Args::RXOVERSAMPLE },
+        { "rxtestsignal", required_argument, 0, Args::RXTESTSIGNAL },
+        { "txen", required_argument, 0, Args::TXEN },
+        { "txlo", required_argument, 0, Args::TXLO },
+        { "txpath", required_argument, 0, Args::TXPATH },
+        { "txlpf", required_argument, 0, Args::TXLPF },
+        { "txoversample", required_argument, 0, Args::TXOVERSAMPLE },
+        { "txtestsignal", required_argument, 0, Args::TXTESTSIGNAL },
+        { "ini", required_argument, 0, Args::INIFILE },
+        { 0, 0, 0, 0 } };
 
     int long_index = 0;
     int option = 0;
@@ -128,13 +125,18 @@ int main(int argc, char** argv)
         case Args::HELP:
             return printHelp();
         case Args::DEVICE:
-            if (optarg != NULL) devName = optarg;
+            if (optarg != NULL)
+                devName = optarg;
             break;
         case Args::CHIP:
-            if (optarg != NULL) moduleId = stoi(optarg);
+            if (optarg != NULL)
+                moduleId = stoi(optarg);
             break;
         case Args::LOG:
-            if (optarg != NULL) {logVerbosity = strToLogLevel(optarg); }
+            if (optarg != NULL)
+            {
+                logVerbosity = strToLogLevel(optarg);
+            }
             break;
         case Args::INIT:
             initializeBoard = true;
@@ -216,7 +218,8 @@ int main(int argc, char** argv)
     }
 
     device->SetMessageLogCallback(LogCallback);
-    try {
+    try
+    {
         if (initializeBoard)
             device->Init();
         if (iniFilename)
@@ -228,7 +231,7 @@ int main(int argc, char** argv)
             if (slash0Pos != std::string::npos)
                 cwd.resize(slash0Pos);
 
-             if(iniFilename[0] != '/') // is not global path
+            if (iniFilename[0] != '/') // is not global path
                 sprintf(configFilepath, "%s/%s", cwd.c_str(), iniFilename);
             else
                 sprintf(configFilepath, "%s", iniFilename);
@@ -245,11 +248,12 @@ int main(int argc, char** argv)
                 return -1;
             }
 
-            for (int i=0; i<device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)
+            for (int i = 0; i < device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)
                 config.channel[i] = config.channel[0];
         }
         device->Configure(config, moduleId);
-    } catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         cerr << "Config failed: " << e.what() << endl;
         return EXIT_FAILURE;
     }
@@ -258,4 +262,3 @@ int main(int argc, char** argv)
 
     return EXIT_SUCCESS;
 }
-

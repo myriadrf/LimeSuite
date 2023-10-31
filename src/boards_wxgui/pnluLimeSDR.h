@@ -12,17 +12,22 @@ class pnlGPIO;
 
 class pnluLimeSDR : public wxPanel
 {
-public:
-    pnluLimeSDR(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = wxEmptyString);
-    void Initialize(lime::SDRDevice *device);
+  public:
+    pnluLimeSDR(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        int style = 0,
+        wxString name = wxEmptyString);
+    void Initialize(lime::SDRDevice* device);
     virtual ~pnluLimeSDR();
     virtual void UpdatePanel();
-    void OnLoopbackChange(wxCommandEvent &event);
+    void OnLoopbackChange(wxCommandEvent& event);
 
-    void OnReadAll(wxCommandEvent &event);
-    void OnWriteAll(wxCommandEvent &event);
+    void OnReadAll(wxCommandEvent& event);
+    void OnWriteAll(wxCommandEvent& event);
 
-protected:
+  protected:
     wxFlexGridSizer* mainSizer;
     pnlGPIO* pnl_gpio;
     wxCheckBox* chkTxLBSH;
@@ -31,8 +36,8 @@ protected:
     wxChoice* cmbTxPath;
     wxStaticText* txtLB;
 
-    lime::SDRDevice *device;
-    
+    lime::SDRDevice* device;
+
     DECLARE_EVENT_TABLE()
 };
 

@@ -1,5 +1,5 @@
 #ifndef LIME_LIMESDR_5G_H
-#define	LIME_LIMESDR_5G_H
+#define LIME_LIMESDR_5G_H
 
 #include "CDCM6208/CDCM6208_Dev.h"
 #include "LMS7002M_SDRDevice.h"
@@ -12,8 +12,7 @@
 
 #include "dataTypes.h"
 
-namespace lime
-{
+namespace lime {
 
 class LMS7002M;
 class LitePCIe;
@@ -24,7 +23,7 @@ class SlaveSelectShim;
 
 class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
-public:
+  public:
     LimeSDR_X3() = delete;
     LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::vector<lime::LitePCIe*> trxStreams);
     virtual ~LimeSDR_X3();
@@ -39,18 +38,19 @@ public:
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count) override;
+    virtual void SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) override;
+    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
+    virtual int CustomParameterWrite(
+        const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
-    virtual int UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
-protected:
+    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
+  protected:
     int InitLMS1(bool skipTune = false);
     int InitLMS2(bool skipTune = false);
     int InitLMS3(bool skipTune = false);
@@ -67,26 +67,14 @@ protected:
 
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
 
-    enum class ePathLMS1_Rx {
-        NONE = 0, LNAH = 1, LNAL = 2
-    };
-    enum class ePathLMS1_Tx {
-        NONE = 0, BAND1 = 1, BAND2 = 2
-    };
-    enum class ePathLMS2_Rx {
-        NONE = 0, TDD = 1, FDD = 2, CALIBRATION = 3
-    };
-    enum class ePathLMS2_Tx {
-        NONE = 0, TDD = 1, FDD = 2
-    };
+    enum class ePathLMS1_Rx { NONE = 0, LNAH = 1, LNAL = 2 };
+    enum class ePathLMS1_Tx { NONE = 0, BAND1 = 1, BAND2 = 2 };
+    enum class ePathLMS2_Rx { NONE = 0, TDD = 1, FDD = 2, CALIBRATION = 3 };
+    enum class ePathLMS2_Tx { NONE = 0, TDD = 1, FDD = 2 };
 
-    enum class eMemoryDevice {
-        FPGA_RAM = 0,
-        FPGA_FLASH,
-        COUNT
-    };
+    enum class eMemoryDevice { FPGA_RAM = 0, FPGA_FLASH, COUNT };
 
-private:
+  private:
     CDCM_Dev* mClockGeneratorCDCM;
     Equalizer* mEqualizer;
     std::vector<LitePCIe*> mTRXStreamPorts;
@@ -99,14 +87,13 @@ private:
 
 class LimeSDR_X3Entry : public DeviceRegistryEntry
 {
-public:
+  public:
     LimeSDR_X3Entry();
     virtual ~LimeSDR_X3Entry();
     std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
     SDRDevice* make(const DeviceHandle& handle) override;
 };
 
-}
+} // namespace lime
 
 #endif // LIME_LIMESDR_5G_H
-
