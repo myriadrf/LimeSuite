@@ -478,6 +478,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     assert(fpga);
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
+    fpga->WriteRegister(0xD, 0); //stop WFM
     mRx.lastTimestamp.store(0, std::memory_order_relaxed);
 
     // const uint16_t MIMO_EN = needMIMO << 8;
@@ -500,11 +501,12 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     fpga->WriteRegister(0x0007, channelEnables);
     fpga->ResetTimestamp();
 
-    assert(fpga);
-    fpga->WriteRegister(0xFFFF, 1 << chipId);
-    fpga->StopStreaming();
-    fpga->WriteRegister(0xD, 0); //stop WFM
-    fpga->ResetTimestamp();
+    constexpr uint16_t waitGPS_PPS = 1 << 2;
+    int interface_ctrl_000A = fpga->ReadRegister(0x000A);
+    interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
+    if (cfg.extraConfig && cfg.extraConfig->waitPPS)
+        interface_ctrl_000A |= waitGPS_PPS;
+    fpga->WriteRegister(0x000A, interface_ctrl_000A);
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.
     // if the thread blocks for too long, Linux can trigger RT throttling

@@ -39,6 +39,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
 
     virtual int Init() override;
     virtual void Reset() override;
+    virtual void GetGPSLock(GPS_Lock* status) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
 

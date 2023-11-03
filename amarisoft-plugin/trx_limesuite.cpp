@@ -1182,6 +1182,12 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
 
             SDRDevice::StreamConfig::Extras* extra = new SDRDevice::StreamConfig::Extras();
 
+            sprintf(varname, "port%i_syncPPS", p);
+            if (trx_get_param_double(hostState, &val, varname) == 0)
+            {
+                extra->waitPPS = val != 0;
+                s->streamExtras[p] = extra;
+            }
             sprintf(varname, "port%i_usePoll", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {

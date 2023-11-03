@@ -88,6 +88,15 @@ void LMS7002M_SDRDevice::Reset()
         iter->ResetChip();
 }
 
+void LMS7002M_SDRDevice::GetGPSLock(GPS_Lock* status)
+{
+    uint16_t regValue = mFPGA->ReadRegister(0x114);
+    status->glonass = static_cast<GPS_Lock::LockStatus>((regValue >> 0) & 0x3);
+    status->gps = static_cast<GPS_Lock::LockStatus>((regValue >> 4) & 0x3);
+    status->beidou = static_cast<GPS_Lock::LockStatus>((regValue >> 8) & 0x3);
+    status->galileo = static_cast<GPS_Lock::LockStatus>((regValue >> 12) & 0x3);
+}
+
 double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
 {
     if (moduleIndex >= mLMSChips.size())

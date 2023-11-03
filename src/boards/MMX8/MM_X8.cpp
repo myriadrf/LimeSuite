@@ -141,6 +141,11 @@ void LimeSDR_MMX8::Reset()
         mSubDevices[i]->Reset();
 }
 
+void LimeSDR_MMX8::GetGPSLock(GPS_Lock* status)
+{
+    // TODO: implement
+}
+
 double LimeSDR_MMX8::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
 {
     return mSubDevices[moduleIndex]->GetSampleRate(0, trx);

@@ -65,6 +65,7 @@ static int printHelp(void)
     cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
     cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;
     cerr << "    --linkformat [I16, I12]\t\t Data transfer format" << endl;
+    cerr << "    --syncPPS \t\t start sampling on next PPS" << endl;
 
     return EXIT_SUCCESS;
 }
@@ -83,7 +84,8 @@ enum Args {
     LOOPTX = 'r',
     MIMO = 200,
     REPEATER,
-    LINKFORMAT
+    LINKFORMAT,
+    SYNCPPS
 };
 
 class FFTPlotter
@@ -245,6 +247,7 @@ int main(int argc, char** argv)
     int channelCount = 1;
     bool repeater = false;
     int64_t repeaterDelay = 0;
+    bool syncPPS = false;
     SDRDevice::StreamConfig::DataFormat linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
     static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
         { "device", required_argument, 0, Args::DEVICE },
@@ -260,6 +263,7 @@ int main(int argc, char** argv)
         { "mimo", optional_argument, 0, Args::MIMO },
         { "repeater", optional_argument, 0, Args::REPEATER },
         { "linkFormat", required_argument, 0, Args::LINKFORMAT },
+        { "syncPPS", no_argument, 0, Args::SYNCPPS },
         { 0, 0, 0, 0 } };
 
     int long_index = 0;
@@ -341,6 +345,9 @@ int main(int argc, char** argv)
                 }
             }
             break;
+        case Args::SYNCPPS:
+            syncPPS = true;
+            break;
         }
     }
 
@@ -387,6 +394,12 @@ int main(int argc, char** argv)
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = linkFormat;
+
+        if (syncPPS)
+        {
+            stream.extraConfig = new SDRDevice::StreamConfig::Extras();
+            stream.extraConfig->waitPPS = syncPPS;
+        }
         device->StreamSetup(stream, chipIndex);
     } catch (std::runtime_error& e)
     {
