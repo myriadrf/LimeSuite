@@ -617,7 +617,7 @@ int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::St
     //auto start = high_resolution_clock::now();
     while (samplesProduced < count)
     {
-        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 250))
+        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 2000))
             return samplesProduced;
         if (!timestampSet && meta)
         {
