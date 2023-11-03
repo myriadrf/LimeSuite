@@ -94,9 +94,9 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::IComms* spiRFsoc, lime::IComms* spiFPGA, lime::
     mStreamers.resize(chipCount, nullptr);
 
     DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA_XTRX", mFPGA);
-    fpgaNode->childs.push_back(new DeviceNode("LMS7002M", "LMS7002M", chip));
+    fpgaNode->children.push_back(new DeviceNode("LMS7002M", "LMS7002M", chip));
     desc.socTree = new DeviceNode("XTRX", "SDRDevice", this);
-    desc.socTree->childs.push_back(fpgaNode);
+    desc.socTree->children.push_back(fpgaNode);
 }
 
 LimeSDR_XTRX::~LimeSDR_XTRX()

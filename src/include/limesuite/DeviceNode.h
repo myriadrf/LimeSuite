@@ -13,7 +13,16 @@ struct DeviceNode {
     std::string name;
     std::string klass;
     void* ptr;
-    std::vector<DeviceNode*> childs;
+    std::vector<DeviceNode*> children;
+
+    ~DeviceNode()
+    {
+        for (auto& child : children)
+        {
+            delete child;
+            child = nullptr;
+        }
+    }
 };
 
 } // namespace lime

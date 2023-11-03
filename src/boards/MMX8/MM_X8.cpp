@@ -45,7 +45,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
     mADF = new ADF4002();
     // TODO: readback board's reference clock
     mADF->Initialize(adfComms, 30.72e6);
-    desc.socTree->childs.push_back(new DeviceNode("ADF4002", "ADF4002", mADF));
+    desc.socTree->children.push_back(new DeviceNode("ADF4002", "ADF4002", mADF));
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
@@ -96,7 +96,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
         char ctemp[256];
         sprintf(ctemp, "%s#%li", d.socTree->name.c_str(), i + 1);
         d.socTree->name = std::string(ctemp);
-        desc.socTree->childs.push_back(d.socTree);
+        desc.socTree->children.push_back(d.socTree);
     }
 }
 

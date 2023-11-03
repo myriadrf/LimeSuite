@@ -11,6 +11,7 @@
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/DeviceNode.h"
 #include "limesuite/IComms.h"
 
 namespace lime {
@@ -81,6 +82,14 @@ class LIME_API SDRDevice
         std::vector<CustomParameter> customParameters;
         std::vector<DataStorage> memoryDevices;
         DeviceNode* socTree;
+
+        ~Descriptor()
+        {
+            if (socTree != nullptr)
+            {
+                delete socTree;
+            }
+        }
     };
 
     struct StreamStats {

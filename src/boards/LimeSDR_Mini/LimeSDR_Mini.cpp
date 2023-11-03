@@ -78,9 +78,9 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
     descriptor.rfSOC.push_back(soc);
 
     DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA-Mini", mFPGA);
-    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
+    fpgaNode->children.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
     descriptor.socTree = new DeviceNode("SDR Mini", "SDRDevice", this);
-    descriptor.socTree->childs.push_back(fpgaNode);
+    descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
 }

@@ -232,10 +232,10 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
 void CreateBranch(wxTreeCtrl* treeRoot, wxTreeItemId parentId, const DeviceNode* node)
 {
     wxTreeItemId branchId = treeRoot->AppendItem(parentId, node->name, 0, 0, new DeviceTreeItemData(node));
-    if (node->childs.size() == 0)
+    if (node->children.size() == 0)
         return;
 
-    for (const auto& soc : node->childs)
+    for (const auto& soc : node->children)
         CreateBranch(treeRoot, branchId, soc);
 }
 
@@ -253,7 +253,7 @@ void FillDeviceTree(wxTreeCtrl* root, lime::SDRDevice* device, wxWindow* parentW
     treeRootData->gui = sdrUI;
     wxTreeItemId rootId = root->AddRoot(node->name, 0, 0, treeRootData);
 
-    for (const auto& soc : node->childs)
+    for (const auto& soc : node->children)
         CreateBranch(root, rootId, soc);
     root->ExpandAll();
     root->SelectItem(rootId, true);

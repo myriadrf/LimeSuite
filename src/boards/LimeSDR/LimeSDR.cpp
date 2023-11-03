@@ -89,9 +89,9 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
     descriptor.rfSOC.push_back(soc);
 
     DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA", mFPGA);
-    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
+    fpgaNode->children.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
     descriptor.socTree = new DeviceNode("SDR-USB", "SDRDevice", this);
-    descriptor.socTree->childs.push_back(fpgaNode);
+    descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
 
