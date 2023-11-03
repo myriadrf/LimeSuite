@@ -23,6 +23,7 @@ void __loadLimeSDR_Mini(void) // TODO: fixme replace with LoadLibrary/dlopen
     static LimeSDR_MiniEntry limesdr_miniSupport; // Self register on initialization
 }
 
+// Device identifier vendor ID and product ID pairs.
 const std::set<VidPid> ids{ { 1027, 24607 } };
 
 LimeSDR_MiniEntry::LimeSDR_MiniEntry()

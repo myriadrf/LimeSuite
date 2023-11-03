@@ -63,6 +63,10 @@ class USBEntry : public DeviceRegistryEntry
 #endif
   private:
     std::set<VidPid> mDeviceIds;
+#ifdef __unix__
+    std::string GetUSBDeviceSpeedString(libusb_device* device);
+    DeviceHandle GetDeviceHandle(libusb_device_handle* tempHandle, libusb_device* device, libusb_device_descriptor desc);
+#endif
 };
 
 class USB_CSR_Pipe : public ISerialPort

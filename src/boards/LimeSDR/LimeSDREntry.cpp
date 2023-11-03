@@ -34,6 +34,7 @@ void __loadLimeSDR(void) //TODO fixme replace with LoadLibrary/dlopen
     static LimeSDREntry limesdrSupport; // self register on initialization
 }
 
+// Device identifier vendor ID and product ID pairs.
 const std::set<VidPid> ids{ { 1204, 241 }, { 1204, 243 }, { 7504, 24840 } };
 
 LimeSDREntry::LimeSDREntry()

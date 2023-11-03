@@ -53,7 +53,7 @@ class USBGeneric
     libusb_device_handle* dev_handle; //a device handle
     libusb_context* ctx; //a libusb session
 
-    virtual void handle_libusb_events();
+    virtual void HandleLibusbEvents();
 #endif
 };
 

@@ -88,7 +88,7 @@ std::vector<DeviceHandle> USBEntry::enumerate(const DeviceHandle& hint)
 
     if (usbDeviceCount < 0)
     {
-        lime::error("failed to get libusb device list: %s", libusb_strerror(libusb_error(usbDeviceCount)));
+        lime::error("Failed to get libusb device list: %s", libusb_strerror(libusb_error(usbDeviceCount)));
         return handles;
     }
 
@@ -98,74 +98,30 @@ std::vector<DeviceHandle> USBEntry::enumerate(const DeviceHandle& hint)
         int returnCode = libusb_get_device_descriptor(devs[i], &desc);
         if (returnCode < 0)
         {
-            lime::error("failed to get device description");
+            lime::error("Failed to get device description");
         }
 
         VidPid id{ desc.idVendor, desc.idProduct };
 
-        if (mDeviceIds.find(id) != mDeviceIds.end())
+        if (mDeviceIds.find(id) == mDeviceIds.end())
         {
-            libusb_device_handle* tempDev_handle(nullptr);
-            if (libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
-            {
-                continue;
-            }
+            continue;
+        }
 
-            DeviceHandle handle;
+        libusb_device_handle* tempDev_handle(nullptr);
+        if (libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
+        {
+            continue;
+        }
 
-            //check operating speed
-            int speed = libusb_get_device_speed(devs[i]);
+        DeviceHandle handle = GetDeviceHandle(tempDev_handle, devs[i], desc);
 
-            switch (speed)
-            {
-            case LIBUSB_SPEED_SUPER:
-                handle.media = "USB 3.0";
-                break;
-            case LIBUSB_SPEED_HIGH:
-                handle.media = "USB 2.0";
-                break;
-            default:
-                handle.media = "USB";
-                break;
-            }
+        libusb_close(tempDev_handle);
 
-            //read device name
-            char characterBuffer[255];
-            int descriptorStringLength = libusb_get_string_descriptor_ascii(
-                tempDev_handle, LIBUSB_CLASS_COMM, reinterpret_cast<unsigned char*>(characterBuffer), sizeof(characterBuffer));
-            if (descriptorStringLength > 0)
-            {
-                handle.name = std::string(characterBuffer, size_t(descriptorStringLength));
-            }
-
-            int addressLength = std::sprintf(characterBuffer, "%.4x:%.4x", id.vid, id.pid);
-            if (addressLength > 0)
-            {
-                handle.addr = std::string(characterBuffer, size_t(addressLength));
-            }
-
-            if (desc.iSerialNumber > 0)
-            {
-                int serialStringLength = libusb_get_string_descriptor_ascii(
-                    tempDev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(characterBuffer), sizeof(characterBuffer));
-
-                if (serialStringLength < 0)
-                {
-                    lime::error("failed to get serial number");
-                }
-                else
-                {
-                    handle.serial = std::string(characterBuffer, size_t(serialStringLength));
-                }
-            }
-
-            libusb_close(tempDev_handle);
-
-            //add handle conditionally, filter by serial number
-            if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
-            {
-                handles.push_back(handle);
-            }
+        // Add handle conditionally, filter by serial number
+        if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
+        {
+            handles.push_back(handle);
         }
     }
 
@@ -174,6 +130,61 @@ std::vector<DeviceHandle> USBEntry::enumerate(const DeviceHandle& hint)
     return handles;
 #endif
 }
+
+#ifdef __unix__
+std::string USBEntry::GetUSBDeviceSpeedString(libusb_device* device)
+{
+    int speed = libusb_get_device_speed(device);
+
+    const std::unordered_map<int, std::string> mapping = { { LIBUSB_SPEED_UNKNOWN, "USB" },
+        { LIBUSB_SPEED_LOW, "USB" },
+        { LIBUSB_SPEED_FULL, "USB" },
+        { LIBUSB_SPEED_HIGH, "USB 2.0" },
+        { LIBUSB_SPEED_SUPER, "USB 3.0" } };
+
+    return mapping.at(speed);
+}
+
+DeviceHandle USBEntry::GetDeviceHandle(libusb_device_handle* tempHandle, libusb_device* device, libusb_device_descriptor desc)
+{
+    DeviceHandle handle;
+
+    // Check operating speed
+    handle.media = GetUSBDeviceSpeedString(device);
+
+    // Read device name
+    char characterBuffer[255];
+    int descriptorStringLength = libusb_get_string_descriptor_ascii(
+        tempHandle, LIBUSB_CLASS_COMM, reinterpret_cast<unsigned char*>(characterBuffer), sizeof(characterBuffer));
+    if (descriptorStringLength > 0)
+    {
+        handle.name = std::string(characterBuffer, size_t(descriptorStringLength));
+    }
+
+    int addressLength = std::sprintf(characterBuffer, "%.4x:%.4x", desc.idVendor, desc.idProduct);
+    if (addressLength > 0)
+    {
+        handle.addr = std::string(characterBuffer, size_t(addressLength));
+    }
+
+    if (desc.iSerialNumber > 0)
+    {
+        int serialStringLength = libusb_get_string_descriptor_ascii(
+            tempHandle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(characterBuffer), sizeof(characterBuffer));
+
+        if (serialStringLength < 0)
+        {
+            lime::error("Failed to get serial number");
+        }
+        else
+        {
+            handle.serial = std::string(characterBuffer, size_t(serialStringLength));
+        }
+    }
+
+    return handle;
+}
+#endif
 
 LMS64C_LMS7002M_Over_USB::LMS64C_LMS7002M_Over_USB(USB_CSR_Pipe& dataPort)
     : pipe(dataPort)

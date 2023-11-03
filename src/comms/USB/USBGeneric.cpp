@@ -15,7 +15,7 @@ namespace lime {
 int USBGeneric::activeUSBconnections = 0;
 std::thread USBGeneric::gUSBProcessingThread{};
 
-void USBGeneric::handle_libusb_events()
+void USBGeneric::HandleLibusbEvents()
 {
     struct timeval tv;
     tv.tv_sec = 0;
@@ -44,7 +44,7 @@ USBGeneric::USBGeneric(void* usbContext)
     if (activeUSBconnections == 0)
     {
         ++activeUSBconnections;
-        gUSBProcessingThread = std::thread(&USBGeneric::handle_libusb_events, this);
+        gUSBProcessingThread = std::thread(&USBGeneric::HandleLibusbEvents, this);
     }
     else
     {
