@@ -19,19 +19,21 @@ using namespace lime;
 std::vector<std::string> LitePCIe::GetDevicesWithPattern(const std::string& regex)
 {
     std::vector<std::string> devices;
-    FILE *lsPipe;
+    FILE* lsPipe;
     char cmd[512];
-    snprintf(cmd, sizeof(cmd)-1, "find /dev -maxdepth 1 -readable -name %s", regex.c_str());
+    snprintf(cmd, sizeof(cmd) - 1, "find /dev -maxdepth 1 -readable -name %s", regex.c_str());
     lsPipe = popen(cmd, "r");
     char tempBuffer[512];
-    while(fscanf(lsPipe, "%s", tempBuffer) == 1)
+    while (fscanf(lsPipe, "%s", tempBuffer) == 1)
         devices.push_back(tempBuffer);
     pclose(lsPipe);
     return devices;
 }
 
-
-LitePCIe::LitePCIe() : mFilePath(""), mFileDescriptor(-1), isConnected(false)
+LitePCIe::LitePCIe()
+    : mFilePath("")
+    , mFileDescriptor(-1)
+    , isConnected(false)
 {
 }
 
@@ -56,7 +58,7 @@ int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
 
     litepcie_ioctl_mmap_dma_info info;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_MMAP_DMA_INFO, &info);
-    if(ret == 0)
+    if (ret == 0)
     {
         mDMA.bufferCount = info.dma_rx_buf_count;
         mDMA.bufferSize = info.dma_rx_buf_size;
@@ -73,8 +75,8 @@ int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
                 sprintf(msg, "%s: DMA writer request denied", mFilePath.c_str());
                 throw std::runtime_error(msg);
             }
-            uint8_t* buf = (uint8_t*)mmap(NULL, info.dma_rx_buf_size*info.dma_rx_buf_count,
-                PROT_READ, MAP_SHARED, mFileDescriptor, info.dma_rx_buf_offset);
+            uint8_t* buf = (uint8_t*)mmap(
+                NULL, info.dma_rx_buf_size * info.dma_rx_buf_count, PROT_READ, MAP_SHARED, mFileDescriptor, info.dma_rx_buf_offset);
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 char msg[256];
@@ -95,8 +97,12 @@ int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
                 sprintf(msg, "%s: DMA reader request denied", mFilePath.c_str());
                 throw std::runtime_error(msg);
             }
-            uint8_t* buf = (uint8_t*)mmap(NULL, info.dma_tx_buf_size*info.dma_tx_buf_count,
-                PROT_WRITE, MAP_SHARED, mFileDescriptor, info.dma_tx_buf_offset);
+            uint8_t* buf = (uint8_t*)mmap(NULL,
+                info.dma_tx_buf_size * info.dma_tx_buf_count,
+                PROT_WRITE,
+                MAP_SHARED,
+                mFileDescriptor,
+                info.dma_tx_buf_offset);
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 char msg[256];
@@ -121,12 +127,12 @@ void LitePCIe::Close()
     if (mFileDescriptor >= 0)
     {
         litepcie_ioctl_lock lockInfo;
-        if(mDMA.rxMemory)
+        if (mDMA.rxMemory)
         {
             munmap(mDMA.rxMemory, mDMA.bufferSize * mDMA.bufferCount);
             lockInfo.dma_writer_release = 1;
         }
-        if(mDMA.txMemory)
+        if (mDMA.txMemory)
         {
             munmap(mDMA.txMemory, mDMA.bufferSize * mDMA.bufferCount);
             lockInfo.dma_reader_release = 1;
@@ -137,12 +143,12 @@ void LitePCIe::Close()
     mFileDescriptor = -1;
 }
 
-int LitePCIe::WriteControl(const uint8_t *buffer, const int length, int timeout_ms)
+int LitePCIe::WriteControl(const uint8_t* buffer, const int length, int timeout_ms)
 {
     return write(mFileDescriptor, buffer, length);
 }
 
-int LitePCIe::ReadControl(uint8_t *buffer, const int length, int timeout_ms)
+int LitePCIe::ReadControl(uint8_t* buffer, const int length, int timeout_ms)
 {
     memset(buffer, 0, length);
     uint32_t status = 0;
@@ -161,17 +167,18 @@ int LitePCIe::ReadControl(uint8_t *buffer, const int length, int timeout_ms)
     } while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
 
     //if ((status & 0xFF00) == 0)
-        //throw std::runtime_error("LitePCIe read status timeout");
+    //throw std::runtime_error("LitePCIe read status timeout");
     return read(mFileDescriptor, buffer, length);
 }
 
-int LitePCIe::WriteRaw(const uint8_t *buffer, const int length, int timeout_ms)
+int LitePCIe::WriteRaw(const uint8_t* buffer, const int length, int timeout_ms)
 {
     if (mFileDescriptor < 0)
         throw std::runtime_error("LitePCIe port not opened");
     auto t1 = chrono::high_resolution_clock::now();
     int bytesRemaining = length;
-    while (bytesRemaining > 0 && std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms)
+    while (bytesRemaining > 0 &&
+           std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms)
     {
         int bytesOut = write(mFileDescriptor, buffer, bytesRemaining);
 
@@ -198,8 +205,8 @@ int LitePCIe::WriteRaw(const uint8_t *buffer, const int length, int timeout_ms)
             desc.fd = mFileDescriptor;
             desc.events = POLLOUT;
 
-            const int pollTimeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::high_resolution_clock::now() - t1).count();
+            const int pollTimeout =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t1).count();
             if (pollTimeout <= 0)
                 break;
             printf("poll for %ims\n", pollTimeout);
@@ -223,13 +230,13 @@ int LitePCIe::WriteRaw(const uint8_t *buffer, const int length, int timeout_ms)
     return length - bytesRemaining;
 }
 
-int LitePCIe::ReadRaw(uint8_t *buffer, const int length, int timeout_ms)
+int LitePCIe::ReadRaw(uint8_t* buffer, const int length, int timeout_ms)
 {
     if (mFileDescriptor < 0)
         throw std::runtime_error("LitePCIe port not opened");
 
     int bytesRemaining = length;
-    uint8_t *dest = buffer;
+    uint8_t* dest = buffer;
     auto t1 = chrono::high_resolution_clock::now();
     do
     {
@@ -261,9 +268,10 @@ int LitePCIe::ReadRaw(uint8_t *buffer, const int length, int timeout_ms)
             desc.fd = mFileDescriptor;
             desc.events = POLLIN;
 
-            const int pollTimeout = timeout_ms - std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::high_resolution_clock::now() - t1).count();
-            if(pollTimeout <= 0)
+            const int pollTimeout =
+                timeout_ms -
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t1).count();
+            if (pollTimeout <= 0)
             {
                 printf("Read poll timeout of %i\n", pollTimeout);
                 return length - bytesRemaining;
@@ -290,7 +298,8 @@ int LitePCIe::ReadRaw(uint8_t *buffer, const int length, int timeout_ms)
 #endif
         bytesRemaining -= bytesIn;
         dest += bytesIn;
-    } while (bytesRemaining > 0 && std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
+    } while (bytesRemaining > 0 &&
+             std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
 #ifdef EXTRA_CHECKS
     // if (bytesRemaining > 0)
     //     printf("LitePCIe::ReadRaw %i bytes remaining after timeout\n", bytesRemaining);
@@ -310,13 +319,13 @@ void LitePCIe::RxDMAEnable(bool enabled, uint32_t bufferSize, uint8_t irqPeriod)
     writer.enable = enabled ? 1 : 0;
     writer.hw_count = 0;
     writer.sw_count = 0;
-    if(enabled)
+    if (enabled)
     {
         writer.write_size = bufferSize;
         writer.irqFreq = irqPeriod;
     }
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_DMA_WRITER, &writer);
-    if( ret < 0)
+    if (ret < 0)
         printf("Failed DMA writer ioctl. errno(%i) %s\n", errno, strerror(errno));
 }
 
@@ -330,7 +339,7 @@ void LitePCIe::TxDMAEnable(bool enabled)
     reader.hw_count = 0;
     reader.sw_count = 0;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_DMA_READER, &reader);
-    if( ret < 0)
+    if (ret < 0)
         printf("Failed DMA reader ioctl. err(%i) %s\n", errno, strerror(errno));
 }
 
@@ -392,7 +401,7 @@ bool LitePCIe::WaitRx()
             return true;
     }
     auto state = GetRxDMAState();
-    if(state.hwIndex - state.swIndex != 0)
+    if (state.hwIndex - state.swIndex != 0)
         return true;
     else
         return false;

@@ -1,11 +1,11 @@
 #include "wx/wxprec.h"
 
 #ifdef __BORLANDC__
-#pragma hdrstop
+    #pragma hdrstop
 #endif //__BORLANDC__
 
 #ifndef WX_PRECOMP
-#include <wx/wx.h>
+    #include <wx/wx.h>
 #endif //WX_PRECOMP
 #include <wx/msgdlg.h>
 
@@ -31,8 +31,6 @@
 #include "pnlBoardControls.h"
 #include "LMSBoards.h"
 #include <sstream>
-#include "pnlAPI.h"
-//#include "limeRFE_wxgui.h"
 #include "SPI_wxgui.h"
 #include "GUI/events.h"
 #include "GUI/ISOCPanel.h"
@@ -46,11 +44,11 @@ using namespace lime;
 
 static constexpr int controlCollumn = 1;
 
-LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr=nullptr;
+LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr = nullptr;
 
 int LMS7SuiteAppFrame::m_lmsSelection = 0;
 
-void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char *message)
+void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char* message)
 {
     if (obj_ptr == nullptr || obj_ptr->mMiniLog == nullptr)
         return;
@@ -61,10 +59,11 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char 
     wxPostEvent(obj_ptr, evt);
 }
 
-struct DeviceTreeItemData : public wxTreeItemData
-{
+struct DeviceTreeItemData : public wxTreeItemData {
     DeviceTreeItemData(const DeviceNode* soc)
-     : wxTreeItemData(), gui(nullptr), soc(soc)
+        : wxTreeItemData()
+        , gui(nullptr)
+        , soc(soc)
     {
     }
 
@@ -77,25 +76,27 @@ struct DeviceTreeItemData : public wxTreeItemData
     const DeviceNode* soc;
 };
 
-LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
-    : wxFrame(parent, wxNewId(), _("LimeSuite")), lmsControl(nullptr)
+LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
+    : wxFrame(parent, wxNewId(), _("LimeSuite"))
+    , lmsControl(nullptr)
 {
     obj_ptr = this;
 
     mbar = new wxMenuBar(0);
     fileMenu = new wxMenu();
-    wxMenuItem *menuFileQuit =
-        new wxMenuItem(fileMenu, idMenuQuit, wxString(wxT("&Quit")) + wxT('\t') + wxT("Alt+F4"),
-                       wxT("Quit the application"), wxITEM_NORMAL);
+    wxMenuItem* menuFileQuit = new wxMenuItem(
+        fileMenu, idMenuQuit, wxString(wxT("&Quit")) + wxT('\t') + wxT("Alt+F4"), wxT("Quit the application"), wxITEM_NORMAL);
     fileMenu->Append(menuFileQuit);
 
     mnuModules = new wxMenu();
     mbar->Append(mnuModules, wxT("Modules"));
 
     helpMenu = new wxMenu();
-    wxMenuItem *menuHelpAbout =
-        new wxMenuItem(helpMenu, idMenuAbout, wxString(wxT("&About")) + wxT('\t') + wxT("F1"),
-                       wxT("Show info about this application"), wxITEM_NORMAL);
+    wxMenuItem* menuHelpAbout = new wxMenuItem(helpMenu,
+        idMenuAbout,
+        wxString(wxT("&About")) + wxT('\t') + wxT("F1"),
+        wxT("Show info about this application"),
+        wxITEM_NORMAL);
     helpMenu->Append(menuHelpAbout);
 
     mbar->Append(helpMenu, wxT("&Help"));
@@ -112,8 +113,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     pnlDeviceConnection = new DeviceConnectionPanel(this, wxNewId());
     mainSizer->Add(pnlDeviceConnection, 0, wxEXPAND, 0);
 
-    m_scrolledWindow1 = new wxScrolledWindow(this, wxNewId(), wxDefaultPosition, wxDefaultSize,
-                                             wxHSCROLL | wxVSCROLL);
+    m_scrolledWindow1 = new wxScrolledWindow(this, wxNewId(), wxDefaultPosition, wxDefaultSize, wxHSCROLL | wxVSCROLL);
     m_scrolledWindow1->SetScrollRate(5, 5);
     contentSizer = new wxFlexGridSizer(0, 2, 0, 0);
     contentSizer->AddGrowableCol(1);
@@ -121,9 +121,10 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     contentSizer->SetFlexibleDirection(wxBOTH);
     contentSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
-    mContent = nullptr;//new lms7002_mainPanel(m_scrolledWindow1, wxNewId(), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    mContent = nullptr; //new lms7002_mainPanel(m_scrolledWindow1, wxNewId(), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
     //contentSizer->Add(mContent, 0, 0, 5);
-    deviceTree = new wxTreeCtrl(m_scrolledWindow1, wxNewId(), wxPoint(0,0), wxSize(200,385), wxTR_HAS_BUTTONS | wxTR_SINGLE | wxTR_ROW_LINES);
+    deviceTree = new wxTreeCtrl(
+        m_scrolledWindow1, wxNewId(), wxPoint(0, 0), wxSize(200, 385), wxTR_HAS_BUTTONS | wxTR_SINGLE | wxTR_ROW_LINES);
     contentSizer->Add(deviceTree, 0, wxEXPAND, 0);
 
     m_scrolledWindow1->SetSizerAndFit(contentSizer);
@@ -144,7 +145,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     fftviewer = new fftviewer_frFFTviewer(this, wxNewId());
     AddModule(fftviewer, "fftviewer");
 
-    SPI_wxgui *spigui = new SPI_wxgui(this, wxNewId());
+    SPI_wxgui* spigui = new SPI_wxgui(this, wxNewId());
     AddModule(spigui, "SPI");
 
     boardControlsGui = new pnlBoardControls(this, wxNewId());
@@ -153,9 +154,9 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     programmer = new LMS_Programing_wxgui(this, wxNewId());
     AddModule(programmer, "Programming");
 
-    int x,y1,y2;
-    m_scrolledWindow1->GetVirtualSize(&x,&y1);
-    mMiniLog->GetSize(nullptr,&y2);
+    int x, y1, y2;
+    m_scrolledWindow1->GetVirtualSize(&x, &y1);
+    mMiniLog->GetSize(nullptr, &y2);
 
     wxCommandEvent event;
     //OnControlBoardConnect(event);
@@ -163,13 +164,14 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow *parent)
     //UpdateConnections(lmsControl);
 
     // mnuCacheValues->Check(false);
-    const int statusWidths[] = {-1, -3, -3};
+    const int statusWidths[] = { -1, -3, -3 };
     statusBar->SetStatusWidths(3, statusWidths);
     Bind(limeEVT_SDR_HANDLE_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDeviceHandleChange), this);
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
-    deviceTree->Bind(wxEVT_TREE_SEL_CHANGED, wxTreeEventHandler(LMS7SuiteAppFrame::DeviceTreeSelectionChanged), this, deviceTree->GetId());
+    deviceTree->Bind(
+        wxEVT_TREE_SEL_CHANGED, wxTreeEventHandler(LMS7SuiteAppFrame::DeviceTreeSelectionChanged), this, deviceTree->GetId());
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -178,28 +180,28 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
         iter.second->Destroy();
 
     OnDeviceDisconnect();
-
 }
 
-void LMS7SuiteAppFrame::OnClose( wxCloseEvent& event )
+void LMS7SuiteAppFrame::OnClose(wxCloseEvent& event)
 {
     Destroy();
 }
 
-void LMS7SuiteAppFrame::OnQuit( wxCommandEvent& event )
+void LMS7SuiteAppFrame::OnQuit(wxCommandEvent& event)
 {
     Destroy();
 }
 
-void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
+void LMS7SuiteAppFrame::OnAbout(wxCommandEvent& event)
 {
-	dlgAbout dlg(this);
+    dlgAbout dlg(this);
     dlg.ShowModal();
 }
 
-void LMS7SuiteAppFrame::UpdateConnections(SDRDevice *device)
+void LMS7SuiteAppFrame::UpdateConnections(SDRDevice* device)
 {
-    for (auto iter : mModules) {
+    for (auto iter : mModules)
+    {
         iter.second->Initialize(device);
     }
 }
@@ -210,7 +212,7 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
         fftviewer->StopStreaming();
     if (lmsControl)
     {
-        const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
+        const SDRDevice::Descriptor& info = lmsControl->GetDescriptor();
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
@@ -256,11 +258,12 @@ void FillDeviceTree(wxTreeCtrl* root, lime::SDRDevice* device, wxWindow* parentW
     root->SelectItem(rootId, true);
 }
 
-void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
+void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
 {
     OnDeviceDisconnect();
     // event.GetString() is the target device handle text
-    try {
+    try
+    {
         if (event.GetString().length() == 0)
             return;
 
@@ -269,21 +272,24 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
 
         if (!lmsControl)
         {
-            wxMessageBox( wxString::Format("Failed to connect to: %s", event.GetString()), wxT("Connection error"), wxICON_ERROR);
+            wxMessageBox(wxString::Format("Failed to connect to: %s", event.GetString()), wxT("Connection error"), wxICON_ERROR);
             return;
         }
 
         //bind callback for spi data logging
-        const SDRDevice::Descriptor &info = lmsControl->GetDescriptor();
+        const SDRDevice::Descriptor& info = lmsControl->GetDescriptor();
         lmsControl->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         wxString controlDev = _("Device: ");
         controlDev.Append(handle.ToString());
         double refClk = lmsControl->GetClockFreq(LMS_CLOCK_REF,
-                                                 0); // use reference clock of the 0th channel
-        controlDev.Append(wxString::Format(
-            _(" FW:%s HW:%s Protocol:%s GW:%s.%s Ref Clk: %1.2f MHz"),
-            info.firmwareVersion, info.hardwareVersion, info.protocolVersion,
-            info.gatewareVersion, info.gatewareRevision, refClk / 1e6));
+            0); // use reference clock of the 0th channel
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s.%s Ref Clk: %1.2f MHz"),
+            info.firmwareVersion,
+            info.hardwareVersion,
+            info.protocolVersion,
+            info.gatewareVersion,
+            info.gatewareRevision,
+            refClk / 1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         FillDeviceTree(deviceTree, lmsControl, m_scrolledWindow1);
@@ -298,13 +304,13 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent &event)
         UpdateConnections(lmsControl);
 
         Fit();
-    }
-    catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         printf("Failed to connect %s\n", e.what());
     }
 }
 
-void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
+void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent& event)
 {
     if (mMiniLog)
         mMiniLog->HandleMessage(event);
@@ -328,13 +334,13 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
     if (repeatedZeros == 2)
         repeatedZeros = 0;
     repeatedZeros = repeatedZeros - (repeatedZeros & 0x1);
-    for (size_t i = 0; i<length - repeatedZeros; ++i)
+    for (size_t i = 0; i < length - repeatedZeros; ++i)
         //casting to short to print as numbers
         ss << " " << std::setw(2) << (unsigned short)data[i];
     if (repeatedZeros > 2)
         ss << " (00 x " << std::dec << repeatedZeros << " times)";
     cout << ss.str() << endl;
-    wxCommandEvent *evt = new wxCommandEvent();
+    wxCommandEvent* evt = new wxCommandEvent();
     evt->SetString(ss.str());
     evt->SetEventObject(obj_ptr);
     evt->SetEventType(LOG_MESSAGE);
@@ -342,43 +348,44 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
     wxQueueEvent(obj_ptr, evt);
 }
 
-void LMS7SuiteAppFrame::AddModule(IModuleFrame *module, const char *title)
+void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const char* title)
 {
     wxWindowID moduleId = module->GetId();
     printf("Add module %i\n", moduleId);
-    wxMenuItem *item;
+    wxMenuItem* item;
     item = new wxMenuItem(mnuModules, moduleId, wxString(title), wxEmptyString, wxITEM_NORMAL);
     mnuModules->Append(item);
 
     mModules[moduleId] = module;
-    module->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose),
-                       NULL, this);
-    this->Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED,
-                  wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
+    module->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose), NULL, this);
+    this->Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
 }
 
-void LMS7SuiteAppFrame::RemoveModule(IModuleFrame *module) {}
+void LMS7SuiteAppFrame::RemoveModule(IModuleFrame* module)
+{
+}
 
-void LMS7SuiteAppFrame::OnModuleClose(wxCloseEvent &event)
+void LMS7SuiteAppFrame::OnModuleClose(wxCloseEvent& event)
 {
     printf("Close module %i\n", event.GetId());
-    IModuleFrame *module = mModules.at(event.GetId());
-    if (module) {
+    IModuleFrame* module = mModules.at(event.GetId());
+    if (module)
+    {
         module->Show(false);
     }
 }
 
-void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent &event)
+void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent& event)
 {
     printf("show module %i\n", event.GetId());
-    IModuleFrame *module = mModules.at(event.GetId());
+    IModuleFrame* module = mModules.at(event.GetId());
     if (module) //it's already opened
     {
         module->Initialize(lmsControl);
         module->Show(true);
         module->Iconize(false); // restore the window if minimized
-        module->SetFocus();     // focus on my window
-        module->Raise();         // bring window to front
+        module->SetFocus(); // focus on my window
+        module->Raise(); // bring window to front
     }
 }
 
@@ -417,7 +424,7 @@ ISOCPanel* CreateGUI(wxWindow* parent, const std::string& klass, void* socPtr)
     return nullptr;
 }
 
-void LMS7SuiteAppFrame::DeviceTreeSelectionChanged(wxTreeEvent &event)
+void LMS7SuiteAppFrame::DeviceTreeSelectionChanged(wxTreeEvent& event)
 {
     DeviceTreeItemData* item = reinterpret_cast<DeviceTreeItemData*>(deviceTree->GetItemData(event.GetItem()));
     if (item->gui == nullptr)

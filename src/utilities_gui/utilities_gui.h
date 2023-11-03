@@ -34,29 +34,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 class dlgConnectionSettings_view : public wxDialog
 {
-	private:
-    protected:
-      wxStaticText *m_staticText472;
-      wxListBox *mListLMS7ports;
-      wxButton *btnConnect;
-      wxButton *btnCancel;
-      wxButton *btnDisconnect;
+  private:
+  protected:
+    wxStaticText* m_staticText472;
+    wxListBox* mListLMS7ports;
+    wxButton* btnConnect;
+    wxButton* btnCancel;
+    wxButton* btnDisconnect;
 
-      // Virtual event handlers, overide them in your derived class
-      virtual void GetDeviceList(wxInitDialogEvent &event)
-      {
-          event.Skip(); }
-		virtual void OnConnect( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnCancel( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnDisconnect( wxCommandEvent& event ) { event.Skip(); }
+    // Virtual event handlers, overide them in your derived class
+    virtual void GetDeviceList(wxInitDialogEvent& event) { event.Skip(); }
+    virtual void OnConnect(wxCommandEvent& event) { event.Skip(); }
+    virtual void OnCancel(wxCommandEvent& event) { event.Skip(); }
+    virtual void OnDisconnect(wxCommandEvent& event) { event.Skip(); }
 
-      public:
-        dlgConnectionSettings_view(wxWindow *parent, wxWindowID id = wxID_ANY,
-                                   const wxString &title = wxT("Connection Settings"),
-                                   const wxPoint &pos = wxDefaultPosition,
-                                   const wxSize &size = wxDefaultSize,
-                                   long style = wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-        ~dlgConnectionSettings_view();
+  public:
+    dlgConnectionSettings_view(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = wxT("Connection Settings"),
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+    ~dlgConnectionSettings_view();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,18 +63,18 @@ class dlgConnectionSettings_view : public wxDialog
 ///////////////////////////////////////////////////////////////////////////////
 class dlgFullMessageLog_view : public wxDialog
 {
-	private:
-    protected:
-      wxTextCtrl *txtMessageField;
+  private:
+  protected:
+    wxTextCtrl* txtMessageField;
 
-    public:
-      dlgFullMessageLog_view(wxWindow *parent, wxWindowID id = wxID_ANY,
-                             const wxString &title = wxT("Message log"),
-                             const wxPoint &pos = wxDefaultPosition,
-                             const wxSize &size = wxDefaultSize,
-                             long style = wxCAPTION | wxCLOSE_BOX | wxDEFAULT_DIALOG_STYLE |
-                                          wxMAXIMIZE_BOX | wxRESIZE_BORDER);
-      ~dlgFullMessageLog_view();
+  public:
+    dlgFullMessageLog_view(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = wxT("Message log"),
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxCAPTION | wxCLOSE_BOX | wxDEFAULT_DIALOG_STYLE | wxMAXIMIZE_BOX | wxRESIZE_BORDER);
+    ~dlgFullMessageLog_view();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -83,35 +82,35 @@ class dlgFullMessageLog_view : public wxDialog
 ///////////////////////////////////////////////////////////////////////////////
 class dlgDeviceInfo_view : public wxDialog
 {
-	private:
-    protected:
-      wxButton *btnGetInfo;
-      wxStaticText *m_staticText6;
-      wxStaticText *lblDeviceCtr;
-      wxStaticText *m_staticText8;
-      wxStaticText *lblExpansionCtr;
-      wxStaticText *m_staticText10;
-      wxStaticText *lblFirmwareCtr;
-      wxStaticText *m_staticText12;
-      wxStaticText *lblHardwareCtr;
-      wxStaticText *m_staticText14;
-      wxStaticText *lblProtocolCtr;
-      wxStaticText *m_staticText41;
-      wxStaticText *lblGatewareCtr;
-      wxStaticText *m_staticText45;
-      wxStaticText *lblGatewareTargetCtr;
+  private:
+  protected:
+    wxButton* btnGetInfo;
+    wxStaticText* m_staticText6;
+    wxStaticText* lblDeviceCtr;
+    wxStaticText* m_staticText8;
+    wxStaticText* lblExpansionCtr;
+    wxStaticText* m_staticText10;
+    wxStaticText* lblFirmwareCtr;
+    wxStaticText* m_staticText12;
+    wxStaticText* lblHardwareCtr;
+    wxStaticText* m_staticText14;
+    wxStaticText* lblProtocolCtr;
+    wxStaticText* m_staticText41;
+    wxStaticText* lblGatewareCtr;
+    wxStaticText* m_staticText45;
+    wxStaticText* lblGatewareTargetCtr;
 
-      // Virtual event handlers, overide them in your derived class
-      virtual void OnGetInfo(wxCommandEvent &event)
-      {
-          event.Skip(); }
+    // Virtual event handlers, overide them in your derived class
+    virtual void OnGetInfo(wxCommandEvent& event) { event.Skip(); }
 
-    public:
-      dlgDeviceInfo_view(wxWindow *parent, wxWindowID id = wxID_ANY,
-                         const wxString &title = wxT("Device Info"),
-                         const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
-                         long style = wxDEFAULT_DIALOG_STYLE);
-      ~dlgDeviceInfo_view();
+  public:
+    dlgDeviceInfo_view(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = wxT("Device Info"),
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxDEFAULT_DIALOG_STYLE);
+    ~dlgDeviceInfo_view();
 };
 
 #endif //__UTILITIES_GUI_H__

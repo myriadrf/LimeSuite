@@ -26,7 +26,8 @@ const long RFSpark_wxgui::ID_CMBSELECTADC = wxNewId();
 BEGIN_EVENT_TABLE(RFSpark_wxgui, wxPanel)
 END_EVENT_TABLE()
 
-RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& title, const wxPoint& pos,const wxSize& size, long style)
+RFSpark_wxgui::RFSpark_wxgui(
+    wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
 {
     lmsControl = nullptr;
     Create(parent, id, wxDefaultPosition, wxDefaultSize, style, title);
@@ -45,10 +46,38 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Value")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
     sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Units")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
     wxArrayString adcList;
-    wxString adcNames[] = { "VDD12_TIA_RFE", "VDD_TBB", "VDD14_RBB", "DVDD_SXT", "VDD_DIC_SXT", "VDD12_TXBUF", "VDD12_VCO_SXT", "VDD14_LNA_RFE",
-        "DVDD_SXR", "VDD_DIV_SXR", "VDD_CP_SXR", "VDD18_SXR", "VD_MXLOBUF_RFE", "VDD14_TIA_RFE", "VDD12_LNA_RFE", "VDD_TLOBUF_TRF",
-        "VDD12_RXBIF", "VDD_AFE", "DIGPRVDD1", "VDD_SPI_BUF", "VDD18_TPAD_TRF", "DVDD_CGEN", "VDD_DIV_CGEN", "VDD_CP_CGEN", "VDD12_DIG", "VDD14_VCO_CGEN",
-        "TSTAO", "TSTDO 0", "TSTDO 1", "3V3", "VDIO", "VDIO_FMC" };
+    wxString adcNames[] = { "VDD12_TIA_RFE",
+        "VDD_TBB",
+        "VDD14_RBB",
+        "DVDD_SXT",
+        "VDD_DIC_SXT",
+        "VDD12_TXBUF",
+        "VDD12_VCO_SXT",
+        "VDD14_LNA_RFE",
+        "DVDD_SXR",
+        "VDD_DIV_SXR",
+        "VDD_CP_SXR",
+        "VDD18_SXR",
+        "VD_MXLOBUF_RFE",
+        "VDD14_TIA_RFE",
+        "VDD12_LNA_RFE",
+        "VDD_TLOBUF_TRF",
+        "VDD12_RXBIF",
+        "VDD_AFE",
+        "DIGPRVDD1",
+        "VDD_SPI_BUF",
+        "VDD18_TPAD_TRF",
+        "DVDD_CGEN",
+        "VDD_DIV_CGEN",
+        "VDD_CP_CGEN",
+        "VDD12_DIG",
+        "VDD14_VCO_CGEN",
+        "TSTAO",
+        "TSTDO 0",
+        "TSTDO 1",
+        "3V3",
+        "VDIO",
+        "VDIO_FMC" };
     for (int i = 0; i < mADCcount; ++i)
     {
         adcElement.title = new wxStaticText(this, wxNewId(), wxString::Format("%s", adcNames[i]));
@@ -72,7 +101,9 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
 
     wxFlexGridSizer* sizerGPIOs = new wxFlexGridSizer(0, 2, 2, 4);
 
-    wxString gpios7_0[] = { "ADCinQ2_N 15", "ADCinQ2_P", "ADCinI2_N", "ADCinI2_P", "ADCinQ1_N", "ADCinQ1_P", "ADCinI1_N", "ADCinI1_P" };
+    wxString gpios7_0[] = {
+        "ADCinQ2_N 15", "ADCinQ2_P", "ADCinI2_N", "ADCinI2_P", "ADCinQ1_N", "ADCinQ1_P", "ADCinI1_N", "ADCinI1_P"
+    };
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
@@ -82,7 +113,9 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
         mGPIOboxes.push_back(chkgpio);
     }
 
-    wxString gpios15_8[] = { "GPIO 15", "DIG_RST", "CORE_LDO_EN", "IQSELEN2RX_DIR", "IQSELEN1TX_DIR", "DIO_BUF_OE", "DIQ2RX_DIR", "DIQ1TX_DIR" };
+    wxString gpios15_8[] = {
+        "GPIO 15", "DIG_RST", "CORE_LDO_EN", "IQSELEN2RX_DIR", "IQSELEN1TX_DIR", "DIO_BUF_OE", "DIQ2RX_DIR", "DIQ1TX_DIR"
+    };
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
@@ -128,13 +161,12 @@ void RFSpark_wxgui::Initialize(lms_device_t* pSerPort)
 
 RFSpark_wxgui::~RFSpark_wxgui()
 {
-
 }
 
 void RFSpark_wxgui::UpdateADClabels()
 {
-	for (unsigned i = 0; i < mADCdata.size(); ++i)
-	{
+    for (unsigned i = 0; i < mADCdata.size(); ++i)
+    {
         mADCgui[i].value->SetLabelText(wxString::Format("%1.3f", mADCdata[i].value));
         mADCgui[i].units->SetLabelText(wxString::Format("%s", mADCdata[i].units));
     }
@@ -146,7 +178,7 @@ void RFSpark_wxgui::OnRefreshAllADC(wxCommandEvent& event)
     {
         float_type val;
         lms_name_t units;
-        if (LMS_ReadCustomBoardParam(lmsControl,i,&val,units)!=0)
+        if (LMS_ReadCustomBoardParam(lmsControl, i, &val, units) != 0)
         {
             wxMessageBox(_("Error reading ADC values"), _("Warning"));
             return;
@@ -160,23 +192,23 @@ void RFSpark_wxgui::OnRefreshAllADC(wxCommandEvent& event)
 
 void RFSpark_wxgui::OnWriteGPIO(wxCommandEvent& event)
 {
-    std::vector<uint8_t> values(mGPIOboxes.size()/8, 0);
+    std::vector<uint8_t> values(mGPIOboxes.size() / 8, 0);
     int gpioIndex = 0;
-    for (size_t i = 0; i < mGPIOboxes.size()/8; ++i)
+    for (size_t i = 0; i < mGPIOboxes.size() / 8; ++i)
     {
         unsigned char value = 0;
         for (int j = 7; j >= 0; --j)
             value |= mGPIOboxes[gpioIndex++]->IsChecked() << j;
         values[i] = value;
     }
-    if (LMS_GPIOWrite(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
+    if (LMS_GPIOWrite(lmsControl, values.data(), mGPIOboxes.size() / 8) != 0)
         wxMessageBox(_("GPIO write failed"), _("Warning"));
 }
 
 void RFSpark_wxgui::OnReadGPIO(wxCommandEvent& event)
 {
-    std::vector<uint8_t> values(mGPIOboxes.size()/8);
-    if (LMS_GPIORead(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
+    std::vector<uint8_t> values(mGPIOboxes.size() / 8);
+    if (LMS_GPIORead(lmsControl, values.data(), mGPIOboxes.size() / 8) != 0)
     {
         wxMessageBox(_("GPIO read failed"), _("Warning"));
         return;
@@ -186,18 +218,18 @@ void RFSpark_wxgui::OnReadGPIO(wxCommandEvent& event)
     for (size_t i = 0; i < mGPIOboxes.size() / 8; ++i)
     {
         for (int j = 7; j >= 0 && gpioIndex < mGPIOboxes.size(); --j)
-            mGPIOboxes[gpioIndex++]->SetValue( values[gpioByte] & (0x1 << j) );
+            mGPIOboxes[gpioIndex++]->SetValue(values[gpioByte] & (0x1 << j));
         ++gpioByte;
     }
 }
 
-void RFSpark_wxgui::OnReadAll(wxCommandEvent &event)
+void RFSpark_wxgui::OnReadAll(wxCommandEvent& event)
 {
     OnReadGPIO(event);
     OnRefreshAllADC(event);
 }
 
-void RFSpark_wxgui::OnWriteAll(wxCommandEvent &event)
+void RFSpark_wxgui::OnWriteAll(wxCommandEvent& event)
 {
     OnWriteGPIO(event);
 }

@@ -6,11 +6,11 @@
 
 #include "software/kernel/litepcie.h"
 
-namespace lime{
+namespace lime {
 
 class LitePCIe
 {
-public:
+  public:
     static std::vector<std::string> GetDevicesWithPattern(const std::string& regex);
     LitePCIe();
     ~LitePCIe();
@@ -20,12 +20,12 @@ public:
     bool IsOpen();
 
     // Write/Read for communicating to control end points (SPI, I2C...)
-    int WriteControl(const uint8_t *buffer, int length, int timeout_ms = 100);
-    int ReadControl(uint8_t *buffer, int length, int timeout_ms = 100);
+    int WriteControl(const uint8_t* buffer, int length, int timeout_ms = 100);
+    int ReadControl(uint8_t* buffer, int length, int timeout_ms = 100);
 
     // Write/Read for samples streaming
-    int WriteRaw(const uint8_t *buffer, int length, int timeout_ms = 100);
-    int ReadRaw(uint8_t *buffer, int length, int timeout_ms = 100);
+    int WriteRaw(const uint8_t* buffer, int length, int timeout_ms = 100);
+    int ReadRaw(uint8_t* buffer, int length, int timeout_ms = 100);
 
     const std::string& GetPathName() const { return mFilePath; };
     void SetPathName(const char* filePath) { mFilePath = std::string(filePath); };
@@ -36,8 +36,13 @@ public:
     void TxDMAEnable(bool enabled);
 
     struct DMAInfo {
-        DMAInfo() : rxMemory(nullptr), txMemory(nullptr),
-            bufferSize(0), bufferCount(0) {}
+        DMAInfo()
+            : rxMemory(nullptr)
+            , txMemory(nullptr)
+            , bufferSize(0)
+            , bufferCount(0)
+        {
+        }
         uint8_t* rxMemory;
         uint8_t* txMemory;
         int bufferSize;
@@ -63,11 +68,11 @@ public:
 
     void CacheFlush(bool isTx, bool toDevice, uint16_t index);
 
-protected:
+  protected:
     std::string mFilePath;
     DMAInfo mDMA;
     int mFileDescriptor;
     bool isConnected;
 };
 
-}
+} // namespace lime

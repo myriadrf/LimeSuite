@@ -19,14 +19,14 @@ class FPGA;
 // Base class for device with multiple LMS7002M chips and FPGA
 class LIME_API LMS7002M_SDRDevice : public SDRDevice
 {
-public:
+  public:
     LMS7002M_SDRDevice();
     virtual ~LMS7002M_SDRDevice();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
-    virtual const Descriptor &GetDescriptor();
+    virtual const Descriptor& GetDescriptor();
 
     virtual int Init() = 0;
     virtual void Reset() override;
@@ -39,38 +39,38 @@ public:
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
-    virtual int StreamSetup(const StreamConfig &config, uint8_t moduleIndex) = 0;
+    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
     virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
     virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count,
-                         const StreamMeta* meta) override;
-    virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count,
-                         const StreamMeta* meta) override;
+    virtual int StreamTx(
+        uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual int StreamTx(
+        uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t *MOSI, uint32_t *MISO,
-                     uint32_t count) override;
+    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int I2CWrite(int address, const uint8_t *data, uint32_t length) override;
-    virtual int I2CRead(int addr, uint8_t *dest, uint32_t length) override;
-    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
-    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
-    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
-    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
-    virtual int CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units) override;
+    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
+    virtual int I2CRead(int addr, uint8_t* dest, uint32_t length) override;
+    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
+    virtual int CustomParameterWrite(
+        const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback) override;
     virtual void SetMessageLogCallback(LogCallbackType callback) override;
 
-    virtual void *GetInternalChip(uint32_t index);
+    virtual void* GetInternalChip(uint32_t index);
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 
-protected:
+  protected:
     static int UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;
@@ -79,11 +79,11 @@ protected:
 
     Descriptor mDeviceDescriptor;
     StreamConfig mStreamConfig;
-    FPGA *mFPGA;
+    FPGA* mFPGA;
 
-private:
+  private:
     friend class DeviceRegistry;
 };
 
-}
+} // namespace lime
 #endif

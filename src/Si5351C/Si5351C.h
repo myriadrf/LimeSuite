@@ -11,19 +11,20 @@
 #include <string>
 #include "limesuite/config.h"
 //---------------------------------------------------------------------------
-namespace lime{
+namespace lime {
 
-enum eSi_CLOCK_INPUT
-{
-    Si_CLKIN,
-    Si_XTAL,
-    Si_CMOS
-};
+enum eSi_CLOCK_INPUT { Si_CLKIN, Si_XTAL, Si_CMOS };
 
-struct Si5351_Channel
-{
-    Si5351_Channel() : outputDivider(1), outputFreqHz(1), multisynthDivider(1), pllSource(0),
-        phaseOffset(0), powered(true), inverted(false), int_mode(false) {};
+struct Si5351_Channel {
+    Si5351_Channel()
+        : outputDivider(1)
+        , outputFreqHz(1)
+        , multisynthDivider(1)
+        , pllSource(0)
+        , phaseOffset(0)
+        , powered(true)
+        , inverted(false)
+        , int_mode(false){};
     int outputDivider;
     unsigned long outputFreqHz;
     float multisynthDivider;
@@ -34,9 +35,15 @@ struct Si5351_Channel
     bool int_mode;
 };
 
-struct Si5351_PLL
-{
-    Si5351_PLL() : inputFreqHz(0), VCO_Hz(0), feedbackDivider(0), CLKIN_DIV(1), CLK_SRC(1) {}
+struct Si5351_PLL {
+    Si5351_PLL()
+        : inputFreqHz(0)
+        , VCO_Hz(0)
+        , feedbackDivider(0)
+        , CLKIN_DIV(1)
+        , CLK_SRC(1)
+    {
+    }
     unsigned long inputFreqHz;
     float VCO_Hz;
     float feedbackDivider;
@@ -48,18 +55,23 @@ class II2C;
 
 class LIME_API Si5351C
 {
-public:
-    enum Status
-    {
+  public:
+    enum Status {
         SUCCESS,
         FAILED,
     };
 
-    struct StatusBits
-    {
-        StatusBits() : sys_init(0), sys_init_stky(0), lol_b(0), lol_b_stky(0), lol_a(0), lol_a_stky(0), los(0), los_stky(0)
+    struct StatusBits {
+        StatusBits()
+            : sys_init(0)
+            , sys_init_stky(0)
+            , lol_b(0)
+            , lol_b_stky(0)
+            , lol_a(0)
+            , lol_a_stky(0)
+            , los(0)
+            , los_stky(0)
         {
-
         }
         int sys_init;
         int sys_init_stky;
@@ -75,7 +87,7 @@ public:
     Status ClearStatus();
 
     Si5351C(II2C& i2c_comms);
-	~Si5351C();
+    ~Si5351C();
     bool LoadRegValuesFromFile(std::string FName);
 
     void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
@@ -83,21 +95,19 @@ public:
 
     Status UploadConfiguration();
     Status ConfigureClocks();
-	void Reset();
+    void Reset();
 
-private:
-    void FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned long Fmin, const unsigned long Fmax);
+  private:
+    void FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned long Fmin, const unsigned long Fmax);
     lime::II2C& comms;
     int addrSi5351;
 
     Si5351_PLL PLL[2];
     Si5351_Channel CLK[8];
 
-	static const unsigned char m_defaultConfiguration[];
-	unsigned char m_newConfiguration[255];
-
-
+    static const unsigned char m_defaultConfiguration[];
+    unsigned char m_newConfiguration[255];
 };
 
-}
+} // namespace lime
 #endif // SI5351C_MODULE

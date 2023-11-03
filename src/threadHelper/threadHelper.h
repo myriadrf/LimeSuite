@@ -3,17 +3,9 @@
 
 #include <thread>
 
-namespace lime{
+namespace lime {
 
-enum ThreadPriority {
-    LOWEST,
-    LOW,
-    BELOW_NORMAL,
-    NORMAL,
-    ABOVE_NORMAL,
-    HIGH,
-    HIGHEST
-};
+enum ThreadPriority { LOWEST, LOW, BELOW_NORMAL, NORMAL, ABOVE_NORMAL, HIGH, HIGHEST };
 
 enum ThreadPolicy {
     DEFAULT,
@@ -29,7 +21,7 @@ enum ThreadPolicy {
  *
  * @return          0 on success, (-1) on failure
  */
-int SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::thread *thread);
+int SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::thread* thread);
 
 /**
  * Set priority of current or specificied thread
@@ -41,6 +33,6 @@ int SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::threa
  * @return          0 on success, (-1) on failure
  */
 int SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy policy);
-}
+} // namespace lime
 
 #endif

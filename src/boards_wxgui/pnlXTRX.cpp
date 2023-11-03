@@ -18,7 +18,7 @@ using namespace lime;
 BEGIN_EVENT_TABLE(pnlXTRX, wxPanel)
 END_EVENT_TABLE()
 
-pnlXTRX::pnlXTRX(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size, int style, wxString name)
+pnlXTRX::pnlXTRX(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
 {
     chipSelect = -1;
     device = nullptr;
@@ -27,7 +27,7 @@ pnlXTRX::pnlXTRX(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSi
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
-    wxFlexGridSizer *mainSizer = new wxFlexGridSizer(0, 2, 1, 1);
+    wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 1, 1);
 
     mainSizer->Add(new wxStaticText(this, wxID_ANY, _("RFSW_TX ")), 1, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     cmbTxPath = new wxChoice(this, wxNewId());
@@ -51,7 +51,7 @@ pnlXTRX::pnlXTRX(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSi
     mainSizer->Add(TDDCntrl, 1, wxEXPAND | wxALIGN_RIGHT | wxALIGN_TOP, 5);
     Connect(TDDCntrl->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlXTRX::OnInputChange), NULL, this);
 
-    wxStaticBoxSizer *mainBoxSizer;
+    wxStaticBoxSizer* mainBoxSizer;
     mainBoxSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxString::Format("RF controls %s", name)), wxHORIZONTAL);
     mainBoxSizer->Add(mainSizer, 0, 0, 5);
 
@@ -63,15 +63,15 @@ pnlXTRX::pnlXTRX(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSi
     Bind(WRITE_ALL_VALUES, &pnlXTRX::OnWriteAll, this, this->GetId());
 }
 
-void pnlXTRX::Initialize(lime::SDRDevice *dev, const string& spiSlaveName)
+void pnlXTRX::Initialize(lime::SDRDevice* dev, const string& spiSlaveName)
 {
     chipSelect = -1;
     device = dev;
     if (!device)
         return;
 
-    const SDRDevice::Descriptor &desc = device->GetDescriptor();
-    for (const auto &nameIds : desc.spiSlaveIds)
+    const SDRDevice::Descriptor& desc = device->GetDescriptor();
+    for (const auto& nameIds : desc.spiSlaveIds)
     {
         if (nameIds.first == spiSlaveName)
         {
@@ -83,15 +83,14 @@ void pnlXTRX::Initialize(lime::SDRDevice *dev, const string& spiSlaveName)
 
 pnlXTRX::~pnlXTRX()
 {
-
 }
 
-void pnlXTRX::OnInputChange(wxCommandEvent &event)
+void pnlXTRX::OnInputChange(wxCommandEvent& event)
 {
     uint16_t addr = 0x000a;
     uint16_t value = 0;
 
-    if (pnlXTRX::LMS_ReadFPGAReg (device,addr,&value))
+    if (pnlXTRX::LMS_ReadFPGAReg(device, addr, &value))
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
     value &= ~(1 << 11 | 1 << 4 | 1 << 3 | 1 << 2);
     bool autoSwitching = TDDCntrl->IsChecked();
@@ -105,34 +104,35 @@ void pnlXTRX::OnInputChange(wxCommandEvent &event)
         wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
 }
 
-int pnlXTRX::LMS_WriteFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t val)
+int pnlXTRX::LMS_WriteFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t val)
 {
     if (!device)
         return -1;
 
     const uint32_t mosi = (1 << 31) | address << 16 | val;
-    try {
+    try
+    {
         device->SPI(chipSelect, &mosi, nullptr, 1);
         return 0;
-    }
-    catch (...) {
+    } catch (...)
+    {
         return -1;
     }
 }
 
-int pnlXTRX::LMS_ReadFPGAReg(lime::SDRDevice *device, uint32_t address, uint16_t *val)
+int pnlXTRX::LMS_ReadFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t* val)
 {
     if (!device)
         return -1;
     const uint32_t mosi = address;
     uint32_t miso = 0;
 
-    try {
+    try
+    {
         device->SPI(chipSelect, &mosi, &miso, 1);
         *val = miso & 0xFFFF;
         return 0;
-    }
-    catch (...)
+    } catch (...)
     {
         return -1;
     }
@@ -152,16 +152,16 @@ void pnlXTRX::UpdatePanel()
     cmbRxPath->Enable(!autoSwitching);
     cmbTxPath->Enable(!autoSwitching);
     TDDCntrl->SetValue(autoSwitching);
-    cmbTxPath->SetSelection ((value >> 4) & 1);
-    cmbRxPath->SetSelection ((value >> 2) & 3);
+    cmbTxPath->SetSelection((value >> 4) & 1);
+    cmbRxPath->SetSelection((value >> 2) & 3);
 }
 
-void pnlXTRX::OnReadAll(wxCommandEvent &event)
+void pnlXTRX::OnReadAll(wxCommandEvent& event)
 {
     UpdatePanel();
 }
 
-void pnlXTRX::OnWriteAll(wxCommandEvent &event)
+void pnlXTRX::OnWriteAll(wxCommandEvent& event)
 {
     OnInputChange(event);
 }

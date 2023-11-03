@@ -21,7 +21,7 @@ class SDRDevice;
 class fftviewer_frFFTviewer : public frFFTviewer
 {
   public:
-    virtual bool Initialize(lime::SDRDevice *device) override;
+    virtual bool Initialize(lime::SDRDevice* device) override;
     virtual void Update() override;
 
   protected:
@@ -33,8 +33,8 @@ class fftviewer_frFFTviewer : public frFFTviewer
     std::atomic<bool> enableFFT;
     std::string captureFilename;
     // Handlers for frFFTviewer events.
-    void OnWindowFunctionChanged( wxCommandEvent& event );
-    void OnbtnStartStop( wxCommandEvent& event );
+    void OnWindowFunctionChanged(wxCommandEvent& event);
+    void OnbtnStartStop(wxCommandEvent& event);
     void OnChannelVisibilityChange(wxCommandEvent& event);
     void OnStreamChange(wxCommandEvent& event);
     void OnEnPwr(wxCommandEvent& event);
@@ -42,25 +42,26 @@ class fftviewer_frFFTviewer : public frFFTviewer
     void OnAvgChange(wxSpinEvent& event);
     void OnAvgChangeEnter(wxCommandEvent& event);
     void OnWindowFunctionChange(wxCommandEvent& event);
-    static void StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format);
+    static void StreamingLoop(
+        fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format);
 
     void OnUpdateStats(wxTimerEvent& event);
     void OnUpdatePlots(wxThreadEvent& event);
-public:
+
+  public:
     /** Constructor */
-  fftviewer_frFFTviewer(wxWindow *parent, wxWindowID id);
-  ~fftviewer_frFFTviewer();
-  //// end generated class members
-  void SetNyquistFrequency();
+    fftviewer_frFFTviewer(wxWindow* parent, wxWindowID id);
+    ~fftviewer_frFFTviewer();
+    //// end generated class members
+    void SetNyquistFrequency();
 
-  void StartStreaming();
-  void StopStreaming();
-  void OnbtnCaptureClick(wxCommandEvent &event);
+    void StartStreaming();
+    void StopStreaming();
+    void OnbtnCaptureClick(wxCommandEvent& event);
 
-protected:
+  protected:
     static const int cMaxChCount = 2;
-    struct DataToGUI
-    {
+    struct DataToGUI {
         std::vector<float> samplesI[cMaxChCount];
         std::vector<float> samplesQ[cMaxChCount];
         std::vector<float> fftBins[cMaxChCount];
@@ -81,7 +82,7 @@ protected:
             }
             return *this;
         }
-    }streamData;
+    } streamData;
 
     std::vector<float> fftFreqAxis;
     std::vector<float> timeXAxis;
@@ -90,7 +91,7 @@ protected:
     std::thread threadProcessing;
     wxString printDataRate(float dataRate);
 
-    lime::SDRDevice *device;
+    lime::SDRDevice* device;
     wxTimer* mGUIupdater;
     unsigned lmsIndex;
 };

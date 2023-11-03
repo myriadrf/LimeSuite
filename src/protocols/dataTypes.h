@@ -9,48 +9,51 @@
 #include <type_traits>
 #include <assert.h>
 
-namespace lime{
+namespace lime {
 
-template<typename T, uint8_t chCount>
-class StagingPacket
+template<typename T, uint8_t chCount> class StagingPacket
 {
-public:
-    StagingPacket(uint16_t samplesCount) : timestamp(0), useTimestamp(false), flush(false),
-        offset(0), length(0), mCapacity(samplesCount)
+  public:
+    StagingPacket(uint16_t samplesCount)
+        : timestamp(0)
+        , useTimestamp(false)
+        , flush(false)
+        , offset(0)
+        , length(0)
+        , mCapacity(samplesCount)
     {
         assert(samplesCount > 0);
         constexpr int alignment = sizeof(T);
-        for(uint8_t i=0; i<chCount; ++i)
+        for (uint8_t i = 0; i < chCount; ++i)
         {
-            uint8_t* mem = (uint8_t*)aligned_alloc(alignment, alignment*samplesCount);
+            uint8_t* mem = (uint8_t*)aligned_alloc(alignment, alignment * samplesCount);
             tail[i] = head[i] = channel[i] = reinterpret_cast<T*>(mem);
         }
-
     };
     ~StagingPacket()
     {
-        for(uint8_t i=0; i<chCount; ++i)
+        for (uint8_t i = 0; i < chCount; ++i)
             free(channel[i]);
     };
     int64_t timestamp;
     bool useTimestamp;
     bool flush;
 
-    inline int size() const { return length-offset; };
+    inline int size() const { return length - offset; };
     inline bool empty() const { return size() == 0; };
     inline int capacity() const { return mCapacity; };
-    inline bool isFull() const { return mCapacity-length == 0; };
+    inline bool isFull() const { return mCapacity - length == 0; };
     inline constexpr int channelCount() const { return chCount; };
 
     // copies samples data to buffer, returns actual copied samples count
-    inline int push(const T* const * src, uint16_t count)
+    inline int push(const T* const* src, uint16_t count)
     {
-        const uint16_t freeSamples = mCapacity-length;
+        const uint16_t freeSamples = mCapacity - length;
         const int samplesToCopy = std::min(freeSamples, count);
         constexpr int alignment = sizeof(T);
-        for(uint8_t i=0; i<chCount; ++i)
+        for (uint8_t i = 0; i < chCount; ++i)
         {
-            if(src[i] == nullptr)
+            if (src[i] == nullptr)
                 continue;
             memcpy(tail[i], src[i], samplesToCopy * alignment);
             tail[i] += samplesToCopy;
@@ -61,21 +64,23 @@ public:
     // returns number of samples removed
     inline int pop(int count)
     {
-        const uint16_t toPop = std::min(count, length-offset);
-        for(uint8_t i=0; i<chCount; ++i)
+        const uint16_t toPop = std::min(count, length - offset);
+        for (uint8_t i = 0; i < chCount; ++i)
             head[i] += toPop;
         offset += toPop;
         timestamp += toPop; // also offset timestamp
         return toPop;
     }
-    inline T* const * front() const { return head; }
-    inline void Reset() {
+    inline T* const* front() const { return head; }
+    inline void Reset()
+    {
         offset = 0;
         length = 0;
-        for(uint8_t i=0; i<chCount; ++i)
+        for (uint8_t i = 0; i < chCount; ++i)
             tail[i] = head[i] = channel[i];
     }
-private:
+
+  private:
     T* head[chCount];
     T* tail[chCount];
     T* channel[chCount];
@@ -84,11 +89,13 @@ private:
     uint16_t mCapacity;
 };
 
-template<class T>
-struct PartialPacket
-{
-    PartialPacket() : timestamp(0), start(0), end(0), useTimestamp(false) {};
-    static constexpr int samplesStorage = 512*8;
+template<class T> struct PartialPacket {
+    PartialPacket()
+        : timestamp(0)
+        , start(0)
+        , end(0)
+        , useTimestamp(false){};
+    static constexpr int samplesStorage = 512 * 8;
     T chA[samplesStorage];
     T chB[samplesStorage];
     int64_t timestamp;
@@ -98,12 +105,13 @@ struct PartialPacket
     bool flush;
 };
 
-struct DataBlock
-{
-    DataBlock() : size(0), usage(0), offset(0), ptr(nullptr) {};
-    inline bool isValid() const {
-        return (ptr != nullptr) && (usage <= size) && (offset <= usage);
-    }
+struct DataBlock {
+    DataBlock()
+        : size(0)
+        , usage(0)
+        , offset(0)
+        , ptr(nullptr){};
+    inline bool isValid() const { return (ptr != nullptr) && (usage <= size) && (offset <= usage); }
     // ~DataBlock() { if(ptr != nullptr) delete ptr; };
     std::chrono::time_point<std::chrono::high_resolution_clock> genTime;
     int32_t size;
@@ -112,47 +120,40 @@ struct DataBlock
     void* ptr;
 };
 
-struct FPGA_DataPacket
-{
-    FPGA_DataPacket() {
-        memset(this, 0, sizeof(FPGA_DataPacket));
-    }
+struct FPGA_DataPacket {
+    FPGA_DataPacket() { memset(this, 0, sizeof(FPGA_DataPacket)); }
 
-    inline bool txWasDropped() const {
-        return header0 & (1 << 3);
-    }
-    inline void ignoreTimestamp(bool enabled) {
+    inline bool txWasDropped() const { return header0 & (1 << 3); }
+    inline void ignoreTimestamp(bool enabled)
+    {
         const uint8_t mask = 1 << 4;
         header0 &= ~mask; //clear ignore timestamp
         header0 |= enabled ? mask : 0; //ignore timestamp
     }
-    inline bool getIgnoreTimestamp() {
+    inline bool getIgnoreTimestamp()
+    {
         const uint8_t mask = 1 << 4;
         return header0 & mask; //ignore timestamp
     }
-    inline void ClearHeader() {
-        memset(this, 0, 16);
-    }
-    inline float RxFIFOFill() {
-        return (header0 & 0x7) * 0.125;
-    }
-    inline void SetPayloadSize(uint16_t size) {
+    inline void ClearHeader() { memset(this, 0, 16); }
+    inline float RxFIFOFill() { return (header0 & 0x7) * 0.125; }
+    inline void SetPayloadSize(uint16_t size)
+    {
         payloadSizeLSB = size & 0xFF;
         payloadSizeMSB = (size >> 8) & 0xFF;
     }
-    inline uint16_t GetPayloadSize() const {
-        return (payloadSizeMSB << 8) | payloadSizeLSB;
-    }
+    inline uint16_t GetPayloadSize() const { return (payloadSizeMSB << 8) | payloadSizeLSB; }
     // order matters
     uint8_t header0;
     // payload size specifies how many bytes are valid samples data, 0-full packet is valid
     uint8_t payloadSizeLSB;
     uint8_t payloadSizeMSB;
     uint8_t reserved[5];
-    int64_t counter; // should be unsigned, but that's prone to underflow during arithmetic and would choke FPGA, packets would not be sent
+    int64_t
+        counter; // should be unsigned, but that's prone to underflow during arithmetic and would choke FPGA, packets would not be sent
     uint8_t data[4080];
 };
 
-}// namespace lime
+} // namespace lime
 
 #endif

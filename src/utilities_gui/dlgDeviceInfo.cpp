@@ -1,12 +1,10 @@
 #include "dlgDeviceInfo.h"
 
-
-dlgDeviceInfo::dlgDeviceInfo(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
-:
-dlgDeviceInfo_view( parent, id, title, pos, size, styles)
+dlgDeviceInfo::dlgDeviceInfo(
+    wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long styles)
+    : dlgDeviceInfo_view(parent, id, title, pos, size, styles)
 {
     lmsControl = nullptr;
-
 }
 
 void dlgDeviceInfo::Initialize(lms_device_t* lms)
@@ -14,11 +12,11 @@ void dlgDeviceInfo::Initialize(lms_device_t* lms)
     lmsControl = lms;
 }
 
-void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
+void dlgDeviceInfo::OnGetInfo(wxCommandEvent& event)
 {
     const lms_dev_info_t* info;
 
-    if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
+    if ((info = LMS_GetDeviceInfo(lmsControl)) != nullptr)
     {
         lblDeviceCtr->SetLabel(info->deviceName);
         lblExpansionCtr->SetLabel(info->expansionName);
@@ -38,6 +36,4 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblGatewareCtr->SetLabel(_("???"));
         lblGatewareTargetCtr->SetLabel(_("???"));
     }
-
-
 }

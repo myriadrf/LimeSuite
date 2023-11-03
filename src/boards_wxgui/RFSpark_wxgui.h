@@ -16,11 +16,10 @@ class wxCheckBox;
 
 #include <vector>
 
-class RFSpark_wxgui: public wxPanel
+class RFSpark_wxgui : public wxPanel
 {
-public:
-    struct ADCdata
-    {
+  public:
+    struct ADCdata {
         unsigned char channel;
         std::string units;
         double value;
@@ -29,19 +28,23 @@ public:
         short value;*/
     };
 
-    struct ADCdataGUI
-    {
+    struct ADCdataGUI {
         wxStaticText* title;
         wxStaticText* units;
         wxStaticText* powerOf10;
         wxStaticText* value;
     };
 
-    RFSpark_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString& title=wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long style = 0);
+    RFSpark_wxgui(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = wxEmptyString,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = 0);
     virtual void Initialize(lms_device_t* pSerPort);
     virtual ~RFSpark_wxgui();
 
-protected:
+  protected:
     static const int mADCcount = 32;
     static const long ID_BTNREADADC;
     static const long ID_BTNREADALLADC;
@@ -52,15 +55,15 @@ protected:
     std::vector<ADCdataGUI> mADCgui;
     std::vector<wxCheckBox*> mGPIOboxes;
 
-private:
+  private:
     void UpdateADClabels();
     void OnRefreshAllADC(wxCommandEvent& event);
     void OnWriteGPIO(wxCommandEvent& event);
     void OnReadGPIO(wxCommandEvent& event);
 
-protected:
-    void OnReadAll(wxCommandEvent &event);
-    void OnWriteAll(wxCommandEvent &event);
+  protected:
+    void OnReadAll(wxCommandEvent& event);
+    void OnWriteAll(wxCommandEvent& event);
     lms_device_t* lmsControl;
     DECLARE_EVENT_TABLE()
 };

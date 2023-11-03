@@ -31,7 +31,8 @@ using namespace lime;
 BEGIN_EVENT_TABLE(LMS_Programing_wxgui, wxFrame)
 END_EVENT_TABLE()
 
-LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
+LMS_Programing_wxgui::LMS_Programing_wxgui(
+    wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
     : IModuleFrame(parent, id, title, pos, size, styles)
 {
     mProgrammingInProgress.store(false);
@@ -51,10 +52,12 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     FlexGridSizer6 = new wxFlexGridSizer(0, 2, 0, 0);
     StaticText1 = new wxStaticText(this, wxID_ANY, _T("File:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
     FlexGridSizer6->Add(StaticText1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    lblFilename = new wxStaticText(this, wxID_ANY, _T("\?"), wxDefaultPosition, wxSize(400, -1), wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
+    lblFilename =
+        new wxStaticText(this, wxID_ANY, _T("\?"), wxDefaultPosition, wxSize(400, -1), wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
     FlexGridSizer6->Add(lblFilename, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer2->Add(FlexGridSizer6, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    btnStartStop = new wxButton(this, ID_BUTTON2, _T("Program"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
+    btnStartStop =
+        new wxButton(this, ID_BUTTON2, _T("Program"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
     FlexGridSizer2->Add(btnStartStop, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer8 = new wxFlexGridSizer(0, 1, 0, 0);
     FlexGridSizer8->AddGrowableCol(0);
@@ -68,7 +71,8 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     FlexGridSizer1->Add(FlexGridSizer2, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer3 = new wxFlexGridSizer(0, 3, 0, 5);
     FlexGridSizer7 = new wxFlexGridSizer(0, 2, 0, 5);
-    StaticText2 = new wxStaticText(this, wxID_ANY, _T("Programming mode:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT3"));
+    StaticText2 =
+        new wxStaticText(this, wxID_ANY, _T("Programming mode:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT3"));
     FlexGridSizer7->Add(StaticText2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     cmbDevice = new wxChoice(this, ID_CHOICE2, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE2"));
     FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
@@ -79,30 +83,33 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     FlexGridSizer1->SetSizeHints(this);
 
     Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnOpenClick);
-    Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
+    Connect(btnStartStop->GetId(),
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
     Connect(ID_CHOICE2, wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&LMS_Programing_wxgui::OncmbDeviceSelect);
     Connect(ID_PROGRAMING_FINISHED_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingFinished);
-    Connect(ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingStatusUpdate);
+    Connect(
+        ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingStatusUpdate);
 }
 
 LMS_Programing_wxgui::~LMS_Programing_wxgui()
 {
     //make sure the thread has stopped before destroying data
-    if(mProgrammingInProgress.load() == true)
+    if (mProgrammingInProgress.load() == true)
     {
         mAbortProgramming.store(true);
         mWorkerThread.join();
     }
 }
 
-bool LMS_Programing_wxgui::Initialize(lime::SDRDevice *device)
+bool LMS_Programing_wxgui::Initialize(lime::SDRDevice* device)
 {
     mDevice = device;
     if (mDevice)
     {
         cmbDevice->Clear();
-        const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
-        for(const SDRDevice::DataStorage &mem : desc.memoryDevices)
+        const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
+        for (const SDRDevice::DataStorage& mem : desc.memoryDevices)
             cmbDevice->Append(wxString(mem.name));
         cmbDevice->SetSelection(0);
         wxCommandEvent evt;
@@ -114,7 +121,6 @@ bool LMS_Programing_wxgui::Initialize(lime::SDRDevice *device)
 
 void LMS_Programing_wxgui::Update()
 {
-
 }
 
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
@@ -123,7 +129,7 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
     wxString deviceSelection = cmbDevice->GetStringSelection();
     if (mDevice)
     {
-        const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+        const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
         if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
         {
             if (deviceSelection.find("FPGA") != wxString::npos)
@@ -141,7 +147,7 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
     else if (deviceSelection.find("FPGA") != wxString::npos)
         wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*";
     else
-         wildcards = "img(*.img)|*.img|rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
+        wildcards = "img(*.img)|*.img|rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
 
     wxFileDialog dlg(this, _("Select file"), _(""), _(""), wildcards, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
@@ -156,9 +162,7 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
     //if needed load program data from file
     wxString deviceSelection = cmbDevice->GetStringSelection();
 
-    if(
-        (deviceSelection.find("Reset") == wxString::npos) &&
-        (deviceSelection.find("Auto") == wxString::npos))
+    if ((deviceSelection.find("Reset") == wxString::npos) && (deviceSelection.find("Auto") == wxString::npos))
     {
         if (lblFilename->GetLabel().length() <= 1)
         {
@@ -169,7 +173,7 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
         //using wxWidgets to read file, to support nonascii characters in path
         wxFFileInputStream fin(lblFilename->GetLabel());
 
-        if(!fin.IsOk())
+        if (!fin.IsOk())
         {
             wxMessageBox(_("Error loading program file"), _("Error"));
             return;
@@ -183,7 +187,9 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
         fin.Read(mProgramData.data(), m_data_size);
     }
 
-    Disconnect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
+    Disconnect(btnStartStop->GetId(),
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
     btnOpen->Disable();
     btnStartStop->SetLabel(_("Abort"));
 
@@ -198,9 +204,7 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
 {
     wxString deviceSelection = cmbDevice->GetStringSelection();
-    if(
-        (deviceSelection.find("Reset") == wxString::npos) &&
-        (deviceSelection.find("Auto") == wxString::npos))
+    if ((deviceSelection.find("Reset") == wxString::npos) && (deviceSelection.find("Auto") == wxString::npos))
         btnOpenEnb = true;
     else
         btnOpenEnb = false;
@@ -214,8 +218,11 @@ void LMS_Programing_wxgui::OnProgramingFinished(wxCommandEvent& event)
     mWorkerThread.join();
     wxMessageBox(event.GetString(), _("INFO"), wxICON_INFORMATION | wxOK);
     btnOpen->Enable(btnOpenEnb);
-    Disconnect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
-    Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
+    Disconnect(
+        btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
+    Connect(btnStartStop->GetId(),
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
     btnStartStop->SetLabel(_("Program"));
 }
 
@@ -224,7 +231,7 @@ void LMS_Programing_wxgui::OnAbortProgramming(wxCommandEvent& event)
     mAbortProgramming.store(true);
 }
 
-LMS_Programing_wxgui* LMS_Programing_wxgui::obj_ptr=nullptr;
+LMS_Programing_wxgui* LMS_Programing_wxgui::obj_ptr = nullptr;
 bool LMS_Programing_wxgui::OnProgrammingCallback(size_t bsent, size_t btotal, const char* progressMsg)
 {
     wxCommandEvent evt;
@@ -246,12 +253,13 @@ void LMS_Programing_wxgui::DoProgramming()
     obj_ptr = this;
     int device = cmbDevice->GetSelection();
 
-    const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+    const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
     int status;
-    try {
-        status = mDevice->UploadMemory(desc.memoryDevices[device].id, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
-    }
-    catch (...)
+    try
+    {
+        status =
+            mDevice->UploadMemory(desc.memoryDevices[device].id, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
+    } catch (...)
     {
         status = -1;
     }

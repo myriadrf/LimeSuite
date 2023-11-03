@@ -35,14 +35,14 @@ static constexpr int ctrlBulkReadAddr = 0x82;
 static constexpr uint8_t spi_LMS7002M = 0;
 static constexpr uint8_t spi_FPGA = 1;
 
-static const SDRDevice::CustomParameter CP_VCTCXO_DAC = {"VCTCXO DAC (runtime)", 0, 0, 255, false};
-static const SDRDevice::CustomParameter CP_TEMPERATURE = {"Board Temperature", 1, 0, 65535, true};
+static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (runtime)", 0, 0, 255, false };
+static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
 
 LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, ISerialPort* commsPort)
-    : mStreamPort(streamPort),
-    mSerialPort(commsPort),
-    mlms7002mPort(spiLMS),
-    mfpgaPort(spiFPGA)
+    : mStreamPort(streamPort)
+    , mSerialPort(commsPort)
+    , mlms7002mPort(spiLMS)
+    , mfpgaPort(spiFPGA)
 {
     SDRDevice::Descriptor descriptor = GetDeviceInfo();
 
@@ -67,13 +67,13 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
         descriptor.customParameters.push_back(CP_TEMPERATURE);
     }
 
-    descriptor.spiSlaveIds = {{"LMS7002M", spi_LMS7002M}, {"FPGA", spi_FPGA}};
+    descriptor.spiSlaveIds = { { "LMS7002M", spi_LMS7002M }, { "FPGA", spi_FPGA } };
 
     RFSOCDescriptor soc;
     soc.name = "LMS";
     soc.channelCount = 1;
-    soc.rxPathNames = {"NONE", "LNAH", "LNAL_NC", "LNAW", "Auto"};
-    soc.txPathNames = {"NONE", "BAND1", "BAND2", "Auto"};
+    soc.rxPathNames = { "NONE", "LNAH", "LNAL_NC", "LNAW", "Auto" };
+    soc.txPathNames = { "NONE", "BAND1", "BAND2", "Auto" };
 
     descriptor.rfSOC.push_back(soc);
 
@@ -104,7 +104,7 @@ inline bool InRange(double val, double min, double max)
     return val >= min ? val <= max : false;
 }
 
-static inline const std::string strFormat(const char *format, ...)
+static inline const std::string strFormat(const char* format, ...)
 {
     char ctemp[256];
 
@@ -139,7 +139,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
         bool txUsed = false;
         for (int i = 0; i < 2; ++i)
         {
-            const ChannelConfig &ch = cfg.channel[i];
+            const ChannelConfig& ch = cfg.channel[i];
             rxUsed |= ch.rx.enabled;
             txUsed |= ch.tx.enabled;
         }
@@ -163,14 +163,14 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         for (int i = 0; i < 2; ++i)
         {
-            const ChannelConfig &ch = cfg.channel[i];
+            const ChannelConfig& ch = cfg.channel[i];
             mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
             mLMSChips[0]->EnableChannel(Rx, i, ch.rx.enabled);
             mLMSChips[0]->EnableChannel(Tx, i, ch.tx.enabled);
 
             mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
 
-            if(ch.rx.path == 4)
+            if (ch.rx.path == 4)
             {
                 mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
             }
@@ -194,12 +194,11 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
     } //try
-    catch (std::logic_error &e)
+    catch (std::logic_error& e)
     {
         printf("LimeSDR_Mini config: %s\n", e.what());
         throw;
-    }
-    catch (std::runtime_error &e)
+    } catch (std::runtime_error& e)
     {
         throw;
     }
@@ -207,44 +206,106 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
 int LimeSDR_Mini::Init()
 {
-    struct regVal
-    {
+    struct regVal {
         uint16_t adr;
         uint16_t val;
     };
 
-    const std::vector<regVal> initVals_1v0 = {
-        {0x0022, 0x0FFF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
-        {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
-        {0x0089, 0x1078}, {0x008B, 0x2100}, {0x008C, 0x267B}, {0x0092, 0xFFFF},
-	    {0x0093, 0x03FF}, {0x00A1, 0x656A}, {0x00A6, 0x0001}, {0x00A9, 0x8000},
-        {0x00AC, 0x2000}, {0x0105, 0x0011}, {0x0108, 0x218C}, {0x0109, 0x6100},
-        {0x010A, 0x1F4C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010E, 0x0000},
-        {0x010F, 0x3142}, {0x0110, 0x2B14}, {0x0111, 0x0000}, {0x0112, 0x942E},
-        {0x0113, 0x03C2}, {0x0114, 0x00D0}, {0x0117, 0x1230}, {0x0119, 0x18D2},
-        {0x011C, 0x8941}, {0x011D, 0x0000}, {0x011E, 0x0740}, {0x0120, 0xE6C0},
-        {0x0121, 0x8650}, {0x0123, 0x000F}, {0x0200, 0x00E1}, {0x0208, 0x017B},
-        {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
-        {0x040B, 0x1020}, {0x040C, 0x00FB}
-    };
+    const std::vector<regVal> initVals_1v0 = { { 0x0022, 0x0FFF },
+        { 0x0023, 0x5550 },
+        { 0x002B, 0x0038 },
+        { 0x002C, 0x0000 },
+        { 0x002D, 0x0641 },
+        { 0x0086, 0x4101 },
+        { 0x0087, 0x5555 },
+        { 0x0088, 0x03F0 },
+        { 0x0089, 0x1078 },
+        { 0x008B, 0x2100 },
+        { 0x008C, 0x267B },
+        { 0x0092, 0xFFFF },
+        { 0x0093, 0x03FF },
+        { 0x00A1, 0x656A },
+        { 0x00A6, 0x0001 },
+        { 0x00A9, 0x8000 },
+        { 0x00AC, 0x2000 },
+        { 0x0105, 0x0011 },
+        { 0x0108, 0x218C },
+        { 0x0109, 0x6100 },
+        { 0x010A, 0x1F4C },
+        { 0x010B, 0x0001 },
+        { 0x010C, 0x8865 },
+        { 0x010E, 0x0000 },
+        { 0x010F, 0x3142 },
+        { 0x0110, 0x2B14 },
+        { 0x0111, 0x0000 },
+        { 0x0112, 0x942E },
+        { 0x0113, 0x03C2 },
+        { 0x0114, 0x00D0 },
+        { 0x0117, 0x1230 },
+        { 0x0119, 0x18D2 },
+        { 0x011C, 0x8941 },
+        { 0x011D, 0x0000 },
+        { 0x011E, 0x0740 },
+        { 0x0120, 0xE6C0 },
+        { 0x0121, 0x8650 },
+        { 0x0123, 0x000F },
+        { 0x0200, 0x00E1 },
+        { 0x0208, 0x017B },
+        { 0x020B, 0x4000 },
+        { 0x020C, 0x8000 },
+        { 0x0400, 0x8081 },
+        { 0x0404, 0x0006 },
+        { 0x040B, 0x1020 },
+        { 0x040C, 0x00FB } };
 
-    const std::vector<regVal> initVals_1v2 = {
-        {0x0022, 0x0FFF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
-        {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
-        {0x0089, 0x1078}, {0x008B, 0x2100}, {0x008C, 0x267B}, {0x00A1, 0x656A},
-        {0x00A6, 0x0009}, {0x00A7, 0x8A8A}, {0x00A9, 0x8000}, {0x00AC, 0x2000},
-        {0x0105, 0x0011}, {0x0108, 0x218C}, {0x0109, 0x6100}, {0x010A, 0x1F4C},
-        {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010E, 0x0000}, {0x010F, 0x3142},
-        {0x0110, 0x2B14}, {0x0111, 0x0000}, {0x0112, 0x942E}, {0x0113, 0x03C2},
-        {0x0114, 0x00D0}, {0x0117, 0x1230}, {0x0119, 0x18D2}, {0x011C, 0x8941},
-        {0x011D, 0x0000}, {0x011E, 0x0740}, {0x0120, 0xC5C0}, {0x0121, 0x8650},
-        {0x0123, 0x000F}, {0x0200, 0x00E1}, {0x0208, 0x017B}, {0x020B, 0x4000},
-        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
-        {0x040C, 0x00FB}
-    };
+    const std::vector<regVal> initVals_1v2 = { { 0x0022, 0x0FFF },
+        { 0x0023, 0x5550 },
+        { 0x002B, 0x0038 },
+        { 0x002C, 0x0000 },
+        { 0x002D, 0x0641 },
+        { 0x0086, 0x4101 },
+        { 0x0087, 0x5555 },
+        { 0x0088, 0x03F0 },
+        { 0x0089, 0x1078 },
+        { 0x008B, 0x2100 },
+        { 0x008C, 0x267B },
+        { 0x00A1, 0x656A },
+        { 0x00A6, 0x0009 },
+        { 0x00A7, 0x8A8A },
+        { 0x00A9, 0x8000 },
+        { 0x00AC, 0x2000 },
+        { 0x0105, 0x0011 },
+        { 0x0108, 0x218C },
+        { 0x0109, 0x6100 },
+        { 0x010A, 0x1F4C },
+        { 0x010B, 0x0001 },
+        { 0x010C, 0x8865 },
+        { 0x010E, 0x0000 },
+        { 0x010F, 0x3142 },
+        { 0x0110, 0x2B14 },
+        { 0x0111, 0x0000 },
+        { 0x0112, 0x942E },
+        { 0x0113, 0x03C2 },
+        { 0x0114, 0x00D0 },
+        { 0x0117, 0x1230 },
+        { 0x0119, 0x18D2 },
+        { 0x011C, 0x8941 },
+        { 0x011D, 0x0000 },
+        { 0x011E, 0x0740 },
+        { 0x0120, 0xC5C0 },
+        { 0x0121, 0x8650 },
+        { 0x0123, 0x000F },
+        { 0x0200, 0x00E1 },
+        { 0x0208, 0x017B },
+        { 0x020B, 0x4000 },
+        { 0x020C, 0x8000 },
+        { 0x0400, 0x8081 },
+        { 0x0404, 0x0006 },
+        { 0x040B, 0x1020 },
+        { 0x040C, 0x00FB } };
 
     int hw_version = mFPGA->ReadRegister(3) & 0xF;
-    auto &initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
+    auto& initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
 
     lime::LMS7002M* lms = mLMSChips[0];
 
@@ -264,13 +325,12 @@ int LimeSDR_Mini::Init()
         return -1;
     }
 
-
     lms->EnableChannel(TRXDir::Tx, 0, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    lms->SPI_write(0x0123, 0x000F);  //SXT
-    lms->SPI_write(0x0120, 0x80C0);  //SXT
-    lms->SPI_write(0x011C, 0x8941);  //SXT
+    lms->SPI_write(0x0123, 0x000F); //SXT
+    lms->SPI_write(0x0120, 0x80C0); //SXT
+    lms->SPI_write(0x011C, 0x8941); //SXT
     lms->EnableChannel(TRXDir::Rx, 0, false);
     lms->EnableChannel(TRXDir::Tx, 0, false);
 
@@ -342,7 +402,7 @@ void LimeSDR_Mini::EnableCache(bool enable)
     }
 }
 
-void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mStreamPort);
     assert(MOSI);
@@ -456,8 +516,8 @@ int LimeSDR_Mini::UpdateFPGAInterface(void* userData)
 void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
 {
     const bool bypass = (oversample <= 1);
-    uint8_t decimation = 7;     // HBD_OVR_RXTSP=7 - bypass
-    uint8_t interpolation = 7;  // HBI_OVR_TXTSP=7 - bypass
+    uint8_t decimation = 7; // HBD_OVR_RXTSP=7 - bypass
+    uint8_t interpolation = 7; // HBI_OVR_TXTSP=7 - bypass
     double cgenFreq = f_Hz * 4; // AI AQ BI BQ
     // TODO:
     // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
@@ -479,7 +539,7 @@ void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
         decimation = 4;
         if (oversample <= 16)
         {
-            const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
+            const int decTbl[] = { 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
             decimation = decTbl[oversample];
         }
         interpolation = decimation;
@@ -488,13 +548,15 @@ void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
 
     if (bypass)
     {
-        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", f_Hz / 1e6,
-               cgenFreq / 1e6);
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", f_Hz / 1e6, cgenFreq / 1e6);
     }
     else
     {
-        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i", f_Hz / 1e6,
-               cgenFreq / 1e6, decimation + 1, interpolation + 1); // dec/inter ratio is 2^(value+1)
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i",
+            f_Hz / 1e6,
+            cgenFreq / 1e6,
+            decimation + 1,
+            interpolation + 1); // dec/inter ratio is 2^(value+1)
     }
 
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
@@ -508,7 +570,7 @@ void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
     mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     if (bypass)
-        mLMSChips[0]->SetInterfaceFrequency(f_Hz*4, 7, 7);
+        mLMSChips[0]->SetInterfaceFrequency(f_Hz * 4, 7, 7);
     else
         mLMSChips[0]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
@@ -536,13 +598,13 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
     deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
     deviceDescriptor.serialNumber = info.boardSerialNumber;
 
-    const uint32_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
+    const uint32_t addrs[] = { 0x0000, 0x0001, 0x0002, 0x0003 };
     uint32_t data[4];
     SPI(spi_FPGA, addrs, data, 4);
-    auto boardID = static_cast<eLMS_DEV>(data[0]);//(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-    auto gatewareVersion = data[1];//(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
-    auto gatewareRevision = data[2];//(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-    auto hwVersion = data[3] & 0x7F;//pkt.inBuffer[15]&0x7F;
+    auto boardID = static_cast<eLMS_DEV>(data[0]); //(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+    auto gatewareVersion = data[1]; //(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
+    auto gatewareRevision = data[2]; //(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+    auto hwVersion = data[3] & 0x7F; //pkt.inBuffer[15]&0x7F;
 
     deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
     deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
@@ -552,7 +614,7 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
     return deviceDescriptor;
 }
 
-int LimeSDR_Mini::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
+int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
     if (mStreamers[0])
     {
@@ -568,12 +630,10 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
         mStreamers[0]->Setup(config);
 
         return 0;
-    }
-    catch (std::logic_error &e)
+    } catch (std::logic_error& e)
     {
         return -1;
-    }
-    catch (std::runtime_error &e)
+    } catch (std::runtime_error& e)
     {
         return -1;
     }
@@ -621,12 +681,12 @@ void LimeSDR_Mini::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx,
     }
 }
 
-void *LimeSDR_Mini::GetInternalChip(uint32_t index)
+void* LimeSDR_Mini::GetInternalChip(uint32_t index)
 {
     return mLMSChips.at(index);
 }
 
-int LimeSDR_Mini::GPIODirRead(uint8_t *buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIODirRead(uint8_t* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -647,7 +707,7 @@ int LimeSDR_Mini::GPIODirRead(uint8_t *buffer, const size_t bufLength)
     return ret;
 }
 
-int LimeSDR_Mini::GPIORead(uint8_t *buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIORead(uint8_t* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -668,7 +728,7 @@ int LimeSDR_Mini::GPIORead(uint8_t *buffer, const size_t bufLength)
     return ret;
 }
 
-int LimeSDR_Mini::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -681,7 +741,7 @@ int LimeSDR_Mini::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
     return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
-int LimeSDR_Mini::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -694,12 +754,12 @@ int LimeSDR_Mini::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
     return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
-int LimeSDR_Mini::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
+int LimeSDR_Mini::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
 {
     return mfpgaPort->CustomParameterWrite(ids, values, count, units);
 }
 
-int LimeSDR_Mini::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
+int LimeSDR_Mini::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
 {
     return mfpgaPort->CustomParameterRead(ids, values, count, units);
 }

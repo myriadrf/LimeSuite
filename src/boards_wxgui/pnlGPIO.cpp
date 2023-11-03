@@ -12,7 +12,7 @@
 using namespace lime;
 using namespace std;
 
-pnlGPIO::pnlGPIO(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
+pnlGPIO::pnlGPIO(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
 {
     device = nullptr;
     gpioCount = 8;
@@ -29,10 +29,10 @@ void pnlGPIO::Initialize(lime::SDRDevice* pControl)
     {
         auto info = device->GetDescriptor();
 
-        const std::unordered_map<std::string, int> specialGpioCounts {
-            {string(GetDeviceName(LMS_DEV_LIMESDRMINI)), 10},
-            {string(GetDeviceName(LMS_DEV_LIMESDRMINI_V2)), 10},
-            {string(GetDeviceName(LMS_DEV_LIMESDR_PCIE)), 16},
+        const std::unordered_map<std::string, int> specialGpioCounts{
+            { string(GetDeviceName(LMS_DEV_LIMESDRMINI)), 10 },
+            { string(GetDeviceName(LMS_DEV_LIMESDRMINI_V2)), 10 },
+            { string(GetDeviceName(LMS_DEV_LIMESDR_PCIE)), 16 },
         };
 
         if (specialGpioCounts.find(info.name) != specialGpioCounts.end())
@@ -41,7 +41,7 @@ void pnlGPIO::Initialize(lime::SDRDevice* pControl)
         }
     }
 
-    auto gpioSizer = new wxFlexGridSizer(0, gpioCount+1, 0, 0);
+    auto gpioSizer = new wxFlexGridSizer(0, gpioCount + 1, 0, 0);
     gpioSizer->Add(new wxStaticText(this, wxID_ANY, _("GPIO")), 1, wxEXPAND | wxALL, 5);
 
     for (int i = gpioCount; i--;)
@@ -76,10 +76,10 @@ void pnlGPIO::Initialize(lime::SDRDevice* pControl)
     {
         gpioIn[i] = new wxStaticText(this, wxNewId(), _("0"));
         gpioIn[i]->SetToolTip(_("GPIO input value"));
-        gpioSizer->Add(gpioIn[i],1, wxEXPAND | wxALL, 5);
+        gpioSizer->Add(gpioIn[i], 1, wxEXPAND | wxALL, 5);
     }
 
-    auto groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GPIO Control") ), wxVERTICAL );
+    auto groupSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("GPIO Control")), wxVERTICAL);
     groupSizer->Add(gpioSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     SetSizer(groupSizer);
     groupSizer->Fit(this);
@@ -98,13 +98,13 @@ pnlGPIO::~pnlGPIO()
 
 void pnlGPIO::OnUsrGPIODirChange(wxCommandEvent& event)
 {
-    uint8_t value[2] = {0};
+    uint8_t value[2] = { 0 };
 
     for (int i = 0; i < gpioCount; i++)
     {
         bool check = gpioDir[i]->GetValue();
         if (check)
-            value[i/8] |= 1 << (i%8);
+            value[i / 8] |= 1 << (i % 8);
         gpioOut[i]->Enable(check);
     }
 
@@ -114,11 +114,11 @@ void pnlGPIO::OnUsrGPIODirChange(wxCommandEvent& event)
 
 void pnlGPIO::OnUsrGPIOChange(wxCommandEvent& event)
 {
-    uint8_t value[2] = {0};
+    uint8_t value[2] = { 0 };
     for (int i = 0; i < gpioCount; i++)
     {
         if (gpioOut[i]->GetValue())
-            value[i/8] |= 1 << (i%8);
+            value[i / 8] |= 1 << (i % 8);
     }
 
     if (device && device->GPIOWrite(value, gpioCount > 8 ? 2 : 1))
@@ -127,16 +127,16 @@ void pnlGPIO::OnUsrGPIOChange(wxCommandEvent& event)
 
 void pnlGPIO::UpdatePanel()
 {
-    uint8_t gpio[2] = {0};
-    uint8_t dir[2] = {0};
+    uint8_t gpio[2] = { 0 };
+    uint8_t dir[2] = { 0 };
 
-    if (device && device->GPIODirRead(dir, gpioCount > 8 ? 2 : 1)==0)
+    if (device && device->GPIODirRead(dir, gpioCount > 8 ? 2 : 1) == 0)
     {
         for (int i = 0; i < gpioCount; i++)
         {
-            gpioDir[i]->SetValue(dir[i/8] & 1);
-            gpioOut[i]->Enable(dir[i/8] & 1);
-            dir[i/8] >>= 1;
+            gpioDir[i]->SetValue(dir[i / 8] & 1);
+            gpioOut[i]->Enable(dir[i / 8] & 1);
+            dir[i / 8] >>= 1;
         }
     }
     else
@@ -148,8 +148,8 @@ void pnlGPIO::UpdatePanel()
     {
         for (int i = 0; i < gpioCount; i++)
         {
-            gpioIn[i]->SetLabel(gpio[i/8] & 1 ? _("1") : _("0"));
-            gpio[i/8] >>= 1;
+            gpioIn[i]->SetLabel(gpio[i / 8] & 1 ? _("1") : _("0"));
+            gpio[i / 8] >>= 1;
         }
     }
     else

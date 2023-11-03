@@ -5,66 +5,62 @@
 
 using namespace lime;
 
-void SPI_wxgui::InsertSPIControlsRow(wxWindow *parent, wxWindowID id, wxFlexGridSizer *row,
-                                     SPI_wxgui::SPIFields *controls)
+void SPI_wxgui::InsertSPIControlsRow(wxWindow* parent, wxWindowID id, wxFlexGridSizer* row, SPI_wxgui::SPIFields* controls)
 {
-    wxFlexGridSizer *fgSizer306;
+    wxFlexGridSizer* fgSizer306;
     fgSizer306 = new wxFlexGridSizer(0, 8, 5, 5);
     fgSizer306->SetFlexibleDirection(wxBOTH);
     fgSizer306->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
-    wxStaticText *addrText = new wxStaticText(parent, wxID_ANY, wxT("Address(Hex):"));
+    wxStaticText* addrText = new wxStaticText(parent, wxID_ANY, wxT("Address(Hex):"));
     row->Add(addrText, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
 
-    wxTextCtrl *txtLMSwriteAddr = new wxTextCtrl(parent, wxID_ANY, wxT("FFFF"));
+    wxTextCtrl* txtLMSwriteAddr = new wxTextCtrl(parent, wxID_ANY, wxT("FFFF"));
     //txtLMSwriteAddr->SetMinSize( wxSize( 48,-1 ) );
     controls->address = txtLMSwriteAddr;
 
     row->Add(txtLMSwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
 
-    wxStaticText *valueText = new wxStaticText(parent, wxID_ANY, wxT("Value(Hex):"));
+    wxStaticText* valueText = new wxStaticText(parent, wxID_ANY, wxT("Value(Hex):"));
     row->Add(valueText, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
 
-    wxTextCtrl *txtLMSwriteValue = new wxTextCtrl(parent, wxID_ANY, wxT("FFFF"));
+    wxTextCtrl* txtLMSwriteValue = new wxTextCtrl(parent, wxID_ANY, wxT("FFFF"));
     //txtLMSwriteValue->SetMinSize( wxSize( 48,-1 ) );
     row->Add(txtLMSwriteValue, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
     controls->value = txtLMSwriteValue;
 
-    wxButton *btnLMSwrite = new wxButton(parent, id, wxT("Write"));
+    wxButton* btnLMSwrite = new wxButton(parent, id, wxT("Write"));
     btnLMSwrite->SetDefault();
     row->Add(btnLMSwrite, 0, wxALIGN_CENTER_VERTICAL, 0);
-    btnLMSwrite->Bind(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SPI_wxgui::onSPIwrite),
-                      this, id);
+    btnLMSwrite->Bind(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SPI_wxgui::onSPIwrite), this, id);
 
-    wxButton *btnLMSread = new wxButton(parent, id, wxT("Read"));
+    wxButton* btnLMSread = new wxButton(parent, id, wxT("Read"));
     btnLMSread->SetDefault();
     row->Add(btnLMSread, 0, wxALIGN_CENTER_VERTICAL, 0);
-    btnLMSread->Bind(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SPI_wxgui::onSPIread),
-                     this, id);
+    btnLMSread->Bind(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(SPI_wxgui::onSPIread), this, id);
 
-    wxStaticText *statusText = new wxStaticText(parent, wxID_ANY, wxT("Status:"));
+    wxStaticText* statusText = new wxStaticText(parent, wxID_ANY, wxT("Status:"));
     row->Add(statusText, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
 
-    wxStaticText *lblLMSwriteStatus =
-        new wxStaticText(parent, wxID_ANY, wxT("???"), wxDefaultPosition, wxSize(134, 13));
+    wxStaticText* lblLMSwriteStatus = new wxStaticText(parent, wxID_ANY, wxT("???"), wxDefaultPosition, wxSize(134, 13));
     row->Add(lblLMSwriteStatus, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     controls->status = lblLMSwriteStatus;
 }
 
-wxFlexGridSizer *SPI_wxgui::CreateSPIControls(wxWindow *parent, uint8_t rowCount,
-                                              wxChoice *deviceSelector)
+wxFlexGridSizer* SPI_wxgui::CreateSPIControls(wxWindow* parent, uint8_t rowCount, wxChoice* deviceSelector)
 {
-    wxFlexGridSizer *mainSizer;
+    wxFlexGridSizer* mainSizer;
     mainSizer = new wxFlexGridSizer(0, 1, 0, 0);
     mainSizer->SetFlexibleDirection(wxBOTH);
     mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
     mainSizer->Add(deviceSelector, 0, wxALIGN_LEFT, 0);
 
-    wxFlexGridSizer *szRows = new wxFlexGridSizer(0, 8, 0, 0);
+    wxFlexGridSizer* szRows = new wxFlexGridSizer(0, 8, 0, 0);
     szRows->SetFlexibleDirection(wxBOTH);
     szRows->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
-    for (int i = 0; i < rowCount; ++i) {
+    for (int i = 0; i < rowCount; ++i)
+    {
         SPI_wxgui::SPIFields controls;
         wxWindowID lineID = wxNewId();
         InsertSPIControlsRow(parent, lineID, szRows, &controls);
@@ -75,19 +71,18 @@ wxFlexGridSizer *SPI_wxgui::CreateSPIControls(wxWindow *parent, uint8_t rowCount
     return mainSizer;
 }
 
-SPI_wxgui::SPI_wxgui(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
-                     const wxSize &size, long styles)
+SPI_wxgui::SPI_wxgui(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long styles)
     : IModuleFrame(parent, id, title, pos, size, styles)
 {
     mDevice = nullptr;
 
-    wxFlexGridSizer *mainSizer;
+    wxFlexGridSizer* mainSizer;
     mainSizer = new wxFlexGridSizer(0, 1, 0, 0);
     mainSizer->SetFlexibleDirection(wxBOTH);
     mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
     mSPIselection.push_back(new wxChoice(this, wxNewId()));
-    wxFlexGridSizer *spiControls = CreateSPIControls(this, 4, mSPIselection.back());
+    wxFlexGridSizer* spiControls = CreateSPIControls(this, 4, mSPIselection.back());
     mainSizer->Add(spiControls, 0, wxALIGN_LEFT, 0);
 
     mSPIselection.push_back(new wxChoice(this, wxNewId()));
@@ -101,13 +96,15 @@ SPI_wxgui::SPI_wxgui(wxWindow *parent, wxWindowID id, const wxString &title, con
     this->Centre(wxBOTH);
 }
 
-bool SPI_wxgui::Initialize(SDRDevice *pCtrPort)
+bool SPI_wxgui::Initialize(SDRDevice* pCtrPort)
 {
     mDevice = pCtrPort;
-    if (mDevice == nullptr) {
+    if (mDevice == nullptr)
+    {
         wxArrayString emptyList;
         emptyList.Add("No comms");
-        for (auto iter : mSPIselection) {
+        for (auto iter : mSPIselection)
+        {
             if (iter)
                 iter->Set(emptyList);
         }
@@ -115,9 +112,9 @@ bool SPI_wxgui::Initialize(SDRDevice *pCtrPort)
     }
 
     wxArrayString spiSlavesList;
-    const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+    const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
 
-    for (const auto &nameIds : desc.spiSlaveIds)
+    for (const auto& nameIds : desc.spiSlaveIds)
         spiSlavesList.Add(wxString::Format("%s", nameIds.first.c_str()));
 
     for (auto iter : mSPIselection)
@@ -125,7 +122,8 @@ bool SPI_wxgui::Initialize(SDRDevice *pCtrPort)
             iter->Set(spiSlavesList);
 
     // by default for first SPI section select LMS chip
-    if (mSPIselection[0]) {
+    if (mSPIselection[0])
+    {
         bool found = mSPIselection[0]->SetStringSelection(_("LMS7002M"));
         if (!found)
             found = mSPIselection[0]->SetStringSelection(_("LMS7002M_1"));
@@ -138,11 +136,13 @@ bool SPI_wxgui::Initialize(SDRDevice *pCtrPort)
     return true;
 }
 
-void SPI_wxgui::onSPIwrite(wxCommandEvent &event)
+void SPI_wxgui::onSPIwrite(wxCommandEvent& event)
 {
-    try {
-        SPIFields &fields = mSPIElements.at(event.GetId());
-        if (!mDevice) {
+    try
+    {
+        SPIFields& fields = mSPIElements.at(event.GetId());
+        if (!mDevice)
+        {
             fields.status->SetLabel("Not connected");
             return;
         }
@@ -159,11 +159,11 @@ void SPI_wxgui::onSPIwrite(wxCommandEvent &event)
         int listSelection = fields.devSelection->GetSelection();
         if (listSelection < 0)
             return;
-        const wxString strDevAddr =
-            fields.devSelection->GetString(listSelection);
-        const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+        const wxString strDevAddr = fields.devSelection->GetString(listSelection);
+        const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
         auto iter = desc.spiSlaveIds.find(std::string(strDevAddr.mb_str()));
-        if (iter == desc.spiSlaveIds.end()) {
+        if (iter == desc.spiSlaveIds.end())
+        {
             printf("Connected device does not have SPI for %s", strDevAddr.mb_str().data());
             return;
         }
@@ -171,24 +171,27 @@ void SPI_wxgui::onSPIwrite(wxCommandEvent &event)
 
         const uint32_t mosi = (1 << 31) | addr << 16 | value;
 
-        try {
+        try
+        {
             mDevice->SPI(devAddr, &mosi, nullptr, 1);
             fields.status->SetLabel("OK");
-        }
-        catch (std::runtime_error &e) {
+        } catch (std::runtime_error& e)
+        {
             fields.status->SetLabel(e.what());
         }
-    }
-    catch (...) {
+    } catch (...)
+    {
         printf("No spi controls created for event id: %i", event.GetId());
     }
 }
 
-void SPI_wxgui::onSPIread(wxCommandEvent &event)
+void SPI_wxgui::onSPIread(wxCommandEvent& event)
 {
-    try {
-        SPIFields &fields = mSPIElements.at(event.GetId());
-        if (!mDevice) {
+    try
+    {
+        SPIFields& fields = mSPIElements.at(event.GetId());
+        if (!mDevice)
+        {
             fields.status->SetLabel("Not connected");
             return;
         }
@@ -201,16 +204,15 @@ void SPI_wxgui::onSPIread(wxCommandEvent &event)
         long value = 0;
         strValue.ToLong(&value, 16);
 
-
         uint32_t devAddr = 0;
         int listSelection = fields.devSelection->GetSelection();
         if (listSelection < 0)
             return;
-        const wxString strDevAddr =
-            fields.devSelection->GetString(listSelection);
-        const SDRDevice::Descriptor &desc = mDevice->GetDescriptor();
+        const wxString strDevAddr = fields.devSelection->GetString(listSelection);
+        const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
         auto iter = desc.spiSlaveIds.find(std::string(strDevAddr.mb_str()));
-        if (iter == desc.spiSlaveIds.end()) {
+        if (iter == desc.spiSlaveIds.end())
+        {
             printf("Connected device does not have SPI for %s", strDevAddr.mb_str().data());
             return;
         }
@@ -219,16 +221,17 @@ void SPI_wxgui::onSPIread(wxCommandEvent &event)
         const uint32_t mosi = addr;
         uint32_t miso = 0;
 
-        try {
+        try
+        {
             mDevice->SPI(devAddr, &mosi, &miso, 1);
             fields.status->SetLabel("OK");
             fields.value->SetValue(wxString::Format("%04X", miso));
-        }
-        catch (std::runtime_error &e) {
+        } catch (std::runtime_error& e)
+        {
             fields.status->SetLabel(e.what());
         }
-    }
-    catch (...) {
+    } catch (...)
+    {
         printf("No spi controls created for event id: %i", event.GetId());
     }
 }

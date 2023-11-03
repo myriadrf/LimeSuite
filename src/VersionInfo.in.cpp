@@ -24,9 +24,7 @@ std::string lime::GetAPIVersion(void)
 {
     const std::string verStr(QUOTE(LIME_SUITE_API_VERSION));
     std::stringstream ss;
-    ss << std::stoi(verStr.substr(2, 4)) << "."
-       << std::stoi(verStr.substr(6, 2)) << "."
-       << std::stoi(verStr.substr(8, 2));
+    ss << std::stoi(verStr.substr(2, 4)) << "." << std::stoi(verStr.substr(6, 2)) << "." << std::stoi(verStr.substr(8, 2));
     return ss.str();
 }
 

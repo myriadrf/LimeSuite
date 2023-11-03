@@ -15,17 +15,21 @@ class wxTextCtrl;
 class wxChoice;
 class wxRadioButton;
 
-
-
 class pnlQSpark : public wxPanel
 {
-public:
-    pnlQSpark(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
-    void Initialize(lms_device_t *pControl);
+  public:
+    pnlQSpark(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = wxEmptyString,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        int style = 0,
+        wxString name = "");
+    void Initialize(lms_device_t* pControl);
     virtual ~pnlQSpark();
 
     wxComboBox* cmbVCXOcontrolVoltage;
-    
+
     wxCheckBox* chkLB_1A;
     wxCheckBox* chkLB_1B;
     wxCheckBox* chkLB_2A;
@@ -74,15 +78,15 @@ public:
 
     void OnbtnUpdateAll(wxCommandEvent& event);
     void OnNcoFrequencyChanged(wxCommandEvent& event);
-protected:
-    void OnConfigurePLL(wxCommandEvent &event);
-    void OnReadAll(wxCommandEvent &event);
-    void OnWriteAll(wxCommandEvent &event);
+
+  protected:
+    void OnConfigurePLL(wxCommandEvent& event);
+    void OnReadAll(wxCommandEvent& event);
+    void OnWriteAll(wxCommandEvent& event);
     void OnSwitchToChannelA(wxCommandEvent& event);
     void OnSwitchToChannelB(wxCommandEvent& event);
 
-    struct Register
-    {
+    struct Register {
         Register();
         Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue);
         unsigned short address;
@@ -93,8 +97,8 @@ protected:
     std::map<wxObject*, Register> controlsPtr2Registers;
     void RegisterParameterChangeHandler(wxCommandEvent& event);
 
-protected:
-    lms_device_t *lmsControl;
+  protected:
+    lms_device_t* lmsControl;
     DECLARE_EVENT_TABLE()
 };
 

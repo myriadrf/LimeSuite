@@ -36,7 +36,7 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, co
     cmbRxPath->SetSelection(0);
     Connect(cmbRxPath->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
     lbSizer->Add(cmbRxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    
+
     lbSizer->Add(new wxStaticText(this, wxID_ANY, _("TX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
     wxArrayString txChoices;
     txChoices.push_back(_("Band 1"));
@@ -48,7 +48,7 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, co
     lbSizer->Add(new wxStaticText(this, wxID_ANY, _("Loopback:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
     txtLB = new wxStaticText(this, wxNewId(), _("TX Band 1 -> RX LNAH"));
     lbSizer->Add(txtLB, 1, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    
+
     chkTxLBSH = new wxCheckBox(this, wxNewId(), _("Loopback shunt"));
     Connect(chkTxLBSH->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
     lbSizer->Add(chkTxLBSH, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
@@ -62,7 +62,7 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, co
     Bind(WRITE_ALL_VALUES, &pnluLimeSDR::OnLoopbackChange, this, this->GetId());
 }
 
-void pnluLimeSDR::Initialize(lime::SDRDevice *newDevice)
+void pnluLimeSDR::Initialize(lime::SDRDevice* newDevice)
 {
     device = newDevice;
     pnl_gpio->Initialize(device);
@@ -85,17 +85,17 @@ void pnluLimeSDR::OnLoopbackChange(wxCommandEvent& event)
     uint16_t value = 0;
     value |= chkTxLBSH->GetValue() << 2;
     value |= chkTxLBAT->GetValue() << 1;
-    value |= cmbRxPath->GetSelection() == 1 ? 1<<9 : 1<<8;
-    value |= cmbTxPath->GetSelection() == 1 ? 1<<13 : 1<<12;
+    value |= cmbRxPath->GetSelection() == 1 ? 1 << 9 : 1 << 8;
+    value |= cmbTxPath->GetSelection() == 1 ? 1 << 13 : 1 << 12;
 
     auto sdr = static_cast<lime::LimeSDR_Mini*>(device);
 
-    if (sdr && sdr->WriteFPGARegister(addr, value)) 
+    if (sdr && sdr->WriteFPGARegister(addr, value))
     {
         wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
     }
 
-    txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value>>13)&1)?'1':'2',((value>>9)&1)?'H':'W'));
+    txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value >> 13) & 1) ? '1' : '2', ((value >> 9) & 1) ? 'H' : 'W'));
 }
 
 void pnluLimeSDR::UpdatePanel()
@@ -105,7 +105,7 @@ void pnluLimeSDR::UpdatePanel()
 
     auto sdr = static_cast<lime::LimeSDR_Mini*>(device);
 
-    if (sdr && sdr->WriteFPGARegister(addr, value)) 
+    if (sdr && sdr->WriteFPGARegister(addr, value))
     {
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -115,16 +115,16 @@ void pnluLimeSDR::UpdatePanel()
     chkTxLBAT->SetValue((value >> 1) & 0x1);
     cmbRxPath->SetSelection((value >> 9) & 0x1);
     cmbTxPath->SetSelection((value >> 13) & 0x1);
-    txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value>>13)&1)?'1':'2',((value>>9)&1)?'H':'W'));
+    txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value >> 13) & 1) ? '1' : '2', ((value >> 9) & 1) ? 'H' : 'W'));
     pnl_gpio->UpdatePanel();
 }
 
-void pnluLimeSDR::OnReadAll(wxCommandEvent &event)
+void pnluLimeSDR::OnReadAll(wxCommandEvent& event)
 {
     UpdatePanel();
 }
 
-void pnluLimeSDR::OnWriteAll(wxCommandEvent &event)
+void pnluLimeSDR::OnWriteAll(wxCommandEvent& event)
 {
     OnLoopbackChange(event);
     pnl_gpio->OnUsrGPIODirChange(event);

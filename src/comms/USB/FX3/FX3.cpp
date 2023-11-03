@@ -32,7 +32,9 @@ void FX3::handle_libusb_events()
 }
 #endif // __UNIX__
 
-FX3::FX3(void *usbContext) : contexts(nullptr), isConnected(false)
+FX3::FX3(void* usbContext)
+    : contexts(nullptr)
+    , isConnected(false)
 {
     isConnected = false;
 #ifdef __unix__
@@ -65,11 +67,11 @@ FX3::~FX3()
     }
 }
 
-bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
+bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
     Disconnect();
 #ifdef __unix__
-    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
+    libusb_device** devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0)
@@ -102,7 +104,8 @@ bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
         if (desc.iSerialNumber > 0)
         {
             char data[255];
-            int stringLength = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(data), sizeof(data));
+            int stringLength = libusb_get_string_descriptor_ascii(
+                dev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(data), sizeof(data));
 
             if (stringLength < 0)
             {
@@ -130,11 +133,11 @@ bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
         return ReportError(-1, "libusb_open failed");
     }
 
-    if (libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
+    if (libusb_kernel_driver_active(dev_handle, 0) == 1) //find out if kernel driver is attached
     {
         lime::info("Kernel Driver Active");
 
-        if(libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
+        if (libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
         {
             lime::info("Kernel Driver Detached!");
         }
@@ -163,7 +166,7 @@ void FX3::Disconnect()
         // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
         const bool isBuggy_libusb_free_transfer = ver->major == 1 && ver->minor == 0 && ver->micro == 25;
 
-        if (isBuggy_libusb_free_transfer && contexts) 
+        if (isBuggy_libusb_free_transfer && contexts)
         {
             for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
             {
@@ -196,7 +199,7 @@ inline bool FX3::IsConnected()
 #endif
 }
 
-int32_t FX3::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32_t timeout_ms)
+int32_t FX3::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
 {
     long len = 0;
     if (not IsConnected())
@@ -212,15 +215,17 @@ int32_t FX3::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32
     len = actualTransferred;
     if (status != 0)
     {
-        printf("FX3::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n", endPointAddr, libusb_error_name(status), actualTransferred, length);
+        printf("FX3::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
+            endPointAddr,
+            libusb_error_name(status),
+            actualTransferred,
+            length);
     }
 #endif
     return len;
 }
 
-int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
-        uint8_t* data, uint32_t length,
-        int32_t timeout_ms)
+int32_t FX3::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
 {
     long len = length;
     if (not IsConnected())
@@ -238,11 +243,12 @@ int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
 #ifdef __unix__
 /** @brief Function for handling libusb callbacks
 */
-static void process_libusbtransfer(libusb_transfer *trans)
+static void process_libusbtransfer(libusb_transfer* trans)
 {
-    USBTransferContext_FX3 *context = static_cast<USBTransferContext_FX3 *>(trans->user_data);
+    USBTransferContext_FX3* context = static_cast<USBTransferContext_FX3*>(trans->user_data);
     std::unique_lock<std::mutex> lck(context->transferLock);
-    switch (trans->status) {
+    switch (trans->status)
+    {
     case LIBUSB_TRANSFER_CANCELLED:
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
@@ -276,16 +282,16 @@ static void process_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
+int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 {
-    std::unique_lock<std::mutex> lock {contextsLock};
+    std::unique_lock<std::mutex> lock{ contextsLock };
 
     int i = 0;
     bool contextFound = false;
     //find not used context
     for (i = 0; i < USB_MAX_CONTEXTS; i++)
     {
-        if (!contexts[i].used) 
+        if (!contexts[i].used)
         {
             contextFound = true;
             break;
@@ -305,15 +311,13 @@ int FX3::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
     if (InEndPt[endPointAddr & 0xF])
     {
         contexts[i].EndPt = InEndPt[endPointAddr & 0xF];
-        contexts[i].context =
-            contexts[i].EndPt->BeginDataXfer((unsigned char *)buffer, length, contexts[i].inOvLap);
+        contexts[i].context = contexts[i].EndPt->BeginDataXfer((unsigned char*)buffer, length, contexts[i].inOvLap);
     }
 
     return i;
 #else
-    libusb_transfer *tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length,
-                              process_libusbtransfer, &contexts[i], 0);
+    libusb_transfer* tr = contexts[i].transfer;
+    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length, process_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
     int status = libusb_submit_transfer(tr);
@@ -333,31 +337,28 @@ bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     {
 #ifndef __unix__
         int status = 0;
-        status =
-            contexts[contextHandle].EndPt->WaitForXfer(contexts[contextHandle].inOvLap, timeout_ms);
+        status = contexts[contextHandle].EndPt->WaitForXfer(contexts[contextHandle].inOvLap, timeout_ms);
         return status;
 #else
         //blocking not to waste CPU
         std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
-        return contexts[contextHandle].cv.wait_for(lck, std::chrono::milliseconds(timeout_ms), [&]() {
-            return contexts[contextHandle].done.load();
-        });
+        return contexts[contextHandle].cv.wait_for(
+            lck, std::chrono::milliseconds(timeout_ms), [&]() { return contexts[contextHandle].done.load(); });
 #endif
     }
 
     return true; //there is nothing to wait for (signal wait finished)
 }
 
-int FX3::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
+int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 {
-    if (contextHandle >= 0 && contexts[contextHandle].used == true) 
+    if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
         int status = 0;
         long len = length;
-        status = contexts[contextHandle].EndPt->FinishDataXfer((unsigned char *)buffer, len,
-                                                               contexts[contextHandle].inOvLap,
-                                                               contexts[contextHandle].context);
+        status = contexts[contextHandle].EndPt->FinishDataXfer(
+            (unsigned char*)buffer, len, contexts[contextHandle].inOvLap, contexts[contextHandle].context);
         contexts[contextHandle].used = false;
         contexts[contextHandle].reset();
         return len;
@@ -368,7 +369,7 @@ int FX3::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
         return length;
 #endif
     }
-    
+
     return 0;
 }
 
@@ -377,7 +378,7 @@ void FX3::AbortEndpointXfers(uint8_t endPointAddr)
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
-        if (InEndPt[i] && InEndPt[i]->Address == endPointAddr) 
+        if (InEndPt[i] && InEndPt[i]->Address == endPointAddr)
         {
             InEndPt[i]->Abort();
         }

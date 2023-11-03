@@ -19,24 +19,23 @@
 
 using namespace lime;
 
-void LMS7002_WXGUI::UpdateControlsByMap(wxPanel *panel, LMS7002M *lmsControl,
-                                        const std::map<wxWindow *, LMS7Parameter> &wndId2param,
-                                        const uint8_t channel)
+void LMS7002_WXGUI::UpdateControlsByMap(
+    wxPanel* panel, LMS7002M* lmsControl, const std::map<wxWindow*, LMS7Parameter>& wndId2param, const uint8_t channel)
 {
     if (panel == nullptr || lmsControl == nullptr)
         return;
     panel->Freeze();
 
-    wxObject *wnd;
+    wxObject* wnd;
     uint16_t value = 0;
-    wxClassInfo *wndClass;
-    wxClassInfo *cmbInfo = wxClassInfo::FindClass(_("wxComboBox"));
-    wxClassInfo *chkInfo = wxClassInfo::FindClass(_("wxCheckBox"));
-    wxClassInfo *rgrInfo = wxClassInfo::FindClass(_("wxRadioBox"));
-    wxClassInfo *numericSliderInfo = wxClassInfo::FindClass(_("NumericSlider"));
-    wxClassInfo *spinCtrlInfo = wxClassInfo::FindClass(_("wxSpinCtrl"));
-    wxClassInfo *labelInfo = wxClassInfo::FindClass(_("wxStaticText"));
-    wxClassInfo *radioBtnInfo = wxClassInfo::FindClass(_("wxRadioButton"));
+    wxClassInfo* wndClass;
+    wxClassInfo* cmbInfo = wxClassInfo::FindClass(_("wxComboBox"));
+    wxClassInfo* chkInfo = wxClassInfo::FindClass(_("wxCheckBox"));
+    wxClassInfo* rgrInfo = wxClassInfo::FindClass(_("wxRadioBox"));
+    wxClassInfo* numericSliderInfo = wxClassInfo::FindClass(_("NumericSlider"));
+    wxClassInfo* spinCtrlInfo = wxClassInfo::FindClass(_("wxSpinCtrl"));
+    wxClassInfo* labelInfo = wxClassInfo::FindClass(_("wxStaticText"));
+    wxClassInfo* radioBtnInfo = wxClassInfo::FindClass(_("wxRadioButton"));
 
     for (auto idParam : wndId2param)
     {
@@ -49,7 +48,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel *panel, LMS7002M *lmsControl,
         //cast window to specific control, to set value, or set selection
         if (wndClass->IsKindOf(cmbInfo))
         {
-            wxComboBox *box = wxStaticCast(wnd, wxComboBox);
+            wxComboBox* box = wxStaticCast(wnd, wxComboBox);
             if (box->GetCount() <= value)
             {
                 wxString str;
@@ -65,7 +64,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel *panel, LMS7002M *lmsControl,
         }
         else if (wndClass->IsKindOf(rgrInfo))
         {
-            wxRadioBox *box = wxStaticCast(wnd, wxRadioBox);
+            wxRadioBox* box = wxStaticCast(wnd, wxRadioBox);
             if (box->GetCount() <= value)
             {
                 wxString str;
@@ -95,7 +94,9 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel *panel, LMS7002M *lmsControl,
         {
             wxString str;
 #ifndef NDEBUG
-            str = wxString::Format(_("Unhandled control class type. className=%s, was assigned address %04X"), wndClass->GetClassName(), idParam.second.address);
+            str = wxString::Format(_("Unhandled control class type. className=%s, was assigned address %04X"),
+                wndClass->GetClassName(),
+                idParam.second.address);
             wxMessageBox(str, "ERROR!");
 #endif
         }
@@ -103,7 +104,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel *panel, LMS7002M *lmsControl,
     panel->Thaw();
 }
 
-int LMS7002_WXGUI::index2value(int index, const indexValueMap &pairs)
+int LMS7002_WXGUI::index2value(int index, const indexValueMap& pairs)
 {
     for (size_t i = 0; i < pairs.size(); ++i)
         if (index == pairs[i].first)
@@ -111,7 +112,7 @@ int LMS7002_WXGUI::index2value(int index, const indexValueMap &pairs)
     return 0;
 }
 
-int LMS7002_WXGUI::value2index(int value, const indexValueMap &pairs)
+int LMS7002_WXGUI::value2index(int value, const indexValueMap& pairs)
 {
     for (size_t i = 0; i < pairs.size(); ++i)
         if (value == pairs[i].second)
@@ -123,14 +124,14 @@ int LMS7002_WXGUI::value2index(int value, const indexValueMap &pairs)
     @param wndId2Param wxWidgets controls and LMS parameters pairs
     @param replace Replace all tooltips with new ones, or keep old ones and just add missing ones
 */
-void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wndId2param, bool replace)
+void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter>& wndId2param, bool replace)
 {
 #if wxUSE_TOOLTIPS
     wxString sttip = _("");
     std::map<wxWindow*, LMS7Parameter>::const_iterator iter;
     for (iter = wndId2param.begin(); iter != wndId2param.end(); ++iter)
     {
-        wxToolTip *ttip = NULL;
+        wxToolTip* ttip = NULL;
         ttip = iter->first->GetToolTip();
         if (ttip)
             sttip = ttip->GetTip();
@@ -143,12 +144,12 @@ void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wnd
         if (sttip.length() != 0)
             sttip += _("\n");
 
-        int bitCount = iter->second.msb - iter->second.lsb +1;
+        int bitCount = iter->second.msb - iter->second.lsb + 1;
         if (bitCount == 1)
             sttip += wxString::Format(_("0x%.4X[%i]"), iter->second.address, iter->second.lsb);
         else
             sttip += wxString::Format(_("0x%.4X[%i:%i]"), iter->second.address, iter->second.msb, iter->second.lsb);
-        if(iter->first->IsKindOf(wxClassInfo::FindClass(_("NumericSlider")))) //set tooltip is not virtual method, need to cast
+        if (iter->first->IsKindOf(wxClassInfo::FindClass(_("NumericSlider")))) //set tooltip is not virtual method, need to cast
             (reinterpret_cast<NumericSlider*>(iter->first))->SetToolTip(sttip + wxString::From8BitData(iter->second.name));
         else
             iter->first->SetToolTip(sttip + wxString::From8BitData(iter->second.name));

@@ -43,64 +43,59 @@ class LMS_Programing_wxgui;
 
 class LMS7SuiteAppFrame : public wxFrame
 {
-    protected:
-      void AddModule(IModuleFrame *module, const char *title);
-      void RemoveModule(IModuleFrame *module);
-      // Handlers for AppFrame events.
-      void OnClose(wxCloseEvent &event);
-      void OnQuit(wxCommandEvent &event);
-      void OnAbout(wxCommandEvent &event);
-      void OnDeviceHandleChange(wxCommandEvent &event);
-      void HandleLMSevent(wxCommandEvent &event);
-      void OnModuleClose(wxCloseEvent &event);
-      void OnShowModule(wxCommandEvent &event);
-      void OnDeviceDisconnect();
+  protected:
+    void AddModule(IModuleFrame* module, const char* title);
+    void RemoveModule(IModuleFrame* module);
+    // Handlers for AppFrame events.
+    void OnClose(wxCloseEvent& event);
+    void OnQuit(wxCommandEvent& event);
+    void OnAbout(wxCommandEvent& event);
+    void OnDeviceHandleChange(wxCommandEvent& event);
+    void HandleLMSevent(wxCommandEvent& event);
+    void OnModuleClose(wxCloseEvent& event);
+    void OnShowModule(wxCommandEvent& event);
+    void OnDeviceDisconnect();
 
-      void DeviceTreeSelectionChanged(wxTreeEvent &event);
-    public:
-        LMS7SuiteAppFrame( wxWindow* parent );
+    void DeviceTreeSelectionChanged(wxTreeEvent& event);
 
-        virtual ~LMS7SuiteAppFrame();
-        static int m_lmsSelection;
-      protected:
-        static void OnGlobalLogEvent(const lime::LogLevel level, const char *message);
-        static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
-        void OnLogMessage(wxCommandEvent &event);
-        static const int cDeviceInfoCollumn = 1;
-        static const int cDeviceVerRevMaskCollumn = 2;
-        void UpdateConnections(lime::SDRDevice *port);
+  public:
+    LMS7SuiteAppFrame(wxWindow* parent);
 
-        lime::SDRDevice *lmsControl;
-        pnlMiniLog* mMiniLog;
-        fftviewer_frFFTviewer* fftviewer;
-        static LMS7SuiteAppFrame* obj_ptr;
+    virtual ~LMS7SuiteAppFrame();
+    static int m_lmsSelection;
 
-        std::map<wxWindowID, IModuleFrame *> mModules;
+  protected:
+    static void OnGlobalLogEvent(const lime::LogLevel level, const char* message);
+    static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
+    void OnLogMessage(wxCommandEvent& event);
+    static const int cDeviceInfoCollumn = 1;
+    static const int cDeviceVerRevMaskCollumn = 2;
+    void UpdateConnections(lime::SDRDevice* port);
 
-        enum
-        {
-            idMenuQuit = 1000,
-            ID_MENUITEM_LIMERFE,
-            idMenuAbout
-        };
+    lime::SDRDevice* lmsControl;
+    pnlMiniLog* mMiniLog;
+    fftviewer_frFFTviewer* fftviewer;
+    static LMS7SuiteAppFrame* obj_ptr;
 
-        wxTreeCtrl* deviceTree;
-        wxMenuBar *mbar;
-        wxMenu *fileMenu;
-        wxMenu *mnuOptions;
-        wxMenuItem *mnuCacheValues;
-        wxMenu *mnuModules;
-        wxMenu *helpMenu;
-        wxStatusBar *statusBar;
-        wxFlexGridSizer *mainSizer;
-        wxScrolledWindow *m_scrolledWindow1;
-        wxFlexGridSizer *contentSizer;
-        ISOCPanel *mContent;
-        LMS_Programing_wxgui* programmer;
-        pnlBoardControls* boardControlsGui;
-        lime::DeviceConnectionPanel* pnlDeviceConnection;
+    std::map<wxWindowID, IModuleFrame*> mModules;
+
+    enum { idMenuQuit = 1000, ID_MENUITEM_LIMERFE, idMenuAbout };
+
+    wxTreeCtrl* deviceTree;
+    wxMenuBar* mbar;
+    wxMenu* fileMenu;
+    wxMenu* mnuOptions;
+    wxMenuItem* mnuCacheValues;
+    wxMenu* mnuModules;
+    wxMenu* helpMenu;
+    wxStatusBar* statusBar;
+    wxFlexGridSizer* mainSizer;
+    wxScrolledWindow* m_scrolledWindow1;
+    wxFlexGridSizer* contentSizer;
+    ISOCPanel* mContent;
+    LMS_Programing_wxgui* programmer;
+    pnlBoardControls* boardControlsGui;
+    lime::DeviceConnectionPanel* pnlDeviceConnection;
 };
 
-
 #endif // __LMS7SuiteAppFrame__
-

@@ -1,0 +1,27 @@
+clang-format:
+  before_script:
+    - apt-get update
+    - apt-get install -y clang-format git colordiff
+  script:
+    - ./.gitlab-ci/git-clang-format.sh
+  rules:
+    - changes:
+      - "**/*.h"
+      - "**/*.c"
+      - "**/*.cpp"
+      - ".gitlab-ci.yml"
+      - ".gitlab-ci/*"
+
+build-linux:
+  before_script:
+    - apt-get update
+    - apt-get install -y libwxbase3.2-1 libwxgtk3.2-1 libwxgtk3.2-dev wx-common wx3.2-headers cmake libusb-1.0-0-dev
+  script:
+    - ./.gitlab-ci/build-linux.sh
+  rules:
+    - changes:
+      - "**/*.h"
+      - "**/*.c"
+      - "**/*.cpp"
+      - ".gitlab-ci.yml"
+      - ".gitlab-ci/*"

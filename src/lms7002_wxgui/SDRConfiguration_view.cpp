@@ -6,14 +6,12 @@
 using namespace std;
 using namespace lime;
 
-SOCConfig_view::SOCConfig_view(
-    wxWindow* parent, wxWindowID id,
-    const wxPoint& pos, const wxSize& size, long style)
+SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : wxPanel(parent, id, pos, size, style)
     , socIndex(0)
 {
-    gui.titledBox = new wxStaticBox( this, wxID_ANY, wxT("RF SOC") );
-    wxStaticBoxSizer* sbSizer = new wxStaticBoxSizer(gui.titledBox , wxHORIZONTAL);
+    gui.titledBox = new wxStaticBox(this, wxID_ANY, wxT("RF SOC"));
+    wxStaticBoxSizer* sbSizer = new wxStaticBoxSizer(gui.titledBox, wxHORIZONTAL);
     wxWindow* base = sbSizer->GetStaticBox();
 
     wxSizerFlags titleFlags(0);
@@ -21,9 +19,9 @@ SOCConfig_view::SOCConfig_view(
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Center();
 
-    wxFlexGridSizer *rxGrid = new wxFlexGridSizer(5, 4, 4);
+    wxFlexGridSizer* rxGrid = new wxFlexGridSizer(5, 4, 4);
     {
-        const vector<string> titles = {"Enable", "RxAntenna", "RxGain", "RxLPF (MHz)", "RxNCO (MHz)"};
+        const vector<string> titles = { "Enable", "RxAntenna", "RxGain", "RxLPF (MHz)", "RxNCO (MHz)" };
         for (const auto& name : titles)
             rxGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
@@ -44,40 +42,43 @@ SOCConfig_view::SOCConfig_view(
             fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));
             rxGrid->Add(fields.lpf, ctrlFlags);
 
-            fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));;
+            fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));
+            ;
             rxGrid->Add(fields.nco, ctrlFlags);
         }
     }
 
-    wxFlexGridSizer *centerGrid = new wxFlexGridSizer(1, 4, 4);
+    wxFlexGridSizer* centerGrid = new wxFlexGridSizer(1, 4, 4);
     {
-        wxFlexGridSizer *LOgrid = new wxFlexGridSizer(3, 0, 0);
+        wxFlexGridSizer* LOgrid = new wxFlexGridSizer(3, 0, 0);
         LOgrid->Add(new wxStaticText(base, wxID_ANY, "RxLO (MHz)"), titleFlags);
         LOgrid->Add(new wxStaticText(base, wxID_ANY, ""), titleFlags);
         LOgrid->Add(new wxStaticText(base, wxID_ANY, "TxLO (MHz)"), titleFlags);
 
-        gui.rxLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));;
+        gui.rxLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));
+        ;
         LOgrid->Add(gui.rxLO, ctrlFlags);
 
         gui.tdd = new wxCheckBox(base, wxNewId(), wxT("TDD"));
         LOgrid->Add(gui.tdd, ctrlFlags);
 
-        gui.txLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));;
+        gui.txLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));
+        ;
         LOgrid->Add(gui.txLO, ctrlFlags);
         centerGrid->Add(LOgrid);
 
-        wxFlexGridSizer *samplingGrid = new wxFlexGridSizer(2, 0, 0);
+        wxFlexGridSizer* samplingGrid = new wxFlexGridSizer(2, 0, 0);
 
         samplingGrid->Add(new wxStaticText(base, wxID_ANY, wxT("Sample rate (MHz):")), titleFlags);
         gui.sampleRate = new wxTextCtrl(base, wxNewId(), wxT("10"));
         samplingGrid->Add(gui.sampleRate, ctrlFlags);
         centerGrid->Add(samplingGrid, wxSizerFlags().Center());
 
-        wxFlexGridSizer *oversamplingGrid = new wxFlexGridSizer(4, 0, 0);
+        wxFlexGridSizer* oversamplingGrid = new wxFlexGridSizer(4, 0, 0);
         oversamplingGrid->Add(new wxStaticText(base, wxID_ANY, "Decimate:"), titleFlags);
         wxArrayString oversampleNames;
         oversampleNames.Add(wxT("max"));
-        for(int i=0; i<5; ++i)
+        for (int i = 0; i < 5; ++i)
             oversampleNames.Add(wxString::Format("%i", 1 << i));
         gui.decimation = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, oversampleNames);
         gui.decimation->SetSelection(2);
@@ -91,19 +92,21 @@ SOCConfig_view::SOCConfig_view(
         centerGrid->Add(oversamplingGrid, wxSizerFlags().Center());
     }
 
-    wxFlexGridSizer *txGrid = new wxFlexGridSizer(5, 4, 4);
+    wxFlexGridSizer* txGrid = new wxFlexGridSizer(5, 4, 4);
     {
-        const vector<string> titles = {"TxNCO (MHz)", "TxLPF (MHz)", "TxGain", "TxAntenna", "Enable"};
+        const vector<string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain", "TxAntenna", "Enable" };
         for (auto name : titles)
             txGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
 
         for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
             ChannelConfigGUI& fields = gui.tx[i];
-            fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));;
+            fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));
+            ;
             txGrid->Add(fields.nco, ctrlFlags);
 
-            fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));;
+            fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));
+            ;
             txGrid->Add(fields.lpf, ctrlFlags);
 
             fields.gain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
@@ -128,7 +131,7 @@ SOCConfig_view::SOCConfig_view(
     SetSizerAndFit(sbSizer);
 }
 
-void SOCConfig_view::Setup(SDRDevice *device, int index)
+void SOCConfig_view::Setup(SDRDevice* device, int index)
 {
     sdrDevice = device;
 
@@ -137,7 +140,7 @@ void SOCConfig_view::Setup(SDRDevice *device, int index)
         return;
     }
 
-    const SDRDevice::RFSOCDescriptor &descriptor = device->GetDescriptor().rfSOC.at(index);
+    const SDRDevice::RFSOCDescriptor& descriptor = device->GetDescriptor().rfSOC.at(index);
     socIndex = index;
     gui.titledBox->SetLabel(descriptor.name.c_str());
 
@@ -183,12 +186,11 @@ void SOCConfig_view::Setup(SDRDevice *device, int index)
     }
 }
 
-void SOCConfig_view::UpdateGUI(const lime::SDRDevice::SDRConfig &config)
+void SOCConfig_view::UpdateGUI(const lime::SDRDevice::SDRConfig& config)
 {
-
 }
 
-void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
+void SOCConfig_view::SubmitConfig(wxCommandEvent& event)
 {
     if (!sdrDevice)
         return;
@@ -197,22 +199,21 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
 
     config.referenceClockFreq = 30.72e6;
 
-    auto parseGuiValue = [](const wxString& str)
-    {
+    auto parseGuiValue = [](const wxString& str) {
         double value = 0;
         str.ToDouble(&value);
         return value;
     };
 
-    for(int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
+    for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
     {
         const double multiplier = 1e6; // convert from GUI MHz to Hz
-        SDRDevice::ChannelConfig &ch = config.channel[i];
+        SDRDevice::ChannelConfig& ch = config.channel[i];
 
         ch.rx.centerFrequency = parseGuiValue(gui.rxLO->GetValue()) * multiplier;
         ch.tx.centerFrequency = parseGuiValue(gui.txLO->GetValue()) * multiplier;
 
-        if(gui.tdd->IsChecked())
+        if (gui.tdd->IsChecked())
             ch.rx.centerFrequency = ch.tx.centerFrequency;
 
         ch.rx.NCOoffset = parseGuiValue(gui.rx[i].nco->GetValue()) * multiplier;
@@ -226,10 +227,10 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
         ch.rx.lpf = parseGuiValue(gui.rx[i].lpf->GetValue()) * multiplier;
         ch.tx.lpf = parseGuiValue(gui.tx[i].lpf->GetValue()) * multiplier;
         int oversampleIndex = gui.decimation->GetSelection();
-        ch.rx.oversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
+        ch.rx.oversample = oversampleIndex > 0 ? (1 << (oversampleIndex - 1)) : 0;
 
         oversampleIndex = gui.interpolation->GetSelection();
-        ch.tx.oversample = oversampleIndex > 0 ? (1<<(oversampleIndex-1)) : 0;
+        ch.tx.oversample = oversampleIndex > 0 ? (1 << (oversampleIndex - 1)) : 0;
         ch.rx.enabled = gui.rx[i].enable->IsChecked();
         ch.tx.enabled = gui.tx[i].enable->IsChecked();
         // ch.rxCalibrate;
@@ -238,31 +239,29 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent &event)
         // ch.txTestSignal;
     }
 
-    try {
+    try
+    {
         sdrDevice->Init();
         sdrDevice->Configure(config, socIndex);
-    }
-    catch (std::logic_error &e) // settings problem
+    } catch (std::logic_error& e) // settings problem
     {
         wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
         return;
-    }
-    catch (std::runtime_error &e) // communications problem
+    } catch (std::runtime_error& e) // communications problem
     {
         wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
         return;
     }
 }
 
-SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
-                                     const wxSize &size, long style)
-    : ISOCPanel(parent, id, pos, size, style), sdrDevice(nullptr)
+SDRConfiguration_view::SDRConfiguration_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
+    : ISOCPanel(parent, id, pos, size, style)
+    , sdrDevice(nullptr)
 {
     mainSizer = new wxFlexGridSizer(0, 1, 0, 0);
     mainSizer->AddGrowableCol(0);
     mainSizer->SetFlexibleDirection(wxBOTH);
     mainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
-
 
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Left().Top();
@@ -273,7 +272,7 @@ SDRConfiguration_view::SDRConfiguration_view(wxWindow *parent, wxWindowID id, co
     this->SetSizerAndFit(mainSizer);
 }
 
-void SDRConfiguration_view::Setup(lime::SDRDevice *device)
+void SDRConfiguration_view::Setup(lime::SDRDevice* device)
 {
     sdrDevice = device;
     if (!sdrDevice)
@@ -283,13 +282,13 @@ void SDRConfiguration_view::Setup(lime::SDRDevice *device)
         return;
     }
 
-    const SDRDevice::Descriptor &desc = device->GetDescriptor();
+    const SDRDevice::Descriptor& desc = device->GetDescriptor();
 
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Left().Top();
 
     // add rows for each SOC
-    for (size_t i=socGUI.size(); i<desc.rfSOC.size(); ++i)
+    for (size_t i = socGUI.size(); i < desc.rfSOC.size(); ++i)
     {
         SOCConfig_view* row = new SOCConfig_view(this, wxNewId());
         mainSizer->Add(row, ctrlFlags);
@@ -297,7 +296,7 @@ void SDRConfiguration_view::Setup(lime::SDRDevice *device)
         row->Hide();
     }
 
-    for (size_t i=0; i<socGUI.size(); ++i)
+    for (size_t i = 0; i < socGUI.size(); ++i)
     {
         if (i < desc.rfSOC.size())
         {

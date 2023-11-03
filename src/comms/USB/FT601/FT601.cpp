@@ -6,13 +6,13 @@
 #include "DeviceExceptions.h"
 
 #ifndef __unix__
-#include "windows.h"
-#include "FTD3XXLibrary/FTD3XX.h"
+    #include "windows.h"
+    #include "FTD3XXLibrary/FTD3XX.h"
 #else
-#include <libusb.h>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
+    #include <libusb.h>
+    #include <mutex>
+    #include <condition_variable>
+    #include <chrono>
 #endif
 
 using namespace lime;
@@ -45,7 +45,9 @@ void FT601::handle_libusb_events()
 }
 #endif // __UNIX__
 
-FT601::FT601(void *usbContext) : contexts(nullptr), isConnected(false)
+FT601::FT601(void* usbContext)
+    : contexts(nullptr)
+    , isConnected(false)
 {
     isConnected = false;
 #ifdef __unix__
@@ -78,7 +80,7 @@ FT601::~FT601()
     }
 }
 
-bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
+bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
 #ifndef __unix__
     DWORD devCount;
@@ -106,7 +108,7 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
     FT_SetPipeTimeout(mFTHandle, streamBulkReadAddr, 0);
     FT_SetPipeTimeout(mFTHandle, streamBulkWriteAddr, 0);
 #else
-    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
+    libusb_device** devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0)
@@ -140,7 +142,8 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
         if (desc.iSerialNumber > 0)
         {
             char data[255];
-            int stringLength = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(data), sizeof(data));
+            int stringLength = libusb_get_string_descriptor_ascii(
+                dev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(data), sizeof(data));
 
             if (stringLength < 0)
             {
@@ -168,11 +171,11 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
         return ReportError(ENODEV, "libusb_open failed");
     }
 
-    if (libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
+    if (libusb_kernel_driver_active(dev_handle, 1) == 1) //find out if kernel driver is attached
     {
         lime::debug("Kernel Driver Active");
 
-        if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
+        if (libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
         {
             lime::debug("Kernel Driver Detached!");
         }
@@ -196,7 +199,7 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
         return ReportError(-1, "USB reset failed", libusb_strerror(static_cast<libusb_error>(returnCode)));
     }
 
-    FT_FlushPipe(ctrlBulkReadAddr);  //clear ctrl ep rx buffer
+    FT_FlushPipe(ctrlBulkReadAddr); //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
 #endif
@@ -228,7 +231,7 @@ void FT601::Disconnect()
     isConnected = false;
 }
 
-int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32_t timeout_ms)
+int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
 {
     long len = 0;
     if (not IsConnected())
@@ -283,7 +286,11 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int
     len = actualTransferred;
     if (status != 0)
     {
-        printf("FT601::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n", endPointAddr, libusb_error_name(status), actualTransferred, length);
+        printf("FT601::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
+            endPointAddr,
+            libusb_error_name(status),
+            actualTransferred,
+            length);
     }
 #endif
     return len;
@@ -297,11 +304,12 @@ int32_t FT601::ControlTransfer(int requestType, int request, int value, int inde
 #ifdef __unix__
 /** @brief Function for handling libusb callbacks
 */
-static void process_libusbtransfer(libusb_transfer *trans)
+static void process_libusbtransfer(libusb_transfer* trans)
 {
-    USBTransferContext_FT601 *context = static_cast<USBTransferContext_FT601 *>(trans->user_data);
+    USBTransferContext_FT601* context = static_cast<USBTransferContext_FT601*>(trans->user_data);
     std::unique_lock<std::mutex> lck(context->transferLock);
-    switch (trans->status) {
+    switch (trans->status)
+    {
     case LIBUSB_TRANSFER_CANCELLED:
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
@@ -335,23 +343,23 @@ static void process_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
+int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 {
-    std::unique_lock<std::mutex> lock {contextsLock};
+    std::unique_lock<std::mutex> lock{ contextsLock };
 
     int i = 0;
     bool contextFound = false;
     //find not used context
     for (i = 0; i < USB_MAX_CONTEXTS; i++)
     {
-        if (!contexts[i].used) 
+        if (!contexts[i].used)
         {
             contextFound = true;
             break;
         }
     }
 
-    if (!contextFound) 
+    if (!contextFound)
     {
         printf("No contexts left for reading or sending data, address %i\n", endPointAddr);
         return -1;
@@ -361,7 +369,7 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 
     lock.unlock();
 #ifndef __unix__
-	ULONG ulActual;
+    ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
     FT_InitializeOverlapped(mFTHandle, &contexts[i].inOvLap);
 
@@ -383,7 +391,7 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
         return -1;
     }
 #else
-    libusb_transfer *tr = contexts[i].transfer;
+    libusb_transfer* tr = contexts[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length, process_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
@@ -399,7 +407,7 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 }
 
 bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
-{    
+{
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
@@ -412,18 +420,17 @@ bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 #else
         //blocking not to waste CPU
         std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
-        return contexts[contextHandle].cv.wait_for(lck, std::chrono::milliseconds(timeout_ms), [&]() {
-            return contexts[contextHandle].done.load();
-        });
+        return contexts[contextHandle].cv.wait_for(
+            lck, std::chrono::milliseconds(timeout_ms), [&]() { return contexts[contextHandle].done.load(); });
 #endif
     }
 
     return true; //there is nothing to wait for (signal wait finished)
 }
 
-int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
+int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 {
-    if (contextHandle >= 0 && contexts[contextHandle].used == true) 
+    if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
         ULONG ulActualBytesTransferred;
@@ -450,7 +457,7 @@ int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
         return length;
 #endif
     }
-    
+
     return 0;
 }
 
@@ -558,10 +565,10 @@ int FT601::ReinitPipe(unsigned char ep)
 int FT601::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
-    unsigned char wbuffer[20] = {0};
+    unsigned char wbuffer[20] = { 0 };
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
@@ -574,7 +581,7 @@ int FT601::FT_FlushPipe(unsigned char ep)
     }
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
@@ -593,10 +600,10 @@ int FT601::FT_FlushPipe(unsigned char ep)
 int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
     int actual = 0;
-    unsigned char wbuffer[20] = {0};
+    unsigned char wbuffer[20] = { 0 };
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
@@ -609,12 +616,12 @@ int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
     }
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
     wbuffer[5] = 0x02;
-    wbuffer[8] = (size) & 0xFF;
+    wbuffer[8] = (size)&0xFF;
     wbuffer[9] = (size >> 8) & 0xFF;
     wbuffer[10] = (size >> 16) & 0xFF;
     wbuffer[11] = (size >> 24) & 0xFF;
