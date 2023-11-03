@@ -61,10 +61,12 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
     FT_SetPipeTimeout(mFTHandle, ctrlBulkReadAddr, 500);
     FT_SetPipeTimeout(mFTHandle, streamBulkReadAddr, 0);
     FT_SetPipeTimeout(mFTHandle, streamBulkWriteAddr, 0);
+
+    isConnected = true;
 #else
     USBGeneric::Connect(vid, pid, serial);
 
-    FT_FlushPipe(ctrlBulkReadAddr); //clear ctrl ep rx buffer
+    FT_FlushPipe(ctrlBulkReadAddr); // Clear control endpoint rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
 #endif
