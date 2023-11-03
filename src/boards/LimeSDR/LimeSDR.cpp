@@ -469,25 +469,6 @@ void LimeSDR::EnableCache(bool enable)
         mFPGA->EnableValuesCache(enable);
 }
 
-/*static void printPacket(const LMS64CPacket& pkt, uint8_t blockSize, const char* prefix)
-{
-    printf("%s", prefix);
-    int i = 0;
-    for (; i < 8; ++i)
-        printf("%02X ", reinterpret_cast<const uint8_t*>(&pkt)[i]);
-    for (; i < 8 + pkt.blockCount * blockSize; i += blockSize)
-    {
-        int j = 0;
-        for (; j < blockSize / 2; ++j)
-            printf("%02X", reinterpret_cast<const uint8_t*>(&pkt)[i + j]);
-        printf(" ");
-        for (; j < blockSize; ++j)
-            printf("%02X", reinterpret_cast<const uint8_t*>(&pkt)[i + j]);
-        printf(" ");
-    }
-    printf("\n");
-}*/
-
 void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mStreamPort);
