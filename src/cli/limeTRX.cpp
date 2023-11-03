@@ -506,7 +506,7 @@ int main(int argc, char** argv)
             txMeta.timestamp = rxMeta.timestamp + samplesRead + repeaterDelay;
             txMeta.useTimestamp = true;
             txMeta.flush = true;
-            int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesRead, &txMeta);
+            device->StreamTx(chipIndex, rxSamples, samplesRead, &txMeta);
         }
 
         // process samples

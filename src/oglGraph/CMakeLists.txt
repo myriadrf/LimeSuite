@@ -7,7 +7,7 @@ set(oglGraph_src_files
 
 #ignore warnings about narrowing: static font header
 if(CMAKE_COMPILER_IS_GNUCXX)
-	add_definitions(-Wno-narrowing)
+	add_definitions(-Wno-narrowing -Wno-address)
 endif()
 
 ADD_DEFINITIONS(-DGLEW_STATIC)

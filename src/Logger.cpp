@@ -37,6 +37,7 @@ static const char* errToStr(const int errnum)
     //http://linux.die.net/man/3/strerror_r
     #if !(defined(__GLIBC__) && defined(__GNU_SOURCE))
     auto result = strerror_r(errnum, buff, sizeof(buff));
+    (void)result;
     #else
     //this version may decide to use its own internal string
     return strerror_r(errnum, buff, sizeof(buff));

@@ -14,7 +14,14 @@
     #include "windows.h"
     #include "CyAPI.h"
 #else
+    #ifdef __GNUC__
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wpedantic"
+    #endif
     #include <libusb.h>
+    #ifdef __GNUC__
+        #pragma GCC diagnostic pop
+    #endif
     #include <mutex>
     #include <condition_variable>
     #include <chrono>
