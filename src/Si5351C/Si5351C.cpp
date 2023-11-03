@@ -20,6 +20,7 @@
 using namespace std;
 using namespace lime;
 
+// TODO: check if actually needed
 // static uint8_t addrSi5351 = 0x20;
 
 /// Splits float into fraction integers A + B/C

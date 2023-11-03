@@ -416,6 +416,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
 
     const uint8_t chipIndex = pthis->lmsIndex;
 
+    // TODO: check if actually needed
     /*std::vector<std::vector<complex32f_t>> txPattern(2);
     for (uint i = 0; i < txPattern.size(); ++i)
     {
