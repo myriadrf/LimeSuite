@@ -11,14 +11,14 @@
 #include <set>
 
 #ifdef __unix__
-#include <libusb.h>
+    #include <libusb.h>
 #endif
 
 namespace lime {
 
 class USBTransferContext
 {
-public:
+  public:
     explicit USBTransferContext();
     virtual ~USBTransferContext();
     virtual bool Reset();
@@ -34,8 +34,7 @@ public:
 #endif
 };
 
-struct VidPid
-{
+struct VidPid {
     uint16_t vid;
     uint16_t pid;
 
@@ -52,16 +51,17 @@ struct VidPid
 
 class USBEntry : public DeviceRegistryEntry
 {
-public:
-    USBEntry(const std::string &name, std::set<VidPid> deviceIds);
+  public:
+    USBEntry(const std::string& name, std::set<VidPid> deviceIds);
     virtual ~USBEntry();
 
     virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint);
-protected:
+
+  protected:
 #ifdef __unix__
-    static libusb_context* ctx; 
+    static libusb_context* ctx;
 #endif
-private:
+  private:
     std::set<VidPid> mDeviceIds;
 };
 
