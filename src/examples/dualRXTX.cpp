@@ -10,7 +10,7 @@
 #include <math.h>
 #include <signal.h>
 #ifdef USE_GNU_PLOT
-#include "gnuPlotPipe.h"
+    #include "gnuPlotPipe.h"
 #endif
 
 using namespace lime;
@@ -20,7 +20,8 @@ float sampleRate = 10e6;
 static uint8_t chipIndex = 0; // device might have several RF chips
 
 bool stopProgram(false);
-void intHandler(int dummy) {
+void intHandler(int dummy)
+{
     std::cout << "Stoppping\n";
     stopProgram = true;
 }
@@ -36,7 +37,8 @@ static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 int main(int argc, char** argv)
 {
     auto handles = DeviceRegistry::enumerate();
-    if (handles.size() == 0) {
+    if (handles.size() == 0)
+    {
         printf("No devices found\n");
         return -1;
     }
@@ -46,7 +48,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
 
     // Use first available device
-    SDRDevice *device = DeviceRegistry::makeDevice(handles.at(0));
+    SDRDevice* device = DeviceRegistry::makeDevice(handles.at(0));
     if (!device)
     {
         std::cout << "Failed to connect to device" << std::endl;
@@ -57,7 +59,7 @@ int main(int argc, char** argv)
 
     // RF parameters
     SDRDevice::SDRConfig config;
-    for (int c=0; c<2; ++c) // MIMO
+    for (int c = 0; c < 2; ++c) // MIMO
     {
         config.channel[c].rx.enabled = true;
         config.channel[c].rx.centerFrequency = frequencyLO;
@@ -88,9 +90,9 @@ int main(int argc, char** argv)
 
     signal(SIGINT, intHandler);
 
-    const int samplesInBuffer = 256*4;
+    const int samplesInBuffer = 256 * 4;
     complex32f_t** rxSamples = new complex32f_t*[2]; // allocate two channels for simplicity
-    for (int i=0; i<2; ++i)
+    for (int i = 0; i < 2; ++i)
         rxSamples[i] = new complex32f_t[samplesInBuffer];
 
 #ifdef USE_GNU_PLOT
@@ -99,22 +101,22 @@ int main(int argc, char** argv)
 #endif
 
     std::cout << "Configuring device ...\n";
-    try {
+    try
+    {
         auto t1 = std::chrono::high_resolution_clock::now();
         device->Configure(config, chipIndex);
         auto t2 = std::chrono::high_resolution_clock::now();
-        std::cout << "SDR configured in " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
+        std::cout << "SDR configured in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 
         device->StreamSetup(stream, chipIndex);
         device->StreamStart(chipIndex);
 
-    }
-    catch ( std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         return -1;
-    }
-    catch ( std::logic_error &e) {
+    } catch (std::logic_error& e)
+    {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         return -1;
     }
@@ -135,7 +137,7 @@ int main(int argc, char** argv)
         totalSamplesReceived += samplesRead;
 
         // process samples
-        for (int n=0; n<samplesRead; ++n)
+        for (int n = 0; n < samplesRead; ++n)
         {
             float amplitude = pow(rxSamples[0][n].i, 2) + pow(rxSamples[0][n].q, 2);
             if (amplitude > maxSignalAmplitude)
@@ -143,7 +145,7 @@ int main(int argc, char** argv)
         }
 
         SDRDevice::StreamMeta txMeta;
-        txMeta.timestamp = rxMeta.timestamp + samplesInBuffer*64;
+        txMeta.timestamp = rxMeta.timestamp + samplesInBuffer * 64;
         txMeta.useTimestamp = true;
         txMeta.flush = false;
         int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesInBuffer, &txMeta);
@@ -155,13 +157,11 @@ int main(int argc, char** argv)
         totalSamplesSent += samplesSent;
 
         t2 = std::chrono::high_resolution_clock::now();
-        if (t2-t1 > std::chrono::seconds(1))
+        if (t2 - t1 > std::chrono::seconds(1))
         {
             t1 = t2;
-            std::cout << "Total samples received: " << totalSamplesReceived
-                << "  signal amplitude: " << sqrt(maxSignalAmplitude)
-                << "  total samples sent: " << totalSamplesSent
-                << std::endl;
+            std::cout << "Total samples received: " << totalSamplesReceived << "  signal amplitude: " << sqrt(maxSignalAmplitude)
+                      << "  total samples sent: " << totalSamplesSent << std::endl;
 
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points title 'ch 0'");
@@ -180,7 +180,7 @@ int main(int argc, char** argv)
     }
     DeviceRegistry::freeDevice(device);
 
-    for (int i=0; i<2; ++i)
+    for (int i = 0; i < 2; ++i)
         delete[] rxSamples[i];
     delete[] rxSamples;
     return 0;

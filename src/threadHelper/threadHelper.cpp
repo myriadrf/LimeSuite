@@ -1,16 +1,16 @@
 #include "threadHelper.h"
 
 #ifdef __unix__
-#include <pthread.h>
+    #include <pthread.h>
 #else
-#include <windows.h>
+    #include <windows.h>
 #endif
 #include "Logger.h"
 
 using namespace lime;
 
 #ifdef __unix__
-int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::thread *thread)
+int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::thread* thread)
 {
     if (!thread)
     {
@@ -49,7 +49,10 @@ int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std:
     if (int ret = pthread_setschedparam(thread->native_handle(), sched_policy, &sch))
     {
         lime::debug("SetOSThreadPriority: Failed to set priority(%d), schec_prio(%d), policy(%d), ret(%d)",
-                    priority, sched_policy, ret, sch.sched_priority);
+            priority,
+            sched_policy,
+            ret,
+            sch.sched_priority);
         return -1;
     }
 
@@ -89,7 +92,10 @@ int lime::SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy polic
     if (int ret = pthread_setschedparam(pthread_self(), sched_policy, &sch) != 0)
     {
         lime::debug("SetOSCurrentThreadPriority: Failed to set priority(%d), schec_prio(%d), policy(%d), ret(%d)",
-                    priority, sched_policy, ret, sch.sched_priority);
+            priority,
+            sched_policy,
+            ret,
+            sch.sched_priority);
         return -1;
     }
 
@@ -98,7 +104,7 @@ int lime::SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy polic
 
 #elif _WIN32
 
-int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy /*policy*/, std::thread *thread)
+int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy /*policy*/, std::thread* thread)
 {
     if (!thread)
     {
@@ -179,7 +185,7 @@ int lime::SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy /*pol
 }
 #else
 
-int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::thread *thread)
+int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std::thread* thread)
 {
     return 0;
 }

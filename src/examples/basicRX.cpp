@@ -11,7 +11,7 @@
 #include <signal.h>
 #include "kissFFT/kiss_fft.h"
 #ifdef USE_GNU_PLOT
-#include "gnuPlotPipe.h"
+    #include "gnuPlotPipe.h"
 #endif
 
 using namespace lime;
@@ -21,7 +21,8 @@ float sampleRate = 10e6;
 static uint8_t chipIndex = 0; // device might have several RF chips
 
 bool stopProgram(false);
-void intHandler(int dummy) {
+void intHandler(int dummy)
+{
     std::cout << "Stoppping\n";
     stopProgram = true;
 }
@@ -39,7 +40,8 @@ int main(int argc, char** argv)
     auto handles = DeviceRegistry::enumerate();
     float peakAmplitude = -1000, peakFrequency = 0;
 
-    if (handles.size() == 0) {
+    if (handles.size() == 0)
+    {
         printf("No devices found\n");
         return -1;
     }
@@ -49,7 +51,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
 
     // Use first available device
-    SDRDevice *device = DeviceRegistry::makeDevice(handles.at(0));
+    SDRDevice* device = DeviceRegistry::makeDevice(handles.at(0));
     if (!device)
     {
         std::cout << "Failed to connect to device" << std::endl;
@@ -73,16 +75,16 @@ int main(int argc, char** argv)
     config.channel[0].tx.sampleRate = sampleRate;
     config.channel[0].tx.oversample = 2;
     config.channel[0].tx.path = 2; // TODO: replace with string names
-    config.channel[0].tx.centerFrequency = frequencyLO-1e6;
+    config.channel[0].tx.centerFrequency = frequencyLO - 1e6;
     config.channel[0].tx.testSignal = false; // Tx will output sampleRate/4 signal
 
     std::cout << "Configuring device ...\n";
-    try {
+    try
+    {
         auto t1 = std::chrono::high_resolution_clock::now();
         device->Configure(config, chipIndex);
         auto t2 = std::chrono::high_resolution_clock::now();
-        std::cout << "SDR configured in " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << "ms\n";
+        std::cout << "SDR configured in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms\n";
 
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
@@ -95,12 +97,12 @@ int main(int argc, char** argv)
         device->StreamSetup(stream, chipIndex);
         device->StreamStart(chipIndex);
 
-    }
-    catch ( std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         return -1;
-    }
-    catch ( std::logic_error &e) {
+    } catch (std::logic_error& e)
+    {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
         return -1;
     }
@@ -110,7 +112,7 @@ int main(int argc, char** argv)
 
     const uint fftSize = 16384;
     complex32f_t** rxSamples = new complex32f_t*[2]; // allocate two channels for simplicity
-    for (int i=0; i<2; ++i)
+    for (int i = 0; i < 2; ++i)
         rxSamples[i] = new complex32f_t[fftSize];
 
 #ifdef USE_GNU_PLOT
@@ -128,7 +130,7 @@ int main(int argc, char** argv)
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx m_fftCalcIn[fftSize];
     kiss_fft_cpx m_fftCalcOut[fftSize];
-    
+
     SDRDevice::StreamMeta rxMeta;
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
     {
@@ -144,9 +146,10 @@ int main(int argc, char** argv)
             m_fftCalcIn[i].i = rxSamples[0][i].q;
         }
         kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
-        for (unsigned int i = 1; i<fftSize; ++i)
+        for (unsigned int i = 1; i < fftSize; ++i)
         {
-            float output = 10*log10(((m_fftCalcOut[i].r*m_fftCalcOut[i].r + m_fftCalcOut[i].i*m_fftCalcOut[i].i)/(fftSize*fftSize)));
+            float output =
+                10 * log10(((m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i) / (fftSize * fftSize)));
             fftBins[i] = output;
             if (output > peakAmplitude)
             {
@@ -157,11 +160,13 @@ int main(int argc, char** argv)
         if (peakFrequency > sampleRate / 2)
             peakFrequency = peakFrequency - sampleRate;
         t2 = std::chrono::high_resolution_clock::now();
-        if (t2-t1 > std::chrono::seconds(1))
+        if (t2 - t1 > std::chrono::seconds(1))
         {
             t1 = t2;
             printf("Samples received: %li, Peak amplitude %.2f dBFS @ %.3f MHz\n",
-                totalSamplesReceived, peakAmplitude, (frequencyLO+peakFrequency)/1e6);
+                totalSamplesReceived,
+                peakAmplitude,
+                (frequencyLO + peakFrequency) / 1e6);
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points\n");
             for (int j = 0; j < samplesRead; ++j)
@@ -174,7 +179,7 @@ int main(int argc, char** argv)
     }
     DeviceRegistry::freeDevice(device);
 
-    for (int i=0; i<2; ++i)
+    for (int i = 0; i < 2; ++i)
         delete[] rxSamples[i];
     delete[] rxSamples;
     return 0;

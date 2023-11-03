@@ -7,8 +7,7 @@
 class wxFlexGridSizer;
 class wxCheckBox;
 
-namespace lime
-{
+namespace lime {
 class IConnection;
 }
 
@@ -16,16 +15,21 @@ class pnlGPIO;
 
 class pnlLimeSDR : public wxPanel
 {
-public:
-    pnlLimeSDR(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = wxEmptyString);
+  public:
+    pnlLimeSDR(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        int style = 0,
+        wxString name = wxEmptyString);
     void Initialize(lime::SDRDevice* pControl);
     virtual ~pnlLimeSDR();
     virtual void UpdatePanel();
-    void OnGPIOChange(wxCommandEvent &event);
-    void OnReadAll(wxCommandEvent &event);
-    void OnWriteAll(wxCommandEvent &event);
+    void OnGPIOChange(wxCommandEvent& event);
+    void OnReadAll(wxCommandEvent& event);
+    void OnWriteAll(wxCommandEvent& event);
 
-protected:
+  protected:
     pnlGPIO* pnl_gpio;
     wxCheckBox* chkRFLB_A_EN;
     wxCheckBox* chkRFLB_B_EN;
@@ -37,8 +41,8 @@ protected:
     wxFlexGridSizer* mainSizer;
 
     int chipSelect;
-    lime::SDRDevice *device;
-    
+    lime::SDRDevice* device;
+
     DECLARE_EVENT_TABLE()
 };
 

@@ -8,11 +8,11 @@
  **************************************************************/
 
 #ifdef WX_PRECOMP
-#include "wx_pch.h"
+    #include "wx_pch.h"
 #endif
 
 #ifdef __BORLANDC__
-#pragma hdrstop
+    #pragma hdrstop
 #endif //__BORLANDC__
 
 #include "lms7suiteApp.h"
@@ -34,10 +34,8 @@ bool lms7suiteApp::OnInit()
 {
     wxInitAllImageHandlers();
     wxBitmap splashBitmap = wxBITMAP_PNG_FROM_DATA(splash);
-    wxSplashScreen* splash = new wxSplashScreen(splashBitmap,
-        wxSPLASH_CENTRE_ON_SCREEN,
-        6000, NULL, -1, wxDefaultPosition, wxDefaultSize,
-        wxSIMPLE_BORDER | wxSTAY_ON_TOP);
+    wxSplashScreen* splash = new wxSplashScreen(
+        splashBitmap, wxSPLASH_CENTRE_ON_SCREEN, 6000, NULL, -1, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER | wxSTAY_ON_TOP);
     wxYield(); //linux needs this to load splash image
     LMS7SuiteAppFrame* frame = new LMS7SuiteAppFrame(0L);
     frame->SetIcon(wxICON(LMS_ICO));

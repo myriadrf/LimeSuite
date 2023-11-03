@@ -26,31 +26,30 @@
  */
 #define LIME_SUITE_API_VERSION 0x20201000
 
-namespace lime
-{
-    /*!
+namespace lime {
+/*!
      * Get the library version as a dotted string.
      * The format is major.minor.patch.build-extra.
      */
-    LIME_API std::string GetLibraryVersion(void);
+LIME_API std::string GetLibraryVersion(void);
 
-    /*!
+/*!
      * Get the date of the build in "%Y-%M-%d" format.
      */
-    LIME_API std::string GetBuildTimestamp(void);
+LIME_API std::string GetBuildTimestamp(void);
 
-    /*!
+/*!
      * Get the LimeSuite library API version as a string.
      * The format of the version string is <b>major.minor.increment</b>,
      * where the digits are taken directly from <b>LIME_SUITE_API_VERSION</b>.
      */
-    LIME_API std::string GetAPIVersion(void);
+LIME_API std::string GetAPIVersion(void);
 
-    /*!
+/*!
      * Get the ABI/so version of the library.
      */
-    LIME_API std::string GetABIVersion(void);
+LIME_API std::string GetABIVersion(void);
 
-}
+} // namespace lime
 
 #endif //LIMESUITE_VERSION_INFO_H

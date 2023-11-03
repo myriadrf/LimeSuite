@@ -16,15 +16,14 @@
 #include <functional>
 #include <vector>
 
-namespace lime{
+namespace lime {
 class ISPI;
 class LMS7002M_RegistersMap;
 class MCU_BD;
 class BinSearchParam;
 class GridSearchParam;
 
-struct RSSI_measurements
-{
+struct RSSI_measurements {
     void clear()
     {
         amplitudeFFT.clear();
@@ -41,34 +40,31 @@ typedef double float_type;
 
 class LIME_API LMS7002M
 {
-public:
-  static constexpr double CGEN_MAX_FREQ = 640e6;
+  public:
+    static constexpr double CGEN_MAX_FREQ = 640e6;
 
-  enum class ClockID
-  {
-      CLK_REFERENCE = 0,
-      CLK_SXR = 1, ///RX LO clock
-      CLK_SXT = 2, ///TX LO clock
-      CLK_CGEN = 3,
-      ///RXTSP reference clock (read-only)
-      CLK_RXTSP = 4,
-      ///TXTSP reference clock (read-only)
-      CLK_TXTSP = 5
-  };
+    enum class ClockID {
+        CLK_REFERENCE = 0,
+        CLK_SXR = 1, ///RX LO clock
+        CLK_SXT = 2, ///TX LO clock
+        CLK_CGEN = 3,
+        ///RXTSP reference clock (read-only)
+        CLK_RXTSP = 4,
+        ///TXTSP reference clock (read-only)
+        CLK_TXTSP = 5
+    };
 
-  struct CGEN_details
-  {
-      float_type frequency;
-      float_type frequencyVCO;
-      float_type referenceClock;
-      uint32_t INT;
-      uint32_t FRAC;
-      uint8_t div_outch_cgen;
-      uint16_t csw;
-      bool success;
-  };
-    struct SX_details
-    {
+    struct CGEN_details {
+        float_type frequency;
+        float_type frequencyVCO;
+        float_type referenceClock;
+        uint32_t INT;
+        uint32_t FRAC;
+        uint8_t div_outch_cgen;
+        uint16_t csw;
+        bool success;
+    };
+    struct SX_details {
         float_type frequency;
         float_type frequencyVCO;
         float_type referenceClock;
@@ -81,7 +77,7 @@ public:
         bool success;
     };
 
-    LMS7002M(ISPI *port);
+    LMS7002M(ISPI* port);
 
     /*!
      * Set the connection for the LMS7002M driver.
@@ -89,12 +85,9 @@ public:
      * \param devIndex which RFIC index (default 0 for most devices)
      * \param dataPort connection used to get samples data when calibrating with FFT
      */
-    void SetConnection(ISPI *port);
+    void SetConnection(ISPI* port);
 
-    ISPI* GetConnection(void) const
-    {
-        return controlPort;
-    }
+    ISPI* GetConnection(void) const { return controlPort; }
 
     virtual ~LMS7002M();
 
@@ -102,8 +95,7 @@ public:
      * Enum for configuring the channel selection.
      * @see MAC register
      */
-    enum Channel
-    {
+    enum Channel {
         ChA = 1,
         ChB = 2,
         ChAB = 3,
@@ -159,14 +151,14 @@ public:
     ///@}
 
     ///@name Registers writing and reading
-    uint16_t Get_SPI_Reg_bits(const LMS7Parameter &param, bool fromChip = false);
+    uint16_t Get_SPI_Reg_bits(const LMS7Parameter& param, bool fromChip = false);
     uint16_t Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip = false);
-    int Modify_SPI_Reg_bits(const LMS7Parameter &param, const uint16_t value, bool fromChip = false);
+    int Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t value, bool fromChip = false);
     int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
     int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
-    uint16_t SPI_read(uint16_t address, bool fromChip = false, int *status = 0);
+    uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
     int RegistersTest(const char* fileName = "registersTest.txt");
-    static const LMS7Parameter* GetParam(const std::string &name);
+    static const LMS7Parameter* GetParam(const std::string& name);
     ///@}
 
     ///@name Transmitter, Receiver calibrations
@@ -184,7 +176,7 @@ public:
     ///@name Internal calibrations
     int CalibrateInternalADC(int clkDiv = 32);
     int CalibrateRP_BIAS();
-    int CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS);
+    int CalibrateTxGain(float maxGainOffset_dBFS, float* actualGain_dBFS);
     int CalibrateAnalogRSSI_DC_Offset();
 
     ///@name High level gain configuration
@@ -238,8 +230,8 @@ public:
 
     //! Get the actual TX PAD gain in dB
     float_type GetTRFPAD_dB(void);
-    
-        /*!
+
+    /*!
      * Set the TBB frontend gain in dB
      * @param gain in dB relative to optimal gain (0 - optimal gain, >0 may cause saturation)
      * @return 0 for success, else error
@@ -262,8 +254,7 @@ public:
     ///@}
 
     ///@name RF selection
-    enum PathRFE
-    {
+    enum PathRFE {
         PATH_RFE_NONE = 0,
         PATH_RFE_LNAH,
         PATH_RFE_LNAL,
@@ -303,10 +294,7 @@ public:
     int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
     bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
-    enum VCO_Module
-    {
-        VCO_CGEN, VCO_SXR, VCO_SXT
-    };
+    enum VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
     ///@}
@@ -318,18 +306,18 @@ public:
     int SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
     int SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
     float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
-    int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *coef, uint8_t coefCount);
-    int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount);
+    int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t* coef, uint8_t coefCount);
+    int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t* coef, uint8_t coefCount);
     float_type GetReferenceClk_TSP(bool tx);
 
-    int WriteGFIRCoefficients(bool tx, uint8_t gfirIndex, const float_type *coef, uint8_t coefCount);
+    int WriteGFIRCoefficients(bool tx, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
     int SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth);
 
     int SetNCOFrequencies(bool tx, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     // @param phaseOffset optional will be filled with phase offset value
     std::vector<float_type> GetNCOFrequencies(bool tx, float_type* phaseOffset = nullptr);
-    int SetNCOPhases(bool tx, float_type *angles_deg, uint8_t count, float_type frequencyOffset);
+    int SetNCOPhases(bool tx, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
     // @param frequencyOffset optional will be filled with NCO frequency offset value
     std::vector<float_type> GetNCOPhases(bool tx, float_type* frequencyOffset = nullptr);
@@ -341,8 +329,7 @@ public:
     float_type GetSampleRate(bool tx, Channel ch);
 
     ///@name LML
-    enum LMLSampleSource
-    {
+    enum LMLSampleSource {
         AI = 0,
         AQ = 1,
         BI = 2,
@@ -352,20 +339,12 @@ public:
     /*!
      * Set the LML sample positions in the RF to baseband direction.
      */
-    void ConfigureLML_RF2BB(
-        const LMLSampleSource s0,
-        const LMLSampleSource s1,
-        const LMLSampleSource s2,
-        const LMLSampleSource s3);
+    void ConfigureLML_RF2BB(const LMLSampleSource s0, const LMLSampleSource s1, const LMLSampleSource s2, const LMLSampleSource s3);
 
     /*!
      * Set the LML sample positions in the baseband to RF direction.
      */
-    void ConfigureLML_BB2RF(
-        const LMLSampleSource s0,
-        const LMLSampleSource s1,
-        const LMLSampleSource s2,
-        const LMLSampleSource s3);
+    void ConfigureLML_BB2RF(const LMLSampleSource s0, const LMLSampleSource s1, const LMLSampleSource s2, const LMLSampleSource s3);
     ///@}
 
     /*!
@@ -379,8 +358,8 @@ public:
      * Get the RX DC removal filter enabled.
      */
     bool GetRxDCRemoval(void);
-    
-        /*!
+
+    /*!
      * Enables/disables TDD mode 
      * @param enable true - use same pll for Tx and Rx, false - us seperate PLLs
      * @return 0 for success for error condition
@@ -400,7 +379,7 @@ public:
      * @param [out] I the real adjustment [+1.0, -1.0]
      * @param [out] Q the imaginary adjustment [+1.0, -1.0]
      */
-    void GetDCOffset(bool tx, float_type &I, float_type &Q);
+    void GetDCOffset(bool tx, float_type& I, float_type& Q);
 
     /*!
      * Set the IQ imbalance correction.
@@ -418,19 +397,45 @@ public:
      * @param [out] gainI the real gain adjustment [+1.0, 0.0]
      * @param [out] gainQ the imaginary gain adjustment [+1.0, 0.0]
      */
-    void GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ);
+    void GetIQBalance(const bool tx, float_type& phase, float_type& gainI, float_type& gainQ);
 
     double GetClockFreq(ClockID clk_id, uint8_t channel);
     void SetClockFreq(ClockID clk_id, double freq, uint8_t channel);
 
     ///enumeration to indicate module registers intervals
-    enum MemorySection
-    {
-        LimeLight = 0, EN_DIR, AFE, BIAS, XBUF, CGEN, LDO, BIST, CDS,
-        TRF, TBB, RFE, RBB, SX, TRX_GAIN, TxTSP,
-        TxNCO, TxGFIR1, TxGFIR2, TxGFIR3a, TxGFIR3b, TxGFIR3c,
-        RxTSP, RxNCO, RxGFIR1, RxGFIR2, RxGFIR3a, RxGFIR3b, RxGFIR3c,
-        RSSI_DC_CALIBRATION, RSSI_PDET_TEMP_CONFIG, RSSI_DC_CONFIG,
+    enum MemorySection {
+        LimeLight = 0,
+        EN_DIR,
+        AFE,
+        BIAS,
+        XBUF,
+        CGEN,
+        LDO,
+        BIST,
+        CDS,
+        TRF,
+        TBB,
+        RFE,
+        RBB,
+        SX,
+        TRX_GAIN,
+        TxTSP,
+        TxNCO,
+        TxGFIR1,
+        TxGFIR2,
+        TxGFIR3a,
+        TxGFIR3b,
+        TxGFIR3c,
+        RxTSP,
+        RxNCO,
+        RxGFIR1,
+        RxGFIR2,
+        RxGFIR3a,
+        RxGFIR3b,
+        RxGFIR3c,
+        RSSI_DC_CALIBRATION,
+        RSSI_PDET_TEMP_CONFIG,
+        RSSI_DC_CONFIG,
         MEMORY_SECTIONS_COUNT
     };
     virtual int SetDefaults(MemorySection module);
@@ -444,50 +449,44 @@ public:
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
 
-    enum LogType
-    {
-        LOG_INFO,
-        LOG_WARNING,
-        LOG_ERROR,
-        LOG_DATA
-    };
+    enum LogType { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
     void SetLogCallback(std::function<void(const char*, int)> callback);
-    LMS7002M_RegistersMap *BackupRegisterMap(void);
-    void RestoreRegisterMap(LMS7002M_RegistersMap *backup);
+    LMS7002M_RegistersMap* BackupRegisterMap(void);
+    void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
 
-    double GetSampleRate(bool tx, double *rf_rate_Hz = nullptr);
+    double GetSampleRate(bool tx, double* rf_rate_Hz = nullptr);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 
-    typedef int(*CGENChangeCallbackType)(void* userData);
+    typedef int (*CGENChangeCallbackType)(void* userData);
     void SetOnCGENChangeCallback(CGENChangeCallbackType callback, void* userData = nullptr);
-protected:
+
+  protected:
     CGENChangeCallbackType mCallback_onCGENChange;
     void* mCallback_onCGENChange_userData;
 
     bool mCalibrationByMCU;
-    MCU_BD *mcuControl;
+    MCU_BD* mcuControl;
     bool useCache;
-    LMS7002M_RegistersMap *mRegistersMap;
+    LMS7002M_RegistersMap* mRegistersMap;
 
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
-
 
     uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
     ///@name Algorithms functions
     void BackupAllRegisters();
     void RestoreAllRegisters();
-    
-    uint32_t GetRSSI(RSSI_measurements *measurements = nullptr);
+
+    uint32_t GetRSSI(RSSI_measurements* measurements = nullptr);
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC();
     void AdjustAutoDC(const uint16_t address, bool tx);
     void CalibrateRxDCAuto();
     void CalibrateTxDCAuto();
-    void CalibrateTxDC(int16_t *dccorri, int16_t *dccorrq);
-    void CalibrateIQImbalance(const bool tx, uint16_t *gainI=nullptr, uint16_t *gainQ=nullptr, int16_t *phase=nullptr);
+    void CalibrateTxDC(int16_t* dccorri, int16_t* dccorrq);
+    void CalibrateIQImbalance(const bool tx, uint16_t* gainI = nullptr, uint16_t* gainQ = nullptr, int16_t* phase = nullptr);
 
     int CalibrateTxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CalibrateRxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
@@ -499,23 +498,31 @@ protected:
     void BinarySearch(BinSearchParam* args);
     void TxDcBinarySearch(BinSearchParam* args);
     void GridSearch(GridSearchParam* args);
-    void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
-    void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
-    int RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-    int TxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-    int TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
+    void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t& value, const uint8_t maxIterations);
+    void FineSearch(const uint16_t addrI,
+        const uint8_t msbI,
+        const uint8_t lsbI,
+        int16_t& valueI,
+        const uint16_t addrQ,
+        const uint8_t msbQ,
+        const uint8_t lsbQ,
+        int16_t& valueQ,
+        const uint8_t fieldSize);
+    int RxFilterSearch(const LMS7Parameter& param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
+    int TxFilterSearch(const LMS7Parameter& param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
+    int TxFilterSearch_S5(const LMS7Parameter& param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
     int TuneRxFilterSetup(const float_type rx_lpf_IF);
     int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
-    int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
-    
-    int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop);
+    int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream& ss);
+
+    int Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop);
     ///@}
 
     virtual void Log(const char* text, LogType type);
 
-    void Log(LogType type, const char *format, ...)
+    void Log(LogType type, const char* format, ...)
     {
         va_list argList;
         va_start(argList, format);
@@ -524,14 +531,14 @@ protected:
     }
 
     std::function<void(const char*, int)> log_callback;
-    void Log(LogType type, const char *format, va_list argList);
+    void Log(LogType type, const char* format, va_list argList);
 
     ///port used for communicating with LMS7002M
-    lime::ISPI *controlPort;
+    lime::ISPI* controlPort;
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];
     double _cachedRefClockRate;
     int LoadConfigLegacyFile(const char* filename);
 };
-}
+} // namespace lime
 #endif

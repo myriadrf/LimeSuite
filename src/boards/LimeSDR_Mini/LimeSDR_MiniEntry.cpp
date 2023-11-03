@@ -9,11 +9,11 @@
 #include "FT601/FT601.h"
 
 #ifndef __unix__
-#include "windows.h"
-#include "FTD3XXLibrary/FTD3XX.h"
+    #include "windows.h"
+    #include "FTD3XXLibrary/FTD3XX.h"
 #else
-#include <libusb.h>
-#include <mutex>
+    #include <libusb.h>
+    #include <mutex>
 #endif
 
 using namespace lime;
@@ -23,14 +23,15 @@ void __loadLimeSDR_Mini(void) // TODO: fixme replace with LoadLibrary/dlopen
     static LimeSDR_MiniEntry limesdr_miniSupport; // Self register on initialization
 }
 
-const std::set<VidPid> ids {{1027, 24607}};
+const std::set<VidPid> ids{ { 1027, 24607 } };
 
-LimeSDR_MiniEntry::LimeSDR_MiniEntry() : USBEntry("LimeSDR_Mini", ids)
+LimeSDR_MiniEntry::LimeSDR_MiniEntry()
+    : USBEntry("LimeSDR_Mini", ids)
 {
 }
 
 #ifndef __unix__
-std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
+std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
 {
     std::vector<DeviceHandle> handles;
 
@@ -39,7 +40,7 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle &hint)
         return handles;
     }
 
-    FT_STATUS ftStatus=FT_OK;
+    FT_STATUS ftStatus = FT_OK;
     static DWORD numDevs = 0;
 
     ftStatus = FT_CreateDeviceInfoList(&numDevs);
@@ -78,23 +79,26 @@ static constexpr int ctrlBulkReadAddr = 0x82;
 
 class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 {
-public:
-    explicit USB_CSR_Pipe_Mini(FT601& port) : USB_CSR_Pipe(), port(port) {};
+  public:
+    explicit USB_CSR_Pipe_Mini(FT601& port)
+        : USB_CSR_Pipe()
+        , port(port){};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {    
-        return port.BulkTransfer(ctrlBulkWriteAddr, const_cast<uint8_t *>(data), length, timeout_ms);
+    {
+        return port.BulkTransfer(ctrlBulkWriteAddr, const_cast<uint8_t*>(data), length, timeout_ms);
     }
 
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
     {
         return port.BulkTransfer(ctrlBulkReadAddr, data, length, timeout_ms);
     }
-protected:
+
+  protected:
     FT601& port;
 };
 
-SDRDevice *LimeSDR_MiniEntry::make(const DeviceHandle &handle)
+SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
 {
     const auto splitPos = handle.addr.find(":");
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);

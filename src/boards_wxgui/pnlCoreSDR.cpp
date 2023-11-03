@@ -10,13 +10,12 @@
 
 #include <ciso646>
 
-
 using namespace std;
 
 BEGIN_EVENT_TABLE(pnlCoreSDR, wxPanel)
 END_EVENT_TABLE()
 
-pnlCoreSDR::pnlCoreSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
+pnlCoreSDR::pnlCoreSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
 {
     lmsControl = nullptr;
 
@@ -58,9 +57,8 @@ pnlCoreSDR::pnlCoreSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     Connect(cmbTx2Path->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnlCoreSDR::OnLoopbackChange), NULL, this);
     mainSizer->Add(cmbTx2Path, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-
     wxStaticBoxSizer* mainBoxSizer;
-    mainBoxSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("RF switch controls") ), wxVERTICAL );
+    mainBoxSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("RF switch controls")), wxVERTICAL);
     mainBoxSizer->Add(mainSizer, 0, 0, 5);
     mainBoxSizer->Fit(this);
     mainBoxSizer->SetSizeHints(this);
@@ -92,10 +90,10 @@ void pnlCoreSDR::OnLoopbackChange(wxCommandEvent& event)
     value |= cmbTx1Path->GetSelection() << 8;
     value |= cmbTx2Path->GetSelection() << 12;
 
-    value |= cmbRx1Path->GetSelection() ? 0x01 << (cmbRx1Path->GetSelection()-1) : 0;
-    value |= cmbRx2Path->GetSelection() ? 0x10 << (cmbRx2Path->GetSelection()-1) : 0;
+    value |= cmbRx1Path->GetSelection() ? 0x01 << (cmbRx1Path->GetSelection() - 1) : 0;
+    value |= cmbRx2Path->GetSelection() ? 0x10 << (cmbRx2Path->GetSelection() - 1) : 0;
 
-    if(LMS_WriteFPGAReg(lmsControl,addr, value))
+    if (LMS_WriteFPGAReg(lmsControl, addr, value))
         wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
 }
 
@@ -103,7 +101,7 @@ void pnlCoreSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(LMS_ReadFPGAReg(lmsControl,addr, &value))
+    if (LMS_ReadFPGAReg(lmsControl, addr, &value))
     {
         wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -113,24 +111,24 @@ void pnlCoreSDR::UpdatePanel()
     cmbTx2Path->SetSelection((value >> 12) & 0x1);
 
     {
-        int path = value&0x7;
+        int path = value & 0x7;
         path = path == 4 ? 3 : path == 2 ? 2 : path == 1 ? 1 : 0;
         cmbRx1Path->SetSelection(path);
     }
 
     {
-        int path = (value>>4)&0x7;
+        int path = (value >> 4) & 0x7;
         path = path == 4 ? 3 : path == 2 ? 2 : path == 1 ? 1 : 0;
         cmbRx2Path->SetSelection(path);
     }
 }
 
-void pnlCoreSDR::OnReadAll(wxCommandEvent &event)
+void pnlCoreSDR::OnReadAll(wxCommandEvent& event)
 {
     UpdatePanel();
 }
 
-void pnlCoreSDR::OnWriteAll(wxCommandEvent &event)
+void pnlCoreSDR::OnWriteAll(wxCommandEvent& event)
 {
     OnLoopbackChange(event);
 }

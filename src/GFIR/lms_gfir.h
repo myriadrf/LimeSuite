@@ -6,19 +6,16 @@
  */
 
 #ifndef LMS_GFIR_H
-#define	LMS_GFIR_H
+#define LMS_GFIR_H
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-void GenerateFilter(int n, double w1, double w2, double a1, double a2, double *coefs);
+void GenerateFilter(int n, double w1, double w2, double a1, double a2, double* coefs);
 
-
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* LMS_GFIR_H */
-
+#endif /* LMS_GFIR_H */

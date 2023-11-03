@@ -2,10 +2,8 @@ set(oglGraph_src_files
 	dlgMarkers.cpp
 	GLFont.cpp
 	OpenGLGraph.cpp
-	glew/glew.c
+	${PROJECT_SOURCE_DIR}/external/glew/glew.c
 )
-include_directories(glew)
-include_directories(glew/GL)
 
 #ignore warnings about narrowing: static font header
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -29,6 +27,7 @@ message(STATUS "OPENGL_LIBRARIES: ${OPENGL_LIBRARIES}")
 target_include_directories(oglGraph PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${OPENGL_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/external/glew
 )
 
 if (APPLE)

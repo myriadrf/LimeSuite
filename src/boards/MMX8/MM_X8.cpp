@@ -16,18 +16,20 @@
 
 #include "math.h"
 
-namespace lime
-{
+namespace lime {
 
-static SDRDevice::CustomParameter cp_vctcxo_dac = {"VCTCXO DAC (volatile)", 0, 0, 65535, false};
+static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<lime::IComms*> &spiFPGA, std::vector<lime::LitePCIe*> trxStreams, ISPI* adfComms)
+LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
+    std::vector<lime::IComms*>& spiFPGA,
+    std::vector<lime::LitePCIe*> trxStreams,
+    ISPI* adfComms)
     : mTRXStreamPorts(trxStreams)
 {
-    mMainFPGAcomms =  spiFPGA[8];
-    SDRDevice::Descriptor &desc = mDeviceDescriptor;
+    mMainFPGAcomms = spiFPGA[8];
+    SDRDevice::Descriptor& desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_MMX8);
 
     // LMS64CProtocol::FirmwareInfo fw;
@@ -39,7 +41,6 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
-
     desc.socTree = new DeviceNode("X8", "SDRDevice", this);
 
     mADF = new ADF4002();
@@ -49,52 +50,52 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
-    desc.memoryDevices.push_back({"FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH});
+    desc.memoryDevices.push_back({ "FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH });
 
     desc.customParameters.push_back(cp_vctcxo_dac);
-    for (size_t i=0; i<mSubDevices.size(); ++i)
+    for (size_t i = 0; i < mSubDevices.size(); ++i)
     {
         mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i]);
-        const SDRDevice::Descriptor &d = mSubDevices[i]->GetDescriptor();
+        const SDRDevice::Descriptor& d = mSubDevices[i]->GetDescriptor();
 
-        for (const auto &soc : d.rfSOC)
+        for (const auto& soc : d.rfSOC)
         {
             RFSOCDescriptor temp = soc;
             char ctemp[512];
-            sprintf(ctemp, "%s@%li", temp.name.c_str(), i+1);
+            sprintf(ctemp, "%s@%li", temp.name.c_str(), i + 1);
             temp.name = std::string(ctemp);
             desc.rfSOC.push_back(temp);
         }
 
-        for (const auto &s : d.spiSlaveIds)
+        for (const auto& s : d.spiSlaveIds)
         {
             char ctemp[512];
-            sprintf(ctemp, "%s@%li", s.first.c_str(), i+1);
-            desc.spiSlaveIds[ctemp] = (i+1) << 8 | s.second;
+            sprintf(ctemp, "%s@%li", s.first.c_str(), i + 1);
+            desc.spiSlaveIds[ctemp] = (i + 1) << 8 | s.second;
             chipSelectToDevice[desc.spiSlaveIds[ctemp]] = mSubDevices[i];
         }
 
-        for (const auto &s : d.memoryDevices)
+        for (const auto& s : d.memoryDevices)
         {
             char ctemp[512];
-            sprintf(ctemp, "%s@%li", s.name.c_str(), i+1);
-            desc.memoryDevices.push_back({ctemp, (i+1) << 8 | s.id});
-            memorySelectToDevice[(i+1) << 8 | s.id] = mSubDevices[i];
+            sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
+            desc.memoryDevices.push_back({ ctemp, (i + 1) << 8 | s.id });
+            memorySelectToDevice[(i + 1) << 8 | s.id] = mSubDevices[i];
         }
 
-        for (const auto &s : d.customParameters)
+        for (const auto& s : d.customParameters)
         {
             SDRDevice::CustomParameter p = s;
-            p.id |= (i+1) << 8;
+            p.id |= (i + 1) << 8;
             char ctemp[512];
-            sprintf(ctemp, "%s@%li", s.name.c_str(), i+1);
+            sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
             p.name = ctemp;
             desc.customParameters.push_back(p);
             customParameterToDevice[p.id] = mSubDevices[i];
         }
 
         char ctemp[256];
-        sprintf(ctemp, "%s#%li", d.socTree->name.c_str(), i+1);
+        sprintf(ctemp, "%s#%li", d.socTree->name.c_str(), i + 1);
         d.socTree->name = std::string(ctemp);
         desc.socTree->childs.push_back(d.socTree);
     }
@@ -102,7 +103,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*> &spiLMS7002M, std::vector<
 
 LimeSDR_MMX8::~LimeSDR_MMX8()
 {
-    for (size_t i=0; i<mSubDevices.size(); ++i)
+    for (size_t i = 0; i < mSubDevices.size(); ++i)
         delete mSubDevices[i];
 }
 
@@ -118,25 +119,26 @@ void LimeSDR_MMX8::Configure(const SDRConfig& cfg, uint8_t socIndex)
         mSubDevices[socIndex]->Init();
         mSubDevices[socIndex]->Configure(cfg, 0);
     } //try
-    catch (std::logic_error &e) {
+    catch (std::logic_error& e)
+    {
         printf("LimeSDR_MMX8 config: %s\n", e.what());
         throw;
-    }
-    catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         throw;
     }
 }
 
 int LimeSDR_MMX8::Init()
 {
-    for (size_t i=0; i<mSubDevices.size(); ++i)
+    for (size_t i = 0; i < mSubDevices.size(); ++i)
         mSubDevices[i]->Init();
     return 0;
 }
 
 void LimeSDR_MMX8::Reset()
 {
-    for(uint32_t i=0; i<mSubDevices.size(); ++i)
+    for (uint32_t i = 0; i < mSubDevices.size(); ++i)
         mSubDevices[i]->Reset();
 }
 
@@ -147,27 +149,27 @@ double LimeSDR_MMX8::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
 
 double LimeSDR_MMX8::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
-    return mSubDevices[channel/2]->GetClockFreq(clk_id, channel & 0x1);
+    return mSubDevices[channel / 2]->GetClockFreq(clk_id, channel & 0x1);
 }
 
 void LimeSDR_MMX8::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    mSubDevices[channel/2]->SetClockFreq(clk_id, freq, channel & 1);
+    mSubDevices[channel / 2]->SetClockFreq(clk_id, freq, channel & 1);
 }
 
 void LimeSDR_MMX8::Synchronize(bool toChip)
 {
-    for (auto &d : mSubDevices)
+    for (auto& d : mSubDevices)
         d->Synchronize(toChip);
 }
 
 void LimeSDR_MMX8::EnableCache(bool enable)
 {
-    for (auto &d : mSubDevices)
+    for (auto& d : mSubDevices)
         d->EnableCache(enable);
 }
 
-int LimeSDR_MMX8::StreamSetup(const StreamConfig &config, uint8_t moduleIndex)
+int LimeSDR_MMX8::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
     return mSubDevices[moduleIndex]->StreamSetup(config, 0);
 }
@@ -207,7 +209,7 @@ void LimeSDR_MMX8::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx,
     mSubDevices[moduleIndex]->StreamStatus(0, rx, tx);
 }
 
-void LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, uint32_t count)
+void LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     if (chipSelect == 0)
     {
@@ -226,19 +228,19 @@ void LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO
     dev->SPI(subSelect, MOSI, MISO, count);
 }
 
-int LimeSDR_MMX8::I2CWrite(int address, const uint8_t *data, uint32_t length)
+int LimeSDR_MMX8::I2CWrite(int address, const uint8_t* data, uint32_t length)
 {
     return -1;
 }
 
-int LimeSDR_MMX8::I2CRead(int addres, uint8_t *dest, uint32_t length)
+int LimeSDR_MMX8::I2CRead(int addres, uint8_t* dest, uint32_t length)
 {
     return -1;
 }
 
 void LimeSDR_MMX8::SetMessageLogCallback(LogCallbackType callback)
 {
-    for (size_t i=0; i<mSubDevices.size(); ++i)
+    for (size_t i = 0; i < mSubDevices.size(); ++i)
         mSubDevices[i]->SetMessageLogCallback(callback);
 }
 
@@ -247,12 +249,12 @@ void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
     return mSubDevices[index]->GetInternalChip(0);
 }
 
-int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values, const size_t count, const std::string& units)
+int LimeSDR_MMX8::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
 {
     int ret = 0;
-    for (size_t i=0; i<count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
-        int subModuleIndex = (ids[i] >> 8)-1;
+        int subModuleIndex = (ids[i] >> 8) - 1;
         int id = ids[i] & 0xFF;
         if (subModuleIndex >= 0)
             ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, units);
@@ -262,12 +264,12 @@ int LimeSDR_MMX8::CustomParameterWrite(const int32_t *ids, const double *values,
     return ret;
 }
 
-int LimeSDR_MMX8::CustomParameterRead(const int32_t *ids, double *values, const size_t count, std::string* units)
+int LimeSDR_MMX8::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
 {
     int ret = 0;
-    for (size_t i=0; i<count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
-        int subModuleIndex = (ids[i] >> 8)-1;
+        int subModuleIndex = (ids[i] >> 8) - 1;
         int id = ids[i] & 0xFF;
         if (subModuleIndex >= 0)
             ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, &units[i]);
@@ -299,7 +301,7 @@ bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, Up
     return dev->UploadMemory(subSelect, data, length, callback);
 }
 
-int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig &config, uint8_t moduleIndex, const void** samples, uint32_t count)
+int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
 {
     return mSubDevices[moduleIndex]->UploadTxWaveform(config, 0, samples, count);
 }

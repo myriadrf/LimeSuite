@@ -3,8 +3,7 @@
 
 #include <vector>
 
-struct GLGlyph
-{
+struct GLGlyph {
     std::vector<unsigned char> bitmap;
     unsigned short id;
     unsigned short width;
@@ -17,4 +16,3 @@ struct GLGlyph
 };
 
 #endif // GLGlyph_H
-

@@ -3,7 +3,8 @@
 
 #include <stdexcept>
 
-class OperationNotSupported : public std::logic_error {
+class OperationNotSupported : public std::logic_error
+{
     using std::logic_error::logic_error;
 };
 

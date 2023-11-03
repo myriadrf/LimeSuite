@@ -25,32 +25,31 @@ namespace lime {
 
 LMS64CPacket::LMS64CPacket()
 {
-     memset(this, 0, sizeof(LMS64CPacket));
+    memset(this, 0, sizeof(LMS64CPacket));
 }
 
 namespace LMS64CProtocol {
 
-static const char cmd_status_text[][32]=
-{
-    "Undefined/Failure",
-    "Completed",
-    "Unknown command",
-    "Busy",
-    "Too many blocks",
-    "Error",
-    "Wrong order",
-    "Resource denied"
+static const char cmd_status_text[][32] = {
+    "Undefined/Failure", "Completed", "Unknown command", "Busy", "Too many blocks", "Error", "Wrong order", "Resource denied"
 };
 
 static inline const char* status2string(const int status)
 {
-    if(status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
+    if (status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
         return cmd_status_text[status];
     else
         return "Unknown status";
 }
 
-static int SPI16(ISerialPort& port, uint8_t chipSelect, eCMD_LMS writeCmd, const uint32_t *MOSI, eCMD_LMS readCmd, uint32_t *MISO, size_t count, uint32_t subDevice)
+static int SPI16(ISerialPort& port,
+    uint8_t chipSelect,
+    eCMD_LMS writeCmd,
+    const uint32_t* MOSI,
+    eCMD_LMS readCmd,
+    uint32_t* MISO,
+    size_t count,
+    uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.status = STATUS_UNDEFINED;
@@ -61,15 +60,18 @@ static int SPI16(ISerialPort& port, uint8_t chipSelect, eCMD_LMS writeCmd, const
     size_t srcIndex = 0;
     size_t destIndex = 0;
     const int maxBlocks = 14;
-    while (srcIndex < count) {
+    while (srcIndex < count)
+    {
         // fill packet with same direction operations
         const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
-        for (int i = 0; i < maxBlocks && srcIndex < count; ++i) {
+        for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
+        {
             const bool isWrite = MOSI[srcIndex] & (1 << 31);
             if (isWrite != willDoWrite)
                 break; // change between write/read, flush packet
 
-            if (isWrite) {
+            if (isWrite)
+            {
                 pkt.cmd = writeCmd;
                 int payloadOffset = pkt.blockCount * 4;
                 pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 24;
@@ -77,7 +79,8 @@ static int SPI16(ISerialPort& port, uint8_t chipSelect, eCMD_LMS writeCmd, const
                 pkt.payload[payloadOffset + 2] = MOSI[srcIndex] >> 8;
                 pkt.payload[payloadOffset + 3] = MOSI[srcIndex];
             }
-            else {
+            else
+            {
                 pkt.cmd = readCmd;
                 int payloadOffset = pkt.blockCount * 2;
                 pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 8;
@@ -98,7 +101,8 @@ static int SPI16(ISerialPort& port, uint8_t chipSelect, eCMD_LMS writeCmd, const
         if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
             return -1;
 
-        for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i) {
+        for (int i = 0; MISO && i < pkt.blockCount && destIndex < count; ++i)
+        {
             //MISO[destIndex] = 0;
             //MISO[destIndex] = pkt.payload[0] << 24;
             //MISO[destIndex] |= pkt.payload[1] << 16;
@@ -197,8 +201,10 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t 
     size_t destIndex = 0;
     const int maxBlocks = 14;
     const int blockSize = 3;
-    while (srcIndex < count) {
-        for (int i = 0; i < maxBlocks && srcIndex < count; ++i) {
+    while (srcIndex < count)
+    {
+        for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
+        {
             int payloadOffset = pkt.blockCount * blockSize;
             pkt.payload[payloadOffset + 0] = MOSI[srcIndex] >> 16;
             pkt.payload[payloadOffset + 1] = MOSI[srcIndex] >> 8;
@@ -233,7 +239,8 @@ int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count)
     return -1;
 }
 
-int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *values, const size_t count, const std::string& units, uint32_t subDevice)
+int CustomParameterWrite(
+    ISerialPort& port, const int32_t* ids, const double* values, const size_t count, const std::string& units, uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
@@ -246,13 +253,13 @@ int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *va
     {
         pkt.payload[byteIndex++] = ids[i];
         int powerOf10 = 0;
-        if(values[i] > 65535.0 && (units != ""))
-            powerOf10 = log10(values[i]/65.536)/3;
+        if (values[i] > 65535.0 && (units != ""))
+            powerOf10 = log10(values[i] / 65.536) / 3;
         if (values[i] < 65.536 && (units != ""))
-            powerOf10 = log10(values[i]/65535.0) / 3;
+            powerOf10 = log10(values[i] / 65535.0) / 3;
         int unitsId = 0; // need to convert given units to their enum
         pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
-        int value = values[i] / pow(10, 3*powerOf10);
+        int value = values[i] / pow(10, 3 * powerOf10);
         pkt.payload[byteIndex++] = (value >> 8);
         pkt.payload[byteIndex++] = (value & 0xFF);
     }
@@ -265,7 +272,8 @@ int CustomParameterWrite(ISerialPort& port, const int32_t *ids, const double *va
     return 0;
 }
 
-int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, const size_t count, std::string* units, uint32_t subDevice)
+int CustomParameterRead(
+    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::string* units, uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
@@ -289,33 +297,37 @@ int CustomParameterRead(ISerialPort& port, const int32_t *ids, double *values, c
     for (size_t i = 0; i < count; ++i)
     {
         int unitsIndex = pkt.payload[i * 4 + 1];
-        if(units)
+        if (units)
         {
             if (unitsIndex & 0x0F)
             {
-                const char adc_units_prefix[] = {
-                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
-                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
-                units[i] = adc_units_prefix[unitsIndex&0x0F]+adcUnits2string((unitsIndex & 0xF0)>>4);
+                const char adc_units_prefix[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
+                units[i] = adc_units_prefix[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
             }
             else
-                units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
+                units[i] += adcUnits2string((unitsIndex & 0xF0) >> 4);
         }
-        if((unitsIndex & 0xF0)>>4 == RAW)
+        if ((unitsIndex & 0xF0) >> 4 == RAW)
         {
             values[i] = (uint16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
         }
         else
         {
             values[i] = (int16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
-            if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
+            if ((unitsIndex & 0xF0) >> 4 == TEMPERATURE)
                 values[i] /= 10;
         }
     }
     return 0;
 }
 
-int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mode, ProgramWriteTarget device, ProgressCallback callback, uint32_t subDevice)
+int ProgramWrite(ISerialPort& port,
+    const char* data,
+    size_t length,
+    int prog_mode,
+    ProgramWriteTarget device,
+    ProgressCallback callback,
+    uint32_t subDevice)
 {
 #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -328,20 +340,20 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
     size_t bytesSent = 0;
 
     bool needsData = true;
-    if(device == ProgramWriteTarget::FPGA && prog_mode == 2)
+    if (device == ProgramWriteTarget::FPGA && prog_mode == 2)
         needsData = false;
-    if(device == ProgramWriteTarget::FX3 && (prog_mode == 0 || prog_mode == 1))
+    if (device == ProgramWriteTarget::FX3 && (prog_mode == 0 || prog_mode == 1))
         needsData = false;
 
     eCMD_LMS cmd;
-    if(device == ProgramWriteTarget::HPM || device == ProgramWriteTarget::FX3)
+    if (device == ProgramWriteTarget::HPM || device == ProgramWriteTarget::FX3)
         cmd = CMD_MEMORY_WR;
-    else if(device == FPGA)
+    else if (device == FPGA)
         cmd = CMD_ALTERA_FPGA_GW_WR;
     else
     {
         sprintf(progressMsg, "Programming failed! Target device not supported");
-        if(callback)
+        if (callback)
             callback(bytesSent, length, progressMsg);
         return ReportError(ENOTSUP, progressMsg);
     }
@@ -354,9 +366,9 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
 
     const size_t chunkSize = 32;
     static_assert(chunkSize < LMS64CPacket::payloadSize, "chunk must fit into packet payload");
-    const uint32_t chunkCount = length/chunkSize + (length%chunkSize > 0) + 1; // +1 programming end packet
+    const uint32_t chunkCount = length / chunkSize + (length % chunkSize > 0) + 1; // +1 programming end packet
 
-    for (uint32_t chunkIndex = 0; chunkIndex<chunkCount && !abortProgramming; ++chunkIndex)
+    for (uint32_t chunkIndex = 0; chunkIndex < chunkCount && !abortProgramming; ++chunkIndex)
     {
         memset(packet.payload, 0, packet.payloadSize);
         packet.payload[0] = prog_mode;
@@ -366,7 +378,7 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
         packet.payload[4] = chunkIndex & 0xFF;
         packet.payload[5] = std::min(length - bytesSent, chunkSize);
 
-        if(cmd == CMD_MEMORY_WR)
+        if (cmd == CMD_MEMORY_WR)
         {
             packet.payload[6] = 0;
             packet.payload[7] = 0;
@@ -377,7 +389,7 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
             packet.payload[11] = device & 0xFF;
         }
 
-        if(needsData)
+        if (needsData)
         {
             memcpy(&packet.payload[24], data, chunkSize);
             data += chunkSize;
@@ -385,33 +397,33 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
 
         if (port.Write((uint8_t*)&packet, sizeof(packet), progTimeout_ms) != sizeof(packet))
         {
-            if(callback)
+            if (callback)
                 callback(bytesSent, length, "Programming failed! Write operation failed");
             return false;
         }
         if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), progTimeout_ms) != sizeof(inPacket))
         {
-            if(callback)
+            if (callback)
                 callback(bytesSent, length, "Programming failed! Read operation failed");
             return false;
         }
 
-        if(inPacket.status != STATUS_COMPLETED_CMD)
+        if (inPacket.status != STATUS_COMPLETED_CMD)
         {
             sprintf(progressMsg, "Programming failed! %s", status2string(inPacket.status));
-            if(callback)
+            if (callback)
                 callback(bytesSent, length, progressMsg);
             return ReportError(EPROTO, progressMsg);
         }
         bytesSent += packet.payload[5];
-        if(needsData == false) //only one packet is needed to initiate bitstream from flash
+        if (needsData == false) //only one packet is needed to initiate bitstream from flash
         {
             bytesSent = length;
             break;
         }
-        if(callback)
+        if (callback)
         {
-            bool completed = chunkIndex == chunkCount-1;
+            bool completed = chunkIndex == chunkCount - 1;
             if (completed)
                 sprintf(progressMsg, "Programming: completed");
             abortProgramming = callback(bytesSent, length, progressMsg);
@@ -422,7 +434,10 @@ int ProgramWrite(ISerialPort& port, const char* data, size_t length, int prog_mo
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
     if ((device == 2 && prog_mode == 2) == false)
-        lime::log(LOG_LEVEL_INFO, "Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+        lime::log(LOG_LEVEL_INFO,
+            "Programming finished, %li bytes sent! %li ms\n",
+            length,
+            std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     else
         lime::log(LOG_LEVEL_INFO, "FPGA configuring initiated\n");
 #endif
@@ -437,9 +452,9 @@ int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice)
     pkt.blockCount = 1;
     pkt.periphID = socIndex;
     pkt.subDevice = subDevice;
-    
+
     pkt.payload[0] = LMS_RST_PULSE;
-        
+
     int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (sent != sizeof(pkt))
         throw std::runtime_error("DeviceReset write failed");
@@ -449,7 +464,7 @@ int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice)
     return 0;
 }
 
-int GPIODirRead(ISerialPort& port, uint8_t *buffer, const size_t bufLength)
+int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
@@ -475,7 +490,7 @@ int GPIODirRead(ISerialPort& port, uint8_t *buffer, const size_t bufLength)
     return 0;
 }
 
-int GPIORead(ISerialPort& port, uint8_t *buffer, const size_t bufLength)
+int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
@@ -501,7 +516,7 @@ int GPIORead(ISerialPort& port, uint8_t *buffer, const size_t bufLength)
     return 0;
 }
 
-int GPIODirWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength)
+int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_WR;
@@ -522,7 +537,7 @@ int GPIODirWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLengt
     return 0;
 }
 
-int GPIOWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength)
+int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
 {
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_WR;
@@ -543,6 +558,6 @@ int GPIOWrite(ISerialPort& port, const uint8_t *buffer, const size_t bufLength)
     return 0;
 }
 
-}
+} // namespace LMS64CProtocol
 
-}
+} // namespace lime

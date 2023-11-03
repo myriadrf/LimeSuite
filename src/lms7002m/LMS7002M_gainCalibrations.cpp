@@ -8,7 +8,7 @@ int LMS7002M::CalibrateTxGainSetup()
     int ch = Get_SPI_Reg_bits(LMS7param(MAC));
 
     uint16_t value = SPI_read(0x0020);
-    if( (value & 3) == 1)
+    if ((value & 3) == 1)
         value = value | 0x0014;
     else
         value = value | 0x0028;
@@ -44,7 +44,7 @@ int LMS7002M::CalibrateTxGainSetup()
     const int isel_dac_afe = Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
     SetDefaults(AFE);
     Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
-    if(ch == 2)
+    if (ch == 2)
     {
         Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
@@ -64,7 +64,7 @@ int LMS7002M::CalibrateTxGainSetup()
     //CGEN
     SetDefaults(CGEN);
     status = SetFrequencyCGEN(61.44e6);
-    if(status != 0)
+    if (status != 0)
         return status;
 
     //SXR
@@ -85,21 +85,22 @@ int LMS7002M::CalibrateTxGainSetup()
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
     int16_t tsgValue = 0x7FFF;
-    if(txcmixGainMSB == 0 && txcmixGainLSB == 1)
+    if (txcmixGainMSB == 0 && txcmixGainLSB == 1)
         tsgValue = 0x3FFF;
-    else if(txcmixGainMSB == 1 && txcmixGainLSB == 0)
+    else if (txcmixGainMSB == 1 && txcmixGainLSB == 0)
         tsgValue = 0x5A85;
     else
         tsgValue = 0x7FFF;
-    LoadDC_REG_IQ(Tx, tsgValue , tsgValue);
+    LoadDC_REG_IQ(Tx, tsgValue, tsgValue);
     SetNCOFrequency(Tx, 0, 0.5e6);
 
     return 0;
 }
 
-int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
+int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float* actualGain_dBFS)
 {
-    if (!controlPort){
+    if (!controlPort)
+    {
         lime::error("No device connected");
         return -1;
     }
@@ -107,20 +108,20 @@ int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
     int cg_iamp = 0;
     auto registersBackup = BackupRegisterMap();
     status = CalibrateTxGainSetup();
-    if(status == 0)
+    if (status == 0)
     {
         cg_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
-        while(GetRSSI() < 0x7FFF)
+        while (GetRSSI() < 0x7FFF)
         {
-            if(++cg_iamp > 63)
+            if (++cg_iamp > 63)
                 break;
             Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
         }
     }
     RestoreRegisterMap(registersBackup);
 
-    int ind = this->GetActiveChannelIndex()%2;
-    opt_gain_tbb[ind] = cg_iamp > 1 ? cg_iamp-1 : 1;
+    int ind = this->GetActiveChannelIndex() % 2;
+    opt_gain_tbb[ind] = cg_iamp > 1 ? cg_iamp - 1 : 1;
 
     if (status == 0)
         Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), opt_gain_tbb[ind]);

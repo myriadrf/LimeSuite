@@ -13,7 +13,8 @@
 
 using namespace lime;
 
-ADF4002::ADF4002() : mComms(nullptr)
+ADF4002::ADF4002()
+    : mComms(nullptr)
 {
 }
 
@@ -24,7 +25,7 @@ ADF4002::~ADF4002()
 void ADF4002::Initialize(ISPI* comms, double refClkHz)
 {
     mComms = comms;
-    txtFref = refClkHz/1e6;
+    txtFref = refClkHz / 1e6;
 }
 
 int ADF4002::UploadConfig()
@@ -34,8 +35,8 @@ int ADF4002::UploadConfig()
     GetConfig(data);
 
     std::vector<uint32_t> dataWr;
-    for(int i=0; i<12; i+=3)
-        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+    for (int i = 0; i < 12; i += 3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i + 1] << 8 | data[i + 2]);
 
     // ADF4002 needs to be writen 4 values of 24 bits
     mComms->SPI(dataWr.data(), nullptr, 4);
@@ -113,15 +114,14 @@ void ADF4002::MakeData()
     m_registers[0x02] = 0x00;
     //Anti-Backlash
     btmp = (char)cmbABW;
-    if(btmp > 0) btmp++;
+    if (btmp > 0)
+        btmp++;
     btmp = btmp << 0;
     m_registers[0x02] |= btmp;
     //Lock Detact Precision
     btmp = (char)cmbLDP;
     btmp = btmp << 4;
     m_registers[0x02] |= btmp;
-
-
 
     //======= register addr 0x03 =======
     m_registers[0x03] = 0x00;
@@ -149,9 +149,6 @@ void ADF4002::MakeData()
     btmp = (char)cmbCPG;
     btmp = btmp << 5;
     m_registers[0x05] |= btmp;
-
-
-
 
     //======= register addr 0x06 =======
     m_registers[0x06] = 0x00;
@@ -184,7 +181,8 @@ void ADF4002::MakeData()
     m_registers[0x07] |= btmp;
     //Fastlock
     btmp = (char)cmbFL_f;
-    if(btmp > 0) btmp++;
+    if (btmp > 0)
+        btmp++;
     btmp = btmp << 1;
     m_registers[0x07] |= btmp;
     //Timer Counter
@@ -210,8 +208,6 @@ void ADF4002::MakeData()
     btmp = (char)rgrPD2_f;
     btmp = btmp << 5;
     m_registers[0x08] |= btmp;
-
-
 
     //======= register addr 0x09 =======
     m_registers[0x09] = 0x00;
@@ -244,7 +240,8 @@ void ADF4002::MakeData()
     m_registers[0x0A] |= btmp;
     //Fastlock
     btmp = (char)cmbFL_i;
-    if(btmp > 0) btmp++;
+    if (btmp > 0)
+        btmp++;
     btmp = btmp << 1;
     m_registers[0x0A] |= btmp;
     //Timer Counter
@@ -298,12 +295,12 @@ void ADF4002::MakeData()
 void ADF4002::CalculateRN()
 {
 
-    double x = txtFref*1000000;
-    double y = txtFvco*1000000;
+    double x = txtFref * 1000000;
+    double y = txtFvco * 1000000;
     double Fcomp;
-    while((x!=0) && (y!=0))
+    while ((x != 0) && (y != 0))
     {
-        if(x >= y)
+        if (x >= y)
         {
             x = fmod(x, y);
         }
@@ -313,8 +310,8 @@ void ADF4002::CalculateRN()
         };
     };
 
-    Fcomp = (x + y)/1000000.0;
-    int R = (int)((txtFref/Fcomp)+0.5);
+    Fcomp = (x + y) / 1000000.0;
+    int R = (int)((txtFref / Fcomp) + 0.5);
     int N = (int)((txtFvco / Fcomp) + 0.5);
 
     txtRCnt = R;
@@ -322,8 +319,8 @@ void ADF4002::CalculateRN()
 
     lblFcomp = Fcomp;
     double dFvco = 0;
-    if(txtRCnt != 0)
-        dFvco = txtNCnt * (txtFref)/txtRCnt;
+    if (txtRCnt != 0)
+        dFvco = txtNCnt * (txtFref) / txtRCnt;
     lblFvco = dFvco;
 }
 
@@ -338,7 +335,7 @@ void ADF4002::GetConfig(unsigned char data[12])
     memcpy(&data[9], &m_registers[3], 3);
 }
 
-void ADF4002::SetFrefFvco(double Fref, double Fvco, int &rcount, int &ncount)
+void ADF4002::SetFrefFvco(double Fref, double Fvco, int& rcount, int& ncount)
 {
     txtFref = Fref;
     txtFvco = Fvco;

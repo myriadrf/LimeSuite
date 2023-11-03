@@ -4,7 +4,7 @@
 
 using namespace std;
 
-MCU_File::MCU_File(const char *fileName, const char *mode)
+MCU_File::MCU_File(const char* fileName, const char* mode)
 {
     m_file = fopen(fileName, mode);
     if (m_file != NULL)
@@ -75,9 +75,9 @@ void MCU_File::ReadHex(unsigned long limit)
     bool formatDetected = false;
     bool intel = false;
     bool endSeen = false;
-    bool linear = true;                // Only used for intel hex
-    unsigned long addressBase = 0;    // Only used for intel hex
-    unsigned long dataRecords = 0;    // Only used for s-record
+    bool linear = true; // Only used for intel hex
+    unsigned long addressBase = 0; // Only used for intel hex
+    unsigned long dataRecords = 0; // Only used for s-record
     while (!feof(m_file))
     {
         if (fgets(szLine, 1024, m_file) == 0)
@@ -128,8 +128,7 @@ void MCU_File::ReadHex(unsigned long limit)
             }
             formatDetected = true;
         }
-        else if ((intel && szLine[0] != ':') ||
-                (!intel && szLine[0] != 'S'))
+        else if ((intel && szLine[0] != ':') || (!intel && szLine[0] != 'S'))
         {
             cout << "Ignoring garbage line!\n";
             continue;
@@ -142,9 +141,9 @@ void MCU_File::ReadHex(unsigned long limit)
 
         if (intel)
         {
-            unsigned long    dataBytes;
-            unsigned long    startAddress;
-            unsigned long    type;
+            unsigned long dataBytes;
+            unsigned long startAddress;
+            unsigned long type;
             if (sscanf(&szLine[1], "%2lx%4lx%2lx", &dataBytes, &startAddress, &type) != 3)
             {
                 throw "Hex line beginning corrupt!\n";
@@ -155,8 +154,8 @@ void MCU_File::ReadHex(unsigned long limit)
                 throw "Hex line length incorrect!\n";
             }
             // Check line checksum
-            unsigned char    checkSum = 0;
-            unsigned long    tmp;
+            unsigned char checkSum = 0;
+            unsigned long tmp;
             for (unsigned int i = 0; i <= dataBytes + 4; ++i)
             {
                 if (sscanf(&szLine[1 + i * 2], "%2lx", &tmp) != 1)
@@ -185,8 +184,7 @@ void MCU_File::ReadHex(unsigned long limit)
                     }
                 }
                 if (!m_chunks.size() ||
-                    m_chunks.back().m_startAddress + m_chunks.back().m_bytes.size() !=
-                    addressBase + startAddress)
+                    m_chunks.back().m_startAddress + m_chunks.back().m_bytes.size() != addressBase + startAddress)
                 {
                     m_chunks.push_back(MemBlock());
                     m_chunks.back().m_startAddress = addressBase + startAddress;
@@ -253,7 +251,7 @@ void MCU_File::ReadHex(unsigned long limit)
                 if (dataBytes == 4)
                 {
                     unsigned long ssa;
-                    char    ssaStr[16];
+                    char ssaStr[16];
                     sscanf(&szLine[9], "%8lx", &ssa);
                     sprintf(ssaStr, "%08lX\n", ssa);
                     cout << "Segment start address (CS/IP): ";
@@ -289,7 +287,7 @@ void MCU_File::ReadHex(unsigned long limit)
                 if (dataBytes == 4)
                 {
                     unsigned long lsa;
-                    char    lsaStr[16];
+                    char lsaStr[16];
                     sscanf(&szLine[9], "%8lx", &lsa);
                     sprintf(lsaStr, "%08lX\n", lsa);
                     cout << "Linear start address: ";
@@ -305,7 +303,7 @@ void MCU_File::ReadHex(unsigned long limit)
         {
             // S-record
             unsigned long count;
-            char            type;
+            char type;
             if (sscanf(&szLine[1], "%c%2lx", &type, &count) != 2)
             {
                 throw "Hex line beginning corrupt!\n";
@@ -316,8 +314,8 @@ void MCU_File::ReadHex(unsigned long limit)
                 throw "Hex line length incorrect!\n";
             }
             // Check line checksum
-            unsigned char    checkSum = 0;
-            unsigned long    tmp;
+            unsigned char checkSum = 0;
+            unsigned long tmp;
             for (unsigned int i = 0; i < count + 1; ++i)
             {
                 if (sscanf(&szLine[2 + i * 2], "%2lx", &tmp) != 1)
@@ -357,7 +355,7 @@ void MCU_File::ReadHex(unsigned long limit)
                 // Data record
                 {
                     dataRecords++;
-                    unsigned long    startAddress;
+                    unsigned long startAddress;
                     if (type == '1')
                     {
                         sscanf(&szLine[4], "%4lx", &startAddress);
@@ -371,9 +369,7 @@ void MCU_File::ReadHex(unsigned long limit)
                         sscanf(&szLine[4], "%8lx", &startAddress);
                     }
 
-                    if (!m_chunks.size() ||
-                        m_chunks.back().m_startAddress + m_chunks.back().m_bytes.size() !=
-                        startAddress)
+                    if (!m_chunks.size() || m_chunks.back().m_startAddress + m_chunks.back().m_bytes.size() != startAddress)
                     {
                         m_chunks.push_back(MemBlock());
                         m_chunks.back().m_startAddress = startAddress;
@@ -401,7 +397,7 @@ void MCU_File::ReadHex(unsigned long limit)
             case '5':
                 // Count record
                 {
-                    unsigned long    address;
+                    unsigned long address;
                     sscanf(&szLine[4], "%4lx", &address);
                     if (address != dataRecords)
                     {
@@ -430,7 +426,7 @@ void MCU_File::ReadHex(unsigned long limit)
     {
         throw "No data in file!\n";
     }
-    vector<MemBlock>::iterator    vi;
+    vector<MemBlock>::iterator vi;
     m_top = 0;
     for (vi = m_chunks.begin(); vi < m_chunks.end(); vi++)
     {
@@ -439,9 +435,9 @@ void MCU_File::ReadHex(unsigned long limit)
 }
 
 // Rather inefficient this one, fix sometime
-bool MCU_File::GetByte(const unsigned long address, unsigned char &chr)
+bool MCU_File::GetByte(const unsigned long address, unsigned char& chr)
 {
-    vector<MemBlock>::iterator    vi;
+    vector<MemBlock>::iterator vi;
 
     for (vi = m_chunks.begin(); vi < m_chunks.end(); vi++)
     {
@@ -458,13 +454,13 @@ bool MCU_File::GetByte(const unsigned long address, unsigned char &chr)
     return true;
 }
 
-bool MCU_File::BitString(const unsigned long address, const unsigned char bits, const bool lEndian, string &str)
+bool MCU_File::BitString(const unsigned long address, const unsigned char bits, const bool lEndian, string& str)
 {
-    bool            ok = false;
-    long            i;
-    unsigned char    chr;
-    unsigned long    data = 0;
-    unsigned long    tmp;
+    bool ok = false;
+    long i;
+    unsigned char chr;
+    unsigned long data = 0;
+    unsigned long tmp;
 
     if (lEndian)
     {
@@ -497,11 +493,11 @@ bool MCU_File::BitString(const unsigned long address, const unsigned char bits, 
     {
         if (data & mask)
         {
-            str.insert(0,"1");
+            str.insert(0, "1");
         }
         else
         {
-            str.insert(0,"0");
+            str.insert(0, "0");
         }
         mask <<= 1;
     }

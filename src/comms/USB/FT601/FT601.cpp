@@ -6,13 +6,13 @@
 #include "DeviceExceptions.h"
 
 #ifndef __unix__
-#include "windows.h"
-#include "FTD3XXLibrary/FTD3XX.h"
+    #include "windows.h"
+    #include "FTD3XXLibrary/FTD3XX.h"
 #else
-#include <libusb.h>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
+    #include <libusb.h>
+    #include <mutex>
+    #include <condition_variable>
+    #include <chrono>
 #endif
 
 using namespace lime;
@@ -23,14 +23,17 @@ static constexpr int streamBulkReadAddr = 0x83;
 static constexpr int ctrlBulkWriteAddr = 0x02;
 static constexpr int ctrlBulkReadAddr = 0x82;
 
-FT601::FT601(void *usbContext) : USBGeneric(usbContext) {}
+FT601::FT601(void* usbContext)
+    : USBGeneric(usbContext)
+{
+}
 
 FT601::~FT601()
 {
     Disconnect();
 }
 
-bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
+bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
     Disconnect();
 #ifndef __unix__
@@ -61,7 +64,7 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string &serial)
 #else
     USBGeneric::Connect(vid, pid, serial);
 
-    FT_FlushPipe(ctrlBulkReadAddr);  //clear ctrl ep rx buffer
+    FT_FlushPipe(ctrlBulkReadAddr); //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
 #endif
@@ -88,7 +91,7 @@ void FT601::Disconnect()
 }
 
 #ifndef __unix__
-int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t *data, int length, int32_t timeout_ms)
+int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
 {
     ULONG ulBytesTransferred = 0;
     FT_STATUS ftStatus = FT_OK;
@@ -137,7 +140,7 @@ int32_t FT601::ControlTransfer(int requestType, int request, int value, int inde
 }
 
 #ifndef __unix__
-int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
+int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 {
     int index = GetUSBContextIndex();
 
@@ -146,7 +149,7 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
         return -1;
     }
 
-	ULONG ulActual;
+    ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
     FT_InitializeOverlapped(mFTHandle, &contexts[index].inOvLap);
 
@@ -172,7 +175,7 @@ int FT601::BeginDataXfer(uint8_t *buffer, uint32_t length, uint8_t endPointAddr)
 }
 
 bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
-{    
+{
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
@@ -186,9 +189,9 @@ bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     return true; //there is nothing to wait for (signal wait finished)
 }
 
-int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
+int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 {
-    if (contextHandle >= 0 && contexts[contextHandle].used == true) 
+    if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
         ULONG ulActualBytesTransferred;
         FT_STATUS ftStatus = FT_OK;
@@ -208,7 +211,7 @@ int FT601::FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle)
         contexts[contextHandle].used = false;
         return length;
     }
-    
+
     return 0;
 }
 
@@ -301,10 +304,10 @@ int FT601::ReinitPipe(unsigned char ep)
 int FT601::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
-    unsigned char wbuffer[20] = {0};
+    unsigned char wbuffer[20] = { 0 };
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
@@ -317,7 +320,7 @@ int FT601::FT_FlushPipe(unsigned char ep)
     }
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
@@ -336,10 +339,10 @@ int FT601::FT_FlushPipe(unsigned char ep)
 int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
     int actual = 0;
-    unsigned char wbuffer[20] = {0};
+    unsigned char wbuffer[20] = { 0 };
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
@@ -352,12 +355,12 @@ int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
     }
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter) & 0xFF;
+    wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
     wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
     wbuffer[5] = 0x02;
-    wbuffer[8] = (size) & 0xFF;
+    wbuffer[8] = (size)&0xFF;
     wbuffer[9] = (size >> 8) & 0xFF;
     wbuffer[10] = (size >> 16) & 0xFF;
     wbuffer[11] = (size >> 24) & 0xFF;

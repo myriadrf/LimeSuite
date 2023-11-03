@@ -4,20 +4,21 @@
 #include <map>
 #include "ILMS7002MTab.h"
 
-namespace lime{
+namespace lime {
 
 }
 
 class lms7002_pnlCDS_view : public ILMS7002MTab
 {
   public:
-    lms7002_pnlCDS_view(wxWindow *parent, wxWindowID id = wxID_ANY,
-                        const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
-                        long style = wxTAB_TRAVERSAL);
+    lms7002_pnlCDS_view(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxTAB_TRAVERSAL);
 
   protected:
-    enum
-    {
+    enum {
         ID_CDSN_TXBTSP = 2048,
         ID_CDSN_TXATSP,
         ID_CDSN_RXBTSP,
@@ -40,26 +41,26 @@ class lms7002_pnlCDS_view : public ILMS7002MTab
         ID_CDS_RXALML
     };
 
-    wxCheckBox *chkCDSN_TXBTSP;
-    wxCheckBox *chkCDSN_TXATSP;
-    wxCheckBox *chkCDSN_RXBTSP;
-    wxCheckBox *chkCDSN_RXATSP;
-    wxCheckBox *chkCDSN_TXBLML;
-    wxCheckBox *chkCDSN_TXALML;
-    wxCheckBox *chkCDSN_RXBLML;
-    wxCheckBox *chkCDSN_RXALML;
-    wxCheckBox *chkCDSN_MCLK2;
-    wxCheckBox *chkCDSN_MCLK1;
-    wxRadioBox *rgrCDS_MCLK2;
-    wxRadioBox *rgrCDS_MCLK1;
-    wxRadioBox *rgrCDS_TXBTSP;
-    wxRadioBox *rgrCDS_TXATSP;
-    wxRadioBox *rgrCDS_RXBTSP;
-    wxRadioBox *rgrCDS_RXATSP;
-    wxRadioBox *rgrCDS_TXBLML;
-    wxRadioBox *rgrCDS_TXALML;
-    wxRadioBox *rgrCDS_RXBLML;
-    wxRadioBox *rgrCDS_RXALML;
+    wxCheckBox* chkCDSN_TXBTSP;
+    wxCheckBox* chkCDSN_TXATSP;
+    wxCheckBox* chkCDSN_RXBTSP;
+    wxCheckBox* chkCDSN_RXATSP;
+    wxCheckBox* chkCDSN_TXBLML;
+    wxCheckBox* chkCDSN_TXALML;
+    wxCheckBox* chkCDSN_RXBLML;
+    wxCheckBox* chkCDSN_RXALML;
+    wxCheckBox* chkCDSN_MCLK2;
+    wxCheckBox* chkCDSN_MCLK1;
+    wxRadioBox* rgrCDS_MCLK2;
+    wxRadioBox* rgrCDS_MCLK1;
+    wxRadioBox* rgrCDS_TXBTSP;
+    wxRadioBox* rgrCDS_TXATSP;
+    wxRadioBox* rgrCDS_RXBTSP;
+    wxRadioBox* rgrCDS_RXATSP;
+    wxRadioBox* rgrCDS_TXBLML;
+    wxRadioBox* rgrCDS_TXALML;
+    wxRadioBox* rgrCDS_RXBLML;
+    wxRadioBox* rgrCDS_RXALML;
 };
 
 #endif // __lms7002_pnlCDS_view__

@@ -7,8 +7,7 @@
 #include "typedefs.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 extern void SaveChipState(bool wr);
@@ -26,18 +25,12 @@ extern uint8_t SetFrequencySX(const bool Tx, const float_type freq);
 extern void EnableChannelPowerControls();
 extern void EnableMIMOBuffersIfNecessary();
 
-enum VCO_ID
-{
-    VCO_CGEN = 0,
-    VCO_SXR,
-    VCO_SXT
-};
+enum VCO_ID { VCO_CGEN = 0, VCO_SXR, VCO_SXT };
 
 extern uint8_t TuneVCO(bool SX); // 0-cgen, 1-SXR, 2-SXT
 extern uint16_t pow2(const uint8_t power);
 
-typedef struct
-{
+typedef struct {
     const uint16_t* addr;
     const uint16_t* val;
     const uint16_t* mask;

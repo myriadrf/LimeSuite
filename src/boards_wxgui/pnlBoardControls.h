@@ -27,7 +27,7 @@
 
 #include "IModuleFrame.h"
 
-namespace lime{
+namespace lime {
 class SDRDevice;
 }
 
@@ -35,91 +35,98 @@ class wxTextCtrl;
 
 class pnlBoardControls : public IModuleFrame
 {
-	public:
-        struct ADC_DAC
+  public:
+    struct ADC_DAC {
+        std::string name;
+        bool writable;
+        double value;
+        int32_t channel;
+        std::string units;
+        int8_t powerOf10;
+        int minValue;
+        int maxValue;
+    };
+
+    class Param_GUI
+    {
+      public:
+        Param_GUI()
+            : title(nullptr)
+            , units(nullptr)
+            , rValue(nullptr)
+            , wValue(nullptr){};
+        ~Param_GUI()
         {
-            std::string name;
-            bool writable;
-            double value;
-            int32_t channel;
-            std::string units;
-            int8_t powerOf10;
-            int minValue;
-            int maxValue;
-        };
+            if (title)
+                title->Destroy();
+            if (units)
+                units->Destroy();
+            if (rValue)
+                rValue->Destroy();
+            if (wValue)
+                wValue->Destroy();
+        }
+        wxStaticText* title;
+        wxStaticText* units;
+        wxStaticText* rValue;
+        wxSpinCtrl* wValue;
+    };
 
-        class Param_GUI
-        {
-        public:
-            Param_GUI() : title(nullptr), units(nullptr), rValue(nullptr),wValue(nullptr){};
-            ~Param_GUI()
-            {
-                if (title)
-                    title->Destroy();
-                if (units)
-                    units->Destroy();
-                if (rValue)
-                    rValue->Destroy();
-                if (wValue)
-                    wValue->Destroy();
-            }
-            wxStaticText* title;
-            wxStaticText* units;
-            wxStaticText* rValue;
-            wxSpinCtrl* wValue;
-        };
+    pnlBoardControls(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = _(""),
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxDEFAULT_DIALOG_STYLE);
+    ~pnlBoardControls();
 
-        pnlBoardControls(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
-        ~pnlBoardControls();
+    bool Initialize(lime::SDRDevice* device) override;
+    void Update() override;
 
-        bool Initialize(lime::SDRDevice *device) override;
-        void Update() override;
+    void SetupControls(const std::string& boardID);
+    void OnSetDACvalues(wxSpinEvent& event);
+    void OnSetDACvaluesENTER(wxCommandEvent& event);
+    void OnDACWrite(wxCommandEvent& event);
+    static std::vector<ADC_DAC> mParameters;
 
-        void SetupControls(const std::string &boardID);
-        void OnSetDACvalues(wxSpinEvent &event);
-        void OnSetDACvaluesENTER(wxCommandEvent &event);
-        void OnDACWrite(wxCommandEvent &event);
-        static std::vector<ADC_DAC> mParameters;
-	protected:
-        wxPanel* pnlCustomControls;
-        wxPanel* pnlReadControls;
-        wxSpinCtrl *spinCustomChannelRd;
-        wxStaticText *txtCustomValueRd;
-        wxStaticText *txtCustomUnitsRd;
-        wxStaticText *txtCustomPowerOf10Rd;
-        wxSpinCtrl *spinCustomChannelWr;
-        wxSpinCtrl *spinCustomValueWr;
-        wxChoice *cmbCustomUnitsWr;
-        wxChoice *cmbCustomPowerOf10Wr;
-        wxButton *btnCustomRd;
-        wxButton *btnCustomWr;
-        void OnCustomRead(wxCommandEvent& event);
-        void OnCustomWrite(wxCommandEvent& event);
+  protected:
+    wxPanel* pnlCustomControls;
+    wxPanel* pnlReadControls;
+    wxSpinCtrl* spinCustomChannelRd;
+    wxStaticText* txtCustomValueRd;
+    wxStaticText* txtCustomUnitsRd;
+    wxStaticText* txtCustomPowerOf10Rd;
+    wxSpinCtrl* spinCustomChannelWr;
+    wxSpinCtrl* spinCustomValueWr;
+    wxChoice* cmbCustomUnitsWr;
+    wxChoice* cmbCustomPowerOf10Wr;
+    wxButton* btnCustomRd;
+    wxButton* btnCustomWr;
+    void OnCustomRead(wxCommandEvent& event);
+    void OnCustomWrite(wxCommandEvent& event);
 
-        wxFlexGridSizer* sizerAnalogRd;
-        wxPanel* additionalControls;
-        wxStaticText* txtDACTitle;
-        wxTextCtrl* txtDACValue;
-        wxButton* btnDAC;
-        wxFlexGridSizer* sizerDAC;
+    wxFlexGridSizer* sizerAnalogRd;
+    wxPanel* additionalControls;
+    wxStaticText* txtDACTitle;
+    wxTextCtrl* txtDACValue;
+    wxButton* btnDAC;
+    wxFlexGridSizer* sizerDAC;
 
-        wxFlexGridSizer* sizerAdditionalControls;
-        
-        std::vector<ADC_DAC> getBoardParams(const std::string &boardID);
+    wxFlexGridSizer* sizerAdditionalControls;
 
-        void OnUserChangedBoardType(wxCommandEvent& event);
-        void OnReadAll( wxCommandEvent& event );
-        void OnWriteAll( wxCommandEvent& event );
+    std::vector<ADC_DAC> getBoardParams(const std::string& boardID);
 
-        wxButton* btnReadAll;
-        wxButton* btnWriteAll;
-        wxStaticText* m_staticText349;
-        wxChoice* cmbBoardSelection;
+    void OnUserChangedBoardType(wxCommandEvent& event);
+    void OnReadAll(wxCommandEvent& event);
+    void OnWriteAll(wxCommandEvent& event);
 
+    wxButton* btnReadAll;
+    wxButton* btnWriteAll;
+    wxStaticText* m_staticText349;
+    wxChoice* cmbBoardSelection;
 
-
-        std::vector<Param_GUI*> mGUI_widgets;
-        static const std::vector<lime::eLMS_DEV> board_list;
+    std::vector<Param_GUI*> mGUI_widgets;
+    static const std::vector<lime::eLMS_DEV> board_list;
 };
 
 #endif // __pnlAnalog_view__

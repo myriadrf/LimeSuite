@@ -10,15 +10,15 @@
 
 class MemBlock
 {
-public:
+  public:
     size_t m_startAddress;
     std::vector<unsigned char> m_bytes;
 };
 
 class LIME_API MCU_File
 {
-public:
-    explicit MCU_File(const char *fileName, const char *mode);
+  public:
+    explicit MCU_File(const char* fileName, const char* mode);
     ~MCU_File();
 
     bool FileOpened();
@@ -29,14 +29,15 @@ public:
     // Read hex file
     void ReadHex(unsigned long limit);
 
-    bool GetByte(const unsigned long address, unsigned char &chr);
-    bool BitString(const unsigned long address, const unsigned char bits, const bool lEndian, std::string &str);
+    bool GetByte(const unsigned long address, unsigned char& chr);
+    bool BitString(const unsigned long address, const unsigned char bits, const bool lEndian, std::string& str);
 
-    FILE *Handle() const { return m_file; };
+    FILE* Handle() const { return m_file; };
     std::vector<MemBlock> m_chunks;
     size_t m_top;
-private:
-    FILE *m_file;
+
+  private:
+    FILE* m_file;
 };
 
 #endif // MCU_FILE_H

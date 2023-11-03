@@ -16,8 +16,8 @@ class ConnectionManager;
 
 class lms7suiteApp : public wxApp
 {
-    public:
-        virtual bool OnInit();		
+  public:
+    virtual bool OnInit();
 };
 
 #endif // LMS7PROJECTAPP_H

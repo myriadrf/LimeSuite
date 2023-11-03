@@ -8,10 +8,12 @@
 
 #include "Register.h"
 
-namespace lime
-{
+namespace lime {
 
-FPGA_Mini::FPGA_Mini(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI) : FPGA(fpgaSPI, lms7002mSPI) {}
+FPGA_Mini::FPGA_Mini(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI)
+    : FPGA(fpgaSPI, lms7002mSPI)
+{
+}
 
 int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
@@ -64,8 +66,9 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     const double txPhC1 = 89.61;
     const double txPhC2 = 2.71e-7;
 
-    const std::vector<uint32_t> spiAddr = { 0x0021, 0x0022, 0x0023, 0x0024, 0x0027, 0x002A,
-                                            0x0400, 0x040C, 0x040B, 0x0400, 0x040B, 0x0400 };
+    const std::vector<uint32_t> spiAddr = {
+        0x0021, 0x0022, 0x0023, 0x0024, 0x0027, 0x002A, 0x0400, 0x040C, 0x040B, 0x0400, 0x040B, 0x0400
+    };
     const int bakRegCnt = spiAddr.size() - 4;
 
     bool phaseSearch = false;
@@ -91,9 +94,10 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
     lms7002mPort->SPI(spiAddr.data(), dataRd.data(), bakRegCnt);
 
-    {   //Config Rx
-        const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4,
-                 0xE4E4, 0x0086, 0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED };
+    { //Config Rx
+        const std::vector<uint32_t> spiData = {
+            0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0086, 0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED
+        };
         const int setRegCnt = spiData.size();
 
         for (int i = 0; i < setRegCnt; ++i)
@@ -108,7 +112,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     bool txPhaseSearchSuccess = false;
     lime::FPGA::FPGA_PLL_clock clocks[4];
 
-    for (int i = 0; i < 10; i++)    //attempt phase search 10 times
+    for (int i = 0; i < 10; i++) //attempt phase search 10 times
     {
         clocks[0].index = 3;
         clocks[0].outFrequency = rxRate_Hz;
@@ -138,7 +142,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
 
-        for (int i = 0; i < 10; i++)    //attempt phase search 10 times
+        for (int i = 0; i < 10; i++) //attempt phase search 10 times
         {
             clocks[0].index = 1;
             clocks[0].outFrequency = txRate_Hz;
@@ -148,7 +152,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             clocks[2] = clocks[0];
             clocks[3] = clocks[0];
             WriteRegister(0x000A, 0x0200);
-            if (SetPllFrequency(0, txRate_Hz, clocks, 4)==0)
+            if (SetPllFrequency(0, txRate_Hz, clocks, 4) == 0)
             {
                 txPhaseSearchSuccess = true;
                 break;

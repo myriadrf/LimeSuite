@@ -20,14 +20,19 @@ namespace lime {
 class SDRDevice;
 }
 
-class Si5351C_wxgui: public wxFrame
+class Si5351C_wxgui : public wxFrame
 {
-public:
-
-    Si5351C_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int styles = wxDEFAULT_FRAME_STYLE, wxString idname = "");
-    void Initialize(lime::SDRDevice *pModule);
+  public:
+    Si5351C_wxgui(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxString& title = _(""),
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        int styles = wxDEFAULT_FRAME_STYLE,
+        wxString idname = "");
+    void Initialize(lime::SDRDevice* pModule);
     virtual ~Si5351C_wxgui();
-    void ModifyClocksGUI(const std::string &board);
+    void ModifyClocksGUI(const std::string& board);
 
     //(*Declarations(Si5351C_wxgui)
     wxCheckBox* chkEN_CLK5;
@@ -78,7 +83,7 @@ public:
     wxRadioBox* rgrXTALfreq;
     //*)
 
-protected:
+  protected:
     void ClockEnable(unsigned int i, bool enabled);
     //(*Identifiers(Si5351C_wxgui)
     static const long ID_BUTTON2;
@@ -127,7 +132,7 @@ protected:
     static const long ID_BUTTON3;
     //*)
 
-private:
+  private:
     //(*Handlers(Si5351C_wxgui)
     void OnbtnLoadFileClick(wxCommandEvent& event);
     void OnbtnConfigureClockClick(wxCommandEvent& event);
@@ -137,12 +142,11 @@ private:
     void OnbtnClearStatusClick(wxCommandEvent& event);
     bool LoadRegValuesFromFile(std::string FName);
     unsigned char m_newConfiguration[255];
-    lime::SDRDevice *device;
+    lime::SDRDevice* device;
     //*)
 
-protected:
-
-    void BuildContent(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& size);
+  protected:
+    void BuildContent(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size);
 
     DECLARE_EVENT_TABLE()
 };

@@ -1,5 +1,5 @@
 #ifdef __unix__
-#include <unistd.h>
+    #include <unistd.h>
 #endif
 
 #include "LitePCIe.h"
@@ -20,7 +20,8 @@ void __loadLimeSDR_XTRX(void) //TODO fixme replace with LoadLibrary/dlopen
     static LimeSDR_XTRXEntry limesdr_XTRXSupport; // self register on initialization
 }
 
-LimeSDR_XTRXEntry::LimeSDR_XTRXEntry() : DeviceRegistryEntry("LimeSDR_XTRX")
+LimeSDR_XTRXEntry::LimeSDR_XTRXEntry()
+    : DeviceRegistryEntry("LimeSDR_XTRX")
 {
 }
 
@@ -28,7 +29,7 @@ LimeSDR_XTRXEntry::~LimeSDR_XTRXEntry()
 {
 }
 
-std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
+std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle& hint)
 {
     std::vector<DeviceHandle> handles;
     DeviceHandle handle;
@@ -38,11 +39,7 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
         return handles;
 
     const std::string searchDevName("LimeXTRX");
-    const std::vector<std::string> boardNames = {
-        GetDeviceName(LMS_DEV_LIMESDR_XTRX)
-        , "LimeSDR-XTRX"
-        , searchDevName
-    };
+    const std::vector<std::string> boardNames = { GetDeviceName(LMS_DEV_LIMESDR_XTRX), "LimeSDR-XTRX", searchDevName };
     if (!hint.name.empty())
     {
         bool foundMatch = false;
@@ -61,17 +58,17 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
     const std::string pattern(searchDevName + "[0-9]*_control");
     const std::vector<std::string> devices = LitePCIe::GetDevicesWithPattern(pattern);
 
-    for(const auto& devPath : devices)
+    for (const auto& devPath : devices)
     {
         size_t pos = devPath.find(searchDevName);
-        if(pos == std::string::npos)
+        if (pos == std::string::npos)
             continue;
 
         if (!hint.addr.empty() && devPath.find(hint.addr) == std::string::npos)
             continue;
 
-        std::string dev_nr(&devPath[pos+searchDevName.length()], &devPath[devPath.find("_")]);
-        handle.name = boardNames[0];// + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
+        std::string dev_nr(&devPath[pos + searchDevName.length()], &devPath[devPath.find("_")]);
+        handle.name = boardNames[0]; // + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
 
         handle.addr = devPath.substr(0, devPath.find("_"));
         handles.push_back(handle);
@@ -79,7 +76,7 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle &hint)
     return handles;
 }
 
-SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle &handle)
+SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
     LitePCIe* control = new LitePCIe();
@@ -89,7 +86,8 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle &handle)
     IComms* route_lms7002m = new LMS64C_LMS7002M_Over_PCIe(control);
     IComms* route_fpga = new LMS64C_FPGA_Over_PCIe(control);
 
-    try {
+    try
+    {
         std::string controlFile(handle.addr + "_control");
         control->Open(controlFile.c_str(), O_RDWR);
 
@@ -97,8 +95,7 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle &handle)
         stream->SetPathName(streamFile.c_str());
 
         return new LimeSDR_XTRX(route_lms7002m, route_fpga, stream);
-    }
-    catch ( std::runtime_error &e )
+    } catch (std::runtime_error& e)
     {
         delete control;
         delete stream;

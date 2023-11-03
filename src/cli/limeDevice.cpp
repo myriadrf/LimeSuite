@@ -22,31 +22,29 @@ void PrintDeviceDetails(SDRDevice* device)
     cout << '\t' << "Hardware version\t: " << d.hardwareVersion << endl;
     cout << '\t' << "Protocol version\t: " << d.protocolVersion << endl;
     cout << '\t' << "Serial number\t\t: " << d.serialNumber << endl;
-    cout << "\t" << "SPI slave devices\t:" << endl;
-    for (const auto &nameIds : d.spiSlaveIds)
-        cout << "\t\t\t\t  " <<  nameIds.first.c_str() << endl;
-    cout << "\t" << "Memory devices\t\t:" << endl;
-    for (const SDRDevice::DataStorage &mem : d.memoryDevices)
+    cout << "\t"
+         << "SPI slave devices\t:" << endl;
+    for (const auto& nameIds : d.spiSlaveIds)
+        cout << "\t\t\t\t  " << nameIds.first.c_str() << endl;
+    cout << "\t"
+         << "Memory devices\t\t:" << endl;
+    for (const SDRDevice::DataStorage& mem : d.memoryDevices)
         cout << "\t\t\t\t  " << mem.name << endl;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    static struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
-        {"full", no_argument, 0, 'f'},
-        {0, 0, 0,  0}
-    };
+    static struct option long_options[] = { { "help", no_argument, 0, 'h' }, { "full", no_argument, 0, 'f' }, { 0, 0, 0, 0 } };
 
     bool full(false);
     int long_index = 0;
     int option = 0;
-    
+
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
     {
         switch (option)
         {
-        case 'h': 
+        case 'h':
             return printHelp();
         case 'f':
             full = true;

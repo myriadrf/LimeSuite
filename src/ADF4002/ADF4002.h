@@ -11,17 +11,17 @@
 
 #include "limesuite/IComms.h"
 
-namespace lime{
+namespace lime {
 
 class LIME_API ADF4002
 {
-public:
+  public:
     ADF4002();
     ~ADF4002();
     void Initialize(ISPI* comms, double refClkHz);
     int UploadConfig();
 
-    void SetFrefFvco(double Fref, double Fvco, int &rcount, int &ncount);
+    void SetFrefFvco(double Fref, double Fvco, int& rcount, int& ncount);
     void SetReferenceCounterLatch(int Ldp, int Abw, int refCounter);
     void SetNCounterLatch(int CPgain, int NCounter);
     void SetFunctionLatch(int currentSetting1, int currentSetting2, int timerCounter, int fastLock, int muxoutControl);
@@ -66,10 +66,10 @@ public:
     double lblFcomp;
     double lblFvco;
 
-protected:
+  protected:
     ISPI* mComms;
     unsigned char m_registers[12];
 };
 
-}
+} // namespace lime
 #endif // ADF_MODULE_H

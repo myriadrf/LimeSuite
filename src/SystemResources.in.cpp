@@ -13,19 +13,19 @@
 #include <iostream>
 
 #ifdef _MSC_VER
-#include <windows.h>
-#include <shlobj.h>
-#include <io.h>
+    #include <windows.h>
+    #include <shlobj.h>
+    #include <io.h>
 
-//access mode constants
-#define F_OK 0
-#define R_OK 2
-#define W_OK 4
+    //access mode constants
+    #define F_OK 0
+    #define R_OK 2
+    #define W_OK 4
 #endif
 
 #ifdef __unix__
-#include <pwd.h>
-#include <unistd.h>
+    #include <pwd.h>
+    #include <unistd.h>
 #endif
 
 #include <sys/types.h>
@@ -34,19 +34,19 @@
 std::string lime::getLimeSuiteRoot(void)
 {
     //first check the environment variable
-    const char *limeSuiteRoot = std::getenv("LIME_SUITE_ROOT");
-    if (limeSuiteRoot != nullptr) return limeSuiteRoot;
+    const char* limeSuiteRoot = std::getenv("LIME_SUITE_ROOT");
+    if (limeSuiteRoot != nullptr)
+        return limeSuiteRoot;
 
-    // Get the path to the current dynamic linked library.
-    // The path to this library can be used to determine
-    // the installation root without prior knowledge.
-    #if defined(_MSC_VER) && defined(LIME_DLL)
+// Get the path to the current dynamic linked library.
+// The path to this library can be used to determine
+// the installation root without prior knowledge.
+#if defined(_MSC_VER) && defined(LIME_DLL)
     char path[MAX_PATH];
     HMODULE hm = NULL;
-    if (GetModuleHandleExA(
-        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        (LPCSTR) &lime::getLimeSuiteRoot, &hm))
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            (LPCSTR)&lime::getLimeSuiteRoot,
+            &hm))
     {
         const DWORD size = GetModuleFileNameA(hm, path, sizeof(path));
         if (size != 0)
@@ -58,7 +58,7 @@ std::string lime::getLimeSuiteRoot(void)
                 return libPath.substr(0, slash1Pos);
         }
     }
-    #endif //_MSC_VER && LIME_DLL
+#endif //_MSC_VER && LIME_DLL
 
     return "@LIME_SUITE_ROOT@";
 }
@@ -66,14 +66,16 @@ std::string lime::getLimeSuiteRoot(void)
 std::string lime::getHomeDirectory(void)
 {
     //first check the HOME environment variable
-    const char *userHome = std::getenv("HOME");
-    if (userHome != nullptr) return userHome;
+    const char* userHome = std::getenv("HOME");
+    if (userHome != nullptr)
+        return userHome;
 
-    //use unix user id lookup to get the home directory
-    #ifdef __unix__
-    const char *pwDir = getpwuid(getuid())->pw_dir;
-    if (pwDir != nullptr) return pwDir;
-    #endif
+//use unix user id lookup to get the home directory
+#ifdef __unix__
+    const char* pwDir = getpwuid(getuid())->pw_dir;
+    if (pwDir != nullptr)
+        return pwDir;
+#endif
 
     return "";
 }
@@ -84,23 +86,25 @@ std::string lime::getHomeDirectory(void)
 static std::string getBareAppDataDirectory(void)
 {
     //always check APPDATA (usually windows, but can be set for linux)
-    const char *appDataDir = std::getenv("APPDATA");
-    if (appDataDir != nullptr) return appDataDir;
+    const char* appDataDir = std::getenv("APPDATA");
+    if (appDataDir != nullptr)
+        return appDataDir;
 
-    //use windows API to query for roaming app data directory
-    #ifdef _MSC_VER
+//use windows API to query for roaming app data directory
+#ifdef _MSC_VER
     char csidlAppDataDir[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, csidlAppDataDir)))
     {
         return csidlAppDataDir;
     }
-    #endif
+#endif
 
-    //xdg freedesktop standard location environment variable
-    #ifdef __unix__
-    const char *xdgDataHome = std::getenv("XDG_DATA_HOME");
-    if (xdgDataHome != nullptr) return xdgDataHome;
-    #endif
+//xdg freedesktop standard location environment variable
+#ifdef __unix__
+    const char* xdgDataHome = std::getenv("XDG_DATA_HOME");
+    if (xdgDataHome != nullptr)
+        return xdgDataHome;
+#endif
 
     //xdg freedesktop standard location for data in home directory
     return lime::getHomeDirectory() + "/.local/share";
@@ -122,22 +126,23 @@ std::vector<std::string> lime::listImageSearchPaths(void)
 {
     std::vector<std::string> imageSearchPaths;
 
-    //separator for search paths in the environment variable
-    #ifdef _MSC_VER
+//separator for search paths in the environment variable
+#ifdef _MSC_VER
     static const char sep = ';';
-    #else
+#else
     static const char sep = ':';
-    #endif
+#endif
 
     //check the environment's search path
-    const char *imagePathEnv = std::getenv("LIME_IMAGE_PATH");
+    const char* imagePathEnv = std::getenv("LIME_IMAGE_PATH");
     if (imagePathEnv != nullptr)
     {
         std::stringstream imagePaths(imagePathEnv);
         std::string imagePath;
         while (std::getline(imagePaths, imagePath, sep))
         {
-            if (imagePath.empty()) continue;
+            if (imagePath.empty())
+                continue;
             imageSearchPaths.push_back(imagePath);
         }
     }
@@ -151,17 +156,18 @@ std::vector<std::string> lime::listImageSearchPaths(void)
     return imageSearchPaths;
 }
 
-std::string lime::locateImageResource(const std::string &name)
+std::string lime::locateImageResource(const std::string& name)
 {
-    for (const auto &searchPath : lime::listImageSearchPaths())
+    for (const auto& searchPath : lime::listImageSearchPaths())
     {
         const std::string fullPath(searchPath + "/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
-        if (access(fullPath.c_str(), R_OK) == 0) return fullPath;
+        if (access(fullPath.c_str(), R_OK) == 0)
+            return fullPath;
     }
     return "";
 }
 
-int lime::downloadImageResource(const std::string &name)
+int lime::downloadImageResource(const std::string& name)
 {
     const std::string destDir(lime::getAppDataDirectory() + "/images/@VERSION_MAJOR@.@VERSION_MINOR@");
     const std::string destFile(destDir + "/" + name);
@@ -180,27 +186,30 @@ int lime::downloadImageResource(const std::string &name)
     //create images directory
     else
     {
-        #ifdef __unix__
-        const std::string mkdirCmd("mkdir -p \""+destDir+"\"");
-        #else
-        const std::string mkdirCmd("md.exe \""+destDir+"\"");
-        #endif
+#ifdef __unix__
+        const std::string mkdirCmd("mkdir -p \"" + destDir + "\"");
+#else
+        const std::string mkdirCmd("md.exe \"" + destDir + "\"");
+#endif
         int result = std::system(mkdirCmd.c_str());
         if (result != 0)
             return lime::ReportError(result, "Failed to create directory: %s", destDir.c_str());
     }
 
     //check for write access
-    if (access(destDir.c_str(), W_OK) != 0) lime::ReportError("Cannot write: %s", destDir.c_str());
+    if (access(destDir.c_str(), W_OK) != 0)
+        lime::ReportError("Cannot write: %s", destDir.c_str());
 
-    //download the file
-    #ifdef __unix__
-    const std::string dnloadCmd("wget --output-document=\""+destFile+"\" \""+sourceUrl+"\"");
-    #else
-    const std::string dnloadCmd("powershell.exe -Command \"(new-object System.Net.WebClient).DownloadFile('"+sourceUrl+"', '"+destFile+"')\"");
-    #endif
+//download the file
+#ifdef __unix__
+    const std::string dnloadCmd("wget --output-document=\"" + destFile + "\" \"" + sourceUrl + "\"");
+#else
+    const std::string dnloadCmd(
+        "powershell.exe -Command \"(new-object System.Net.WebClient).DownloadFile('" + sourceUrl + "', '" + destFile + "')\"");
+#endif
     int result = std::system(dnloadCmd.c_str());
-    if (result != 0) return lime::ReportError(result, "Failed: %s", dnloadCmd.c_str());
+    if (result != 0)
+        return lime::ReportError(result, "Failed: %s", dnloadCmd.c_str());
 
     return 0;
 }

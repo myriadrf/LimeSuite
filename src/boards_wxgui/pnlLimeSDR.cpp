@@ -12,7 +12,7 @@ using namespace std;
 BEGIN_EVENT_TABLE(pnlLimeSDR, wxPanel)
 END_EVENT_TABLE()
 
-pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
+pnlLimeSDR::pnlLimeSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
 {
     device = nullptr;
     Create(parent, id, pos, size, style, name);
@@ -49,7 +49,7 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     Connect(chkTX2_2_LB_AT->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkTX2_2_LB_AT, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-    auto groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("External loopback controls") ), wxVERTICAL );
+    auto groupSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("External loopback controls")), wxVERTICAL);
     groupSizer->Add(controlsSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     mainSizer->Add(groupSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     pnl_gpio = new pnlGPIO(this, wxNewId());
@@ -64,7 +64,7 @@ void pnlLimeSDR::Initialize(lime::SDRDevice* pControl)
     if (device)
     {
         auto controls = controlsSizer->GetChildren();
-        for(auto i : controls)
+        for (auto i : controls)
             i->GetWindow()->Enable();
     }
 
@@ -88,7 +88,7 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
 
     auto sdr = static_cast<lime::LimeSDR*>(device);
 
-    if (sdr && sdr->WriteFPGARegister(addr, value)) 
+    if (sdr && sdr->WriteFPGARegister(addr, value))
     {
         lime::error("Board loopback change failed");
     }
@@ -98,10 +98,14 @@ pnlLimeSDR::~pnlLimeSDR()
 {
     chkRFLB_A_EN->Disconnect(wxEVT_CHECKBOX, chkRFLB_A_EN->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);
     chkRFLB_B_EN->Disconnect(wxEVT_CHECKBOX, chkRFLB_B_EN->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);
-    chkTX1_2_LB_SH->Disconnect(wxEVT_CHECKBOX, chkTX1_2_LB_SH->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
-    chkTX1_2_LB_AT->Disconnect(wxEVT_CHECKBOX, chkTX1_2_LB_AT->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
-    chkTX2_2_LB_SH->Disconnect(wxEVT_CHECKBOX, chkTX2_2_LB_SH->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
-    chkTX2_2_LB_AT->Disconnect(wxEVT_CHECKBOX, chkTX2_2_LB_AT->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
+    chkTX1_2_LB_SH->Disconnect(wxEVT_CHECKBOX, chkTX1_2_LB_SH->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);
+    ;
+    chkTX1_2_LB_AT->Disconnect(wxEVT_CHECKBOX, chkTX1_2_LB_AT->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);
+    ;
+    chkTX2_2_LB_SH->Disconnect(wxEVT_CHECKBOX, chkTX2_2_LB_SH->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);
+    ;
+    chkTX2_2_LB_AT->Disconnect(wxEVT_CHECKBOX, chkTX2_2_LB_AT->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);
+    ;
 }
 
 void pnlLimeSDR::UpdatePanel()
@@ -126,12 +130,12 @@ void pnlLimeSDR::UpdatePanel()
     pnl_gpio->UpdatePanel();
 }
 
-void pnlLimeSDR::OnReadAll(wxCommandEvent &event)
+void pnlLimeSDR::OnReadAll(wxCommandEvent& event)
 {
     UpdatePanel();
 }
 
-void pnlLimeSDR::OnWriteAll(wxCommandEvent &event)
+void pnlLimeSDR::OnWriteAll(wxCommandEvent& event)
 {
     OnGPIOChange(event);
     pnl_gpio->OnUsrGPIODirChange(event);

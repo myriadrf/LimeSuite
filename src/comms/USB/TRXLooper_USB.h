@@ -13,10 +13,10 @@ class USBGeneric;
 class TRXLooper_USB : public lime::TRXLooper
 {
   public:
-    TRXLooper_USB(USBGeneric *comms, FPGA *f, LMS7002M *chip, uint8_t rxEndPt, uint8_t txEndPt);
+    TRXLooper_USB(USBGeneric* comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt);
     virtual ~TRXLooper_USB();
 
-    virtual void Setup(const lime::SDRDevice::StreamConfig &config) override;
+    virtual void Setup(const lime::SDRDevice::StreamConfig& config) override;
 
   protected:
     virtual int RxSetup() override;
@@ -25,9 +25,10 @@ class TRXLooper_USB : public lime::TRXLooper
     virtual int TxSetup() override;
     virtual void TransmitPacketsLoop() override;
 
-    USBGeneric *comms;
+    USBGeneric* comms;
     const uint8_t rxEndPt;
     const uint8_t txEndPt;
+
   private:
     bool GetSamplesPacket(SamplesPacketType** srcPkt);
     void NegateQ(SamplesPacketType* packet, TRXDir direction);

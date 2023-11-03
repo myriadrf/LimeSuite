@@ -17,9 +17,11 @@
 using namespace std;
 using namespace lime;
 
-void fftviewer_frFFTviewer::Update() {}
+void fftviewer_frFFTviewer::Update()
+{
+}
 
-bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
+bool fftviewer_frFFTviewer::Initialize(SDRDevice* pDataPort)
 {
     StopStreaming();
     device = pDataPort;
@@ -33,7 +35,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
 
     lmsIndex = 0;
     cmbRFSOC->Clear();
-    const SDRDevice::Descriptor &desc = device->GetDescriptor();
+    const SDRDevice::Descriptor& desc = device->GetDescriptor();
 
     for (size_t i = 0; i < desc.rfSOC.size(); ++i)
     {
@@ -54,13 +56,13 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     else
     {
         constexpr uint8_t modeChoicesItemCount = 2;
-        const std::array<wxString, modeChoicesItemCount> modeChoices {"SISO", "MIMO"};
+        const std::array<wxString, modeChoicesItemCount> modeChoices{ "SISO", "MIMO" };
         cmbMode->Set(modeChoicesItemCount, modeChoices.data());
         cmbMode->SetSelection(0);
         cmbMode->GetContainingSizer()->Layout(); // update the width of the box
 
         constexpr uint8_t channelVisibilityChoicesItemCount = 3;
-        const std::array<wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices {"A", "B", "A&B"};
+        const std::array<wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices{ "A", "B", "A&B" };
         cmbChannelVisibility->Set(channelVisibilityChoicesItemCount, channelVisibilityChoices.data());
         cmbChannelVisibility->SetSelection(0);
         cmbChannelVisibility->GetContainingSizer()->Layout(); // update the width of the box
@@ -73,8 +75,10 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice *pDataPort)
     return true;
 }
 
-fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow *parent, wxWindowID id)
-    : frFFTviewer(parent, id), mStreamRunning(false), device(nullptr)
+fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow* parent, wxWindowID id)
+    : frFFTviewer(parent, id)
+    , mStreamRunning(false)
+    , device(nullptr)
 {
     captureSamples.store(false);
     averageCount.store(50);
@@ -146,12 +150,12 @@ fftviewer_frFFTviewer::~fftviewer_frFFTviewer()
         StopStreaming();
 }
 
-void fftviewer_frFFTviewer::OnWindowFunctionChanged( wxCommandEvent& event )
+void fftviewer_frFFTviewer::OnWindowFunctionChanged(wxCommandEvent& event)
 {
     windowFunctionID.store(cmbWindowFunc->GetSelection());
 }
 
-void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
+void fftviewer_frFFTviewer::OnbtnStartStop(wxCommandEvent& event)
 {
     if (threadProcessing.joinable() == false)
     {
@@ -164,7 +168,8 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
-    if (!device) {
+    if (!device)
+    {
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
     }
@@ -179,14 +184,14 @@ void fftviewer_frFFTviewer::StartStreaming()
     fftFreqAxis.resize(fftSize);
     double nyquistMHz;
     txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
-    const float step = 2*nyquistMHz / fftSize;
+    const float step = 2 * nyquistMHz / fftSize;
     for (int i = 0; i < fftSize; ++i)
-        fftFreqAxis[i] = 1e6*(-nyquistMHz + (i+1)*step);
+        fftFreqAxis[i] = 1e6 * (-nyquistMHz + (i + 1) * step);
     timeXAxis.resize(fftSize);
     for (int i = 0; i < fftSize; ++i)
         timeXAxis[i] = i;
 
-    if(chkCaptureToFile->GetValue() == true)
+    if (chkCaptureToFile->GetValue() == true)
     {
         captureSamples.store(true);
         wxFileDialog dlg(this, _("Save samples file"), "", "", "Text (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
@@ -204,7 +209,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         return;
     if (mStreamRunning.load() == true)
         return;
-    switch (cmbMode->GetSelection()%2)
+    switch (cmbMode->GetSelection() % 2)
     {
     case 0: //SISO
         cmbChannelVisibility->SetSelection(0);
@@ -269,18 +274,18 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         double cFreq[2] = { 0, 0 };
         txtCenterOffset1->GetValue().ToDouble(&cFreq[0]);
         txtCenterOffset2->GetValue().ToDouble(&cFreq[1]);
-        double bw[2] = {1, 1};
+        double bw[2] = { 1, 1 };
         txtBW1->GetValue().ToDouble(&bw[0]);
         txtBW2->GetValue().ToDouble(&bw[1]);
 
-        for (int c = 0; c<2; ++c)
+        for (int c = 0; c < 2; ++c)
         {
-            float f0 = (cFreq[c] - bw[c]/2) * 1e6;
-            float fn = (cFreq[c] + bw[c]/2) * 1e6;
+            float f0 = (cFreq[c] - bw[c] / 2) * 1e6;
+            float fn = (cFreq[c] + bw[c] / 2) * 1e6;
             float sum = 0;
             int bins = 0;
             const int lmsch = mFFTpanel->series[0]->visible ? 0 : 1;
-            for (int i = 0; i<fftSize; ++i)
+            for (int i = 0; i < fftSize; ++i)
                 if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
                 {
                     sum += streamData.fftBins[lmsch][i];
@@ -293,7 +298,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
         float pwr2 = (chPwr[1] != 0 ? (10 * log10(chPwr[1])) - dbOffset : -300);
         lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
-        lbldBc->SetLabel(wxString::Format("%.3f", pwr2-pwr1));
+        lbldBc->SetLabel(wxString::Format("%.3f", pwr2 - pwr1));
     }
 
     if (fftSize > 0)
@@ -307,16 +312,18 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         }
         if (chkFreezeConstellation->IsChecked() == false)
         {
-            mConstelationPanel->series[0]->AssignValues(&streamData.samplesI[0][0], &streamData.samplesQ[0][0], streamData.samplesQ[0].size());
-            mConstelationPanel->series[1]->AssignValues(&streamData.samplesI[1][0], &streamData.samplesQ[1][0], streamData.samplesQ[1].size());
+            mConstelationPanel->series[0]->AssignValues(
+                &streamData.samplesI[0][0], &streamData.samplesQ[0][0], streamData.samplesQ[0].size());
+            mConstelationPanel->series[1]->AssignValues(
+                &streamData.samplesI[1][0], &streamData.samplesQ[1][0], streamData.samplesQ[1].size());
         }
         if (chkFreezeFFT->IsChecked() == false)
         {
-            for (int ch = 0; ch<2; ++ch)
+            for (int ch = 0; ch < 2; ++ch)
             {
                 for (int s = 0; s < fftSize; ++s)
                 {
-                    streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (10 * log10(streamData.fftBins[ch][s]))  : -300);
+                    streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (10 * log10(streamData.fftBins[ch][s])) : -300);
                 }
             }
             mFFTpanel->series[0]->AssignValues(&fftFreqAxis[0], &streamData.fftBins[0][0], fftSize);
@@ -342,12 +349,14 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         mFFTpanel->Draw();
         enableFFT.store(true);
     }
-    else enableFFT.store(false);
+    else
+        enableFFT.store(false);
 
     updateGUI.store(true);
 }
 
-void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
+void fftviewer_frFFTviewer::StreamingLoop(
+    fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
 {
     const bool runTx = pthis->chkEnTx->GetValue();
     int avgCount = pthis->spinAvgCount->GetValue();
@@ -379,16 +388,15 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     vector<complex16_t> captureBuffer[cMaxChCount];
     uint32_t samplesToCapture = 0;
     uint32_t samplesCaptured = 0;
-    if(pthis->captureSamples.load() == true)
-        for(int ch=0; ch<channelsCount; ++ch)
+    if (pthis->captureSamples.load() == true)
+        for (int ch = 0; ch < channelsCount; ++ch)
         {
             samplesToCapture = pthis->spinCaptureCount->GetValue();
             captureBuffer[ch].resize(samplesToCapture);
             samplesCaptured = 0;
         }
 
-    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::I16
-                                                  : SDRDevice::StreamConfig::I12;
+    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::I16 : SDRDevice::StreamConfig::I12;
 
     SDRDevice::StreamConfig config;
     config.rxCount = channelsCount;
@@ -396,7 +404,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         config.txCount = channelsCount;
     config.format = SDRDevice::StreamConfig::F32;
     config.linkFormat = fmt;
-    for(int i=0; i<channelsCount; ++i)
+    for (int i = 0; i < channelsCount; ++i)
     {
         config.rxChannels[i] = i;
         config.txChannels[i] = i;
@@ -408,37 +416,37 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     const uint8_t chipIndex = pthis->lmsIndex;
 
-    std::vector< std::vector<complex32f_t> > txPattern(2);
-    for(uint i=0; i<txPattern.size(); ++i)
+    std::vector<std::vector<complex32f_t>> txPattern(2);
+    for (uint i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(fftSize);
-        float srcI[8];// = {1.0, 0.0, -1.0, 0.0};
-        float srcQ[8];// = {-1.0, 0.0, 1.0, 0.0};
-        for(int j=0; j<8; ++j)
+        float srcI[8]; // = {1.0, 0.0, -1.0, 0.0};
+        float srcQ[8]; // = {-1.0, 0.0, 1.0, 0.0};
+        for (int j = 0; j < 8; ++j)
         {
-            srcI[j] = cos(j*2*3.141592/8);// = {1.0, 0.0, -1.0, 0.0};
-            srcQ[j] = sin(j*2*3.141592/8);// = {-1.0, 0.0, 1.0, 0.0};
+            srcI[j] = cos(j * 2 * 3.141592 / 8); // = {1.0, 0.0, -1.0, 0.0};
+            srcQ[j] = sin(j * 2 * 3.141592 / 8); // = {-1.0, 0.0, 1.0, 0.0};
         }
 
-        float ampl = 1.0;//(j+1)*(1.0/(txPacketCount+1));
-        for(uint32_t k=0; k<fftSize; ++k)
+        float ampl = 1.0; //(j+1)*(1.0/(txPacketCount+1));
+        for (uint32_t k = 0; k < fftSize; ++k)
         {
             txPattern[i][k].q = srcQ[k & 7] * ampl;
             txPattern[i][k].i = srcI[k & 7] * ampl;
         }
     }
 
-    const lime::complex32f_t *src[2] = {txPattern[0].data(), txPattern[1].data()};
+    const lime::complex32f_t* src[2] = { txPattern[0].data(), txPattern[1].data() };
 
     try
     {
         pthis->device->StreamSetup(config, chipIndex);
         pthis->device->StreamStart(chipIndex);
-    }
-    catch (std::logic_error &e) {
+    } catch (std::logic_error& e)
+    {
         printf("%s\n", e.what());
-    }
-    catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         printf("%s\n", e.what());
     }
 
@@ -465,24 +473,25 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         {
             uint32_t samplesPopped;
             samplesPopped = pthis->device->StreamRx(chipIndex, buffers, fftSize, &rxMeta);
-            if(samplesPopped <= 0)
+            if (samplesPopped <= 0)
                 continue;
 
             int64_t rxTS = rxMeta.timestamp;
 
-            if (runTx) {
-                txMeta.timestamp = rxTS + 1020*128;
+            if (runTx)
+            {
+                txMeta.timestamp = rxTS + 1020 * 128;
                 pthis->device->StreamTx(chipIndex, buffers, fftSize, &txMeta);
             }
 
-            if(pthis->captureSamples.load())
+            if (pthis->captureSamples.load())
             {
-                for(int ch=0; ch<channelsCount; ++ch)
+                for (int ch = 0; ch < channelsCount; ++ch)
                 {
                     uint32_t samplesToCopy = min(samplesPopped, samplesToCapture);
-                    if(samplesToCopy <= 0)
+                    if (samplesToCopy <= 0)
                         break;
-                    memcpy((captureBuffer[ch].data() + samplesCaptured), buffers[ch], samplesToCopy*sizeof(complex32f_t));
+                    memcpy((captureBuffer[ch].data() + samplesCaptured), buffers[ch], samplesToCopy * sizeof(complex32f_t));
                     samplesToCapture -= samplesToCopy;
                     samplesCaptured += samplesToCopy;
                 }
@@ -492,7 +501,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             {
                 //take only first buffer for time domain display
                 //reset fftBins for accumulation
-                if(fftCounter==0)
+                if (fftCounter == 0)
                     for (unsigned i = 0; i < fftSize; ++i)
                     {
                         if (fftEnabled)
@@ -523,9 +532,11 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
                     int output_index = 0;
                     for (unsigned i = fftSize / 2 + 1; i < fftSize; ++i)
-                        localDataResults.fftBins[ch][output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
+                        localDataResults.fftBins[ch][output_index++] +=
+                            m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
                     for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
-                        localDataResults.fftBins[ch][output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
+                        localDataResults.fftBins[ch][output_index++] +=
+                            m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
                 }
             }
             ++fftCounter;
@@ -536,16 +547,16 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             //shift fft
             if (fftEnabled)
             {
-                for(int ch=0; ch<channelsCount; ++ch)
+                for (int ch = 0; ch < channelsCount; ++ch)
                 {
                     for (unsigned s = 0; s < fftSize; ++s)
                     {
-                        const float div = (float)fftCounter*fftSize*fftSize;
+                        const float div = (float)fftCounter * fftSize * fftSize;
                         localDataResults.fftBins[ch][s] /= div;
                     }
                 }
             }
-            if(pthis->stopProcessing.load() == false)
+            if (pthis->stopProcessing.load() == false)
             {
                 pthis->streamData = localDataResults;
                 wxThreadEvent* evt = new wxThreadEvent();
@@ -557,7 +568,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             fftEnabled = pthis->enableFFT.load();
             avgCount = pthis->averageCount.load();
             int wndFunctionSelection = pthis->windowFunctionID.load();
-            if(wndFunctionSelection != wndFunction)
+            if (wndFunctionSelection != wndFunction)
             {
                 wndFunction = wndFunctionSelection;
                 GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, 1);
@@ -565,7 +576,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         }
     }
 
-  /*  if(pthis->captureSamples.load() == true)
+    /*  if(pthis->captureSamples.load() == true)
     {
         ofstream fout;
         fout.open(pthis->captureFilename.c_str());
@@ -610,10 +621,10 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     pthis->device->StreamStop(chipIndex);
 
     for (int i = 0; i < channelsCount; ++i)
-        delete [] buffers[i];
-    delete [] buffers;
-    delete [] m_fftCalcIn;
-    delete [] m_fftCalcOut;
+        delete[] buffers[i];
+    delete[] buffers;
+    delete[] m_fftCalcIn;
+    delete[] m_fftCalcOut;
     pthis->mStreamRunning.store(false);
 }
 
@@ -638,19 +649,18 @@ void fftviewer_frFFTviewer::SetNyquistFrequency()
     if (freqHz <= 0)
         return;
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
-    mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
+    mFFTpanel->SetInitialDisplayArea(-freqHz / 2, freqHz / 2, -115, 0);
 }
 
 void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
 {
     SetNyquistFrequency();
 
-
     int tmp = cmbChannelVisibility->GetSelection();
     cmbChannelVisibility->Clear();
     cmbChannelVisibility->Append(_T("A"));
     cmbChannelVisibility->Append(_T("B"));
-    if (cmbMode->GetSelection()%2==1)
+    if (cmbMode->GetSelection() % 2 == 1)
         cmbChannelVisibility->Append(_T("A&B"));
     else if (tmp > 1)
         tmp = 0;
@@ -660,7 +670,7 @@ void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
 void fftviewer_frFFTviewer::OnFmtChange(wxCommandEvent& event)
 {
     int val = event.GetInt();
-    int max = 1.0;//val == 1 ? 32800 : 2050;
+    int max = 1.0; //val == 1 ? 32800 : 2050;
     if (val != cmbFmt->GetSelection())
         cmbFmt->SetSelection(val);
     mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -max, max);

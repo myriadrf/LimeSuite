@@ -18,14 +18,14 @@ class SDRDevice;
  */
 class LIME_API DeviceRegistry
 {
-public:
-     /*!
+  public:
+    /*!
      * Discovery identifiers that can be used to create a connection.
      * The hint may contain a connection type, serial number, ip address, etc.
      * \param hint an optional connection handle with some fields filled-in
      * \return a list of handles which can be used to make a connection
      */
-    static std::vector<DeviceHandle> enumerate(const DeviceHandle &hint = DeviceHandle());
+    static std::vector<DeviceHandle> enumerate(const DeviceHandle& hint = DeviceHandle());
 
     /*!
      * Create a connection from an identifying handle.
@@ -33,12 +33,12 @@ public:
      * \param handle a connection handle with fields filled-in
      * \return a pointer to a connection instance (or null)
      */
-    static SDRDevice *makeDevice(const DeviceHandle &handle);
+    static SDRDevice* makeDevice(const DeviceHandle& handle);
 
     /*!
      * Free an connection created by makeConnection().
      */
-    static void freeDevice(SDRDevice *conn);
+    static void freeDevice(SDRDevice* conn);
 
     //! Get a list of available registry entry modules by name
     static std::vector<std::string> moduleNames(void);
@@ -58,39 +58,37 @@ public:
  */
 class LIME_API DeviceRegistryEntry
 {
-public:
-
+  public:
     /*!
      * Instantiating the DeviceRegistryEntry
      * registers it into the connection registry.
      * The name describes the device board type,
      * that should be unique to the entry instance.
      */
-    DeviceRegistryEntry(const std::string &name);
+    DeviceRegistryEntry(const std::string& name);
 
     //! Unregister a connection type
     virtual ~DeviceRegistryEntry(void);
 
-     /*!
+    /*!
      * A discovery function takes a connection handle hint
      * and returns a list of identifiers that can be used
      * to create connection with makeConnection().
      * \param hint an optional connection handle with some fields filled-in
      * \return a list of handles which can be used to make a connection
      */
-    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle &hint) = 0;
+    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) = 0;
 
     /*!
      * A factory function creates a SDRDevice from a device handle.
      * \param handle a device handle with fields filled-in
      * \return a pointer to a SDRDevice instance
      */
-    virtual SDRDevice *make(const DeviceHandle &handle) = 0;
+    virtual SDRDevice* make(const DeviceHandle& handle) = 0;
 
-private:
+  private:
     std::string _name;
 };
 
-}
+} // namespace lime
 #endif
-

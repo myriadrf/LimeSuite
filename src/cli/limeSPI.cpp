@@ -14,8 +14,8 @@ static int32_t FindChipSelectByName(SDRDevice* device, const char* chipName)
     if (!chipName)
     {
         cerr << "specify SPI chip select, -c, --chip :" << endl;
-        for (const auto &nameIds : chipMap)
-            cerr << "\t" <<  nameIds.first.c_str() << endl;
+        for (const auto& nameIds : chipMap)
+            cerr << "\t" << nameIds.first.c_str() << endl;
         return -1;
     }
 
@@ -23,8 +23,8 @@ static int32_t FindChipSelectByName(SDRDevice* device, const char* chipName)
     if (iter == chipMap.end())
     {
         cerr << "Device does not contain target chip (" << chipName << "). Available list:" << endl;
-        for (const auto &nameIds : chipMap)
-            cerr << "\t" <<  nameIds.first.c_str() << endl;
+        for (const auto& nameIds : chipMap)
+            cerr << "\t" << nameIds.first.c_str() << endl;
         return -1;
     }
     return iter->second;
@@ -33,7 +33,7 @@ static int32_t FindChipSelectByName(SDRDevice* device, const char* chipName)
 static void PrintMISO(std::ostream& stream, const std::vector<uint32_t>& miso)
 {
     stream << std::hex << std::setfill('0');
-    for(uint32_t value : miso)
+    for (uint32_t value : miso)
         stream << std::setw(8) << value << std::endl;
 }
 
@@ -112,15 +112,13 @@ int main(int argc, char** argv)
     bool isWrite = false;
     bool isRead = false;
 
-    static struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
-        {"device", required_argument, 0, 'd'},
-        {"chip", required_argument, 0, 'c'},
-        {"read", required_argument, 0, 'r'},
-        {"write", required_argument, 0, 'w'},
-        {"file", optional_argument, 0, 'f'},
-        {0, 0, 0,  0}
-    };
+    static struct option long_options[] = { { "help", no_argument, 0, 'h' },
+        { "device", required_argument, 0, 'd' },
+        { "chip", required_argument, 0, 'c' },
+        { "read", required_argument, 0, 'r' },
+        { "write", required_argument, 0, 'w' },
+        { "file", optional_argument, 0, 'f' },
+        { 0, 0, 0, 0 } };
 
     int long_index = 0;
     int option = 0;
@@ -131,16 +129,26 @@ int main(int argc, char** argv)
         case 'h':
             return printHelp();
         case 'd':
-            if (optarg != NULL) devName = optarg;
+            if (optarg != NULL)
+                devName = optarg;
             break;
         case 'c':
-            if (optarg != NULL) chipName = optarg;
+            if (optarg != NULL)
+                chipName = optarg;
             break;
         case 'r':
-            if (optarg != NULL) {isRead = true; hexInput = optarg; }
+            if (optarg != NULL)
+            {
+                isRead = true;
+                hexInput = optarg;
+            }
             break;
         case 'w':
-            if (optarg != NULL) {isWrite = true; hexInput = optarg; }
+            if (optarg != NULL)
+            {
+                isWrite = true;
+                hexInput = optarg;
+            }
             break;
         case 'f':
             hexInputIsFilename = true;
@@ -196,11 +204,11 @@ int main(int argc, char** argv)
             cerr << "Failed to open file: " << filename << endl;
             return EXIT_FAILURE;
         }
-        inputFile.seekg(0,std::ios::end);
+        inputFile.seekg(0, std::ios::end);
         long fileSize = inputFile.tellg();
-        inputFile.seekg(0,std::ios::beg);
+        inputFile.seekg(0, std::ios::beg);
 
-        buffer.resize(fileSize+1); // +1 to add null termination
+        buffer.resize(fileSize + 1); // +1 to add null termination
         inputFile.read(&buffer[0], fileSize);
         buffer[fileSize] = 0;
         hexInput = buffer.data();
@@ -220,15 +228,17 @@ int main(int argc, char** argv)
 
     std::vector<uint32_t> miso(mosi.size());
 
-    try {
+    try
+    {
         device->SPI(chipSelect, mosi.data(), miso.data(), mosi.size());
-    } catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e)
+    {
         cerr << "SPI failed: " << e.what() << endl;
         return EXIT_FAILURE;
     }
 
     // fill in register addresses for convenience and reusage as write input
-    for (size_t i=0; i<miso.size(); ++i)
+    for (size_t i = 0; i < miso.size(); ++i)
         miso[i] |= mosi[i] << 16;
 
     if (isRead)
@@ -236,4 +246,3 @@ int main(int argc, char** argv)
 
     return EXIT_SUCCESS;
 }
-

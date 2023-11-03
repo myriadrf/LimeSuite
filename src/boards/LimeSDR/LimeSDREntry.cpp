@@ -9,11 +9,11 @@
 #include "FX3/FX3.h"
 
 #ifndef __unix__
-#include "windows.h"
-#include "CyAPI.h"
+    #include "windows.h"
+    #include "CyAPI.h"
 #else
-#include <libusb.h>
-#include <mutex>
+    #include <libusb.h>
+    #include <mutex>
 #endif
 
 #define CTR_W_REQCODE 0xC1
@@ -34,14 +34,15 @@ void __loadLimeSDR(void) //TODO fixme replace with LoadLibrary/dlopen
     static LimeSDREntry limesdrSupport; // self register on initialization
 }
 
-const std::set<VidPid> ids {{1204, 241}, {1204, 243}, {7504, 24840}};
+const std::set<VidPid> ids{ { 1204, 241 }, { 1204, 243 }, { 7504, 24840 } };
 
-LimeSDREntry::LimeSDREntry() : USBEntry("LimeSDR", ids)
+LimeSDREntry::LimeSDREntry()
+    : USBEntry("LimeSDR", ids)
 {
 }
 
 #ifndef __unix__
-std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
+std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
 {
     std::vector<DeviceHandle> handles;
 
@@ -53,7 +54,7 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
     CCyUSBDevice device;
     if (device.DeviceCount())
     {
-        for (int i = 0; i<device.DeviceCount(); ++i)
+        for (int i = 0; i < device.DeviceCount(); ++i)
         {
             if (device.IsOpen())
                 device.Close();
@@ -67,7 +68,7 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
                 handle.media = "USB";
             handle.name = device.DeviceName;
             std::wstring ws(device.SerialNumber);
-            handle.serial = std::string(ws.begin(),ws.end());
+            handle.serial = std::string(ws.begin(), ws.end());
             if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
                 handles.push_back(handle); //filter on serial
             device.Close();
@@ -78,24 +79,30 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle &hint)
 }
 #endif
 
-static const std::set<uint8_t> commandsToBulkTransfer =
-{
-    LMS64CProtocol::CMD_BRDSPI_WR, LMS64CProtocol::CMD_BRDSPI_RD,
-    LMS64CProtocol::CMD_LMS7002_WR, LMS64CProtocol::CMD_LMS7002_RD,
-    LMS64CProtocol::CMD_ANALOG_VAL_WR, LMS64CProtocol::CMD_ANALOG_VAL_RD,
+static const std::set<uint8_t> commandsToBulkTransfer = {
+    LMS64CProtocol::CMD_BRDSPI_WR,
+    LMS64CProtocol::CMD_BRDSPI_RD,
+    LMS64CProtocol::CMD_LMS7002_WR,
+    LMS64CProtocol::CMD_LMS7002_RD,
+    LMS64CProtocol::CMD_ANALOG_VAL_WR,
+    LMS64CProtocol::CMD_ANALOG_VAL_RD,
     LMS64CProtocol::CMD_ADF4002_WR,
     LMS64CProtocol::CMD_LMS7002_RST,
-    LMS64CProtocol::CMD_GPIO_DIR_WR, LMS64CProtocol::CMD_GPIO_DIR_RD,
-    LMS64CProtocol::CMD_GPIO_WR, LMS64CProtocol::CMD_GPIO_RD,
+    LMS64CProtocol::CMD_GPIO_DIR_WR,
+    LMS64CProtocol::CMD_GPIO_DIR_RD,
+    LMS64CProtocol::CMD_GPIO_WR,
+    LMS64CProtocol::CMD_GPIO_RD,
 };
 
 class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
 {
-public:
-    explicit USB_CSR_Pipe_SDR(FX3& port) : USB_CSR_Pipe(), port(port) {};
+  public:
+    explicit USB_CSR_Pipe_SDR(FX3& port)
+        : USB_CSR_Pipe()
+        , port(port){};
 
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {    
+    {
         const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
 
         if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
@@ -103,7 +110,8 @@ public:
             return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
         }
 
-        return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, 1000);
+        return port.ControlTransfer(
+            LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, 1000);
     }
 
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
@@ -115,13 +123,15 @@ public:
             return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
         }
 
-        return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, 1000);
+        return port.ControlTransfer(
+            LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, 1000);
     }
-protected:
+
+  protected:
     FX3& port;
 };
 
-SDRDevice *LimeSDREntry::make(const DeviceHandle &handle)
+SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
 {
     const auto splitPos = handle.addr.find(":");
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);

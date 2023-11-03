@@ -21,19 +21,22 @@ class wxButton;
 class wxStaticBoxSizer;
 //*)
 
-namespace lime{
+namespace lime {
 class ADF4002;
 class SDRDevice;
-}
+} // namespace lime
 
 #include "ISOCPanel.h"
 
-class ADF4002_wxgui: public ISOCPanel
+class ADF4002_wxgui : public ISOCPanel
 {
-public:
-
-    ADF4002_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int styles=0);
-    void Initialize(lime::ADF4002 *soc);
+  public:
+    ADF4002_wxgui(wxWindow* parent,
+        wxWindowID id = wxID_ANY,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        int styles = 0);
+    void Initialize(lime::ADF4002* soc);
     virtual ~ADF4002_wxgui();
 
     void SetGuiDefaults();
@@ -91,8 +94,7 @@ public:
     wxComboBox* cmbABW;
     //*)
 
-protected:
-
+  protected:
     //(*Identifiers(ADF4002_wxgui)
     static const long ID_STATICTEXT1;
     static const long ID_STATICTEXT2;
@@ -146,14 +148,14 @@ protected:
     static const long ID_BUTTON2;
     //*)
 
-private:
+  private:
     lime::ADF4002* m_pModule;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);
     void OnbtnUploadClick(wxCommandEvent& event);
     //*)
 
-protected:
+  protected:
     DECLARE_EVENT_TABLE()
 };
 

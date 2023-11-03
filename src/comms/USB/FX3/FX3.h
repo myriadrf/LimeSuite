@@ -11,22 +11,22 @@
 #include <ciso646>
 
 #ifndef __unix__
-#include "windows.h"
-#include "CyAPI.h"
+    #include "windows.h"
+    #include "CyAPI.h"
 #else
-#include <libusb.h>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
+    #include <libusb.h>
+    #include <mutex>
+    #include <condition_variable>
+    #include <chrono>
 #endif
 
-namespace lime
-{
+namespace lime {
 
 class USBTransferContext_FX3 : public USBTransferContext
 {
-public:
-    USBTransferContext_FX3() : USBTransferContext()
+  public:
+    USBTransferContext_FX3()
+        : USBTransferContext()
     {
 #ifndef __unix__
         inOvLap = new OVERLAPPED;
@@ -47,7 +47,7 @@ public:
 
     bool Reset() override
     {
-        if(used)
+        if (used)
         {
             return false;
         }
@@ -68,20 +68,19 @@ public:
 
 class FX3 : public USBGeneric
 {
-public:
+  public:
     FX3(void* usbContext = nullptr);
     virtual ~FX3();
 
-    virtual bool Connect(uint16_t vid, uint16_t pid, const std::string &serial = "") override;
+    virtual bool Connect(uint16_t vid, uint16_t pid, const std::string& serial = "") override;
     virtual void Disconnect() override;
 
 #ifndef __unix__
-    virtual int BeginDataXfer(uint8_t *buffer, uint32_t length,
-                              uint8_t endPointAddr) override;
+    virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
-    virtual int FinishDataXfer(uint8_t *buffer, uint32_t length, int contextHandle) override;
+    virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
 };
 
-}
+} // namespace lime

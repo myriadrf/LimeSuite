@@ -7,20 +7,20 @@
 
 class GNUPlotPipe
 {
-public:
+  public:
     GNUPlotPipe(bool persistent = true)
     {
 #ifdef __unix__
-        if(persistent)
+        if (persistent)
             pipeHandle = popen("gnuplot -persistent -noraise", "we");
         else
             pipeHandle = popen("gnuplot -noraise", "we");
 #else
-        if(persistent)
+        if (persistent)
             pipeHandle = _popen("gnuplot -persistent", "w");
         else
             pipeHandle = _popen("gnuplot", "w");
-#endif       
+#endif
     }
     ~GNUPlotPipe()
     {
@@ -48,12 +48,10 @@ public:
         va_end(argList);
     }
 
-    void flush()
-    {
-        fflush(pipeHandle);
-    }
-protected:
-    FILE *pipeHandle;
+    void flush() { fflush(pipeHandle); }
+
+  protected:
+    FILE* pipeHandle;
 };
 
 #endif
