@@ -110,8 +110,7 @@ void Equalizer::Configure(const Equalizer::Config& state)
         WriteRegister(BYPASSGAIN_CFR, cfr.bypassGain);
 
         assert(fir.coefficientsCount <= 32);
-        if (fir.coefficients)
-            SetFIRCoefficients(fir.coefficients, fir.coefficientsCount);
+        SetFIRCoefficients(fir.coefficients, fir.coefficientsCount);
         // WriteRegister(ODD_FIR, fir.coefficientsCount % 2); // set in SetFIRCoefficients
         WriteRegister(SLEEP_FIR, fir.sleep);
         WriteRegister(BYPASS_FIR, fir.bypass);
