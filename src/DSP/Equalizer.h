@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <memory>
 #include "Register.h"
 
 namespace lime {
@@ -35,7 +36,7 @@ class Equalizer
         Config() { memset(this, 0, sizeof(Config)); }
     };
 
-    Equalizer(ISPI* comms, uint32_t spiBusAddr);
+    Equalizer(std::shared_ptr<ISPI> comms, uint32_t spiBusAddr);
     ~Equalizer();
     void Configure(const Equalizer::Config& cfg);
 
@@ -43,7 +44,7 @@ class Equalizer
     uint8_t GetOversample();
 
   private:
-    ISPI* m_Comms;
+    std::shared_ptr<ISPI> m_Comms;
     uint32_t mSPIbusAddr;
     void WriteRegister(const Register& reg, uint16_t value);
     uint16_t ReadRegister(const Register& reg);

@@ -110,7 +110,7 @@ static bool HasFPGAClockPhaseSearch(uint8_t targetDevice, uint8_t version, uint8
     }
 }
 
-FPGA::FPGA(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI)
+FPGA::FPGA(std::shared_ptr<lime::ISPI> fpgaSPI, std::shared_ptr<lime::ISPI> lms7002mSPI)
     : fpgaPort(fpgaSPI)
     , lms7002mPort(lms7002mSPI)
     , useCache(false)

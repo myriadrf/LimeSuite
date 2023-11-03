@@ -7,7 +7,7 @@
 
 using namespace lime;
 
-CDCM_Dev::CDCM_Dev(ISPI* comms, uint16_t SPI_BASE_ADDR)
+CDCM_Dev::CDCM_Dev(std::shared_ptr<lime::ISPI> comms, uint16_t SPI_BASE_ADDR)
     : comms(comms)
     , SPI_BASE_ADDR(SPI_BASE_ADDR)
     , is_locked(false)

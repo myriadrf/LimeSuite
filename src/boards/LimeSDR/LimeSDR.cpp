@@ -58,7 +58,10 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
-LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, lime::ISerialPort* commsPort)
+LimeSDR::LimeSDR(std::shared_ptr<lime::IComms> spiLMS,
+    std::shared_ptr<lime::IComms> spiFPGA,
+    USBGeneric* streamPort,
+    lime::ISerialPort* commsPort)
     : mStreamPort(streamPort)
     , mSerialPort(commsPort)
     , mlms7002mPort(spiLMS)
@@ -130,8 +133,6 @@ LimeSDR::~LimeSDR()
     delete mStreamPort;
     delete mFPGA;
     delete mSerialPort;
-    delete mlms7002mPort;
-    delete mfpgaPort;
 }
 
 // Verify and configure given settings

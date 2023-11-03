@@ -221,8 +221,8 @@ SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
     USB_CSR_Pipe* usbPipe = new USB_CSR_Pipe_Mini(*usbComms);
 
     // protocol layer
-    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_USB(*usbPipe);
-    IComms* route_fpga = new LMS64C_FPGA_Over_USB(*usbPipe);
+    std::shared_ptr<lime::IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_USB(*usbPipe) };
+    std::shared_ptr<lime::IComms> route_fpga{ new LMS64C_FPGA_Over_USB(*usbPipe) };
 
     return new LimeSDR_Mini(route_lms7002m, route_fpga, usbComms, usbPipe);
 }

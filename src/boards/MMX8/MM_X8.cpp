@@ -21,8 +21,8 @@ static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
-    std::vector<lime::IComms*>& spiFPGA,
+LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
+    std::vector<std::shared_ptr<IComms>>& spiFPGA,
     std::vector<lime::LitePCIe*> trxStreams,
     ISPI* adfComms)
     : mTRXStreamPorts(trxStreams)

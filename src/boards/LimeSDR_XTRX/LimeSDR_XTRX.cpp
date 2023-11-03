@@ -49,7 +49,7 @@ int LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_XTRX::LimeSDR_XTRX(lime::IComms* spiRFsoc, lime::IComms* spiFPGA, lime::LitePCIe* sampleStream)
+LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc, std::shared_ptr<IComms> spiFPGA, lime::LitePCIe* sampleStream)
     : LMS7002M_SDRDevice()
     , lms7002mPort(spiRFsoc)
     , fpgaPort(spiFPGA)
@@ -525,7 +525,8 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
 }
 
 enum // TODO: replace
-{ LMS_PATH_NONE = 0, ///<No active path (RX or TX)
+{
+    LMS_PATH_NONE = 0, ///<No active path (RX or TX)
     LMS_PATH_LNAH = 1, ///<RX LNA_H port
     LMS_PATH_LNAL = 2, ///<RX LNA_L port
     LMS_PATH_LNAW = 3, ///<RX LNA_W port

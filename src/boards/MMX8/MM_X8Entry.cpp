@@ -158,15 +158,15 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
 {
     LitePCIe* control = new LitePCIe();
     std::vector<LitePCIe*> trxStreams(8);
-    std::vector<IComms*> controls(8);
-    std::vector<IComms*> fpga(8);
+    std::vector<std::shared_ptr<IComms>> controls(8);
+    std::vector<std::shared_ptr<IComms>> fpga(8);
     ISPI* adfComms = new LMS64C_ADF_Over_PCIe_MMX8(control, 0);
     for (size_t i = 0; i < controls.size(); ++i)
     {
-        controls[i] = new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i + 1);
-        fpga[i] = new LMS64C_FPGA_Over_PCIe_MMX8(control, i + 1);
+        controls[i] = std::shared_ptr<LMS64C_LMS7002M_Over_PCIe_MMX8>(new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i + 1));
+        fpga[i] = std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, i + 1));
     }
-    fpga.push_back(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0));
+    fpga.push_back(std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0)));
 
     try
     {

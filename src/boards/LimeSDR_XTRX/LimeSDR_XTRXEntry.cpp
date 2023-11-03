@@ -83,8 +83,8 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
     LitePCIe* stream = new LitePCIe();
 
     // protocol layer
-    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_PCIe(control);
-    IComms* route_fpga = new LMS64C_FPGA_Over_PCIe(control);
+    std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_PCIe(control) };
+    std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_PCIe(control) };
 
     try
     {

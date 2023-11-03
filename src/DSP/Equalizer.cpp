@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <vector>
+#include <memory>
 
 using namespace lime;
 
@@ -56,7 +57,7 @@ static constexpr Register cmbInsel(0x0080, 2, 2, 0, 0);
 
 static constexpr Register MAC(0xFFFF, 1, 0, 0, 0);
 
-Equalizer::Equalizer(ISPI* comms, uint32_t spiBusAddr)
+Equalizer::Equalizer(std::shared_ptr<ISPI> comms, uint32_t spiBusAddr)
     : m_Comms(comms)
     , mSPIbusAddr(spiBusAddr)
 {

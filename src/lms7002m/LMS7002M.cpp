@@ -147,7 +147,7 @@ void LMS7002M::Log(LogType type, const char* format, va_list argList)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(ISPI* port)
+void LMS7002M::SetConnection(std::shared_ptr<lime::ISPI> port)
 {
     controlPort = port;
 
@@ -166,7 +166,7 @@ void LMS7002M::SetConnection(ISPI* port)
 /** @brief Creates LMS7002M main control object.
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
-LMS7002M::LMS7002M(ISPI* port)
+LMS7002M::LMS7002M(std::shared_ptr<lime::ISPI> port)
     : mCallback_onCGENChange(nullptr)
     , mCallback_onCGENChange_userData(nullptr)
     , useCache(0)
@@ -1739,9 +1739,9 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     const float_type refClk_Hz = GetReferenceClk_SX(tx);
     assert(refClk_Hz > 0);
     integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
-    fractionalPart = (uint32_t)(
-        (VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) *
-        1048576);
+    fractionalPart = (uint32_t)((VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) -
+                                    (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) *
+                                1048576);
 
     Channel ch = this->GetActiveChannel();
     this->SetActiveChannel(tx ? ChSXT : ChSXR);

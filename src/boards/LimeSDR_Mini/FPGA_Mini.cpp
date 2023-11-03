@@ -10,7 +10,7 @@
 
 namespace lime {
 
-FPGA_Mini::FPGA_Mini(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI)
+FPGA_Mini::FPGA_Mini(std::shared_ptr<lime::ISPI> fpgaSPI, std::shared_ptr<lime::ISPI> lms7002mSPI)
     : FPGA(fpgaSPI, lms7002mSPI)
 {
 }

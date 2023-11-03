@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <array>
+#include <memory>
 
 #include "PacketsFIFO.h"
 #include "dataTypes.h"
@@ -28,8 +29,8 @@ class LimeSDR_MMX8 : public lime::SDRDevice
 {
   public:
     LimeSDR_MMX8() = delete;
-    LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
-        std::vector<lime::IComms*>& spiFPGA,
+    LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
+        std::vector<std::shared_ptr<IComms>>& spiFPGA,
         std::vector<lime::LitePCIe*> trxStreams,
         ISPI* adfComms);
     virtual ~LimeSDR_MMX8();
@@ -80,7 +81,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     enum class eMemoryDevice { FPGA_FLASH, COUNT };
 
   private:
-    lime::IComms* mMainFPGAcomms;
+    std::shared_ptr<IComms> mMainFPGAcomms;
     Descriptor mDeviceDescriptor;
     std::vector<LitePCIe*> mTRXStreamPorts;
     std::vector<lime::LimeSDR_XTRX*> mSubDevices;

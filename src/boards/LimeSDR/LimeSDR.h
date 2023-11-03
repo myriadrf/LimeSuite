@@ -21,7 +21,10 @@ class TRXLooper_USB;
 class LimeSDR : public LMS7002M_SDRDevice
 {
   public:
-    LimeSDR(IComms* spiLMS, IComms* spiFPGA, USBGeneric* mStreamPort, ISerialPort* commsPort);
+    LimeSDR(std::shared_ptr<lime::IComms> spiLMS,
+        std::shared_ptr<lime::IComms> spiFPGA,
+        USBGeneric* mStreamPort,
+        ISerialPort* commsPort);
     virtual ~LimeSDR();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
@@ -68,8 +71,8 @@ class LimeSDR : public LMS7002M_SDRDevice
   private:
     USBGeneric* mStreamPort;
     ISerialPort* mSerialPort;
-    IComms* mlms7002mPort;
-    IComms* mfpgaPort;
+    std::shared_ptr<lime::IComms> mlms7002mPort;
+    std::shared_ptr<lime::IComms> mfpgaPort;
 };
 
 class LimeSDREntry : public DeviceRegistryEntry
