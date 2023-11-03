@@ -144,6 +144,22 @@ OpenGLGraph::~OpenGLGraph()
     {
         delete m_font;
     }
+    if (m_glContext)
+    {
+        delete m_glContext;
+    }
+    if (m_timer)
+    {
+        delete m_timer;
+    }
+
+    for (auto serie : series)
+    {
+        if (serie != nullptr)
+        {
+            delete serie;
+        }
+    }
 }
 
 bool OpenGLGraph::Initialize(int width, int height)

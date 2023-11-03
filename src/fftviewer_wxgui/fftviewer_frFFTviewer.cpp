@@ -147,7 +147,14 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow* parent, wxWindowID id)
 fftviewer_frFFTviewer::~fftviewer_frFFTviewer()
 {
     if (mStreamRunning == true)
+    {
         StopStreaming();
+    }
+
+    if (mGUIupdater != nullptr)
+    {
+        delete mGUIupdater;
+    }
 }
 
 void fftviewer_frFFTviewer::OnWindowFunctionChanged(wxCommandEvent& event)

@@ -97,7 +97,7 @@ class cDataSerie
         , vboIndex(0)
         , visible(true)
         , modified(true)
-        , values(NULL)
+        , values(nullptr)
     {
         color = 0x000000FF;
         Initialize(10);
@@ -105,8 +105,10 @@ class cDataSerie
 
     ~cDataSerie()
     {
-        if (values)
+        if (values != nullptr)
+        {
             delete[] values;
+        }
     };
 
     void AssignValues(float* xserie, float* yserie, unsigned int count)
@@ -139,9 +141,11 @@ class cDataSerie
 
     void Clear()
     {
-        if (values)
+        if (values != nullptr)
+        {
             delete[] values;
-        values = NULL;
+        }
+        values = nullptr;
         size = 0;
         allocatedSize = 0;
         modified = true;
