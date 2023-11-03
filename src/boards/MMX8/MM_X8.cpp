@@ -9,7 +9,6 @@
 #include "lms7002m/LMS7002M_validation.h"
 #include "FPGA_common.h"
 #include "DSP/Equalizer.h"
-#include "protocols/ADCUnits.h"
 
 #include "boards/LimeSDR_XTRX/LimeSDR_XTRX.h"
 #include "limesuite/DeviceNode.h"
@@ -79,7 +78,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
         {
             char ctemp[512];
             sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
-            desc.memoryDevices.push_back({ ctemp, (i + 1) << 8 | s.id });
+            desc.memoryDevices.push_back({ ctemp, (static_cast<uint32_t>(i) + 1) << 8 | s.id });
             memorySelectToDevice[(i + 1) << 8 | s.id] = mSubDevices[i];
         }
 

@@ -12,7 +12,6 @@
 #include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
-#include "ADCUnits.h"
 
 #include <assert.h>
 #include <memory>
@@ -21,7 +20,14 @@
 #include <cmath>
 
 #ifdef __unix__
+    #ifdef __GNUC__
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wpedantic"
+    #endif
     #include <libusb.h>
+    #ifdef __GNUC__
+        #pragma GCC diagnostic pop
+    #endif
 #endif
 
 #define CTR_W_REQCODE 0xC1
@@ -461,25 +467,6 @@ void LimeSDR::EnableCache(bool enable)
     mLMSChips[0]->EnableValuesCache(enable);
     if (mFPGA)
         mFPGA->EnableValuesCache(enable);
-}
-
-static void printPacket(const LMS64CPacket& pkt, uint8_t blockSize, const char* prefix)
-{
-    printf("%s", prefix);
-    int i = 0;
-    for (; i < 8; ++i)
-        printf("%02X ", reinterpret_cast<const uint8_t*>(&pkt)[i]);
-    for (; i < 8 + pkt.blockCount * blockSize; i += blockSize)
-    {
-        int j = 0;
-        for (; j < blockSize / 2; ++j)
-            printf("%02X", reinterpret_cast<const uint8_t*>(&pkt)[i + j]);
-        printf(" ");
-        for (; j < blockSize; ++j)
-            printf("%02X", reinterpret_cast<const uint8_t*>(&pkt)[i + j]);
-        printf(" ");
-    }
-    printf("\n");
 }
 
 void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)

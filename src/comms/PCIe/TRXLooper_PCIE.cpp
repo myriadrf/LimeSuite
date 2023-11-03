@@ -485,6 +485,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     case SDRDevice::StreamConfig::DataFormat::F32:
                         srcPkt->Scale<complex32f_t>(1, -1, mConfig.txCount);
                         break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -932,6 +934,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                     break;
                 case SDRDevice::StreamConfig::DataFormat::F32:
                     outputPkt->Scale<complex32f_t>(1, -1, mConfig.rxCount);
+                    break;
+                default:
                     break;
                 }
             }
