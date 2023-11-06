@@ -18,12 +18,12 @@ class TRXLooper_PCIE : public lime::TRXLooper
     TRXLooper_PCIE(
         std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex);
     virtual ~TRXLooper_PCIE();
-    virtual void Setup(const lime::SDRDevice::StreamConfig& config);
+    virtual void Setup(const SDRDevice::StreamConfig& config);
     virtual void Start();
 
     static int UploadTxWaveform(FPGA* fpga,
         std::shared_ptr<LitePCIe> port,
-        const lime::SDRDevice::StreamConfig& config,
+        const SDRDevice::StreamConfig& config,
         uint8_t moduleIndex,
         const void** samples,
         uint32_t count);

@@ -22,7 +22,7 @@ class ISPI;
 class FPGA
 {
   public:
-    FPGA(std::shared_ptr<lime::ISPI> fpgaSPI, std::shared_ptr<lime::ISPI> lms7002mSPI);
+    FPGA(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI);
     virtual ~FPGA(){};
 
     int StartStreaming();
@@ -77,8 +77,8 @@ class FPGA
     int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title = nullptr);
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
-    std::shared_ptr<lime::ISPI> fpgaPort;
-    std::shared_ptr<lime::ISPI> lms7002mPort;
+    std::shared_ptr<ISPI> fpgaPort;
+    std::shared_ptr<ISPI> lms7002mPort;
 
   private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);

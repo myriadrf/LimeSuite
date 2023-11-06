@@ -147,7 +147,7 @@ void LMS7002M::Log(LogType type, const char* format, va_list argList)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(std::shared_ptr<lime::ISPI> port)
+void LMS7002M::SetConnection(std::shared_ptr<ISPI> port)
 {
     controlPort = port;
 
@@ -166,7 +166,7 @@ void LMS7002M::SetConnection(std::shared_ptr<lime::ISPI> port)
 /** @brief Creates LMS7002M main control object.
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
-LMS7002M::LMS7002M(std::shared_ptr<lime::ISPI> port)
+LMS7002M::LMS7002M(std::shared_ptr<ISPI> port)
     : mCallback_onCGENChange(nullptr)
     , mCallback_onCGENChange_userData(nullptr)
     , useCache(0)

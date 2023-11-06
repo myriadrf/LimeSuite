@@ -38,8 +38,8 @@ static constexpr uint8_t spi_FPGA = 1;
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (runtime)", 0, 0, 255, false };
 static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
 
-LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<lime::IComms> spiLMS,
-    std::shared_ptr<lime::IComms> spiFPGA,
+LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
+    std::shared_ptr<IComms> spiFPGA,
     std::shared_ptr<USBGeneric> streamPort,
     std::shared_ptr<ISerialPort> commsPort)
     : mStreamPort(streamPort)

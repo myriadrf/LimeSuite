@@ -128,7 +128,7 @@ TRXLooper_PCIE::~TRXLooper_PCIE()
 {
 }
 
-void TRXLooper_PCIE::Setup(const lime::SDRDevice::StreamConfig& config)
+void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
 {
     if (config.rxCount > 0 && !mRxArgs.port->IsOpen())
         throw std::runtime_error("Rx data port not open\n");

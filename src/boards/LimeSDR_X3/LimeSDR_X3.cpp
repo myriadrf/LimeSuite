@@ -57,7 +57,7 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
 class SlaveSelectShim : public ISPI
 {
   public:
-    SlaveSelectShim(std::shared_ptr<lime::IComms> comms, uint32_t slaveId)
+    SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId)
         : port(comms)
         , slaveId(slaveId){};
     virtual ~SlaveSelectShim(){};
@@ -69,15 +69,14 @@ class SlaveSelectShim : public ISPI
     virtual int ResetDevice() { return port->ResetDevice(slaveId); }
 
   private:
-    std::shared_ptr<lime::IComms> port;
+    std::shared_ptr<IComms> port;
     uint32_t slaveId;
 };
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_X3::LimeSDR_X3(std::shared_ptr<lime::IComms> spiLMS7002M,
-    std::shared_ptr<lime::IComms> spiFPGA,
-    std::vector<std::shared_ptr<LitePCIe>> trxStreams)
+LimeSDR_X3::LimeSDR_X3(
+    std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams)
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
     , fpgaPort(spiFPGA)

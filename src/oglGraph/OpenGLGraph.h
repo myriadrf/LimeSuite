@@ -108,6 +108,7 @@ class cDataSerie
         if (values != nullptr)
         {
             delete[] values;
+            values = nullptr;
         }
     };
 
@@ -144,8 +145,8 @@ class cDataSerie
         if (values != nullptr)
         {
             delete[] values;
+            values = nullptr;
         }
-        values = nullptr;
         size = 0;
         allocatedSize = 0;
         modified = true;

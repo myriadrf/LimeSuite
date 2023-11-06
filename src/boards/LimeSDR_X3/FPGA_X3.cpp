@@ -10,14 +10,14 @@
 
 namespace lime {
 
-FPGA_X3::FPGA_X3(std::shared_ptr<lime::ISPI> fpgaSPI, std::shared_ptr<lime::ISPI> lms7002mSPI)
+FPGA_X3::FPGA_X3(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI)
     : FPGA(fpgaSPI, lms7002mSPI)
 {
 }
 
 int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
-    lime::FPGA::FPGA_PLL_clock clocks[2];
+    FPGA::FPGA_PLL_clock clocks[2];
 
     std::cerr << "FPGA_X3" << std::endl;
     printf("Phases : tx phase %f rx phase %f \n", txPhase, rxPhase);
