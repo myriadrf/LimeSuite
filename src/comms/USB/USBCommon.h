@@ -3,6 +3,7 @@
 
 #include "limesuite/IComms.h"
 #include "LMS64CProtocol.h"
+#include <memory>
 
 namespace lime {
 
@@ -29,7 +30,7 @@ class USB_CSR_Pipe : public ISerialPort
 class LMS64C_LMS7002M_Over_USB : public IComms
 {
   public:
-    LMS64C_LMS7002M_Over_USB(USB_CSR_Pipe& dataPort);
+    LMS64C_LMS7002M_Over_USB(std::shared_ptr<USB_CSR_Pipe> dataPort);
 
     virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
     virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
@@ -37,13 +38,13 @@ class LMS64C_LMS7002M_Over_USB : public IComms
     virtual int ResetDevice(int chipSelect) override;
 
   private:
-    USB_CSR_Pipe& pipe;
+    std::shared_ptr<USB_CSR_Pipe> pipe;
 };
 
 class LMS64C_FPGA_Over_USB : public IComms
 {
   public:
-    LMS64C_FPGA_Over_USB(USB_CSR_Pipe& dataPort);
+    LMS64C_FPGA_Over_USB(std::shared_ptr<USB_CSR_Pipe> dataPort);
 
     void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
     void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
@@ -61,7 +62,7 @@ class LMS64C_FPGA_Over_USB : public IComms
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;
 
   private:
-    USB_CSR_Pipe& pipe;
+    std::shared_ptr<USB_CSR_Pipe> pipe;
 };
 
 } // namespace lime

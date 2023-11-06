@@ -49,7 +49,6 @@ FT601::FT601(void* usbContext)
     : contexts(nullptr)
     , isConnected(false)
 {
-    isConnected = false;
 #ifdef __unix__
     dev_handle = nullptr;
     ctx = reinterpret_cast<libusb_context*>(usbContext);
@@ -77,6 +76,12 @@ FT601::~FT601()
         {
             gUSBProcessingThread.join();
         }
+    }
+
+    if (contexts != nullptr)
+    {
+        delete[] contexts;
+        contexts = nullptr;
     }
 }
 
@@ -565,7 +570,7 @@ int FT601::ReinitPipe(unsigned char ep)
 int FT601::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
-    unsigned char wbuffer[20] = { 0 };
+    unsigned char wbuffer[20]{ 0 };
 
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;

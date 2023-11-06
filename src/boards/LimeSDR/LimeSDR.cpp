@@ -61,7 +61,7 @@ static inline void ValidateChannel(uint8_t channel)
 LimeSDR::LimeSDR(std::shared_ptr<lime::IComms> spiLMS,
     std::shared_ptr<lime::IComms> spiFPGA,
     USBGeneric* streamPort,
-    lime::ISerialPort* commsPort)
+    std::shared_ptr<ISerialPort> commsPort)
     : mStreamPort(streamPort)
     , mSerialPort(commsPort)
     , mlms7002mPort(spiLMS)
@@ -132,7 +132,6 @@ LimeSDR::~LimeSDR()
 
     delete mStreamPort;
     delete mFPGA;
-    delete mSerialPort;
 }
 
 // Verify and configure given settings

@@ -23,7 +23,7 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     LimeSDR_Mini(std::shared_ptr<lime::IComms> spiLMS,
         std::shared_ptr<lime::IComms> spiFPGA,
         USBGeneric* mStreamPort,
-        ISerialPort* commsPort);
+        std::shared_ptr<ISerialPort> commsPort);
     virtual ~LimeSDR_Mini();
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
@@ -67,7 +67,7 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
 
   private:
     USBGeneric* mStreamPort;
-    ISerialPort* mSerialPort;
+    std::shared_ptr<ISerialPort> mSerialPort;
     std::shared_ptr<lime::IComms> mlms7002mPort;
     std::shared_ptr<lime::IComms> mfpgaPort;
 };
