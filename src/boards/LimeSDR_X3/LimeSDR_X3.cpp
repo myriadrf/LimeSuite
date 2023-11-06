@@ -170,6 +170,8 @@ LimeSDR_X3::~LimeSDR_X3()
         delete mLMSChips[i];
         mLMSChips[i] = nullptr;
     }
+
+    delete mFPGA;
 }
 
 inline bool InRange(double val, double min, double max)

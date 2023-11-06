@@ -42,13 +42,13 @@ LitePCIe::~LitePCIe()
     Close();
 }
 
-int LitePCIe::Open(const char* deviceFilename, uint32_t flags)
+int LitePCIe::Open(const std::string& deviceFilename, uint32_t flags)
 {
     mFilePath = deviceFilename;
     // use O_RDWR for now, because MMAP PROT_WRITE imples PROT_READ and will fail if file is opened write only
     flags &= ~O_WRONLY;
     flags |= O_RDWR;
-    mFileDescriptor = open(deviceFilename, flags);
+    mFileDescriptor = open(mFilePath.c_str(), flags);
     if (mFileDescriptor < 0)
     {
         isConnected = false;

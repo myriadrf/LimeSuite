@@ -78,7 +78,7 @@ class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 {
   public:
     LMS64C_LMS7002M_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex)
-        : pipe(*dataPort)
+        : pipe(dataPort)
         , subdeviceIndex(subdeviceIndex)
     {
     }
@@ -98,7 +98,7 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
 {
   public:
     LMS64C_FPGA_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex)
-        : pipe(*dataPort)
+        : pipe(dataPort)
         , subdeviceIndex(subdeviceIndex)
     {
     }
@@ -136,7 +136,7 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 {
   public:
     LMS64C_ADF_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex)
-        : pipe(*dataPort)
+        : pipe(dataPort)
         , subdeviceIndex(subdeviceIndex)
     {
     }

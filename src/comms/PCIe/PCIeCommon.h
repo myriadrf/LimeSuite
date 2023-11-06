@@ -10,12 +10,12 @@ using namespace lime;
 class PCIE_CSR_Pipe : public ISerialPort
 {
   public:
-    explicit PCIE_CSR_Pipe(LitePCIe& port);
+    explicit PCIE_CSR_Pipe(LitePCIe* port);
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
 
   protected:
-    LitePCIe& port;
+    LitePCIe* port;
 };
 
 class LMS64C_LMS7002M_Over_PCIe : public lime::IComms

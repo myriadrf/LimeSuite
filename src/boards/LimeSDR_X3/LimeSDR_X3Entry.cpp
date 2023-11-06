@@ -87,7 +87,7 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
     try
     {
         std::string controlFile(handle.addr + "_control");
-        control->Open(controlFile.c_str(), O_RDWR);
+        control->Open(controlFile, O_RDWR);
 
         std::string streamFile("");
         for (int i = 0; i < 3; ++i)
@@ -97,6 +97,7 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
             trxStreams[i] = new LitePCIe();
             trxStreams[i]->SetPathName(portName);
         }
+
         return new LimeSDR_X3(route_lms7002m, route_fpga, std::move(trxStreams));
     } catch (std::runtime_error& e)
     {
