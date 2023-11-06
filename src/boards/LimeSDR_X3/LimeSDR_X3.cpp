@@ -36,6 +36,105 @@ static SDRDevice::CustomParameter cp_temperature = { "Board Temperature", 1, 0, 
 static SDRDevice::CustomParameter cp_lms1_tx1dac = { "LMS1 TX1DAC", 2, 0, 65535, false };
 static SDRDevice::CustomParameter cp_lms1_tx2dac = { "LMS1 TX2DAC", 3, 0, 65535, false };
 
+static const std::vector<std::pair<uint16_t, uint16_t>> lms1defaultsOverride = { //
+    { 0x0022, 0x0FFF },
+    { 0x0023, 0x5550 },
+    { 0x002B, 0x0038 },
+    { 0x002C, 0x0000 },
+    { 0x002D, 0x0641 },
+    { 0x0086, 0x4101 },
+    { 0x0087, 0x5555 },
+    { 0x0088, 0x0525 },
+    { 0x0089, 0x1078 },
+    { 0x008B, 0x218C },
+    { 0x008C, 0x267B },
+    { 0x00A6, 0x000F },
+    { 0x00A9, 0x8000 },
+    { 0x00AC, 0x2000 },
+    { 0x0108, 0x218C },
+    { 0x0109, 0x57C1 },
+    { 0x010A, 0x154C },
+    { 0x010B, 0x0001 },
+    { 0x010C, 0x8865 },
+    { 0x010D, 0x011A },
+    { 0x010E, 0x0000 },
+    { 0x010F, 0x3142 },
+    { 0x0110, 0x2B14 },
+    { 0x0111, 0x0000 },
+    { 0x0112, 0x000C },
+    { 0x0113, 0x03C2 },
+    { 0x0114, 0x01F0 },
+    { 0x0115, 0x000D },
+    { 0x0118, 0x418C },
+    { 0x0119, 0x5292 },
+    { 0x011A, 0x3001 },
+    { 0x011C, 0x8941 },
+    { 0x011D, 0x0000 },
+    { 0x011E, 0x0984 },
+    { 0x0120, 0xE6C0 },
+    { 0x0121, 0x3638 },
+    { 0x0122, 0x0514 },
+    { 0x0123, 0x200F },
+    { 0x0200, 0x00E1 },
+    { 0x0208, 0x017B },
+    { 0x020B, 0x4000 },
+    { 0x020C, 0x8000 },
+    { 0x0400, 0x8081 },
+    { 0x0404, 0x0006 },
+    { 0x040B, 0x1020 },
+    { 0x040C, 0x00FB }
+};
+
+static const std::vector<std::pair<uint16_t, uint16_t>> lms2and3defaultsOverride = { //
+    { 0x0022, 0x0FFF },
+    { 0x0023, 0x5550 },
+    { 0x002B, 0x0038 },
+    { 0x002C, 0x0000 },
+    { 0x002D, 0x0641 },
+    { 0x0082, 0x803E }, // Power down AFE ADCs/DACs
+    { 0x0086, 0x4101 },
+    { 0x0087, 0x5555 },
+    { 0x0088, 0x0525 },
+    { 0x0089, 0x1078 },
+    { 0x008B, 0x218C },
+    { 0x008C, 0x267B },
+    { 0x00A6, 0x000F },
+    { 0x00A9, 0x8000 },
+    { 0x00AC, 0x2000 },
+    { 0x0108, 0x218C },
+    { 0x0109, 0x57C1 },
+    { 0x010A, 0xD54C },
+    { 0x010B, 0x0001 },
+    { 0x010C, 0x8865 },
+    { 0x010D, 0x011A },
+    { 0x010E, 0x0000 },
+    { 0x010F, 0x3142 },
+    { 0x0110, 0x2B14 },
+    { 0x0111, 0x0000 },
+    { 0x0112, 0x000C },
+    { 0x0113, 0x03C2 },
+    { 0x0114, 0x01F0 },
+    { 0x0115, 0x000D },
+    { 0x0118, 0x418C },
+    { 0x0119, 0xD292 },
+    { 0x011A, 0x3001 },
+    { 0x011C, 0x8941 },
+    { 0x011D, 0x0000 },
+    { 0x011E, 0x0984 },
+    { 0x0120, 0xE6C0 },
+    { 0x0121, 0x3638 },
+    { 0x0122, 0x0514 },
+    { 0x0123, 0x200F },
+    { 0x0200, 0x00E1 },
+    { 0x0208, 0x017B },
+    { 0x020B, 0x4000 },
+    { 0x020C, 0x8000 },
+    { 0x0400, 0x8081 },
+    { 0x0404, 0x0006 },
+    { 0x040B, 0x1020 },
+    { 0x040C, 0x00FB }
+};
+
 static inline void ValidateChannel(uint8_t channel)
 {
     if (channel > 2)
@@ -104,6 +203,7 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     desc.rfSOC.push_back(soc);
 
     LMS7002M* lms1 = new LMS7002M(mLMS7002Mcomms[0]);
+    lms1->ModifyRegistersDefaults(lms1defaultsOverride);
     lms1->SetOnCGENChangeCallback(LMS1_UpdateFPGAInterface, this);
     mLMSChips.push_back(lms1);
 
@@ -114,6 +214,7 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[1] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2);
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
+    lms2->ModifyRegistersDefaults(lms2and3defaultsOverride);
     mLMSChips.push_back(lms2);
 
     // LMS#3
@@ -123,6 +224,7 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[2] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3);
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
+    lms3->ModifyRegistersDefaults(lms2and3defaultsOverride);
     mLMSChips.push_back(lms3);
 
     for (size_t i = 0; i < mLMSChips.size(); ++i)
@@ -168,82 +270,21 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     const std::vector<CustomParameterIO> params{ { cp_lms1_tx1dac.id, dacVal, "" }, { cp_lms1_tx2dac.id, dacVal, "" } };
     CustomParameterWrite(params);
 
-    struct regVal {
-        uint16_t adr;
-        uint16_t val;
-    };
-
-    const std::vector<regVal> initVals = { { 0x0022, 0x0FFF },
-        { 0x0023, 0x5550 },
-        { 0x002B, 0x0038 },
-        { 0x002C, 0x0000 },
-        { 0x002D, 0x0641 },
-        { 0x0086, 0x4101 },
-        { 0x0087, 0x5555 },
-        { 0x0088, 0x0525 },
-        { 0x0089, 0x1078 },
-        { 0x008B, 0x218C },
-        { 0x008C, 0x267B },
-        { 0x00A6, 0x000F },
-        { 0x00A9, 0x8000 },
-        { 0x00AC, 0x2000 },
-        { 0x0108, 0x218C },
-        { 0x0109, 0x57C1 },
-        { 0x010A, 0x154C },
-        { 0x010B, 0x0001 },
-        { 0x010C, 0x8865 },
-        { 0x010D, 0x011A },
-        { 0x010E, 0x0000 },
-        { 0x010F, 0x3142 },
-        { 0x0110, 0x2B14 },
-        { 0x0111, 0x0000 },
-        { 0x0112, 0x000C },
-        { 0x0113, 0x03C2 },
-        { 0x0114, 0x01F0 },
-        { 0x0115, 0x000D },
-        { 0x0118, 0x418C },
-        { 0x0119, 0x5292 },
-        { 0x011A, 0x3001 },
-        { 0x011C, 0x8941 },
-        { 0x011D, 0x0000 },
-        { 0x011E, 0x0984 },
-        { 0x0120, 0xE6C0 },
-        { 0x0121, 0x3638 },
-        { 0x0122, 0x0514 },
-        { 0x0123, 0x200F },
-        { 0x0200, 0x00E1 },
-        { 0x0208, 0x017B },
-        { 0x020B, 0x4000 },
-        { 0x020C, 0x8000 },
-        { 0x0400, 0x8081 },
-        { 0x0404, 0x0006 },
-        { 0x040B, 0x1020 },
-        { 0x040C, 0x00FB } };
-
     LMS7002M* lms = mLMSChips[0];
     if (lms->ResetChip() != 0)
         return -1;
-
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    for (auto i : initVals)
-        lms->SPI_write(i.adr, i.val, true);
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
 
     // EnableChannel(true, 2*i, false);
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    for (auto i : initVals)
-        if (i.adr >= 0x100)
-            lms->SPI_write(i.adr, i.val, true);
+    // lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
 
     // EnableChannel(false, 2*i+1, false);
     // EnableChannel(true, 2*i+1, false);
-
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
     if (skipTune)
         return 0;
@@ -378,63 +419,9 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
         uint16_t val;
     };
 
-    const std::vector<regVal> initVals = { { 0x0022, 0x0FFF },
-        { 0x0023, 0x5550 },
-        { 0x002B, 0x0038 },
-        { 0x002C, 0x0000 },
-        { 0x002D, 0x0641 },
-        { 0x0086, 0x4101 },
-        { 0x0087, 0x5555 },
-        { 0x0088, 0x0525 },
-        { 0x0089, 0x1078 },
-        { 0x008B, 0x218C },
-        { 0x008C, 0x267B },
-        { 0x00A6, 0x000F },
-        { 0x00A9, 0x8000 },
-        { 0x00AC, 0x2000 },
-        { 0x0108, 0x218C },
-        { 0x0109, 0x57C1 },
-        { 0x010A, 0xD54C },
-        { 0x010B, 0x0001 },
-        { 0x010C, 0x8865 },
-        { 0x010D, 0x011A },
-        { 0x010E, 0x0000 },
-        { 0x010F, 0x3142 },
-        { 0x0110, 0x2B14 },
-        { 0x0111, 0x0000 },
-        { 0x0112, 0x000C },
-        { 0x0113, 0x03C2 },
-        { 0x0114, 0x01F0 },
-        { 0x0115, 0x000D },
-        { 0x0118, 0x418C },
-        { 0x0119, 0xD292 },
-        { 0x011A, 0x3001 },
-        { 0x011C, 0x8941 },
-        { 0x011D, 0x0000 },
-        { 0x011E, 0x0984 },
-        { 0x0120, 0xE6C0 },
-        { 0x0121, 0x3638 },
-        { 0x0122, 0x0514 },
-        { 0x0123, 0x200F },
-        { 0x0200, 0x00E1 },
-        { 0x0208, 0x017B },
-        { 0x020B, 0x4000 },
-        { 0x020C, 0x8000 },
-        { 0x0400, 0x8081 },
-        { 0x0404, 0x0006 },
-        { 0x040B, 0x1020 },
-        { 0x040C, 0x00FB } };
-
     LMS7002M* lms = mLMSChips[1];
     if (lms->ResetChip() != 0)
         return -1;
-
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 3);
-    for (auto i : initVals)
-        lms->SPI_write(i.adr, i.val, true);
-
-    lms->SPI_write(0x0082, 0x803E); // Power down AFE ADCs/DACs
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
@@ -458,68 +445,9 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
 // TODO: Setup default register values specifically for onboard LMS3 chip
 int LimeSDR_X3::InitLMS3(bool skipTune)
 {
-    struct regVal {
-        uint16_t adr;
-        uint16_t val;
-    };
-
-    const std::vector<regVal> initVals = { { 0x0022, 0x0FFF },
-        { 0x0023, 0x5550 },
-        { 0x002B, 0x0038 },
-        { 0x002C, 0x0000 },
-        { 0x002D, 0x0641 },
-        { 0x0086, 0x4101 },
-        { 0x0087, 0x5555 },
-        { 0x0088, 0x0525 },
-        { 0x0089, 0x1078 },
-        { 0x008B, 0x218C },
-        { 0x008C, 0x267B },
-        { 0x00A6, 0x000F },
-        { 0x00A9, 0x8000 },
-        { 0x00AC, 0x2000 },
-        { 0x0108, 0x218C },
-        { 0x0109, 0x57C1 },
-        { 0x010A, 0xD54C },
-        { 0x010B, 0x0001 },
-        { 0x010C, 0x8865 },
-        { 0x010D, 0x011A },
-        { 0x010E, 0x0000 },
-        { 0x010F, 0x3142 },
-        { 0x0110, 0x2B14 },
-        { 0x0111, 0x0000 },
-        { 0x0112, 0x000C },
-        { 0x0113, 0x03C2 },
-        { 0x0114, 0x01F0 },
-        { 0x0115, 0x000D },
-        { 0x0118, 0x418C },
-        { 0x0119, 0xD292 },
-        { 0x011A, 0x3001 },
-        { 0x011C, 0x8941 },
-        { 0x011D, 0x0000 },
-        { 0x011E, 0x0984 },
-        { 0x0120, 0xE6C0 },
-        { 0x0121, 0x3638 },
-        { 0x0122, 0x0514 },
-        { 0x0123, 0x200F },
-        { 0x0200, 0x00E1 },
-        { 0x0208, 0x017B },
-        { 0x020B, 0x4000 },
-        { 0x020C, 0x8000 },
-        { 0x0400, 0x8081 },
-        { 0x0404, 0x0006 },
-        { 0x040B, 0x1020 },
-        { 0x040C, 0x00FB } };
-
     LMS7002M* lms = mLMSChips[2];
     if (lms->ResetChip() != 0)
         return -1;
-
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 3);
-    for (auto i : initVals)
-        lms->SPI_write(i.adr, i.val, true);
-
-    lms->SPI_write(0x0082, 0x803E); // Power down AFE ADCs/DACs
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
     if (skipTune)
         return 0;

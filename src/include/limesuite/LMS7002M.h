@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <functional>
 #include <vector>
+#include <utility>
 
 namespace lime {
 class ISPI;
@@ -440,6 +441,7 @@ class LIME_API LMS7002M
         MEMORY_SECTIONS_COUNT
     };
     virtual int SetDefaults(MemorySection module);
+    void ModifyRegistersDefaults(const std::vector<std::pair<uint16_t, uint16_t>>& registerValues);
 
     static float_type gVCO_frequency_table[3][2];
     static float_type gCGEN_VCO_frequencies[2];

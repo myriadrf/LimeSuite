@@ -38,6 +38,103 @@ static const uint8_t SPI_FPGA = 1;
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (runtime)", 0, 0, 255, false };
 static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
 
+static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides_1v0 = { //
+    { 0x0022, 0x0FFF },
+    { 0x0023, 0x5550 },
+    { 0x002B, 0x0038 },
+    { 0x002C, 0x0000 },
+    { 0x002D, 0x0641 },
+    { 0x0086, 0x4101 },
+    { 0x0087, 0x5555 },
+    { 0x0088, 0x03F0 },
+    { 0x0089, 0x1078 },
+    { 0x008B, 0x2100 },
+    { 0x008C, 0x267B },
+    { 0x0092, 0xFFFF },
+    { 0x0093, 0x03FF },
+    { 0x00A1, 0x656A },
+    { 0x00A6, 0x0001 },
+    { 0x00A9, 0x8000 },
+    { 0x00AC, 0x2000 },
+    { 0x0105, 0x0011 },
+    { 0x0108, 0x218C },
+    { 0x0109, 0x6100 },
+    { 0x010A, 0x1F4C },
+    { 0x010B, 0x0001 },
+    { 0x010C, 0x8865 },
+    { 0x010E, 0x0000 },
+    { 0x010F, 0x3142 },
+    { 0x0110, 0x2B14 },
+    { 0x0111, 0x0000 },
+    { 0x0112, 0x942E },
+    { 0x0113, 0x03C2 },
+    { 0x0114, 0x00D0 },
+    { 0x0117, 0x1230 },
+    { 0x0119, 0x18D2 },
+    { 0x011C, 0x8941 },
+    { 0x011D, 0x0000 },
+    { 0x011E, 0x0740 },
+    { 0x0120, 0xE6C0 },
+    { 0x0121, 0x8650 },
+    { 0x0123, 0x000F },
+    { 0x0200, 0x00E1 },
+    { 0x0208, 0x017B },
+    { 0x020B, 0x4000 },
+    { 0x020C, 0x8000 },
+    { 0x0400, 0x8081 },
+    { 0x0404, 0x0006 },
+    { 0x040B, 0x1020 },
+    { 0x040C, 0x00FB }
+};
+
+static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides_1v2 = { //
+    { 0x0022, 0x0FFF },
+    { 0x0023, 0x5550 },
+    { 0x002B, 0x0038 },
+    { 0x002C, 0x0000 },
+    { 0x002D, 0x0641 },
+    { 0x0086, 0x4101 },
+    { 0x0087, 0x5555 },
+    { 0x0088, 0x03F0 },
+    { 0x0089, 0x1078 },
+    { 0x008B, 0x2100 },
+    { 0x008C, 0x267B },
+    { 0x00A1, 0x656A },
+    { 0x00A6, 0x0009 },
+    { 0x00A7, 0x8A8A },
+    { 0x00A9, 0x8000 },
+    { 0x00AC, 0x2000 },
+    { 0x0105, 0x0011 },
+    { 0x0108, 0x218C },
+    { 0x0109, 0x6100 },
+    { 0x010A, 0x1F4C },
+    { 0x010B, 0x0001 },
+    { 0x010C, 0x8865 },
+    { 0x010E, 0x0000 },
+    { 0x010F, 0x3142 },
+    { 0x0110, 0x2B14 },
+    { 0x0111, 0x0000 },
+    { 0x0112, 0x942E },
+    { 0x0113, 0x03C2 },
+    { 0x0114, 0x00D0 },
+    { 0x0117, 0x1230 },
+    { 0x0119, 0x18D2 },
+    { 0x011C, 0x8941 },
+    { 0x011D, 0x0000 },
+    { 0x011E, 0x0740 },
+    { 0x0120, 0xC5C0 },
+    { 0x0121, 0x8650 },
+    { 0x0123, 0x000F },
+    { 0x0200, 0x00E1 },
+    { 0x0208, 0x017B },
+    { 0x020B, 0x4000 },
+    { 0x020C, 0x8000 },
+    { 0x0400, 0x8081 },
+    { 0x0404, 0x0006 },
+    { 0x040B, 0x1020 },
+    { 0x040C, 0x00FB }
+};
+
 LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     std::shared_ptr<IComms> spiFPGA,
     std::shared_ptr<USBGeneric> streamPort,
@@ -49,17 +146,22 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
 {
     SDRDevice::Descriptor descriptor = GetDeviceInfo();
 
-    mLMSChips.push_back(new LMS7002M(mlms7002mPort));
-    mLMSChips[0]->SetConnection(mlms7002mPort);
-    mLMSChips[0]->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
+    LMS7002M* chip = new LMS7002M(mlms7002mPort);
+    chip->SetConnection(mlms7002mPort);
+    chip->SetOnCGENChangeCallback(UpdateFPGAInterface, this);
+    mLMSChips.push_back(chip);
 
     mFPGA = new FPGA_Mini(spiFPGA, spiLMS);
-
     double refClk = mFPGA->DetectRefClk();
-    mLMSChips[0]->SetReferenceClk_SX(TRXDir::Rx, refClk);
+    chip->SetReferenceClk_SX(TRXDir::Rx, refClk);
 
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, descriptor);
+
+    if (gw.hardwareVersion >= 2)
+        chip->ModifyRegistersDefaults(lms7002defaultsOverrides_1v2);
+    else
+        chip->ModifyRegistersDefaults(lms7002defaultsOverrides_1v0);
 
     mStreamers.resize(1, nullptr);
 
@@ -189,124 +291,14 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
 int LimeSDR_Mini::Init()
 {
-    struct regVal {
-        uint16_t adr;
-        uint16_t val;
-    };
-
-    const std::vector<regVal> initVals_1v0 = { { 0x0022, 0x0FFF },
-        { 0x0023, 0x5550 },
-        { 0x002B, 0x0038 },
-        { 0x002C, 0x0000 },
-        { 0x002D, 0x0641 },
-        { 0x0086, 0x4101 },
-        { 0x0087, 0x5555 },
-        { 0x0088, 0x03F0 },
-        { 0x0089, 0x1078 },
-        { 0x008B, 0x2100 },
-        { 0x008C, 0x267B },
-        { 0x0092, 0xFFFF },
-        { 0x0093, 0x03FF },
-        { 0x00A1, 0x656A },
-        { 0x00A6, 0x0001 },
-        { 0x00A9, 0x8000 },
-        { 0x00AC, 0x2000 },
-        { 0x0105, 0x0011 },
-        { 0x0108, 0x218C },
-        { 0x0109, 0x6100 },
-        { 0x010A, 0x1F4C },
-        { 0x010B, 0x0001 },
-        { 0x010C, 0x8865 },
-        { 0x010E, 0x0000 },
-        { 0x010F, 0x3142 },
-        { 0x0110, 0x2B14 },
-        { 0x0111, 0x0000 },
-        { 0x0112, 0x942E },
-        { 0x0113, 0x03C2 },
-        { 0x0114, 0x00D0 },
-        { 0x0117, 0x1230 },
-        { 0x0119, 0x18D2 },
-        { 0x011C, 0x8941 },
-        { 0x011D, 0x0000 },
-        { 0x011E, 0x0740 },
-        { 0x0120, 0xE6C0 },
-        { 0x0121, 0x8650 },
-        { 0x0123, 0x000F },
-        { 0x0200, 0x00E1 },
-        { 0x0208, 0x017B },
-        { 0x020B, 0x4000 },
-        { 0x020C, 0x8000 },
-        { 0x0400, 0x8081 },
-        { 0x0404, 0x0006 },
-        { 0x040B, 0x1020 },
-        { 0x040C, 0x00FB } };
-
-    const std::vector<regVal> initVals_1v2 = { { 0x0022, 0x0FFF },
-        { 0x0023, 0x5550 },
-        { 0x002B, 0x0038 },
-        { 0x002C, 0x0000 },
-        { 0x002D, 0x0641 },
-        { 0x0086, 0x4101 },
-        { 0x0087, 0x5555 },
-        { 0x0088, 0x03F0 },
-        { 0x0089, 0x1078 },
-        { 0x008B, 0x2100 },
-        { 0x008C, 0x267B },
-        { 0x00A1, 0x656A },
-        { 0x00A6, 0x0009 },
-        { 0x00A7, 0x8A8A },
-        { 0x00A9, 0x8000 },
-        { 0x00AC, 0x2000 },
-        { 0x0105, 0x0011 },
-        { 0x0108, 0x218C },
-        { 0x0109, 0x6100 },
-        { 0x010A, 0x1F4C },
-        { 0x010B, 0x0001 },
-        { 0x010C, 0x8865 },
-        { 0x010E, 0x0000 },
-        { 0x010F, 0x3142 },
-        { 0x0110, 0x2B14 },
-        { 0x0111, 0x0000 },
-        { 0x0112, 0x942E },
-        { 0x0113, 0x03C2 },
-        { 0x0114, 0x00D0 },
-        { 0x0117, 0x1230 },
-        { 0x0119, 0x18D2 },
-        { 0x011C, 0x8941 },
-        { 0x011D, 0x0000 },
-        { 0x011E, 0x0740 },
-        { 0x0120, 0xC5C0 },
-        { 0x0121, 0x8650 },
-        { 0x0123, 0x000F },
-        { 0x0200, 0x00E1 },
-        { 0x0208, 0x017B },
-        { 0x020B, 0x4000 },
-        { 0x020C, 0x8000 },
-        { 0x0400, 0x8081 },
-        { 0x0404, 0x0006 },
-        { 0x040B, 0x1020 },
-        { 0x040C, 0x00FB } };
-
-    int hw_version = mFPGA->ReadRegister(3) & 0xF;
-    auto& initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
-
     lime::LMS7002M* lms = mLMSChips[0];
-
     if (lms->ResetChip() != 0)
-    {
         return -1;
-    }
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    for (auto i : initVals)
-    {
-        lms->SPI_write(i.adr, i.val, true);
-    }
 
     if (lms->CalibrateTxGain(0, nullptr) != 0)
-    {
         return -1;
-    }
 
     lms->EnableChannel(TRXDir::Tx, 0, false);
 

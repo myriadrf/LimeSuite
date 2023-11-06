@@ -420,7 +420,32 @@ int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable
 int LMS7002M::ResetChip()
 {
     int status = 0;
-    mRegistersMap->InitializeDefaultValues(LMS7parameterList);
+
+    const std::vector<uint16_t> usedAddresses = mRegistersMap->GetUsedAddresses(0);
+
+    std::vector<uint16_t> addrs;
+    addrs.reserve(usedAddresses.size() + 2);
+    std::vector<uint16_t> values;
+    values.reserve(usedAddresses.size() + 2);
+
+    addrs.push_back(0x0006); // SPISW_CTRL
+    values.push_back(0x0000); // ensure baseband is controlling SPI
+
+    addrs.push_back(0x0020);
+    uint16_t x0020default = mRegistersMap->GetDefaultValue(0x0020);
+    values.push_back(x0020default | 0x3); // enable simultaneous A&B write
+
+    for (uint16_t addr : usedAddresses)
+    {
+        if (addr == 0x0020) // skip address containing MAC, to continue writing both channels
+            continue;
+        addrs.push_back(addr);
+        values.push_back(mRegistersMap->GetDefaultValue(addr));
+    }
+    addrs.push_back(0x0020);
+    values.push_back((x0020default & ~0x3) | 0x1); // back to A channel only
+
+    status = SPI_write_batch(addrs.data(), values.data(), addrs.size(), true);
     status |= Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
     return status;
 }
@@ -2647,6 +2672,12 @@ int LMS7002M::SetDefaults(MemorySection module)
     }
     status = SPI_write_batch(&addrs[0], &values[0], addrs.size());
     return status;
+}
+
+void LMS7002M::ModifyRegistersDefaults(const std::vector<std::pair<uint16_t, uint16_t>>& registerValues)
+{
+    for (const auto& addrValuePair : registerValues)
+        mRegistersMap->SetDefaultValue(addrValuePair.first, addrValuePair.second);
 }
 
 /** @brief Reads all chip configuration and checks if it matches with local registers copy

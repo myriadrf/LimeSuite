@@ -24,6 +24,7 @@ class LMS7002M_RegistersMap
 
     void InitializeDefaultValues(const std::vector<const LMS7Parameter*> parameterList);
     uint16_t GetDefaultValue(uint16_t address) const;
+    void SetDefaultValue(uint16_t address, uint16_t value);
     std::vector<uint16_t> GetUsedAddresses(const uint8_t channel) const;
 
     LMS7002M_RegistersMap& operator=(const LMS7002M_RegistersMap& other)
