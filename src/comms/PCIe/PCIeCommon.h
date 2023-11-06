@@ -10,18 +10,18 @@ using namespace lime;
 class PCIE_CSR_Pipe : public ISerialPort
 {
   public:
-    explicit PCIE_CSR_Pipe(LitePCIe* port);
+    explicit PCIE_CSR_Pipe(std::shared_ptr<LitePCIe> port);
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
 
   protected:
-    LitePCIe* port;
+    std::shared_ptr<LitePCIe> port;
 };
 
 class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
 {
   public:
-    LMS64C_LMS7002M_Over_PCIe(LitePCIe* dataPort);
+    LMS64C_LMS7002M_Over_PCIe(std::shared_ptr<LitePCIe> dataPort);
     void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
     void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
@@ -32,7 +32,7 @@ class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
 class LMS64C_FPGA_Over_PCIe : public lime::IComms
 {
   public:
-    LMS64C_FPGA_Over_PCIe(LitePCIe* dataPort);
+    LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort);
 
     void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
     void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;

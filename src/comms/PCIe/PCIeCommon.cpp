@@ -2,7 +2,7 @@
 
 using namespace lime;
 
-PCIE_CSR_Pipe::PCIE_CSR_Pipe(LitePCIe* port)
+PCIE_CSR_Pipe::PCIE_CSR_Pipe(std::shared_ptr<LitePCIe> port)
     : port(port)
 {
 }
@@ -16,7 +16,7 @@ int PCIE_CSR_Pipe::Read(uint8_t* data, size_t length, int timeout_ms)
     return port->ReadControl(data, length, timeout_ms);
 }
 
-LMS64C_LMS7002M_Over_PCIe::LMS64C_LMS7002M_Over_PCIe(LitePCIe* dataPort)
+LMS64C_LMS7002M_Over_PCIe::LMS64C_LMS7002M_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
     : pipe(dataPort)
 {
 }
@@ -32,7 +32,7 @@ void LMS64C_LMS7002M_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI
     return;
 }
 
-LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(LitePCIe* dataPort)
+LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
     : pipe(dataPort)
 {
 }

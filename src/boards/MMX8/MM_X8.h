@@ -31,7 +31,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     LimeSDR_MMX8() = delete;
     LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
         std::vector<std::shared_ptr<IComms>>& spiFPGA,
-        std::vector<lime::LitePCIe*> trxStreams,
+        std::vector<std::shared_ptr<LitePCIe>> trxStreams,
         ISPI* adfComms);
     virtual ~LimeSDR_MMX8();
 
@@ -83,7 +83,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
   private:
     std::shared_ptr<IComms> mMainFPGAcomms;
     Descriptor mDeviceDescriptor;
-    std::vector<LitePCIe*> mTRXStreamPorts;
+    std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
     std::vector<lime::LimeSDR_XTRX*> mSubDevices;
     std::map<uint32_t, lime::LimeSDR_XTRX*> chipSelectToDevice;
     std::map<uint32_t, lime::LimeSDR_XTRX*> memorySelectToDevice;

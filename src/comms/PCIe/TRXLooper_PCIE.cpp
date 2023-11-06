@@ -114,7 +114,8 @@ template<class T> class DeltaVariable
     T mLastValue;
 };
 
-TRXLooper_PCIE::TRXLooper_PCIE(LitePCIe* rxPort, LitePCIe* txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex)
+TRXLooper_PCIE::TRXLooper_PCIE(
+    std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex)
     : TRXLooper(f, chip, moduleIndex)
 {
     mRx.packetsToBatch = 1;
@@ -979,7 +980,7 @@ void TRXLooper_PCIE::RxTeardown()
 }
 
 int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
-    LitePCIe* port,
+    std::shared_ptr<LitePCIe> port,
     const lime::SDRDevice::StreamConfig& config,
     uint8_t moduleIndex,
     const void** samples,

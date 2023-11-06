@@ -75,8 +75,9 @@ class SlaveSelectShim : public ISPI
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_X3::LimeSDR_X3(
-    std::shared_ptr<lime::IComms> spiLMS7002M, std::shared_ptr<lime::IComms> spiFPGA, std::vector<lime::LitePCIe*> trxStreams)
+LimeSDR_X3::LimeSDR_X3(std::shared_ptr<lime::IComms> spiLMS7002M,
+    std::shared_ptr<lime::IComms> spiFPGA,
+    std::vector<std::shared_ptr<LitePCIe>> trxStreams)
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
     , fpgaPort(spiFPGA)
@@ -172,12 +173,6 @@ LimeSDR_X3::~LimeSDR_X3()
     }
 
     delete mFPGA;
-
-    for (auto& port : mTRXStreamPorts)
-    {
-        delete port;
-        port = nullptr;
-    }
 }
 
 inline bool InRange(double val, double min, double max)
@@ -889,7 +884,7 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
             mTRXStreamPorts.at(moduleIndex), mTRXStreamPorts.at(moduleIndex), mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
         if (mCallback_logMessage)
             mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
-        LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
+        std::shared_ptr<LitePCIe> trxPort{ mTRXStreamPorts.at(moduleIndex) };
         if (!trxPort->IsOpen())
         {
             int dirFlag = 0;
@@ -923,7 +918,7 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
 {
     LMS7002M_SDRDevice::StreamStop(moduleIndex);
-    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
+    std::shared_ptr<LitePCIe> trxPort{ mTRXStreamPorts.at(moduleIndex) };
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();
 }

@@ -15,13 +15,14 @@ class LitePCIe;
 class TRXLooper_PCIE : public lime::TRXLooper
 {
   public:
-    TRXLooper_PCIE(LitePCIe* rxPort, LitePCIe* txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex);
+    TRXLooper_PCIE(
+        std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex);
     virtual ~TRXLooper_PCIE();
     virtual void Setup(const lime::SDRDevice::StreamConfig& config);
     virtual void Start();
 
     static int UploadTxWaveform(FPGA* fpga,
-        LitePCIe* port,
+        std::shared_ptr<LitePCIe> port,
         const lime::SDRDevice::StreamConfig& config,
         uint8_t moduleIndex,
         const void** samples,
@@ -30,7 +31,7 @@ class TRXLooper_PCIE : public lime::TRXLooper
     typedef SamplesPacket<2> SamplesPacketType;
 
     struct TransferArgs {
-        LitePCIe* port;
+        std::shared_ptr<LitePCIe> port;
         std::vector<uint8_t*> buffers;
         int32_t bufferSize;
         int16_t packetSize;

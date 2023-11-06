@@ -49,7 +49,8 @@ int LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc, std::shared_ptr<IComms> spiFPGA, lime::LitePCIe* sampleStream)
+LimeSDR_XTRX::LimeSDR_XTRX(
+    std::shared_ptr<IComms> spiRFsoc, std::shared_ptr<IComms> spiFPGA, std::shared_ptr<LitePCIe> sampleStream)
     : LMS7002M_SDRDevice()
     , lms7002mPort(spiRFsoc)
     , fpgaPort(spiFPGA)
@@ -425,7 +426,7 @@ int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(mStreamPort, mStreamPort, mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
         if (mCallback_logMessage)
             mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
-        LitePCIe* trxPort = mStreamPort;
+        std::shared_ptr<LitePCIe> trxPort{ mStreamPort };
         if (!trxPort->IsOpen())
         {
             int dirFlag = 0;
@@ -459,7 +460,7 @@ int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 void LimeSDR_XTRX::StreamStop(uint8_t moduleIndex)
 {
     LMS7002M_SDRDevice::StreamStop(moduleIndex);
-    LitePCIe* trxPort = mStreamPort;
+    std::shared_ptr<LitePCIe> trxPort{ mStreamPort };
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();
 }
