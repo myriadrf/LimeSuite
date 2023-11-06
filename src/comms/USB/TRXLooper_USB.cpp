@@ -10,7 +10,7 @@
 
 namespace lime {
 
-TRXLooper_USB::TRXLooper_USB(USBGeneric* comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt)
+TRXLooper_USB::TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt)
     : TRXLooper(f, chip, 0)
     , comms(comms)
     , rxEndPt(rxEndPt)

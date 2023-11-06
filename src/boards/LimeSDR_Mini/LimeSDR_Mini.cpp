@@ -40,7 +40,7 @@ static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 
 
 LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<lime::IComms> spiLMS,
     std::shared_ptr<lime::IComms> spiFPGA,
-    USBGeneric* streamPort,
+    std::shared_ptr<USBGeneric> streamPort,
     std::shared_ptr<ISerialPort> commsPort)
     : mStreamPort(streamPort)
     , mSerialPort(commsPort)
@@ -96,7 +96,6 @@ LimeSDR_Mini::~LimeSDR_Mini()
         mStreamers[0] = nullptr;
     }
 
-    delete mStreamPort;
     delete mFPGA;
 }
 
@@ -626,7 +625,7 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 
     try
     {
-        auto connection = static_cast<FT601*>(mStreamPort);
+        auto connection = std::static_pointer_cast<FT601>(mStreamPort);
         connection->ResetStreamBuffers();
 
         mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkReadAddr, streamBulkWriteAddr);
