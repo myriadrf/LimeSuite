@@ -7,6 +7,7 @@
 #include <functional>
 #include <string.h>
 #include <string>
+#include <memory>
 
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
@@ -81,15 +82,7 @@ class LIME_API SDRDevice
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
         std::vector<DataStorage> memoryDevices;
-        DeviceNode* socTree;
-
-        ~Descriptor()
-        {
-            if (socTree != nullptr)
-            {
-                delete socTree;
-            }
-        }
+        std::shared_ptr<DeviceNode> socTree;
     };
 
     struct StreamStats {

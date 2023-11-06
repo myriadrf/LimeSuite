@@ -91,9 +91,9 @@ LimeSDR::LimeSDR(std::shared_ptr<lime::IComms> spiLMS,
     soc.txPathNames = { "None", "Band1", "Band2" };
     descriptor.rfSOC.push_back(soc);
 
-    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA", mFPGA);
-    fpgaNode->children.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
-    descriptor.socTree = new DeviceNode("SDR-USB", "SDRDevice", this);
+    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS", "LMS7002M", mLMSChips[0])));
+    descriptor.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("SDR-USB", "SDRDevice", this));
     descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;

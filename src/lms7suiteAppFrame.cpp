@@ -60,7 +60,7 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char*
 }
 
 struct DeviceTreeItemData : public wxTreeItemData {
-    DeviceTreeItemData(const DeviceNode* soc)
+    DeviceTreeItemData(const std::shared_ptr<DeviceNode> soc)
         : wxTreeItemData()
         , gui(nullptr)
         , soc(soc)
@@ -73,7 +73,7 @@ struct DeviceTreeItemData : public wxTreeItemData {
             gui->Destroy();
     }
     ISOCPanel* gui;
-    const DeviceNode* soc;
+    const std::shared_ptr<DeviceNode> soc;
 };
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
@@ -229,7 +229,7 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
     mContent = nullptr;
 }
 
-void CreateBranch(wxTreeCtrl* treeRoot, wxTreeItemId parentId, const DeviceNode* node)
+void CreateBranch(wxTreeCtrl* treeRoot, wxTreeItemId parentId, const std::shared_ptr<DeviceNode> node)
 {
     wxTreeItemId branchId = treeRoot->AppendItem(parentId, node->name, 0, 0, new DeviceTreeItemData(node));
     if (node->children.size() == 0)
@@ -248,7 +248,7 @@ void FillDeviceTree(wxTreeCtrl* root, lime::SDRDevice* device, wxWindow* parentW
     sdrUI->Setup(device);
     sdrUI->Hide();
 
-    DeviceNode* node = device->GetDescriptor().socTree;
+    std::shared_ptr<DeviceNode> node = device->GetDescriptor().socTree;
     DeviceTreeItemData* treeRootData = new DeviceTreeItemData(node);
     treeRootData->gui = sdrUI;
     wxTreeItemId rootId = root->AddRoot(node->name, 0, 0, treeRootData);

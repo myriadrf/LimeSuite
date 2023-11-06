@@ -93,9 +93,9 @@ LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc, std::shared_ptr<ICo
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA_XTRX", mFPGA);
-    fpgaNode->children.push_back(new DeviceNode("LMS7002M", "LMS7002M", chip));
-    desc.socTree = new DeviceNode("XTRX", "SDRDevice", this);
+    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA_XTRX", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS7002M", "LMS7002M", chip)));
+    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("XTRX", "SDRDevice", this));
     desc.socTree->children.push_back(fpgaNode);
 }
 

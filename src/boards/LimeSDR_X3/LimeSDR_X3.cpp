@@ -150,14 +150,14 @@ LimeSDR_X3::LimeSDR_X3(
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA_X3", mFPGA);
-    fpgaNode->children.push_back(new DeviceNode("LMS_1", "LMS7002M", lms1));
-    fpgaNode->children.push_back(new DeviceNode("LMS_2", "LMS7002M", lms2));
-    fpgaNode->children.push_back(new DeviceNode("LMS_3", "LMS7002M", lms3));
-    desc.socTree = new DeviceNode("X3", "SDRDevice", this);
+    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA_X3", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_1", "LMS7002M", lms1)));
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_2", "LMS7002M", lms2)));
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_3", "LMS7002M", lms3)));
+    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("X3", "SDRDevice", this));
     desc.socTree->children.push_back(fpgaNode);
 
-    desc.socTree->children.push_back(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
+    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM)));
 }
 
 LimeSDR_X3::~LimeSDR_X3()
@@ -172,6 +172,12 @@ LimeSDR_X3::~LimeSDR_X3()
     }
 
     delete mFPGA;
+
+    for (auto& port : mTRXStreamPorts)
+    {
+        delete port;
+        port = nullptr;
+    }
 }
 
 inline bool InRange(double val, double min, double max)
