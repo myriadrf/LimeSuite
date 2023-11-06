@@ -400,7 +400,7 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 #else
     libusb_transfer* tr = contexts[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length, process_libusbtransfer, &contexts[i], 0);
-    contexts[i].done = false;
+    contexts[i].done.store(false);
     contexts[i].bytesXfered = 0;
     int status = libusb_submit_transfer(tr);
     if (status != 0)

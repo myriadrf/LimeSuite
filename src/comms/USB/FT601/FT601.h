@@ -35,7 +35,7 @@ class USBTransferContext_FT601 : public USBTransferContext
 #else
         transfer = libusb_alloc_transfer(0);
         bytesXfered = 0;
-        done = 0;
+        done.store(false);
 #endif
     }
 
