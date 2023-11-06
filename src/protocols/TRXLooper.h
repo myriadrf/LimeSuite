@@ -91,6 +91,8 @@ class TRXLooper
             , stagingPacket(nullptr)
         {
         }
+
+        ~Stream() { delete fifo; }
     };
 
     Stream mRx;

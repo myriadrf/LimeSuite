@@ -204,6 +204,7 @@ bool GLFont::loadFromArray(const char* array, unsigned int size)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    delete[] bitmap;
     return true;
 }
 
