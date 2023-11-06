@@ -76,7 +76,7 @@ class LIME_API SDRDevice
         std::string gatewareTargetBoard; /// Which board should use this gateware
         std::string hardwareVersion; /// The hardware version as a string
         std::string protocolVersion; /// The protocol version as a string
-        uint64_t serialNumber; /// A unique board serial number
+        uint64_t serialNumber{ 0 }; /// A unique board serial number
 
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
         std::vector<RFSOCDescriptor> rfSOC;

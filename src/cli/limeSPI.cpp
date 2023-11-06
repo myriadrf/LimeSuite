@@ -191,7 +191,10 @@ int main(int argc, char** argv)
 
     int32_t chipSelect = FindChipSelectByName(device, chipName);
     if (chipSelect < 0)
+    {
+        DeviceRegistry::freeDevice(device);
         return EXIT_FAILURE;
+    }
 
     std::vector<char> buffer;
     if (hexInputIsFilename)
@@ -216,6 +219,7 @@ int main(int argc, char** argv)
 
     if (!hexInput)
     {
+        DeviceRegistry::freeDevice(device);
         cerr << "No input provided" << endl;
         return EXIT_FAILURE;
     }
@@ -233,6 +237,7 @@ int main(int argc, char** argv)
         device->SPI(chipSelect, mosi.data(), miso.data(), mosi.size());
     } catch (std::runtime_error& e)
     {
+        DeviceRegistry::freeDevice(device);
         cerr << "SPI failed: " << e.what() << endl;
         return EXIT_FAILURE;
     }
@@ -244,5 +249,6 @@ int main(int argc, char** argv)
     if (isRead)
         PrintMISO(cout, miso);
 
+    DeviceRegistry::freeDevice(device);
     return EXIT_SUCCESS;
 }
