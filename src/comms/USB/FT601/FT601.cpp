@@ -48,11 +48,13 @@ void FT601::handle_libusb_events()
 FT601::FT601(void* usbContext)
     : contexts(nullptr)
     , isConnected(false)
+#ifdef __unix__
+    , mUsbCounter(0)
+    , dev_handle(nullptr)
+    , ctx(reinterpret_cast<libusb_context*>(usbContext))
+#endif
 {
 #ifdef __unix__
-    dev_handle = nullptr;
-    ctx = reinterpret_cast<libusb_context*>(usbContext);
-
     if (activeUSBconnections == 0)
     {
         ++activeUSBconnections;

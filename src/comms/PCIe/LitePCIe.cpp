@@ -126,7 +126,7 @@ void LitePCIe::Close()
 {
     if (mFileDescriptor >= 0)
     {
-        litepcie_ioctl_lock lockInfo;
+        litepcie_ioctl_lock lockInfo{ 0, 0, 0, 0, 0, 0 };
         if (mDMA.rxMemory)
         {
             munmap(mDMA.rxMemory, mDMA.bufferSize * mDMA.bufferCount);
