@@ -37,10 +37,10 @@ using namespace lime;
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, { 6306e6, 7714e6 } };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = { 1930e6, 2940e6 };
 
-///define for parameter enumeration if prefix might be needed
+/// Define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
 
-//module addresses needs to be sorted in ascending order
+// Module addresses needs to be sorted in ascending order
 const uint16_t LMS7002M::readOnlyRegisters[] = {
     0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F
 };
@@ -48,11 +48,16 @@ const uint16_t LMS7002M::readOnlyRegistersMasks[] = {
     0x0000, 0x0FFF, 0x007F, 0x0000, 0x0000, 0x0000, 0x0000, 0x003F, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 };
 
-// Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope
+/** @brief Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope */
 class ChannelScope
 {
   public:
-    // convenient constructor when using explicit MAC value
+    /**
+      @brief Convenient constructor when using explicit MAC value.
+      @param chip The chip to use.
+      @param mac The channel to use.
+      @param useCache Whether to use caching or not.
+     */
     ChannelScope(LMS7002M* chip, LMS7002M::Channel mac, bool useCache = false)
         : mChip(chip)
         , mNeedsRestore(false)
@@ -65,7 +70,12 @@ class ChannelScope
         mNeedsRestore = true;
     }
 
-    // convenient constructor when using channel index starting from 0
+    /**
+      @brief Convenient constructor when using channel index starting from 0.
+      @param chip The chip to use.
+      @param index The channel index.
+      @param useCache Whether to use caching or not.
+     */
     ChannelScope(LMS7002M* chip, uint8_t index, bool useCache = false)
         : mChip(chip)
         , mNeedsRestore(false)
@@ -80,6 +90,7 @@ class ChannelScope
         mNeedsRestore = true;
     }
 
+    /** @brief Destroy the Channel Scope object and reset the active channel. */
     ~ChannelScope()
     {
         if (mNeedsRestore)
@@ -87,9 +98,9 @@ class ChannelScope
     }
 
   private:
-    LMS7002M* mChip;
-    LMS7002M::Channel mStoredValue;
-    bool mNeedsRestore;
+    LMS7002M* mChip; ///< The chip to modify
+    LMS7002M::Channel mStoredValue; ///< The channel to restore to
+    bool mNeedsRestore; ///< Whether the channel needs restoring or not
 };
 
 /** @brief Simple logging function to print status messages

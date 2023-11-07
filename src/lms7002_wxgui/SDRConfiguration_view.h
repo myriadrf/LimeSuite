@@ -18,12 +18,13 @@
 
 constexpr int MAX_GUI_CHANNELS_COUNT = 2;
 
+/** @brief The GUI elements for configuring a channel */
 struct ChannelConfigGUI {
-    wxCheckBox* enable;
-    wxChoice* path;
-    wxChoice* gain;
-    wxTextCtrl* lpf;
-    wxTextCtrl* nco;
+    wxCheckBox* enable; ///< Whether the channel is enabled or not
+    wxChoice* path; ///< The path of the channel
+    wxChoice* gain; ///< The gain of the channel
+    wxTextCtrl* lpf; ///< The amount of low-pass filter to use
+    wxTextCtrl* nco; ///< The value of the numerically controlled oscillator to use
 };
 
 struct SDRConfigGUI {

@@ -17,7 +17,7 @@
 using namespace lime;
 using namespace std;
 
-std::mutex globalGnuPlotMutex; // seems multiple plot pipes can't be used concurently
+std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurently
 
 bool stopProgram(false);
 void intHandler(int dummy)
@@ -41,6 +41,7 @@ static SDRDevice::LogLevel strToLogLevel(const char* str)
         return SDRDevice::INFO;
     return SDRDevice::ERROR;
 }
+
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
     if (lvl > logVerbosity)
@@ -163,9 +164,15 @@ class FFTPlotter
     bool doWork;
 };
 
+/** @brief The constellation diagram plotter */
 class ConstellationPlotter
 {
   public:
+  /**
+    @brief Construct a new Constellation Plotter object.
+    @param range The half sidelength of the square to render.
+    @param persistent Whether the plot is persistent or not.
+   */
     ConstellationPlotter(int range, bool persistent)
         : plot(persistent)
         , doWork(false)
@@ -173,14 +180,18 @@ class ConstellationPlotter
         plot.writef("set size square\n set xrange[%i:%i]\n set yrange[%i:%i]\n", -range, range, -range, range);
         plot.flush();
     }
+
+    /** @brief Stop the thread and destroy the Constellation Plotter object. */
     ~ConstellationPlotter() { Stop(); }
 
+    /** @brief Start the plotter loop. */
     void Start()
     {
         doWork = true;
         plotThread = std::thread(&ConstellationPlotter::PlotLoop, this);
     }
 
+    /** @brief Stop the plotter loop. */
     void Stop()
     {
         doWork = false;
@@ -191,6 +202,10 @@ class ConstellationPlotter
         }
     }
 
+    /**
+      @brief Submit data to the plotter.
+      @param data The data to submit to the plotter.
+     */
     void SubmitData(const vector<complex16_t>& data)
     {
         {
@@ -201,6 +216,7 @@ class ConstellationPlotter
     }
 
   private:
+  /** @brief The plot drawing loop. */
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
@@ -224,12 +240,12 @@ class ConstellationPlotter
         }
     }
 
-    GNUPlotPipe plot;
-    std::vector<complex16_t> samples;
-    std::condition_variable plotDataReady;
-    std::mutex plotLock;
-    std::thread plotThread;
-    bool doWork;
+    GNUPlotPipe plot; ///< The GNU Plot object
+    std::vector<complex16_t> samples; ///< The stored samples
+    std::condition_variable plotDataReady; ///< Whether the plot data is ready or not
+    std::mutex plotLock; ///< The plot lock
+    std::thread plotThread; ///< The plotter thread
+    bool doWork; ///< Whether to continue plotting or not
 };
 #endif
 

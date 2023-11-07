@@ -13,19 +13,17 @@
 
 using namespace lime;
 
-/*!
- * The entry structure that describes a board revision and its fw/gw images
- */
+/** @brief The entry structure that describes a board revision and its firmware and gateware images */
 struct ConnectionImageEntry {
-    eLMS_DEV dev;
-    int hw_rev;
+    eLMS_DEV dev; ///< The identifier of the device
+    int hw_rev; ///< The hardware revision of the device
 
-    int fw_ver;
-    const char* fw_img;
+    int fw_ver; ///< The firmware version of the device
+    const char* fw_img; ///< The firmware image of the device
 
-    int gw_ver;
-    int gw_rev;
-    const char* gw_img;
+    int gw_ver; ///< The gateware version of the device
+    int gw_rev; ///< The gateware revision of the device
+    const char* gw_img; ///< The gateware image of the device
 };
 
 /*!
