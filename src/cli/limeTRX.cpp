@@ -90,9 +90,16 @@ enum Args {
 };
 
 #ifdef USE_GNU_PLOT
+/** @brief The fast Fourier transform diagram plotter */
 class FFTPlotter
 {
   public:
+    /**
+    @brief Construct a new FFTPlotter object.
+    @param sampleRate The sample rate of the transform.
+    @param fftSize The amount of samples per transform.
+    @param persistent Whether the plot is persistent or not.
+   */
     FFTPlotter(float sampleRate, int fftSize, bool persistent)
         : plot(persistent)
         , sampleRate(sampleRate)
@@ -102,14 +109,18 @@ class FFTPlotter
         plot.writef("set xrange[%f:%f]\n set yrange[%i:%i]\n", -sampleRate / 2, sampleRate / 2, -120, 0);
         plot.flush();
     }
+
+    /** @brief Stop the plotter and destroy the FFTPlotter object. */
     ~FFTPlotter() { Stop(); }
 
+    /** @brief Start the plotter. */
     void Start()
     {
         doWork = true;
         plotThread = std::thread(&FFTPlotter::PlotLoop, this);
     }
 
+    /** @brief Stop the plotter. */
     void Stop()
     {
         doWork = false;
@@ -120,6 +131,10 @@ class FFTPlotter
         }
     }
 
+    /**
+      @brief Set the plot data.
+      @param data The new data to plot.
+     */
     void SubmitData(const vector<float>& data)
     {
         {
@@ -130,6 +145,7 @@ class FFTPlotter
     }
 
   private:
+    /** @brief The plot drawing loop. */
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
@@ -155,20 +171,20 @@ class FFTPlotter
         }
     }
 
-    GNUPlotPipe plot;
-    std::vector<float> bins;
-    std::condition_variable plotDataReady;
-    std::mutex plotLock;
-    std::thread plotThread;
-    float sampleRate;
-    bool doWork;
+    GNUPlotPipe plot; ///< The GNU Plot object
+    std::vector<float> bins; ///< The data storage
+    std::condition_variable plotDataReady; ///< Whether the plot data is ready or not
+    std::mutex plotLock; ///< The plot lock
+    std::thread plotThread; ///< The plotter thread
+    float sampleRate; ///< The sample rate of the data
+    bool doWork; ///< Whether to continue plotting or not
 };
 
 /** @brief The constellation diagram plotter */
 class ConstellationPlotter
 {
   public:
-  /**
+    /**
     @brief Construct a new Constellation Plotter object.
     @param range The half sidelength of the square to render.
     @param persistent Whether the plot is persistent or not.
@@ -216,7 +232,7 @@ class ConstellationPlotter
     }
 
   private:
-  /** @brief The plot drawing loop. */
+    /** @brief The plot drawing loop. */
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
