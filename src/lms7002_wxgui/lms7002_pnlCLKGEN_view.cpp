@@ -770,7 +770,7 @@ void lms7002_pnlCLKGEN_view::Initialize(ILMS7002MTab::ControllerType* pControl)
     freq = lmsControl->GetFrequencyCGEN();
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
     //LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
-    freq = lmsControl->GetReferenceClk_SX(false);
+    freq = lmsControl->GetReferenceClk_SX(TRXDir::Rx);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq));
 }
 
@@ -904,7 +904,7 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
     //LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
-    freq = lmsControl->GetReferenceClk_SX(false);
+    freq = lmsControl->GetReferenceClk_SX(TRXDir::Rx);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
     uint16_t value;
     value = ReadParam(LMS7param(FRAC_SDM_CGEN_MSB));
@@ -919,9 +919,9 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 {
     double freq;
-    freq = lmsControl->GetReferenceClk_TSP(false);
+    freq = lmsControl->GetReferenceClk_TSP(TRXDir::Rx);
     lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    freq = lmsControl->GetReferenceClk_TSP(true);
+    freq = lmsControl->GetReferenceClk_TSP(TRXDir::Tx);
     lblTxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
 }
 

@@ -98,7 +98,7 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     }
 
     //set reference clock parameter inside MCU
-    long refClk = GetReferenceClk_SX(false);
+    long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
     lime::debug("MCU Ref. clock: %g MHz", refClk / 1e6);
     //set bandwidth for MCU to read from register, value is integer stored in MHz
@@ -162,7 +162,7 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     opt_gain_tbb[ind] = -1;
 
     //set reference clock parameter inside MCU
-    long refClk = GetReferenceClk_SX(false);
+    long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
     lime::debug("MCU Ref. clock: %g MHz", refClk / 1e6);
     //set bandwidth for MCU to read from register, value is integer stored in MHz

@@ -2,7 +2,7 @@
 
 namespace lime {
 
-enum TRXDir { Rx = 0, Tx = 1 };
+enum class TRXDir { Rx = 0, Tx = 1 };
 
 struct Range {
     Range(double a, double b, double step)

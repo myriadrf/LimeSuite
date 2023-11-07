@@ -20,7 +20,7 @@ static bool showRefClkSpurCancelation = true;
 
 lms7002_pnlSX_view::lms7002_pnlSX_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : ILMS7002MTab(parent, id, pos, size, style)
-    , mIsSXT(false)
+    , direction(TRXDir::Rx)
 {
     const int flags = 0;
     wxFlexGridSizer* fgSizer92;
@@ -1403,10 +1403,9 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick(wxCommandEvent& event)
     wxTextEntryDialog* dlg = new wxTextEntryDialog(this, _("Enter reference clock, MHz"), _("Reference clock"));
     double refClkMHz;
     dlg->SetTextValidator(wxFILTER_NUMERIC);
-    const bool isTx = mIsSXT;
     double freq;
 
-    freq = lmsControl->GetReferenceClk_SX(isTx);
+    freq = lmsControl->GetReferenceClk_SX(direction);
     dlg->SetValue(wxString::Format(_("%f"), freq / 1e6));
     if (dlg->ShowModal() == wxID_OK)
     {
@@ -1415,8 +1414,8 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick(wxCommandEvent& event)
         {
             double currentFreq_MHz;
             txtFrequency->GetValue().ToDouble(&currentFreq_MHz);
-            freq = lmsControl->SetReferenceClk_SX(isTx, refClkMHz * 1e6);
-            int status = lmsControl->SetFrequencySX(isTx, currentFreq_MHz * 1e6);
+            freq = lmsControl->SetReferenceClk_SX(direction, refClkMHz * 1e6);
+            int status = lmsControl->SetFrequencySX(direction, currentFreq_MHz * 1e6);
             if (status != 0)
                 wxMessageBox(_("Set SX frequency failed"));
             UpdateGUI();
@@ -1429,19 +1428,18 @@ void lms7002_pnlSX_view::OnbtnCalculateClick(wxCommandEvent& event)
     assert(lmsControl != nullptr);
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    const bool isTx = mIsSXT;
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
-    lmsControl->SetReferenceClk_SX(isTx, RefClkMHz * 1e6);
+    lmsControl->SetReferenceClk_SX(direction, RefClkMHz * 1e6);
 
     double BWMHz;
     txtRefSpurBW->GetValue().ToDouble(&BWMHz);
     int status;
 
     if (chkEnableRefSpurCancelation->IsChecked())
-        status = lmsControl->SetFrequencySXWithSpurCancelation(isTx, freqMHz * 1e6, BWMHz * 1e6);
+        status = lmsControl->SetFrequencySXWithSpurCancelation(direction, freqMHz * 1e6, BWMHz * 1e6);
     else
-        status = lmsControl->SetFrequencySX(isTx, freqMHz * 1e6);
+        status = lmsControl->SetFrequencySX(direction, freqMHz * 1e6);
 
     if (status != 0)
         wxMessageBox(_("Set SX frequency failed"));
@@ -1450,11 +1448,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick(wxCommandEvent& event)
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(lime::LOG_LEVEL_INFO);
-        wxString msg;
-        if (!isTx)
-            msg = _("SXR");
-        else
-            msg = _("SXT");
+        wxString msg = direction == TRXDir::Rx ? _("SXR") : _("SXT");
         msg += wxString::Format(_(" frequency set to %f MHz"), freqMHz);
         evt.SetString(msg);
         wxPostEvent(this, evt);
@@ -1465,7 +1459,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick(wxCommandEvent& event)
 void lms7002_pnlSX_view::OnbtnTuneClick(wxCommandEvent& event)
 {
     assert(lmsControl != nullptr);
-    int status = lmsControl->TuneVCO(mIsSXT ? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
+    int status = lmsControl->TuneVCO(direction == TRXDir::Tx ? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
     if (status != 0)
         wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();
@@ -1476,11 +1470,10 @@ void lms7002_pnlSX_view::UpdateGUI()
     if (lmsControl == nullptr)
         return;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum, mChannel);
-    const bool isTx = mIsSXT;
     double freq;
-    freq = lmsControl->GetReferenceClk_SX(isTx);
+    freq = lmsControl->GetReferenceClk_SX(direction);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    freq = lmsControl->GetFrequencySX(isTx);
+    freq = lmsControl->GetFrequencySX(direction);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
     // TODO: if(chkEnableRefSpurCancelation->IsChecked())
     // {
@@ -1507,7 +1500,7 @@ void lms7002_pnlSX_view::UpdateGUI()
     fracValue |= value;
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
-    if (!mIsSXT)
+    if (direction == TRXDir::Rx)
         chkPD_LOCH_T2RBUF->Hide();
     else
         chkPD_LOCH_T2RBUF->Show();

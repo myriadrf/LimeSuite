@@ -91,8 +91,8 @@ int LMS7002M::CalibrateTxGainSetup()
         tsgValue = 0x5A85;
     else
         tsgValue = 0x7FFF;
-    LoadDC_REG_IQ(Tx, tsgValue, tsgValue);
-    SetNCOFrequency(Tx, 0, 0.5e6);
+    LoadDC_REG_IQ(TRXDir::Tx, tsgValue, tsgValue);
+    SetNCOFrequency(TRXDir::Tx, 0, 0.5e6);
 
     return 0;
 }

@@ -1,6 +1,8 @@
 #include <ciso646>
 #include <stdint.h>
 #include "limesuite/LMS7002M.h"
+#include "limesuite/commonTypes.h"
+
 static lime::LMS7002M* serPort;
 
 extern float bandwidthRF;
@@ -10,7 +12,7 @@ void SetupCalibrations(lime::LMS7002M* chip, double BW)
 {
     serPort = chip;
     bandwidthRF = BW;
-    RefClk = chip->GetReferenceClk_SX(false);
+    RefClk = chip->GetReferenceClk_SX(lime::TRXDir::Rx);
 }
 
 #include <vector>

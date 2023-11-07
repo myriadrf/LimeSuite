@@ -75,6 +75,9 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     enum class eMemoryDevice { FPGA_RAM = 0, FPGA_FLASH, COUNT };
 
   private:
+    void ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex);
+    void SetLMSPath(const TRXDir dir, const SDRDevice::ChannelConfig::Direction& trx, const int ch, const uint8_t socIndex);
+
     CDCM_Dev* mClockGeneratorCDCM;
     Equalizer* mEqualizer;
     std::vector<LitePCIe*> mTRXStreamPorts;
