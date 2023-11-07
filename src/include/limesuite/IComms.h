@@ -33,12 +33,12 @@ class LIME_API II2C
      * Some implementations can combine a write + read transaction.
      * If the device contains multiple I2C masters,
      * the address bits can encode which master.
-     * \param addr the address of the slave
+     * \param address the address of the slave
      * \param [inout] dest buffer to store read data from the slave
      * \param length Number of bytes to read
      * @return 0-success
      */
-    virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
+    virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
 };
 
 class IComms : public ISPI

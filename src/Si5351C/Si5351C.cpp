@@ -1029,6 +1029,7 @@ void Si5351C::SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled, bo
 /** @brief Sets PLL input frequency
     @param id PLL id 0-PLLA 1-PLLB
     @param CLKIN_Hz clock input in Hz
+    @param CLK_SRC source of the clock
 */
 void Si5351C::SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC)
 {

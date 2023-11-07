@@ -1,5 +1,5 @@
 /**
-@file 	gui_utilities.h
+@file 	lms7002_gui_utilities.h
 @author Lime Microsystems (www.limemicro.com)
 @brief 	Common functions used by all panels
 */

@@ -797,6 +797,7 @@ void OpenGLGraph::switchToDataView()
 	@param posy y position of text lower left corner
 	@param angle angle in degrees counterclockwise to rotate text
 	@param scale font scaling
+    @param rgba rgba value
 	@param fmt text format and parameters
 */
 GLvoid OpenGLGraph::glRenderText(float posx, float posy, float angle, float scale, unsigned int rgba, const char* fmt, ...)
@@ -1062,8 +1063,7 @@ bool OpenGLGraph::isInsideDataView(int X, int Y)
 
 /**
 	@brief Returns text string width in pixels
-	@param *std pointer to char array
-	@param fontSize font heigth in pixels
+	@param *str pointer to char array
 */
 int OpenGLGraph::TextWidthInPixels(const char* str)
 {
@@ -1073,7 +1073,6 @@ int OpenGLGraph::TextWidthInPixels(const char* str)
 /**
 	@brief Returns number text width in pixels
 	@param num number
-	@param fontSize text height in pixels
 	@param prec number of decimal digits
 */
 int OpenGLGraph::NumberWidthInPixels(float num, unsigned int prec)
@@ -1426,7 +1425,7 @@ void OpenGLGraph::MoveMarker(int markerID, int posX)
 /**
 	@brief change marker position
 	@param markerID index of marker to be moved
-	@param posX mouse x coordinate in graph window
+	@param xValue mouse x coordinate in graph window
 */
 void OpenGLGraph::ChangeMarker(int markerID, float xValue)
 {

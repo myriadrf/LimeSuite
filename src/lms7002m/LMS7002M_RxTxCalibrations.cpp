@@ -407,7 +407,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 }
 
 /** @brief Loads given DC_REG values into registers
-    @param tx TxTSP or RxTSP selection
+    @param dir TxTSP or RxTSP selection
     @param I DC_REG I value
     @param Q DC_REG Q value
 */

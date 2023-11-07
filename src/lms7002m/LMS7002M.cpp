@@ -617,7 +617,8 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
 
 /** @brief Reads configuration file and uploads registers to chip
     @param filename Configuration source file
-    @return 0-success, other-failure
+    @param tuneDynamicValues Whether to tune the dynamic values or not
+    @return 0 - success, other - failure
 */
 int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
 {
@@ -1229,7 +1230,7 @@ int LMS7002M::SetReferenceClk_SX(TRXDir dir, float_type freq_Hz)
 }
 
 /**	@brief Returns reference clock in Hz used for SXT or SXR
-	@param Tx transmitter or receiver selection
+	@param dir transmitter or receiver selection
 */
 float_type LMS7002M::GetReferenceClk_SX(TRXDir dir)
 {
@@ -1645,6 +1646,8 @@ int LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t val
 
 /** @brief Change given parameter value
     @param address register address
+    @param msb Most significant byte
+    @param lsb Least significant byte
     @param value new bits value, the value is shifted left by lsb bits
     @param fromChip read initial value directly from chip
 */
@@ -1696,7 +1699,7 @@ const LMS7Parameter* LMS7002M::GetParam(const std::string& name)
 }
 
 /** @brief Sets SX frequency
-    @param Tx Rx/Tx module selection
+    @param dir Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
     @param output if not null outputs intermediate calculation values
     @return 0-success, other-cannot deliver requested frequency
@@ -1870,8 +1873,9 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
 }
 
 /** @brief Sets SX frequency with Reference clock spur cancelation
-    @param Tx Rx/Tx module selection
+    @param dir Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
+    @param BW BW
     @return 0-success, other-cannot deliver requested frequency
 */
 int LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW)
@@ -2199,6 +2203,7 @@ int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, int16_t* coef,
 /** @brief Write given data value to whole register
     @param address SPI address
     @param data new register value
+    @param toChip whether we're writing to the chip or not
     @return 0-succes, other-failure
 */
 int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool toChip)
@@ -2551,6 +2556,7 @@ int LMS7002M::RegistersTest(const char* fileName)
     @param startAddr first register address
     @param endAddr last reigster address
     @param pattern data to be written into registers
+    @param ss stringstream to use
     @return 0-register test passed, other-failure
 */
 int LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, stringstream& ss)

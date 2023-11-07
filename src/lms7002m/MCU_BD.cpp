@@ -1187,6 +1187,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted
+ *  @param enabled Whether we're enabling or disabling
     @param mode MCU memory initialization mode
     @return Operation status
 */

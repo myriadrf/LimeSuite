@@ -696,10 +696,6 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     return MCU_NO_ERROR;
 }
 
-/** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
-    @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
-    @return 0-success, other-failure
-*/
 static uint8_t ReadCMP(const bool SX)
 {
 #ifdef __cplusplus

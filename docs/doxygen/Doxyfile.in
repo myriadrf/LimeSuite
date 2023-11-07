@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = @CMAKE_PROJECT_NAME@-@DOXY_PROJECT_VERSION@
+PROJECT_NAME           = @CMAKE_PROJECT_NAME@
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -877,7 +877,12 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       = */*.soda_cfg.h
+EXCLUDE_PATTERNS       = */external/*
+EXCLUDE_PATTERNS      += */build/*
+EXCLUDE_PATTERNS      += */venv/*
+EXCLUDE_PATTERNS      += */SoapyLMS7/*
+EXCLUDE_PATTERNS      += */octave/*
+EXCLUDE_PATTERNS      += */QuickTest/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -2082,7 +2087,7 @@ MACRO_EXPANSION        = YES
 # The default value is: NO.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-EXPAND_ONLY_PREDEF     = NO
+EXPAND_ONLY_PREDEF     = YES
 
 # If the SEARCH_INCLUDES tag is set to YES, the include files in the
 # INCLUDE_PATH will be searched if a #include is found.

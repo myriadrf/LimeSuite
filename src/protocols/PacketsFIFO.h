@@ -72,6 +72,8 @@ template<class T> class PacketsFIFO
     ///---------------------------------------------------------------------------
     /// @brief  Pushes an element to the queue
     /// @param  element  The element to add
+    /// @param wait Whether to wait or now
+    /// @param timeout The timeout (in ms) to wait for
     /// @return True when the element was added, false when the queue is full
     bool push(const T element, bool wait = false, int timeout = 250)
     {
@@ -107,6 +109,8 @@ template<class T> class PacketsFIFO
     ///---------------------------------------------------------------------------
     /// @brief  Pops an element from the queue
     /// @param  element The returned element
+    /// @param wait Whether to wait or now
+    /// @param timeout The timeout (in ms) to wait for
     /// @return True when succeeded, false when the queue is empty
     bool pop(T* element, bool wait = false, int timeout = 250)
     {

@@ -45,7 +45,7 @@ extern "C" {
     #else
         #define API_EXPORT __declspec(dllexport)
     #endif
-#elif defined _DOXYGEN_ONLY_
+#elif __DOXYGEN__
     /** Marks an API routine to be made visible to the dynamic loader.
      *  This is OS and/or compiler-specific. */
     #define API_EXPORT
@@ -57,10 +57,10 @@ extern "C" {
     #define CALL_CONV
 #endif
 
-///Floating point data type
+/// Floating point data type
 typedef double float_type;
 
-///convenience constant for good return code
+/// Convenience constant for good return code
 static const int LMS_SUCCESS = 0;
 
 /**
@@ -71,10 +71,10 @@ static const int LMS_SUCCESS = 0;
  * @{
  */
 
-///LMS Device handle
+/// LMS Device handle
 typedef void lms_device_t;
 
-///Convenience type for fixed length LMS Device information string
+/// Convenience type for fixed length LMS Device information string
 typedef char lms_info_str_t[256];
 
 /**

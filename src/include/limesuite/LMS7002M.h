@@ -44,14 +44,12 @@ class LIME_API LMS7002M
     static constexpr double CGEN_MAX_FREQ = 640e6;
 
     enum class ClockID {
-        CLK_REFERENCE = 0,
-        CLK_SXR = 1, ///RX LO clock
-        CLK_SXT = 2, ///TX LO clock
-        CLK_CGEN = 3,
-        ///RXTSP reference clock (read-only)
-        CLK_RXTSP = 4,
-        ///TXTSP reference clock (read-only)
-        CLK_TXTSP = 5
+        CLK_REFERENCE = 0, ///< Reference clock
+        CLK_SXR = 1, ///< RX LO clock
+        CLK_SXT = 2, ///< TX LO clock
+        CLK_CGEN = 3, ///< Clock generator clock
+        CLK_RXTSP = 4, ///< RXTSP reference clock (read-only)
+        CLK_TXTSP = 5 ///< TXTSP reference clock (read-only)
     };
 
     struct CGEN_details {
@@ -81,9 +79,7 @@ class LIME_API LMS7002M
 
     /*!
      * Set the connection for the LMS7002M driver.
-     * \param port the connection interface
-     * \param devIndex which RFIC index (default 0 for most devices)
-     * \param dataPort connection used to get samples data when calibrating with FFT
+     * @param port the connection interface
      */
     void SetConnection(ISPI* port);
 
@@ -96,11 +92,11 @@ class LIME_API LMS7002M
      * @see MAC register
      */
     enum Channel {
-        ChA = 1,
-        ChB = 2,
-        ChAB = 3,
-        ChSXR = 1, //SXR register space
-        ChSXT = 2, //SXT register space
+        ChA = 1, ///< Channel A
+        ChB = 2, ///< Channel B
+        ChAB = 3, ///< Both channels
+        ChSXR = 1, ///< SXR register space
+        ChSXT = 2, ///< SXT register space
     };
 
     /*!
@@ -115,11 +111,6 @@ class LIME_API LMS7002M
      */
     Channel GetActiveChannel(bool fromChip = true);
 
-    /*!
-     * Get the channel selected by the RFIC index (devIndex),
-     * and by the currently selected RF channel A/B (MAC).
-     * Example when devIndex == 0, return 0 for chA, 1 for chB.
-     */
     size_t GetActiveChannelIndex(bool fromChip = true);
 
     /*!
@@ -132,7 +123,6 @@ class LIME_API LMS7002M
      */
     int EnableChannel(TRXDir dir, const uint8_t channel, const bool enable);
 
-    ///@name Registers writing and reading
     int UploadAll();
     int DownloadAll();
     bool IsSynced();
@@ -148,9 +138,7 @@ class LIME_API LMS7002M
 
     int LoadConfig(const char* filename, bool tuneDynamicValues = true);
     int SaveConfig(const char* filename);
-    ///@}
 
-    ///@name Registers writing and reading
     uint16_t Get_SPI_Reg_bits(const LMS7Parameter& param, bool fromChip = false);
     uint16_t Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip = false);
     int Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t value, bool fromChip = false);
@@ -159,27 +147,19 @@ class LIME_API LMS7002M
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
     int RegistersTest(const char* fileName = "registersTest.txt");
     static const LMS7Parameter* GetParam(const std::string& name);
-    ///@}
 
-    ///@name Transmitter, Receiver calibrations
     int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
     int CalibrateTx(float_type bandwidth, const bool useExtLoopback = false);
-    ///@}
 
-    ///@name Filters tuning
     int TuneTxFilter(const float_type bandwidth);
     int TuneRxFilter(const float_type rx_lpf_freq_RF);
     int TuneTxFilterWithCaching(const float_type bandwidth);
     int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
-    ///@}
 
-    ///@name Internal calibrations
     int CalibrateInternalADC(int clkDiv = 32);
     int CalibrateRP_BIAS();
     int CalibrateTxGain(float maxGainOffset_dBFS, float* actualGain_dBFS);
     int CalibrateAnalogRSSI_DC_Offset();
-
-    ///@name High level gain configuration
 
     /*!
      * Set the RX PGA gain in dB
@@ -188,7 +168,6 @@ class LIME_API LMS7002M
      */
     int SetRBBPGA_dB(const float_type gain);
 
-    //! Get the actual RX PGA gain in dB
     float_type GetRBBPGA_dB(void);
 
     /*!
@@ -198,7 +177,6 @@ class LIME_API LMS7002M
      */
     int SetRFELNA_dB(const float_type gain);
 
-    //! Get the actual RX LNA gain in dB
     float_type GetRFELNA_dB(void);
 
     /*!
@@ -218,7 +196,6 @@ class LIME_API LMS7002M
      */
     int SetRFETIA_dB(const float_type gain);
 
-    //! Get the actual RX TIA gain in dB
     float_type GetRFETIA_dB(void);
 
     /*!
@@ -251,9 +228,6 @@ class LIME_API LMS7002M
     //! Get the actual TX loopback PAD gain in dB
     float_type GetTRFLoopbackPAD_dB(void);
 
-    ///@}
-
-    ///@name RF selection
     enum PathRFE {
         PATH_RFE_NONE = 0,
         PATH_RFE_LNAH,
@@ -281,9 +255,6 @@ class LIME_API LMS7002M
      */
     int GetBandTRF(void);
 
-    ///@}
-
-    ///@name CGEN and PLL
     int SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
     float_type GetReferenceClk_SX(TRXDir dir);
     float_type GetFrequencyCGEN();
@@ -293,13 +264,12 @@ class LIME_API LMS7002M
     int SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output = nullptr);
     int SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
     bool GetSXLocked(TRXDir dir);
+
     ///VCO modules available for tuning
     enum VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
-    ///@}
 
-    ///@name TSP
     int LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q);
     int SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz);
     float_type GetNCOFrequency(TRXDir dir, uint8_t index, bool fromChip = true);
@@ -315,20 +285,15 @@ class LIME_API LMS7002M
 
     int SetNCOFrequencies(TRXDir dir, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
-    // @param phaseOffset optional will be filled with phase offset value
     std::vector<float_type> GetNCOFrequencies(TRXDir dir, float_type* phaseOffset = nullptr);
     int SetNCOPhases(TRXDir dir, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
-    // @param frequencyOffset optional will be filled with NCO frequency offset value
     std::vector<float_type> GetNCOPhases(TRXDir dir, float_type* frequencyOffset = nullptr);
-    ///@}
 
     int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
-    //! Get the sample rate in Hz
     float_type GetSampleRate(TRXDir dir, Channel ch);
 
-    ///@name LML
     enum LMLSampleSource {
         AI = 0,
         AQ = 1,
@@ -345,13 +310,7 @@ class LIME_API LMS7002M
      * Set the LML sample positions in the baseband to RF direction.
      */
     void ConfigureLML_BB2RF(const LMLSampleSource s0, const LMLSampleSource s1, const LMLSampleSource s2, const LMLSampleSource s3);
-    ///@}
 
-    /*!
-     * Set enable for the RX DC removal filter.
-     * @param enable true to enable DC removal
-     * @return 0 for success for error condition
-     */
     int SetRxDCRemoval(const bool enable);
 
     /*!
@@ -368,6 +327,7 @@ class LIME_API LMS7002M
 
     /*!
      * Set the TX DC offset adjustment.
+     * @param dir true for tx, false for rx
      * @param I the real adjustment [+1.0, -1.0]
      * @param Q the imaginary adjustment [+1.0, -1.0]
      * @return 0 for success for error condition
@@ -376,6 +336,7 @@ class LIME_API LMS7002M
 
     /*!
      * Readback the TX DC offset adjustment.
+     * @param dir true for tx, false for rx
      * @param [out] I the real adjustment [+1.0, -1.0]
      * @param [out] Q the imaginary adjustment [+1.0, -1.0]
      */
@@ -383,7 +344,7 @@ class LIME_API LMS7002M
 
     /*!
      * Set the IQ imbalance correction.
-     * @param tx true for tx, false for rx
+     * @param dir true for tx, false for rx
      * @param phase the phase adjustment [+pi, -pi]
      * @param gainI the real gain adjustment [+1.0, 0.0]
      * @param gainQ the imaginary gain adjustment [+1.0, 0.0]
@@ -392,7 +353,7 @@ class LIME_API LMS7002M
 
     /*!
      * Get the IQ imbalance correction.
-     * @param tx true for tx, false for rx
+     * @param dir true for tx, false for rx
      * @param [out] phase the phase adjustment [+pi, -pi]
      * @param [out] gainI the real gain adjustment [+1.0, 0.0]
      * @param [out] gainQ the imaginary gain adjustment [+1.0, 0.0]
@@ -474,7 +435,6 @@ class LIME_API LMS7002M
     static const uint16_t readOnlyRegistersMasks[];
 
     uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
-    ///@name Algorithms functions
     void BackupAllRegisters();
     void RestoreAllRegisters();
 
@@ -518,7 +478,6 @@ class LIME_API LMS7002M
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream& ss);
 
     int Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop);
-    ///@}
 
     virtual void Log(const char* text, LogType type);
 
@@ -533,7 +492,6 @@ class LIME_API LMS7002M
     std::function<void(const char*, int)> log_callback;
     void Log(LogType type, const char* format, va_list argList);
 
-    ///port used for communicating with LMS7002M
     lime::ISPI* controlPort;
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];
