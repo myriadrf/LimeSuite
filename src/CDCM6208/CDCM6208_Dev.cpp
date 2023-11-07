@@ -18,43 +18,43 @@ CDCM_Dev::CDCM_Dev(std::shared_ptr<ISPI> comms, uint16_t SPI_BASE_ADDR)
 }
 
 /**
-	@brief Initializes CDCM device parameters
-   @param primaryFreq primary VCO input frequency
-   @param secondaryFreq secondary VCO input frequency
-   @return 0 on success -1 on error
+    @brief Initializes CDCM device parameters.
+    @param primaryFreq Primary VCO input frequency.
+    @param secondaryFreq Secondary VCO input frequency.
+    @return 0 on success; -1 on error.
 */
 int CDCM_Dev::Init(double primaryFreq, double secondaryFreq)
 {
     VCO.prim_freq = primaryFreq;
     VCO.sec_freq = secondaryFreq;
 
-    Outputs.Y0Y1.requested_freq = 30.72e6;
-    Outputs.Y2Y3.requested_freq = 30.72e6;
-    Outputs.Y4.requested_freq = 30.72e6;
-    Outputs.Y5.requested_freq = 30.72e6;
-    Outputs.Y6.requested_freq = 30.72e6;
-    Outputs.Y7.requested_freq = 30.72e6;
+    outputs.Y0Y1.requested_freq = 30.72e6;
+    outputs.Y2Y3.requested_freq = 30.72e6;
+    outputs.Y4.requested_freq = 30.72e6;
+    outputs.Y5.requested_freq = 30.72e6;
+    outputs.Y6.requested_freq = 30.72e6;
+    outputs.Y7.requested_freq = 30.72e6;
 
     return DownloadConfiguration();
 }
 
 /**
-	@brief Resets CDCM to the default configuration
-   @param primaryFreq primary VCO input frequency
-   @param secondaryFreq secondary VCO input frequency
-   @return 0 on success -1 on error
+    @brief Resets CDCM to the default configuration.
+    @param primaryFreq Primary VCO input frequency.
+    @param secondaryFreq Secondary VCO input frequency.
+    @return 0 on success; -1 on error.
 */
 int CDCM_Dev::Reset(double primaryFreq, double secondaryFreq)
 {
     VCO.prim_freq = primaryFreq;
     VCO.sec_freq = secondaryFreq;
 
-    Outputs.Y0Y1.requested_freq = 30.72e6;
-    Outputs.Y2Y3.requested_freq = 30.72e6;
-    Outputs.Y4.requested_freq = 30.72e6;
-    Outputs.Y5.requested_freq = 30.72e6;
-    Outputs.Y6.requested_freq = 30.72e6;
-    Outputs.Y7.requested_freq = 30.72e6;
+    outputs.Y0Y1.requested_freq = 30.72e6;
+    outputs.Y2Y3.requested_freq = 30.72e6;
+    outputs.Y4.requested_freq = 30.72e6;
+    outputs.Y5.requested_freq = 30.72e6;
+    outputs.Y6.requested_freq = 30.72e6;
+    outputs.Y7.requested_freq = 30.72e6;
 
     struct regVal {
         uint16_t addr;
@@ -97,8 +97,8 @@ int CDCM_Dev::Reset(double primaryFreq, double secondaryFreq)
 }
 
 /**
-	@brief Sets primary frequency of VCO
-	@param freq frequency
+    @brief Sets primary frequency of VCO.
+    @param freq The primary frequency to set the VCO to.
 */
 void CDCM_Dev::SetPrimaryFreq(double freq)
 {
@@ -108,8 +108,8 @@ void CDCM_Dev::SetPrimaryFreq(double freq)
 }
 
 /**
-	@brief Gets the primary frequency of VCO
-	@return VCO primary frequency
+    @brief Gets the primary frequency of VCO.
+    @return VCO primary frequency.
 */
 double CDCM_Dev::GetPrimaryFreq()
 {
@@ -117,8 +117,8 @@ double CDCM_Dev::GetPrimaryFreq()
 }
 
 /**
-	@brief Sets secondary frequency of VCO
-	@param freq frequency
+    @brief Sets secondary frequency of VCO.
+    @param freq The Secondary frequency to set the VCO to.
 */
 void CDCM_Dev::SetSecondaryFreq(double freq)
 {
@@ -128,8 +128,8 @@ void CDCM_Dev::SetSecondaryFreq(double freq)
 }
 
 /**
-	@brief Gets secondary frequency of VCO
-	@param freq frequency
+    @brief Gets secondary frequency of VCO.
+    @return VCO secondary frequency.
 */
 double CDCM_Dev::GetSecondaryFreq()
 {
@@ -137,8 +137,8 @@ double CDCM_Dev::GetSecondaryFreq()
 }
 
 /**
-	@brief Returns current VCO input frequency value
-	@return input frequency
+    @brief Returns current VCO input frequency value.
+    @return Input frequency.
 */
 double CDCM_Dev::GetInputFreq()
 {
@@ -149,8 +149,8 @@ double CDCM_Dev::GetInputFreq()
 }
 
 /**
-	@brief Selects VCO input
-	@param input 2 - primary, 1 - secondary 
+    @brief Selects VCO input.
+    @param input 1 - primary, 2 - secondary.
 */
 void CDCM_Dev::SetVCOInput(int input)
 {
@@ -159,8 +159,8 @@ void CDCM_Dev::SetVCOInput(int input)
 }
 
 /**
-	@brief Returns which VCO input is selected
-	@return 1 - primary, 2 - secondary 
+    @brief Returns which VCO input is selected.
+    @return 1 - primary, 2 - secondary.
 */
 int CDCM_Dev::GetVCOInput()
 {
@@ -168,20 +168,20 @@ int CDCM_Dev::GetVCOInput()
 }
 
 /**
-	@brief Sets all CDCM outputs
-	@param Outputs CDCM Outputs structure
+    @brief Sets all CDCM outputs.
+    @param Outputs CDCM Outputs structure.
 */
 void CDCM_Dev::SetOutputs(CDCM_Outputs Outputs)
 {
-    this->Outputs = Outputs;
+    this->outputs = Outputs;
 }
 
 /**
-	@brief Sets CDCM output frequency to desired value
-	@param output CDCM output to set frequency for
-   @param frequency frequency
-   @param upload Whether upload the registers after calculation
-   @return 0 on success -1 on error
+    @brief Sets CDCM output frequency to desired value.
+    @param output CDCM output to set frequency for.
+    @param frequency The frequency to set.
+    @param upload Whether upload the registers after calculation.
+    @return 0 on success; -1 on error.
 */
 int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
 {
@@ -189,28 +189,28 @@ int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
     switch (output)
     {
     case CDCM_Y0Y1:
-        Outputs.Y0Y1.requested_freq = frequency;
-        Outputs.Y0Y1.used = true;
+        outputs.Y0Y1.requested_freq = frequency;
+        outputs.Y0Y1.used = true;
         break;
     case CDCM_Y2Y3:
-        Outputs.Y2Y3.requested_freq = frequency;
-        Outputs.Y2Y3.used = true;
+        outputs.Y2Y3.requested_freq = frequency;
+        outputs.Y2Y3.used = true;
         break;
     case CDCM_Y4:
-        Outputs.Y4.requested_freq = frequency;
-        Outputs.Y4.used = true;
+        outputs.Y4.requested_freq = frequency;
+        outputs.Y4.used = true;
         break;
     case CDCM_Y5:
-        Outputs.Y5.requested_freq = frequency;
-        Outputs.Y5.used = true;
+        outputs.Y5.requested_freq = frequency;
+        outputs.Y5.used = true;
         break;
     case CDCM_Y6:
-        Outputs.Y6.requested_freq = frequency;
-        Outputs.Y6.used = true;
+        outputs.Y6.requested_freq = frequency;
+        outputs.Y6.used = true;
         break;
     case CDCM_Y7:
-        Outputs.Y7.requested_freq = frequency;
-        Outputs.Y7.used = true;
+        outputs.Y7.requested_freq = frequency;
+        outputs.Y7.used = true;
         break;
     default:
         break;
@@ -232,43 +232,43 @@ int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
         return_val = 0;
     }
 
-    if (Outputs.Y0Y1.used)
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
+    if (outputs.Y0Y1.used)
+        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.requested_freq);
     else
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
+        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.output_freq);
 
-    if (Outputs.Y2Y3.used)
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
+    if (outputs.Y2Y3.used)
+        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.requested_freq);
     else
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
+        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.output_freq);
 
-    if (Outputs.Y4.used)
-        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.requested_freq;
+    if (outputs.Y4.used)
+        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.requested_freq;
     else
-        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.output_freq;
+        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.output_freq;
 
-    SolveFracDiv(Outputs.Y4.divider_val, &Outputs.Y4);
+    SolveFracDiv(outputs.Y4.divider_val, &outputs.Y4);
 
-    if (Outputs.Y5.used)
-        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.requested_freq;
+    if (outputs.Y5.used)
+        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.requested_freq;
     else
-        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.output_freq;
+        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.output_freq;
 
-    SolveFracDiv(Outputs.Y5.divider_val, &Outputs.Y5);
+    SolveFracDiv(outputs.Y5.divider_val, &outputs.Y5);
 
-    if (Outputs.Y6.used)
-        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.requested_freq;
+    if (outputs.Y6.used)
+        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.requested_freq;
     else
-        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.output_freq;
+        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.output_freq;
 
-    SolveFracDiv(Outputs.Y6.divider_val, &Outputs.Y6);
+    SolveFracDiv(outputs.Y6.divider_val, &outputs.Y6);
 
-    if (Outputs.Y7.used)
-        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.requested_freq;
+    if (outputs.Y7.used)
+        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.requested_freq;
     else
-        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.output_freq;
+        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.output_freq;
 
-    SolveFracDiv(Outputs.Y7.divider_val, &Outputs.Y7);
+    SolveFracDiv(outputs.Y7.divider_val, &outputs.Y7);
 
     UpdateOutputFrequencies();
 
@@ -280,8 +280,8 @@ int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
 }
 
 /**
-   @brief Updates VCO and Output frequencies based on requested ones
-   @return 0 on success -1 on error
+    @brief Updates VCO and Output frequencies based on requested ones.
+    @return 0 on success; -1 on error.
 */
 int CDCM_Dev::RecalculateFrequencies()
 {
@@ -302,43 +302,43 @@ int CDCM_Dev::RecalculateFrequencies()
         return_val = 0;
     }
 
-    if (Outputs.Y0Y1.used)
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
+    if (outputs.Y0Y1.used)
+        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.requested_freq);
     else
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
+        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.output_freq);
 
-    if (Outputs.Y2Y3.used)
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
+    if (outputs.Y2Y3.used)
+        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.requested_freq);
     else
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
+        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.output_freq);
 
-    if (Outputs.Y4.used)
-        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.requested_freq;
+    if (outputs.Y4.used)
+        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.requested_freq;
     else
-        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.output_freq;
+        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.output_freq;
 
-    SolveFracDiv(Outputs.Y4.divider_val, &Outputs.Y4);
+    SolveFracDiv(outputs.Y4.divider_val, &outputs.Y4);
 
-    if (Outputs.Y5.used)
-        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.requested_freq;
+    if (outputs.Y5.used)
+        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.requested_freq;
     else
-        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.output_freq;
+        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.output_freq;
 
-    SolveFracDiv(Outputs.Y5.divider_val, &Outputs.Y5);
+    SolveFracDiv(outputs.Y5.divider_val, &outputs.Y5);
 
-    if (Outputs.Y6.used)
-        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.requested_freq;
+    if (outputs.Y6.used)
+        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.requested_freq;
     else
-        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.output_freq;
+        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.output_freq;
 
-    SolveFracDiv(Outputs.Y6.divider_val, &Outputs.Y6);
+    SolveFracDiv(outputs.Y6.divider_val, &outputs.Y6);
 
-    if (Outputs.Y7.used)
-        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.requested_freq;
+    if (outputs.Y7.used)
+        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.requested_freq;
     else
-        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.output_freq;
+        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.output_freq;
 
-    SolveFracDiv(Outputs.Y7.divider_val, &Outputs.Y7);
+    SolveFracDiv(outputs.Y7.divider_val, &outputs.Y7);
 
     UpdateOutputFrequencies();
 
@@ -346,34 +346,34 @@ int CDCM_Dev::RecalculateFrequencies()
 }
 
 /**
-	@brief Gets CDCM output frequency
-	@param output CDCM output to get frequency from
-   @return output frequency
+    @brief Gets CDCM output frequency.
+    @param output CDCM output to get frequency from.
+    @return Output frequency.
 */
 double CDCM_Dev::GetFrequency(cdcm_output_t output)
 {
     switch (output)
     {
     case CDCM_Y0Y1:
-        return Outputs.Y0Y1.output_freq;
+        return outputs.Y0Y1.output_freq;
     case CDCM_Y2Y3:
-        return Outputs.Y2Y3.output_freq;
+        return outputs.Y2Y3.output_freq;
     case CDCM_Y4:
-        return Outputs.Y4.output_freq;
+        return outputs.Y4.output_freq;
     case CDCM_Y5:
-        return Outputs.Y5.output_freq;
+        return outputs.Y5.output_freq;
     case CDCM_Y6:
-        return Outputs.Y6.output_freq;
+        return outputs.Y6.output_freq;
     case CDCM_Y7:
-        return Outputs.Y7.output_freq;
+        return outputs.Y7.output_freq;
     default:
         return -1;
     }
 }
 
 /**
-	@brief Gets current CDCM VCO structure
-   @return VCO structure
+    @brief Gets current CDCM VCO structure.
+    @return VCO structure.
 */
 CDCM_VCO CDCM_Dev::GetVCO()
 {
@@ -381,7 +381,8 @@ CDCM_VCO CDCM_Dev::GetVCO()
 }
 
 /**
-	@brief Sets CDCM VCO
+    @brief Sets CDCM VCO.
+    @param VCO The voltage-controlled oscillator to use.
 */
 void CDCM_Dev::SetVCO(CDCM_VCO VCO)
 {
@@ -390,8 +391,8 @@ void CDCM_Dev::SetVCO(CDCM_VCO VCO)
 }
 
 /**
-	@brief Sets VCO N multiplier value
-	@param value N multiplier value
+    @brief Sets VCO N multiplier value.
+    @param value N multiplier value.
 */
 void CDCM_Dev::SetVCOMultiplier(int value)
 {
@@ -402,9 +403,9 @@ void CDCM_Dev::SetVCOMultiplier(int value)
 }
 
 /**
-	@brief Sets CDCM version
-	@param version 0 - version 1, 1 - version 2
-   @return 0 on sucesss, -1 on error
+    @brief Sets CDCM version.
+    @param version 0 - version 1; 1 - version 2.
+    @return 0 on sucesss; -1 on error.
 */
 int CDCM_Dev::SetVersion(uint8_t version)
 {
@@ -426,8 +427,8 @@ int CDCM_Dev::SetVersion(uint8_t version)
 }
 
 /**
-	@brief Gets CDCM version
-   @return 0 - version 1, 1 - version 2
+    @brief Gets CDCM version.
+    @return 0 - version 1; 1 - version 2.
 */
 int CDCM_Dev::GetVersion()
 {
@@ -435,8 +436,8 @@ int CDCM_Dev::GetVersion()
 }
 
 /**
-	@brief Returns whether VCO PLL is locked
-   @return true - locked, false - not locked
+    @brief Returns whether VCO PLL is locked.
+    @return true - locked; false - not locked.
 */
 bool CDCM_Dev::IsLocked()
 {
@@ -444,8 +445,8 @@ bool CDCM_Dev::IsLocked()
 }
 
 /**
-	@brief Uploads current CDCM configuration to FPGA registers
-   @return 0 on sucesss, -1 on error
+    @brief Uploads current CDCM configuration to FPGA registers.
+    @return 0 on sucesss; -1 on error.
 */
 int CDCM_Dev::UploadConfiguration()
 {
@@ -478,7 +479,7 @@ int CDCM_Dev::UploadConfiguration()
 
     for (int i = 3; i < 24; i += 3)
     {
-        int reg = i == 6 ? 4 : i; // read 4th register instead of 6th
+        int reg = i == 6 ? 4 : i; // Read 4th register instead of 6th
         int val = ReadRegister(CDCM_Regs[reg].addr);
         if (val == -1)
             return -1;
@@ -496,45 +497,45 @@ int CDCM_Dev::UploadConfiguration()
     CDCM_Regs[4].val |= ((VCO.R_div - 1) & 0xF) << 8;
     CDCM_Regs[4].val |= ((VCO.input_mux - 1) & 1) << 12;
 
-    CDCM_Regs[6].val = 0 | ((uint16_t)(Outputs.Y0Y1.divider_val - 1) & 0xFF);
+    CDCM_Regs[6].val = 0 | ((uint16_t)(outputs.Y0Y1.divider_val - 1) & 0xFF);
 
-    CDCM_Regs[8].val = 0 | ((uint16_t)(Outputs.Y2Y3.divider_val - 1) & 0xFF);
+    CDCM_Regs[8].val = 0 | ((uint16_t)(outputs.Y2Y3.divider_val - 1) & 0xFF);
 
     CDCM_Regs[9].val &= ~0x1E00;
-    CDCM_Regs[9].val |= (((int)Outputs.Y4.isFrac) << 9);
-    CDCM_Regs[9].val |= ((Outputs.Y4.prescaler - 2) & 7) << 10;
+    CDCM_Regs[9].val |= (((int)outputs.Y4.isFrac) << 9);
+    CDCM_Regs[9].val |= ((outputs.Y4.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[10].val = 0 | (((Outputs.Y4.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[10].val |= (Outputs.Y4.fractional_part >> 16) & 0xF;
+    CDCM_Regs[10].val = 0 | (((outputs.Y4.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[10].val |= (outputs.Y4.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[11].val = Outputs.Y4.fractional_part & 0xFFFF;
+    CDCM_Regs[11].val = outputs.Y4.fractional_part & 0xFFFF;
 
     CDCM_Regs[12].val &= ~0x1E00;
-    CDCM_Regs[12].val |= (((int)Outputs.Y5.isFrac) << 9);
-    CDCM_Regs[12].val |= ((Outputs.Y5.prescaler - 2) & 7) << 10;
+    CDCM_Regs[12].val |= (((int)outputs.Y5.isFrac) << 9);
+    CDCM_Regs[12].val |= ((outputs.Y5.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[13].val = 0 | (((Outputs.Y5.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[13].val |= (Outputs.Y5.fractional_part >> 16) & 0xF;
+    CDCM_Regs[13].val = 0 | (((outputs.Y5.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[13].val |= (outputs.Y5.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[14].val = Outputs.Y5.fractional_part & 0xFFFF;
+    CDCM_Regs[14].val = outputs.Y5.fractional_part & 0xFFFF;
 
     CDCM_Regs[15].val &= ~0x1E00;
-    CDCM_Regs[15].val |= (((int)Outputs.Y6.isFrac) << 9);
-    CDCM_Regs[15].val |= ((Outputs.Y6.prescaler - 2) & 7) << 10;
+    CDCM_Regs[15].val |= (((int)outputs.Y6.isFrac) << 9);
+    CDCM_Regs[15].val |= ((outputs.Y6.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[16].val = 0 | (((Outputs.Y6.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[16].val |= (Outputs.Y6.fractional_part >> 16) & 0xF;
+    CDCM_Regs[16].val = 0 | (((outputs.Y6.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[16].val |= (outputs.Y6.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[17].val = Outputs.Y6.fractional_part & 0xFFFF;
+    CDCM_Regs[17].val = outputs.Y6.fractional_part & 0xFFFF;
 
     CDCM_Regs[18].val &= ~0x1E00;
-    CDCM_Regs[18].val |= (((int)Outputs.Y7.isFrac) << 9);
-    CDCM_Regs[18].val |= ((Outputs.Y7.prescaler - 2) & 7) << 10;
+    CDCM_Regs[18].val |= (((int)outputs.Y7.isFrac) << 9);
+    CDCM_Regs[18].val |= ((outputs.Y7.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[19].val = 0 | (((Outputs.Y7.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[19].val |= (Outputs.Y7.fractional_part >> 16) & 0xF;
+    CDCM_Regs[19].val = 0 | (((outputs.Y7.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[19].val |= (outputs.Y7.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[20].val = Outputs.Y7.fractional_part & 0xFFFF;
+    CDCM_Regs[20].val = outputs.Y7.fractional_part & 0xFFFF;
 
     for (auto reg : CDCM_Regs)
         if (WriteRegister(reg.second.addr, reg.second.val) != 0)
@@ -555,8 +556,8 @@ int CDCM_Dev::UploadConfiguration()
 }
 
 /**
-	@brief Downloads current CDCM configuration from FPGA registers
-   @return 0 on sucesss, -1 on error
+    @brief Downloads current CDCM configuration from FPGA registers.
+    @return 0 on sucesss; -1 on error.
 */
 int CDCM_Dev::DownloadConfiguration()
 {
@@ -616,36 +617,36 @@ int CDCM_Dev::DownloadConfiguration()
 
     VCO.input_mux = ((CDCM_Regs[4].val >> 12) & 1) + 1;
 
-    Outputs.Y0Y1.divider_val = (CDCM_Regs[6].val & 0xFF) + 1;
-    Outputs.Y2Y3.divider_val = (CDCM_Regs[8].val & 0xFF) + 1;
+    outputs.Y0Y1.divider_val = (CDCM_Regs[6].val & 0xFF) + 1;
+    outputs.Y2Y3.divider_val = (CDCM_Regs[8].val & 0xFF) + 1;
 
-    Outputs.Y4.isFrac = (bool)((CDCM_Regs[9].val >> 9) & 1);
-    Outputs.Y4.prescaler = ((CDCM_Regs[9].val >> 10) & 7) + 2;
-    Outputs.Y4.integer_part = ((CDCM_Regs[10].val >> 4) & 0xFF) + 1;
-    Outputs.Y4.fractional_part = 0 | ((CDCM_Regs[10].val & 0xF) << 16);
-    Outputs.Y4.fractional_part |= CDCM_Regs[11].val;
-    CalculateFracDiv(&Outputs.Y4);
+    outputs.Y4.isFrac = (bool)((CDCM_Regs[9].val >> 9) & 1);
+    outputs.Y4.prescaler = ((CDCM_Regs[9].val >> 10) & 7) + 2;
+    outputs.Y4.integer_part = ((CDCM_Regs[10].val >> 4) & 0xFF) + 1;
+    outputs.Y4.fractional_part = 0 | ((CDCM_Regs[10].val & 0xF) << 16);
+    outputs.Y4.fractional_part |= CDCM_Regs[11].val;
+    CalculateFracDiv(&outputs.Y4);
 
-    Outputs.Y5.isFrac = (bool)((CDCM_Regs[12].val >> 9) & 1);
-    Outputs.Y5.prescaler = ((CDCM_Regs[12].val >> 10) & 7) + 2;
-    Outputs.Y5.integer_part = ((CDCM_Regs[13].val >> 4) & 0xFF) + 1;
-    Outputs.Y5.fractional_part = 0 | ((CDCM_Regs[13].val & 0xF) << 16);
-    Outputs.Y5.fractional_part |= CDCM_Regs[14].val;
-    CalculateFracDiv(&Outputs.Y5);
+    outputs.Y5.isFrac = (bool)((CDCM_Regs[12].val >> 9) & 1);
+    outputs.Y5.prescaler = ((CDCM_Regs[12].val >> 10) & 7) + 2;
+    outputs.Y5.integer_part = ((CDCM_Regs[13].val >> 4) & 0xFF) + 1;
+    outputs.Y5.fractional_part = 0 | ((CDCM_Regs[13].val & 0xF) << 16);
+    outputs.Y5.fractional_part |= CDCM_Regs[14].val;
+    CalculateFracDiv(&outputs.Y5);
 
-    Outputs.Y6.isFrac = (bool)((CDCM_Regs[15].val >> 9) & 1);
-    Outputs.Y6.prescaler = ((CDCM_Regs[15].val >> 10) & 7) + 2;
-    Outputs.Y6.integer_part = ((CDCM_Regs[16].val >> 4) & 0xFF) + 1;
-    Outputs.Y6.fractional_part = 0 | ((CDCM_Regs[16].val & 0xF) << 16);
-    Outputs.Y6.fractional_part |= CDCM_Regs[17].val;
-    CalculateFracDiv(&Outputs.Y6);
+    outputs.Y6.isFrac = (bool)((CDCM_Regs[15].val >> 9) & 1);
+    outputs.Y6.prescaler = ((CDCM_Regs[15].val >> 10) & 7) + 2;
+    outputs.Y6.integer_part = ((CDCM_Regs[16].val >> 4) & 0xFF) + 1;
+    outputs.Y6.fractional_part = 0 | ((CDCM_Regs[16].val & 0xF) << 16);
+    outputs.Y6.fractional_part |= CDCM_Regs[17].val;
+    CalculateFracDiv(&outputs.Y6);
 
-    Outputs.Y7.isFrac = (bool)((CDCM_Regs[18].val >> 9) & 1);
-    Outputs.Y7.prescaler = ((CDCM_Regs[18].val >> 10) & 7) + 2;
-    Outputs.Y7.integer_part = ((CDCM_Regs[19].val >> 4) & 0xFF) + 1;
-    Outputs.Y7.fractional_part = 0 | ((CDCM_Regs[19].val & 0xF) << 16);
-    Outputs.Y7.fractional_part |= CDCM_Regs[20].val;
-    CalculateFracDiv(&Outputs.Y7);
+    outputs.Y7.isFrac = (bool)((CDCM_Regs[18].val >> 9) & 1);
+    outputs.Y7.prescaler = ((CDCM_Regs[18].val >> 10) & 7) + 2;
+    outputs.Y7.integer_part = ((CDCM_Regs[19].val >> 4) & 0xFF) + 1;
+    outputs.Y7.fractional_part = 0 | ((CDCM_Regs[19].val & 0xF) << 16);
+    outputs.Y7.fractional_part |= CDCM_Regs[20].val;
+    CalculateFracDiv(&outputs.Y7);
 
     SetVersion((CDCM_Regs[23].val >> 3) & 7);
 
@@ -657,15 +658,15 @@ int CDCM_Dev::DownloadConfiguration()
 }
 
 /** 
-	@brief Finds fractional dividers integer and fractional parts values
-   @param target requested fractional divider target
-   @param[out] Output Ouput to which fractional divider value is found
-   @return Found divider value
+    @brief Finds fractional dividers integer and fractional parts values.
+    @param target The requested fractional divider target.
+    @param[out] Output Output to which fractional divider the value is found.
+    @return Found divider value.
 */
 double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
 {
-    //Calculate max fractional val (integer value is offset by +1)
-    //8 bits integer value, 20 bits fractional value
+    // Calculate max fractional val (integer value is offset by +1)
+    // 8 bits integer value, 20 bits fractional value
     // 1111 1111  1111 1111 1111 1111 1111
     // \  int  /  \ fractional           /
     //    +1
@@ -675,7 +676,7 @@ double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
     double max_fractional_val = (((1 << 28) + ((1 << 20) - 1)) / (double)(1 << 20)) * 3;
 
     double result = target;
-    //Check bounds
+    // Check bounds
     if (result < 1)
         result = 1;
     else if (result > max_fractional_val)
@@ -691,15 +692,15 @@ double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
     div2_result = result / 2;
     div3_result = result / 3;
 
-    //cast float into 8.20 fixed point integer
+    // Cast float into 8.20 fixed point integer
     div2_fixed = (int)(div2_result * ((1 << 20) & ((1 << 28) - 1)));
-    //recast back
+    // Recast back
     div2_result = (float)div2_fixed / (1 << 20);
-    //cast float into 8.20 fixed point integer
+    // Cast float into 8.20 fixed point integer
     div3_fixed = (int)(div3_result * ((1 << 20) & ((1 << 28) - 1)));
-    //recast back
+    // Recast back
     div3_result = (float)div3_fixed / (1 << 20);
-    // find best match
+    // Find best match
     double div2_difference = abs(result - (div2_result * 2.0));
     double div3_difference = abs(result - (div3_result * 3.0));
     if (div2_difference < div3_difference)
@@ -721,22 +722,22 @@ double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
 }
 
 /** 
-	@brief Finds 8bit and 10bit multiplier values
-   @param Target requested fractional divider target
-   @param[out] Mult8bit 8bit Multiplier value
-   @param[out] Mult10bit 10bit Multiplier value
-   @return 0 on success, -1 on failure
+    @brief Finds 8-bit and 10-bit multiplier values.
+    @param Target The requested fractional divider target.
+    @param[out] Mult8bit 8-bit multiplier value.
+    @param[out] Mult10bit 10-bit multiplier value.
+    @return 0 on success; -1 on failure.
 */
 int CDCM_Dev::SolveN(int Target, int* Mult8bit, int* Mult10bit)
 {
-    //find multiplier combination to get desired ratio
+    // Find multiplier combination to get desired ratio
     double res;
     for (int i10 = 1; i10 <= 1024; i10++)
     {
         res = double(Target) / i10;
-        if (res < (1 << 8)) //check max value
+        if (res < (1 << 8)) // Check max value
         {
-            // check if res is integer
+            // Check if res is integer
             if (IsInteger(res))
             {
                 *Mult8bit = (int)res;
@@ -749,8 +750,8 @@ int CDCM_Dev::SolveN(int Target, int* Mult8bit, int* Mult10bit)
 }
 
 /** 
-	@brief Calculates full divider value based on integer and fractional parts
-   @param[in] Output CDCM Output
+    @brief Calculates full divider value based on integer and fractional parts.
+    @param[in] Output CDCM Output.
 */
 void CDCM_Dev::CalculateFracDiv(CDCM_Output* Output)
 {
@@ -768,7 +769,7 @@ void CDCM_Dev::CalculateFracDiv(CDCM_Output* Output)
 }
 
 /** 
-	@brief Calculates CDCM output frequencies based on current VCO configuration
+    @brief Calculates CDCM output frequencies based on current VCO configuration.
 */
 void CDCM_Dev::UpdateOutputFrequencies()
 {
@@ -778,18 +779,18 @@ void CDCM_Dev::UpdateOutputFrequencies()
     VCO.output_freq *= VCO.prescaler_A;
     VCO.output_freq *= VCO.N_mul_full;
 
-    Outputs.Y0Y1.output_freq = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.divider_val;
-    Outputs.Y4.output_freq = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.divider_val;
-    Outputs.Y5.output_freq = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.divider_val;
+    outputs.Y0Y1.output_freq = (VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.divider_val;
+    outputs.Y4.output_freq = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.divider_val;
+    outputs.Y5.output_freq = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.divider_val;
 
-    Outputs.Y2Y3.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y2Y3.divider_val;
-    Outputs.Y6.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y6.divider_val;
-    Outputs.Y7.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y7.divider_val;
+    outputs.Y2Y3.output_freq = (VCO.output_freq / VCO.prescaler_B) / outputs.Y2Y3.divider_val;
+    outputs.Y6.output_freq = (VCO.output_freq / VCO.prescaler_B) / outputs.Y6.divider_val;
+    outputs.Y7.output_freq = (VCO.output_freq / VCO.prescaler_B) / outputs.Y7.divider_val;
 }
 
 /** 
-	@brief Prepare to read the FPGA registers
-   @return
+    @brief Prepare to read the FPGA registers.
+    @return 0 on success; -1 on failure.
 */
 int CDCM_Dev::PrepareToReadRegs()
 {
@@ -813,15 +814,15 @@ int CDCM_Dev::PrepareToReadRegs()
 }
 
 /** 
-	@brief Calculates numerator/denumenator values from decimal
-   @param decimal decimal value
-   @param[out] num numerator value
-   @param[out] den denumenator value
-   @return error value after conversion
+    @brief Calculates numerator and denumenator values from decimal.
+    @param decimal Decimal value.
+    @param[out] num Numerator value.
+    @param[out] den Denumenator value.
+    @return Error value after conversion.
 */
 double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
 {
-    //constant for CDCM6208
+    // Constant for CDCM6208
     const int max_num_bits = 18;
     const int max_den_bits = 14;
     uint64_t l_num = 1;
@@ -839,7 +840,7 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
     l_num /= gcd;
     l_den /= gcd;
 
-    // find out how many bits are used by numerator and denominator
+    // Find out how many bits are used by numerator and denominator
     int num_bits = 0, den_bits = 0;
     for (int i = 0; i < 64; i++)
     {
@@ -848,10 +849,10 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
         if ((l_den >> i) > 0)
             den_bits = i;
     }
-    //offset by one
+    // Offset by one
     num_bits++;
     den_bits++;
-    // truncate if needed
+    // Truncate if needed
     while ((num_bits > max_num_bits) || (den_bits > max_den_bits))
     {
         l_den = l_den >> 1;
@@ -867,7 +868,7 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
         l_den = l_den >> 1;
         l_num = l_num >> 1;
     }
-    // return values
+    // Return values
     *num = (int)l_num;
     *den = (int)l_den;
     double result_freq = *num / (double)*den;
@@ -875,14 +876,14 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
 }
 
 /** 
-	@brief Find all available VCO configurations based on lcm value
-   @param lcm lcm value
-   @param version VCO version
-   @return All available VCO configurations
+    @brief Find all available VCO configurations based on @p lcm value.
+    @param lcm The least common multiple value.
+    @param version VCO version.
+    @return All available VCO configurations.
 */
 std::vector<CDCM_VCO> CDCM_Dev::FindValidVCOFreqs(double lcm, int version)
 {
-    // find number of valid vco freqs for each prescaler
+    // Find number of valid vco freqs for each prescaler
     std::vector<CDCM_VCO> Config_vector;
     CDCM_VCO placeholder_struct;
     double lo_freq;
@@ -895,7 +896,7 @@ std::vector<CDCM_VCO> CDCM_Dev::FindValidVCOFreqs(double lcm, int version)
 
     for (int prescaler = 4; prescaler <= 6; prescaler++)
     {
-        //Find low and high bounds for current prescaler
+        // Find low and high bounds for current prescaler
         lo_freq = placeholder_struct.min_freq / prescaler;
         hi_freq = placeholder_struct.max_freq / prescaler;
         frequency = ceil(lo_freq / lcm) * lcm;
@@ -912,10 +913,10 @@ std::vector<CDCM_VCO> CDCM_Dev::FindValidVCOFreqs(double lcm, int version)
 }
 
 /** 
-	@brief Euclidean method to find greatest common divisor between two integers
-   @param a first integer
-   @param b second integer
-   @return maximum GCD value
+    @brief Euclidean method to find greatest common divisor between two integers.
+    @param a First integer.
+    @param b Second integer.
+    @return Greatest common divisor value.
 */
 uint64_t CDCM_Dev::FindGCD(uint64_t a, uint64_t b)
 {
@@ -925,9 +926,9 @@ uint64_t CDCM_Dev::FindGCD(uint64_t a, uint64_t b)
 }
 
 /** 
-	@brief Finds the index of VCO input vector which has lowest PSA value
-   @param input vector of VCO configurations
-   @return index of lowest input
+    @brief Finds the index of VCO input vector which has lowest Prescaler A value.
+    @param input Vector of VCO configurations.
+    @return Index of lowest input.
 */
 int CDCM_Dev::FindLowestPSAOutput(std::vector<CDCM_VCO> input)
 {
@@ -947,9 +948,9 @@ int CDCM_Dev::FindLowestPSAOutput(std::vector<CDCM_VCO> input)
 }
 
 /** 
-	@brief Finds the index of VCO input vector which has lowest frequency error
-   @param input vector of VCO configurations
-   @return index of lowest input
+    @brief Finds the index of VCO input vector which has lowest frequency error.
+    @param input Vector of VCO configurations.
+    @return Index of lowest input.
 */
 int CDCM_Dev::GetLowestFreqErr(std::vector<CDCM_VCO> input)
 {
@@ -967,20 +968,20 @@ int CDCM_Dev::GetLowestFreqErr(std::vector<CDCM_VCO> input)
 }
 
 /** 
-	@brief Finds best VCO configuration index
-   @param input vector of VCO configurations
-   @param num_errors how many errors there are in all configurations
-   @return index of best VCO configuration
+    @brief Finds best VCO configuration index.
+    @param input Vector of VCO configurations.
+    @param num_errors How many errors there are in all configurations.
+    @return Index of best VCO configuration.
 */
 int CDCM_Dev::FindBestVCOConfigIndex(std::vector<CDCM_VCO>& input, int num_errors)
 {
     int no_error = input.size() - num_errors;
-    // all configs have freq. errors
+    // All configs have freq. errors
     if (no_error == 0)
     {
         return GetLowestFreqErr(input);
     }
-    // no configs have freq. errors
+    // No configs have freq. errors
     else if (num_errors == 0)
     {
         return FindLowestPSAOutput(input);
@@ -997,13 +998,13 @@ int CDCM_Dev::FindBestVCOConfigIndex(std::vector<CDCM_VCO>& input, int num_error
 }
 
 /** 
-	@brief Finds VCO configuration based on requested output frequencies
-   @return VCO configuration
+    @brief Finds VCO configuration based on requested output frequencies.
+    @return VCO configuration.
 */
 CDCM_VCO CDCM_Dev::FindVCOConfig()
 {
-    double l_Y0Y1 = Outputs.Y0Y1.requested_freq;
-    double l_Y2Y3 = Outputs.Y2Y3.requested_freq;
+    double l_Y0Y1 = outputs.Y0Y1.requested_freq;
+    double l_Y2Y3 = outputs.Y2Y3.requested_freq;
     double input_shift = 1;
     // Eliminate fractional parts by shifting left (if any)
     while (!(IsInteger(l_Y0Y1) && IsInteger(l_Y2Y3)))
@@ -1013,22 +1014,22 @@ CDCM_VCO CDCM_Dev::FindVCOConfig()
         input_shift *= 10;
     }
 
-    //Find lowest common multiple
+    // Find lowest common multiple
     double int_lcm;
     bool do_vco_calc = true;
 
-    if (Outputs.Y0Y1.used && Outputs.Y2Y3.used)
+    if (outputs.Y0Y1.used && outputs.Y2Y3.used)
         int_lcm = (l_Y0Y1 * l_Y2Y3) / FindGCD((uint64_t)l_Y0Y1, (uint64_t)l_Y2Y3);
-    else if (Outputs.Y0Y1.used)
+    else if (outputs.Y0Y1.used)
         int_lcm = l_Y0Y1;
-    else if (Outputs.Y2Y3.used)
+    else if (outputs.Y2Y3.used)
         int_lcm = l_Y2Y3;
     else
         do_vco_calc = false;
 
     if (do_vco_calc)
     {
-        // find number of valid vco freqs for each prescaler
+        // Find number of valid VCO freqs for each prescaler
         std::vector<CDCM_VCO> Config_vector;
         Config_vector = FindValidVCOFreqs(int_lcm, VCO.version);
 
@@ -1063,7 +1064,7 @@ CDCM_VCO CDCM_Dev::FindVCOConfig()
 
         if (Config_vector.size() > 0)
         {
-            // find index of best config
+            // Find index of best config
             int best_index = FindBestVCOConfigIndex(Config_vector, have_error);
             Config_vector[best_index].valid = true;
             Config_vector[best_index].input_mux = GetVCOInput();
@@ -1076,12 +1077,18 @@ CDCM_VCO CDCM_Dev::FindVCOConfig()
             return vco_config;
         }
     }
-    //no algorithm for fractional only frequency planning
+    // No algorithm for fractional only frequency planning
     CDCM_VCO vco_config;
     vco_config.valid = true;
     return vco_config;
 }
 
+/**
+  @brief Writes the given value to the given register.
+  @param addr The address of where to write the value.
+  @param val The value to write.
+  @return 0 on success; -1 on error.
+ */
 int CDCM_Dev::WriteRegister(uint16_t addr, uint16_t val)
 {
     const uint32_t mosi = (1 << 31) | (addr << 16) | val;
@@ -1095,6 +1102,11 @@ int CDCM_Dev::WriteRegister(uint16_t addr, uint16_t val)
     }
 }
 
+/**
+  @brief Reads the value of a given address.
+  @param addr The address of which value to read.
+  @return The value of the given address; -1 on error.
+ */
 uint16_t CDCM_Dev::ReadRegister(uint16_t addr)
 {
     const uint32_t mosi = (addr);

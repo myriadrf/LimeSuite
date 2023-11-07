@@ -145,7 +145,7 @@ typedef struct RFE_COM {
 #define RFE_CHANNEL_RX 0
 #define RFE_CHANNEL_TX 1
 
-/// @brief Information about the status of the board
+/** @brief Information about the status of the board */
 typedef struct {
     unsigned char status1; ///< Status information variable
     unsigned char status2; ///< Status information variable

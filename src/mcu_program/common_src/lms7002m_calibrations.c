@@ -327,7 +327,7 @@ int CheckSaturationTxRx(bool extLoopback)
     return MCU_NO_ERROR;
 }
 
-/// @brief Binary search information
+/** @brief Binary search information */
 typedef struct {
     LMS7Parameter param; ///< The address and the value of where to search
     int16_t result; ///< The result of the search
