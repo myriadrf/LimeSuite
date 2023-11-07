@@ -36,7 +36,6 @@ TRXLooper::TRXLooper(FPGA* f, LMS7002M* chip, int id)
     mRx.lastTimestamp.store(0, std::memory_order_relaxed);
     mRx.terminate.store(false, std::memory_order_relaxed);
     mTx.terminate.store(false, std::memory_order_relaxed);
-    mThreadsReady.store(0);
 }
 
 TRXLooper::~TRXLooper()
@@ -566,7 +565,7 @@ void TRXLooper::Start()
         streamActive.notify_all();
     }
 
-    steamClockStart = steady_clock::now();
+    streamClockStart = steady_clock::now();
     //int64_t startPoint = std::chrono::time_point_cast<std::chrono::microseconds>(pcStreamStart).time_since_epoch().count();
     //printf("Stream%i start %lius\n", chipId, startPoint);
     // if (!mConfig.alignPhase)
@@ -800,9 +799,9 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
     return count - samplesRemaining;
 }
 
-SDRDevice::StreamStats TRXLooper::GetStats(bool tx)
+SDRDevice::StreamStats TRXLooper::GetStats(TRXDir dir)
 {
-    return tx ? mTx.stats : mRx.stats;
+    return dir == TRXDir::Tx ? mTx.stats : mRx.stats;
 }
 
 } // namespace lime

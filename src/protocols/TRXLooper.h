@@ -36,7 +36,7 @@ class TRXLooper
 
     void SetMessageLogCallback(SDRDevice::LogCallbackType callback) { mCallback_logMessage = callback; }
 
-    SDRDevice::StreamStats GetStats(bool tx);
+    SDRDevice::StreamStats GetStats(TRXDir tx);
 
     typedef SamplesPacket<2> SamplesPacketType;
 
@@ -61,11 +61,7 @@ class TRXLooper
     LMS7002M* lms;
     int chipId;
 
-    typedef DataBlock RawDataBlock;
-    typedef DataBlock SamplesBlock;
-
-    std::atomic<int> mThreadsReady;
-    std::chrono::time_point<std::chrono::steady_clock> steamClockStart;
+    std::chrono::time_point<std::chrono::steady_clock> streamClockStart;
 
     SDRDevice::LogCallbackType mCallback_logMessage;
     std::condition_variable streamActive;

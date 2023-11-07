@@ -86,7 +86,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(lime::IComms* spiRFsoc, lime::IComms* spiFPGA, lime::
     mLMSChips.push_back(chip);
     for (auto iter : mLMSChips)
     {
-        iter->SetReferenceClk_SX(false, xtrxDefaultRefClk);
+        iter->SetReferenceClk_SX(TRXDir::Rx, xtrxDefaultRefClk);
         iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, xtrxDefaultRefClk, 0);
     }
 
@@ -207,9 +207,9 @@ static int InitLMS1(LMS7002M* lms, bool skipTune = false)
     if (skipTune)
         return 0;
 
-    if (lms->SetFrequencySX(true, lms->GetFrequencySX(true)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
         return -1;
-    if (lms->SetFrequencySX(false, lms->GetFrequencySX(false)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
         return -1;
 
     // if (SetRate(10e6,2)!=0)
@@ -254,9 +254,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
         if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
-            chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
+            chip->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
         if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
-            chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
+            chip->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
         if (tddMode)
             chip->EnableSXTDD(true);
 
@@ -265,8 +265,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             const ChannelConfig& ch = cfg.channel[i];
             chip->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
 
-            chip->EnableChannel(Rx, i, ch.rx.enabled);
-            chip->EnableChannel(Tx, i, ch.tx.enabled);
+            chip->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
+            chip->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rx.testSignal ? 1 : 0);
             if (ch.rx.testSignal)
@@ -299,9 +299,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
             if (socIndex == 0)
             {
-                if (ch.rx.enabled && chip->SetGFIRFilter(false, i, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != 0)
+                if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, i, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != 0)
                     throw std::logic_error(strFormat("Rx ch%i GFIR config failed", i));
-                if (ch.tx.enabled && chip->SetGFIRFilter(true, i, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != 0)
+                if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, i, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != 0)
                     throw std::logic_error(strFormat("Tx ch%i GFIR config failed", i));
             }
 
@@ -525,7 +525,8 @@ void LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t
 }
 
 enum // TODO: replace
-{ LMS_PATH_NONE = 0, ///<No active path (RX or TX)
+{
+    LMS_PATH_NONE = 0, ///<No active path (RX or TX)
     LMS_PATH_LNAH = 1, ///<RX LNA_H port
     LMS_PATH_LNAL = 2, ///<RX LNA_L port
     LMS_PATH_LNAW = 3, ///<RX LNA_W port

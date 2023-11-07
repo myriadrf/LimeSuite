@@ -187,16 +187,16 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
 
         if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
-            mLMSChips[0]->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
+            mLMSChips[0]->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
         if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
-            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
+            mLMSChips[0]->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
 
         for (int i = 0; i < 2; ++i)
         {
             const ChannelConfig& ch = cfg.channel[i];
             mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
-            mLMSChips[0]->EnableChannel(Rx, i, ch.rx.enabled);
-            mLMSChips[0]->EnableChannel(Tx, i, ch.tx.enabled);
+            mLMSChips[0]->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
+            mLMSChips[0]->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
             mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
             if (ch.rx.path == 4)
@@ -351,8 +351,8 @@ int LimeSDR::Init()
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
 
-    EnableChannel(Rx, 0, false);
-    EnableChannel(Tx, 0, false);
+    EnableChannel(TRXDir::Rx, 0, false);
+    EnableChannel(TRXDir::Tx, 0, false);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     for (auto i : initVals)
         if (i.adr >= 0x100)
@@ -361,8 +361,8 @@ int LimeSDR::Init()
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
 
-    EnableChannel(Rx, 1, false);
-    EnableChannel(Tx, 1, false);
+    EnableChannel(TRXDir::Rx, 1, false);
+    EnableChannel(TRXDir::Tx, 1, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
@@ -423,7 +423,7 @@ void LimeSDR::Reset()
 int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)
 {
     int ret = mLMSChips[0]->EnableChannel(dir, channel, enabled);
-    if (dir == Tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
+    if (dir == TRXDir::Tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
         mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
     return ret;
 }

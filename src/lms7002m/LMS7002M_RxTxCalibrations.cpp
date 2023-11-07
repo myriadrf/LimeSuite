@@ -212,7 +212,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(EINVAL, "Tx Calibration: Incorrect channel selection MAC %i", ch);
 
     //caching variables
-    double txFreq = GetFrequencySX(Tx);
+    double txFreq = GetFrequencySX(TRXDir::Tx);
     uint8_t channel = ch == 1 ? 0 : 1;
     int band = Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF) ? 0 : 1;
 
@@ -237,7 +237,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     }
 
     //set reference clock parameter inside MCU
-    long refClk = GetReferenceClk_SX(false);
+    long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
     verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
@@ -312,7 +312,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(EINVAL, "Rx Calibration: Incorrect channel selection MAC %i", ch);
     uint8_t channel = ch == 1 ? 0 : 1;
     uint8_t lna = (uint8_t)Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
-    double rxFreq = GetFrequencySX(Rx);
+    double rxFreq = GetFrequencySX(TRXDir::Rx);
 
     const char* lnaName;
     switch (lna)
@@ -357,7 +357,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     }
 
     //set reference clock parameter inside MCU
-    long refClk = GetReferenceClk_SX(false);
+    long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
     verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
@@ -411,9 +411,9 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     @param I DC_REG I value
     @param Q DC_REG Q value
 */
-int LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
+int LMS7002M::LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q)
 {
-    if (tx)
+    if (dir == TRXDir::Tx)
     {
         Modify_SPI_Reg_bits(LMS7_DC_REG_TXTSP, I);
         Modify_SPI_Reg_bits(LMS7_TSGDCLDI_TXTSP, 0);

@@ -3,6 +3,8 @@
 
 #include <map>
 #include "ILMS7002MTab.h"
+#include "limesuite/commonTypes.h"
+
 class lms7002_pnlSX_view : public ILMS7002MTab
 {
   protected:
@@ -25,7 +27,7 @@ class lms7002_pnlSX_view : public ILMS7002MTab
         const wxSize& size = wxDefaultSize,
         long style = wxTAB_TRAVERSAL);
     virtual void UpdateGUI() override;
-    bool mIsSXT;
+    lime::TRXDir direction;
 
   protected:
     enum {

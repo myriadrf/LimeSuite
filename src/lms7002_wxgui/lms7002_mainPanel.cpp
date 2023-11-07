@@ -151,7 +151,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     mTabs[ID_TAB_SXR] = tab;
 
     lms7002_pnlSX_view* sxtTab = new lms7002_pnlSX_view(tabsNotebook, ID_TAB_SXT);
-    sxtTab->mIsSXT = true;
+    sxtTab->direction = TRXDir::Tx;
     sxtTab->SetChannel(1);
     tabsNotebook->AddPage(sxtTab, wxT("SXT"), false);
     mTabs[ID_TAB_SXT] = sxtTab;
