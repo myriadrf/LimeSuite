@@ -19,6 +19,7 @@
 #include <wx/statbox.h>
 #include <wx/frame.h>
 #include <wx/spinctrl.h>
+#include <wx/textctrl.h>
 #include <vector>
 #include <string>
 #include <stdint.h>
@@ -31,7 +32,7 @@ namespace lime {
 class SDRDevice;
 }
 
-class wxTextCtrl;
+#include "limesuite/SDRDevice.h"
 
 class pnlBoardControls : public IModuleFrame
 {
@@ -45,6 +46,33 @@ class pnlBoardControls : public IModuleFrame
         int8_t powerOf10;
         int minValue;
         int maxValue;
+    };
+
+    class MemoryParamGUI
+    {
+      public:
+        MemoryParamGUI()
+            : title(nullptr)
+            , txtValue(nullptr)
+            , btnRead(nullptr)
+            , btnWrite(nullptr){};
+        ~MemoryParamGUI()
+        {
+            if (title)
+                title->Destroy();
+            if (txtValue)
+                txtValue->Destroy();
+            if (btnRead)
+                btnRead->Destroy();
+            if (btnWrite)
+                btnWrite->Destroy();
+        }
+        wxStaticText* title;
+        wxTextCtrl* txtValue;
+        wxButton* btnRead;
+        wxButton* btnWrite;
+        int32_t id;
+        lime::SDRDevice::DataStorage::Region mem;
     };
 
     class Param_GUI
@@ -92,6 +120,8 @@ class pnlBoardControls : public IModuleFrame
   protected:
     wxPanel* pnlCustomControls;
     wxPanel* pnlReadControls;
+    wxPanel* pnlEEPROMControls;
+    wxFlexGridSizer* EEPROMsizer;
     wxSpinCtrl* spinCustomChannelRd;
     wxStaticText* txtCustomValueRd;
     wxStaticText* txtCustomUnitsRd;
@@ -102,6 +132,8 @@ class pnlBoardControls : public IModuleFrame
     wxChoice* cmbCustomPowerOf10Wr;
     wxButton* btnCustomRd;
     wxButton* btnCustomWr;
+    void OnMemoryWrite(wxCommandEvent& event);
+    void OnMemoryRead(wxCommandEvent& event);
     void OnCustomRead(wxCommandEvent& event);
     void OnCustomWrite(wxCommandEvent& event);
 
@@ -126,6 +158,7 @@ class pnlBoardControls : public IModuleFrame
     wxChoice* cmbBoardSelection;
 
     std::vector<Param_GUI*> mGUI_widgets;
+    std::vector<MemoryParamGUI*> mMemoryGUI_widgets;
     static const std::vector<lime::eLMS_DEV> board_list;
 };
 

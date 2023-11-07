@@ -67,6 +67,8 @@ class IComms : public ISPI
         return -1;
     }
     virtual int ResetDevice(int chipSelect) { return -1; };
+    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return -1; };
+    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return -1; };
 };
 
 } // namespace lime

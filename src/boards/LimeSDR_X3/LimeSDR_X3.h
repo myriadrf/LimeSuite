@@ -45,6 +45,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) override;
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:
@@ -69,7 +71,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     enum class ePathLMS2_Rx : uint8_t { NONE, TDD, FDD, CALIBRATION };
     enum class ePathLMS2_Tx : uint8_t { NONE, TDD, FDD };
 
-    enum class eMemoryDevice : uint8_t { FPGA_RAM, FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_RAM = 0, FPGA_FLASH, EEPROM, COUNT };
 
   private:
     void ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex);

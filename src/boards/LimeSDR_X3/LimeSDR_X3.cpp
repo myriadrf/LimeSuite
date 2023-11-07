@@ -176,9 +176,13 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
         { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
-    desc.memoryDevices = {
-        { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) },
-    };
+    DataStorage* eeprom = new DataStorage();
+    eeprom->name = "EEPROM";
+    eeprom->id = (int)eMemoryDevice::EEPROM;
+    DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
+    eeprom->map.push_back(vctcxoValue);
+
+    desc.memoryDevices = { { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) }, *eeprom };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
@@ -1207,6 +1211,20 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
     else
         return false;
     return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
+}
+
+int LimeSDR_X3::MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len)
+{
+    if (id != (int)eMemoryDevice::EEPROM)
+        return -1;
+    return fpgaPort->MemoryWrite(address, data, len);
+}
+
+int LimeSDR_X3::MemoryRead(uint32_t id, uint32_t address, void* data, size_t len)
+{
+    if (id != (int)eMemoryDevice::EEPROM)
+        return -1;
+    return fpgaPort->MemoryRead(address, data, len);
 }
 
 int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)

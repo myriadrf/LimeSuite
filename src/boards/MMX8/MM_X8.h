@@ -69,6 +69,8 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     virtual void* GetInternalChip(uint32_t index) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t length) override;
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t length) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:

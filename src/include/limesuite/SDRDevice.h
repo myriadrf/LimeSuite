@@ -48,8 +48,14 @@ class LIME_API SDRDevice
     };
 
     struct DataStorage {
+        struct Region {
+            std::string name;
+            int32_t address;
+            int32_t size;
+        };
         std::string name;
         uint32_t id;
+        std::vector<Region> map;
     };
 
     // General information about device internals, static capabilities
@@ -280,6 +286,9 @@ class LIME_API SDRDevice
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) { return -1; };
+
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) { return -1; };
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) { return -1; };
 };
 
 } // namespace lime

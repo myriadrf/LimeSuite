@@ -26,6 +26,62 @@ LMS64CPacket::LMS64CPacket()
     std::memset(this, 0, sizeof(LMS64CPacket));
 }
 
+LMS64CPacketMemoryWriteView::LMS64CPacketMemoryWriteView(LMS64CPacket* pkt)
+    : packet(pkt)
+{
+}
+
+void LMS64CPacketMemoryWriteView::SetMode(int mode)
+{
+    packet->payload[0] = mode;
+}
+
+void LMS64CPacketMemoryWriteView::SetChunkIndex(int index)
+{
+    packet->payload[1] = (index >> 24) & 0xFF;
+    packet->payload[2] = (index >> 16) & 0xFF;
+    packet->payload[3] = (index >> 8) & 0xFF;
+    packet->payload[4] = index & 0xFF;
+}
+
+void LMS64CPacketMemoryWriteView::SetChunkSize(int size)
+{
+    packet->payload[5] = size;
+}
+
+void LMS64CPacketMemoryWriteView::SetAddress(int addr)
+{
+    packet->payload[6] = (addr >> 24) & 0xFF;
+    packet->payload[7] = (addr >> 16) & 0xFF;
+    packet->payload[8] = (addr >> 8) & 0xFF;
+    packet->payload[9] = addr & 0xFF;
+}
+
+void LMS64CPacketMemoryWriteView::SetDevice(int device)
+{
+    packet->payload[10] = (device >> 8) & 0xFF;
+    packet->payload[11] = device & 0xFF;
+}
+
+void LMS64CPacketMemoryWriteView::SetData(const uint8_t* src, size_t len)
+{
+    assert(len <= 32);
+    len = len > 32 ? 32 : len;
+    memcpy(&packet->payload[24], src, len);
+}
+
+void LMS64CPacketMemoryWriteView::GetData(uint8_t* dest, size_t len) const
+{
+    assert(len <= 32);
+    len = len > 32 ? 32 : len;
+    memcpy(dest, &packet->payload[24], len);
+}
+
+constexpr size_t LMS64CPacketMemoryWriteView::GetMaxDataSize()
+{
+    return 32;
+}
+
 namespace LMS64CProtocol {
 
 static const std::array<std::string, eCMD_STATUS::STATUS_COUNT> COMMAND_STATUS_TEXT = {
@@ -390,29 +446,23 @@ int ProgramWrite(ISerialPort& port,
     packet.blockCount = packet.payloadSize;
     packet.subDevice = subDevice;
 
+    LMS64CPacketMemoryWriteView progView(&packet);
+
     const size_t chunkSize = 32;
-    static_assert(chunkSize < LMS64CPacket::payloadSize, "chunk must fit into packet payload");
+    static_assert(chunkSize <= progView.GetMaxDataSize(), "chunk must fit into packet payload");
     const uint32_t chunkCount = length / chunkSize + (length % chunkSize > 0) + 1; // +1 programming end packet
 
     for (uint32_t chunkIndex = 0; chunkIndex < chunkCount && !abortProgramming; ++chunkIndex)
     {
         memset(packet.payload, 0, packet.payloadSize);
-        packet.payload[0] = prog_mode;
-        packet.payload[1] = (chunkIndex >> 24) & 0xFF;
-        packet.payload[2] = (chunkIndex >> 16) & 0xFF;
-        packet.payload[3] = (chunkIndex >> 8) & 0xFF;
-        packet.payload[4] = chunkIndex & 0xFF;
-        packet.payload[5] = std::min(length - bytesSent, chunkSize);
+        progView.SetMode(prog_mode);
+        progView.SetChunkIndex(chunkIndex);
+        progView.SetChunkSize(std::min(length - bytesSent, chunkSize));
 
         if (cmd == CMD_MEMORY_WR)
         {
-            packet.payload[6] = 0;
-            packet.payload[7] = 0;
-            packet.payload[8] = 0;
-            packet.payload[9] = 0;
-
-            packet.payload[10] = (device >> 8) & 0xFF;
-            packet.payload[11] = device & 0xFF;
+            progView.SetAddress(0x0000);
+            progView.SetDevice(device);
         }
 
         if (needsData)
@@ -611,6 +661,91 @@ int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
         throw std::runtime_error("GPIOWrite read failed");
     }
 
+    return 0;
+}
+
+int MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size_t dataLen, uint32_t subDevice)
+{
+    const int timeout_ms = 100;
+    size_t bytesSent = 0;
+    const uint8_t* src = static_cast<const uint8_t*>(data);
+
+    LMS64CPacket packet;
+    LMS64CPacket inPacket;
+    packet.cmd = CMD_MEMORY_WR;
+    packet.blockCount = packet.payloadSize;
+    packet.subDevice = subDevice;
+
+    LMS64CPacketMemoryWriteView progView(&packet);
+
+    const size_t chunkSize = 32;
+    static_assert(chunkSize <= progView.GetMaxDataSize(), "chunk must fit into packet payload");
+    const uint32_t chunkCount = dataLen / chunkSize + (dataLen % chunkSize > 0);
+
+    for (uint32_t chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex)
+    {
+        memset(packet.payload, 0, packet.payloadSize);
+        progView.SetMode(0);
+        progView.SetChunkIndex(chunkIndex);
+        progView.SetChunkSize(std::min(dataLen - bytesSent, chunkSize));
+
+        progView.SetAddress(address + bytesSent);
+        progView.SetDevice(3);
+
+        progView.SetData(src, chunkSize);
+        src += chunkSize;
+
+        if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
+            return -1;
+        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), timeout_ms) != sizeof(inPacket))
+            return -1;
+
+        if (inPacket.status != STATUS_COMPLETED_CMD)
+            return -1;
+
+        bytesSent += chunkSize;
+    }
+    return 0;
+}
+
+int MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, uint32_t subDevice)
+{
+    const int timeout_ms = 100;
+    size_t bytesGot = 0;
+    uint8_t* dest = static_cast<uint8_t*>(data);
+
+    LMS64CPacket packet;
+    LMS64CPacket inPacket;
+    packet.cmd = CMD_MEMORY_RD;
+    packet.blockCount = 0;
+    packet.subDevice = subDevice;
+    memset(packet.payload, 0, packet.payloadSize);
+
+    LMS64CPacketMemoryWriteView writeView(&packet);
+    writeView.SetMode(0);
+    writeView.SetDevice(3);
+
+    const size_t chunkSize = 32;
+    static_assert(chunkSize <= writeView.GetMaxDataSize(), "chunk must fit into packet payload");
+    const uint32_t chunkCount = dataLen / chunkSize + (dataLen % chunkSize > 0);
+
+    for (uint32_t chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex)
+    {
+        writeView.SetAddress(address + bytesGot);
+
+        if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
+            return -1;
+        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), timeout_ms) != sizeof(inPacket))
+            return -1;
+
+        if (inPacket.status != STATUS_COMPLETED_CMD)
+            return -1;
+        LMS64CPacketMemoryWriteView readView(&inPacket);
+        int bToGet = std::min(chunkSize, dataLen - bytesGot);
+        readView.GetData(dest, bToGet);
+        dest += chunkSize;
+        bytesGot += chunkSize;
+    }
     return 0;
 }
 

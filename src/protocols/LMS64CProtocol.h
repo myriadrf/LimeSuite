@@ -28,6 +28,34 @@ struct LMS64CPacket {
     uint8_t payload[payloadSize];
 };
 
+class LMS64CPacketMemoryWriteView
+{
+  public:
+    LMS64CPacketMemoryWriteView(LMS64CPacket* pkt);
+    void SetMode(int mode);
+    void SetChunkIndex(int index);
+    void SetChunkSize(int size);
+    void SetAddress(int size);
+    void SetDevice(int device);
+    void SetData(const uint8_t* src, size_t len);
+
+    void GetData(uint8_t* dest, size_t len) const;
+    static constexpr size_t GetMaxDataSize();
+
+  private:
+    LMS64CPacketMemoryWriteView() = delete;
+    LMS64CPacket* packet;
+};
+
+class ISerialPort
+{
+  public:
+    virtual ~ISerialPort(){};
+
+    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
+    virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
+};
+
 namespace LMS64CProtocol {
 
 enum eCMD_LMS {
@@ -149,6 +177,8 @@ int ProgramWrite(ISerialPort& port,
     uint32_t subDevice = 0);
 
 int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice = 0);
+int MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size_t dataLen, uint32_t subDevice = 0);
+int MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, uint32_t subDevice = 0);
 
 } // namespace LMS64CProtocol
 

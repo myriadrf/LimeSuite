@@ -316,6 +316,38 @@ bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, Up
     return dev->UploadMemory(subSelect, data, length, callback);
 }
 
+int LimeSDR_MMX8::MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t length)
+{
+    if (id == 0)
+        return mMainFPGAcomms->MemoryWrite(address, data, length);
+
+    SDRDevice* dev = memorySelectToDevice.at(id);
+    if (!dev)
+    {
+        throw std::logic_error("invalid id select");
+        return false;
+    }
+
+    uint32_t subSelect = id & 0xFF;
+    return dev->MemoryWrite(subSelect, address, data, length);
+}
+
+int LimeSDR_MMX8::MemoryRead(uint32_t id, uint32_t address, void* data, size_t length)
+{
+    if (id == 0)
+        return mMainFPGAcomms->MemoryRead(address, data, length);
+
+    SDRDevice* dev = memorySelectToDevice.at(id);
+    if (!dev)
+    {
+        throw std::logic_error("invalid id select");
+        return false;
+    }
+
+    uint32_t subSelect = id & 0xFF;
+    return dev->MemoryRead(subSelect, address, data, length);
+}
+
 int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
 {
     return mSubDevices[moduleIndex]->UploadTxWaveform(config, 0, samples, count);

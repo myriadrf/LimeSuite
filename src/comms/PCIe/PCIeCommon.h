@@ -43,6 +43,9 @@ class LMS64C_FPGA_Over_PCIe : public lime::IComms
     virtual int ProgramWrite(
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;
 
+    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) override;
+    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) override;
+
   private:
     PCIE_CSR_Pipe pipe;
 };

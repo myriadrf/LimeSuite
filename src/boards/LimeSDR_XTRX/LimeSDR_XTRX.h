@@ -37,7 +37,9 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
-    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback);
+    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) override;
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) override;
 
   protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
@@ -47,7 +49,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     enum class ePathLMS1_Rx : uint8_t { NONE, LNAH, LNAL, LNAW };
     enum class ePathLMS1_Tx : uint8_t { NONE, BAND1, BAND2 };
 
-    enum class eMemoryDevice : uint8_t { FPGA_RAM, FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_RAM = 0, FPGA_FLASH, EEPROM, COUNT };
 
   private:
     std::shared_ptr<IComms> lms7002mPort;
