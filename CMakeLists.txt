@@ -217,9 +217,7 @@ endif()
 ########################################################################
 ## Doxygen
 ########################################################################
-find_package(Doxygen
-             REQUIRED dot
-             OPTIONAL_COMPONENTS mscgen dia)
+find_package(Doxygen OPTIONAL_COMPONENTS dot mscgen dia)
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_API_DOXYGEN "Enable LMS API Doxygen documentation" ON "DOXYGEN_FOUND" ON)
