@@ -78,7 +78,12 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
         {
             char ctemp[512];
             sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
-            desc.memoryDevices.push_back({ ctemp, (static_cast<uint32_t>(i) + 1) << 8 | s.id });
+            lime::SDRDevice::DataStorage* storage = new lime::SDRDevice::DataStorage();
+            storage->name = s.name;
+            storage->id = (static_cast<uint32_t>(i) + 1) << 8 | s.id;
+            storage->map = s.map;
+            desc.memoryDevices.push_back(*storage);
+            //desc.memoryDevices.push_back({ ctemp, (static_cast<uint32_t>(i) + 1) << 8 | s.id });
             memorySelectToDevice[(i + 1) << 8 | s.id] = mSubDevices[i];
         }
 
