@@ -10,278 +10,43 @@
 
 using namespace lime;
 
-static int activeUSBconnections = 0;
-static std::thread gUSBProcessingThread;
-
-#ifdef __unix__
-void FX3::handle_libusb_events()
-{
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-
-    while (activeUSBconnections > 0)
-    {
-        int returnCode = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
-
-        if (returnCode != 0)
-        {
-            lime::error("error libusb_handle_events %s", libusb_strerror(static_cast<libusb_error>(returnCode)));
-        }
-    }
-}
-#endif // __UNIX__
-
 FX3::FX3(void* usbContext)
-    : contexts(nullptr)
-    , isConnected(false)
+    : USBGeneric(usbContext)
 {
-    isConnected = false;
-#ifdef __unix__
-    dev_handle = nullptr;
-    ctx = reinterpret_cast<libusb_context*>(usbContext);
-
-    if (activeUSBconnections == 0)
-    {
-        ++activeUSBconnections;
-        gUSBProcessingThread = std::thread(&FX3::handle_libusb_events, this);
-    }
-    else
-    {
-        ++activeUSBconnections;
-    }
-#endif
 }
 
 FX3::~FX3()
 {
     Disconnect();
-    --activeUSBconnections;
-
-    if (activeUSBconnections == 0)
-    {
-        if (gUSBProcessingThread.joinable())
-        {
-            gUSBProcessingThread.join();
-        }
-    }
 }
 
 bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
     Disconnect();
-#ifdef __unix__
-    libusb_device** devs; //pointer to pointer of device, used to retrieve a list of devices
-    int usbDeviceCount = libusb_get_device_list(ctx, &devs);
-
-    if (usbDeviceCount < 0)
+    bool isSuccessful = USBGeneric::Connect(vid, pid, serial);
+    if (!isSuccessful)
     {
-        return ReportError(-1, "libusb_get_device_list failed: %s", libusb_strerror(static_cast<libusb_error>(usbDeviceCount)));
+        return false;
     }
 
-    for (int i = 0; i < usbDeviceCount; ++i)
-    {
-        libusb_device_descriptor desc;
-        int returnCode = libusb_get_device_descriptor(devs[i], &desc);
-
-        if (returnCode < 0)
-        {
-            lime::error("failed to get device description");
-            continue;
-        }
-
-        if (desc.idProduct != pid || desc.idVendor != vid)
-        {
-            continue;
-        }
-
-        if (libusb_open(devs[i], &dev_handle) != 0)
-        {
-            continue;
-        }
-
-        std::string foundSerial;
-        if (desc.iSerialNumber > 0)
-        {
-            char data[255];
-            int stringLength = libusb_get_string_descriptor_ascii(
-                dev_handle, desc.iSerialNumber, reinterpret_cast<unsigned char*>(data), sizeof(data));
-
-            if (stringLength < 0)
-            {
-                lime::error("failed to get serial number");
-            }
-            else
-            {
-                foundSerial = std::string(data, static_cast<size_t>(stringLength));
-            }
-        }
-
-        if (serial == foundSerial)
-        {
-            break; //found it
-        }
-
-        libusb_close(dev_handle);
-        dev_handle = nullptr;
-    }
-
-    libusb_free_device_list(devs, 1);
-
-    if (dev_handle == nullptr)
-    {
-        return ReportError(-1, "libusb_open failed");
-    }
-
-    if (libusb_kernel_driver_active(dev_handle, 0) == 1) //find out if kernel driver is attached
-    {
-        lime::info("Kernel Driver Active");
-
-        if (libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
-        {
-            lime::info("Kernel Driver Detached!");
-        }
-    }
-
-    int returnCode = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
-    if (returnCode != LIBUSB_SUCCESS)
-    {
-        throw std::runtime_error(libusb_strerror(static_cast<libusb_error>(returnCode)));
-        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(returnCode)));
-    }
-#endif
-    isConnected = true;
     contexts = new USBTransferContext_FX3[USB_MAX_CONTEXTS];
-    return 0;
+    return true;
 }
 
-/**	@brief Closes communication to device.
-*/
 void FX3::Disconnect()
 {
-    if (contexts)
-    {
+    USBGeneric::Disconnect();
 #ifdef __unix__
-        const libusb_version* ver = libusb_get_version();
-        // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
-        const bool isBuggy_libusb_free_transfer = ver->major == 1 && ver->minor == 0 && ver->micro == 25;
-
-        if (isBuggy_libusb_free_transfer && contexts)
-        {
-            for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-            {
-                contexts[i].transfer->dev_handle = dev_handle;
-            }
-        }
-#endif
-        delete[] contexts;
-        contexts = nullptr;
-    }
-
-#ifdef __unix__
-    if (dev_handle != 0)
+    if (dev_handle != nullptr)
     {
         libusb_release_interface(dev_handle, 0);
         libusb_close(dev_handle);
-        dev_handle = 0;
+        dev_handle = nullptr;
     }
-#endif
-    isConnected = false;
-}
-
-/** @brief Returns connection status
-    @return 1-connection open, 0-connection closed.
-*/
-inline bool FX3::IsConnected()
-{
-#ifdef __unix__
-    return isConnected;
 #endif
 }
 
-int32_t FX3::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
-{
-    long len = 0;
-    if (not IsConnected())
-    {
-        throw std::runtime_error("BulkTransfer: USB device is not connected");
-    }
-
-    assert(data);
-
-#ifdef __unix__
-    int actualTransferred = 0;
-    int status = libusb_bulk_transfer(dev_handle, endPointAddr, data, length, &actualTransferred, timeout_ms);
-    len = actualTransferred;
-    if (status != 0)
-    {
-        printf("FX3::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
-            endPointAddr,
-            libusb_error_name(status),
-            actualTransferred,
-            length);
-    }
-#endif
-    return len;
-}
-
-int32_t FX3::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
-{
-    long len = length;
-    if (not IsConnected())
-    {
-        throw std::runtime_error("ControlTransfer: USB device is not connected");
-    }
-
-    assert(data);
-#ifdef __unix__
-    len = libusb_control_transfer(dev_handle, requestType, request, value, index, data, length, timeout_ms);
-#endif
-    return len;
-}
-
-#ifdef __unix__
-/** @brief Function for handling libusb callbacks
-*/
-static void process_libusbtransfer(libusb_transfer* trans)
-{
-    USBTransferContext_FX3* context = static_cast<USBTransferContext_FX3*>(trans->user_data);
-    std::unique_lock<std::mutex> lck(context->transferLock);
-    switch (trans->status)
-    {
-    case LIBUSB_TRANSFER_CANCELLED:
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_COMPLETED:
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_ERROR:
-        lime::error("USB TRANSFER ERROR");
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_TIMED_OUT:
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        break;
-    case LIBUSB_TRANSFER_OVERFLOW:
-        lime::error("USB transfer overflow");
-        break;
-    case LIBUSB_TRANSFER_STALL:
-        lime::error("USB transfer stalled");
-        break;
-    case LIBUSB_TRANSFER_NO_DEVICE:
-        lime::error("USB transfer no device");
-        context->done.store(true);
-        break;
-    }
-    lck.unlock();
-    context->cv.notify_one();
-}
-#endif
-
+#ifndef __unix__
 int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 {
     std::unique_lock<std::mutex> lock{ contextsLock };
@@ -297,54 +62,29 @@ int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
             break;
         }
     }
+    int index = GetUSBContextIndex();
 
-    if (!contextFound)
+    if (index < 0)
     {
-        printf("No contexts left for reading or sending data, address %i\n", endPointAddr);
         return -1;
     }
 
-    contexts[i].used = true;
-
-    lock.unlock();
-#ifndef __unix__
     if (InEndPt[endPointAddr & 0xF])
     {
-        contexts[i].EndPt = InEndPt[endPointAddr & 0xF];
-        contexts[i].context = contexts[i].EndPt->BeginDataXfer((unsigned char*)buffer, length, contexts[i].inOvLap);
+        contexts[index].EndPt = InEndPt[endPointAddr & 0xF];
+        contexts[index].context = contexts[index].EndPt->BeginDataXfer(buffer, length, contexts[index].inOvLap);
     }
 
-    return i;
-#else
-    libusb_transfer* tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length, process_libusbtransfer, &contexts[i], 0);
-    contexts[i].done = false;
-    contexts[i].bytesXfered = 0;
-    int status = libusb_submit_transfer(tr);
-    if (status != 0)
-    {
-        printf("BEGIN DATA READING %s\n", libusb_error_name(status));
-        contexts[i].used = false;
-        return -1;
-    }
-#endif
-    return i;
+    return index;
 }
 
 bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 {
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-#ifndef __unix__
         int status = 0;
         status = contexts[contextHandle].EndPt->WaitForXfer(contexts[contextHandle].inOvLap, timeout_ms);
         return status;
-#else
-        //blocking not to waste CPU
-        std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
-        return contexts[contextHandle].cv.wait_for(
-            lck, std::chrono::milliseconds(timeout_ms), [&]() { return contexts[contextHandle].done.load(); });
-#endif
     }
 
     return true; //there is nothing to wait for (signal wait finished)
@@ -354,7 +94,6 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 {
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-#ifndef __unix__
         int status = 0;
         long len = length;
         status = contexts[contextHandle].EndPt->FinishDataXfer(
@@ -362,12 +101,6 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
         contexts[contextHandle].used = false;
         contexts[contextHandle].reset();
         return len;
-#else
-        length = contexts[contextHandle].bytesXfered;
-        contexts[contextHandle].used = false;
-        contexts[contextHandle].reset();
-        return length;
-#endif
     }
 
     return 0;
@@ -375,7 +108,6 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 
 void FX3::AbortEndpointXfers(uint8_t endPointAddr)
 {
-#ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
         if (InEndPt[i] && InEndPt[i]->Address == endPointAddr)
@@ -383,21 +115,7 @@ void FX3::AbortEndpointXfers(uint8_t endPointAddr)
             InEndPt[i]->Abort();
         }
     }
-#else
-    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-    {
-        if (contexts[i].used && contexts[i].transfer->endpoint == endPointAddr)
-        {
-            libusb_cancel_transfer(contexts[i].transfer);
-        }
-    }
-#endif
-    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-    {
-        if (contexts[i].used)
-        {
-            WaitForXfer(i, 250);
-            FinishDataXfer(nullptr, 0, i);
-        }
-    }
+
+    WaitForXfers(endPointAddr);
 }
+#endif
