@@ -42,7 +42,7 @@ void __loadLimeSDR(void) //TODO fixme replace with LoadLibrary/dlopen
 }
 
 // Device identifier vendor ID and product ID pairs.
-const std::set<VidPid> ids{ { 1204, 241 }, { 1204, 243 }, { 7504, 24840 } };
+static const std::set<VidPid> ids{ { 1204, 241 }, { 1204, 243 }, { 7504, 24840 } };
 
 LimeSDREntry::LimeSDREntry()
     : USBEntry("LimeSDR", ids)
@@ -145,8 +145,12 @@ SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
 
-    FX3* usbComms = new FX3(ctx);
-    if (usbComms->Connect(vid, pid, handle.serial) != 0)
+    FX3* usbComms = new FX3(
+#ifdef __unix__
+        ctx
+#endif
+    );
+    if (!usbComms->Connect(vid, pid, handle.serial))
     {
         delete usbComms;
         char reason[256];

@@ -31,7 +31,7 @@ void __loadLimeSDR_Mini(void) // TODO: fixme replace with LoadLibrary/dlopen
 }
 
 // Device identifier vendor ID and product ID pairs.
-const std::set<VidPid> ids{ { 1027, 24607 } };
+static const std::set<VidPid> ids{ { 1027, 24607 } };
 
 LimeSDR_MiniEntry::LimeSDR_MiniEntry()
     : USBEntry("LimeSDR_Mini", ids)
@@ -112,8 +112,12 @@ SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
 
-    FT601* usbComms = new FT601(ctx);
-    if (usbComms->Connect(vid, pid, handle.serial) != 0)
+    FT601* usbComms = new FT601(
+#ifdef __unix__
+        ctx
+#endif
+    );
+    if (!usbComms->Connect(vid, pid, handle.serial))
     {
         delete usbComms;
         char reason[256];

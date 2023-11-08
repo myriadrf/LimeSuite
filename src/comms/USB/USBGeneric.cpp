@@ -79,7 +79,7 @@ USBGeneric::~USBGeneric()
 bool USBGeneric::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
 #ifdef __unix__
-    libusb_device** devs; //pointer to pointer of device, used to retrieve a list of devices
+    libusb_device** devs; // Pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0)
@@ -141,25 +141,24 @@ bool USBGeneric::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
         return ReportError(-1, "libusb_open failed");
     }
 
-    if (libusb_kernel_driver_active(dev_handle, 0) == 1) //find out if kernel driver is attached
+    if (libusb_kernel_driver_active(dev_handle, 0) == 1) // Find out if kernel driver is attached
     {
         lime::info("Kernel Driver Active");
 
-        if (libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
+        if (libusb_detach_kernel_driver(dev_handle, 0) == 0) // Detach it
         {
             lime::info("Kernel Driver Detached!");
         }
     }
 
-    int returnCode = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
+    int returnCode = libusb_claim_interface(dev_handle, 0); // Claim interface 0 (the first) of device
     if (returnCode != LIBUSB_SUCCESS)
     {
-        throw std::runtime_error(libusb_strerror(static_cast<libusb_error>(returnCode)));
-        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(returnCode)));
+        return ReportError(returnCode, "Cannot claim interface - %s", libusb_strerror(libusb_error(returnCode)));
     }
 #endif
     isConnected = true;
-    return 0;
+    return true;
 }
 
 inline bool USBGeneric::IsConnected()
@@ -169,26 +168,27 @@ inline bool USBGeneric::IsConnected()
 
 void USBGeneric::Disconnect()
 {
-    if (contexts)
+    isConnected = false;
+    if (contexts == nullptr)
     {
-#ifdef __unix__
-        const libusb_version* ver = libusb_get_version();
-        // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
-        const bool isBuggy_libusb_free_transfer = ver->major == 1 && ver->minor == 0 && ver->micro == 25;
-
-        if (isBuggy_libusb_free_transfer && contexts)
-        {
-            for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-            {
-                contexts[i].transfer->dev_handle = dev_handle;
-            }
-        }
-#endif
-        delete[] contexts;
-        contexts = nullptr;
+        return;
     }
 
-    isConnected = false;
+#ifdef __unix__
+    const libusb_version* ver = libusb_get_version();
+    // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
+    const bool isBuggy_libusb_free_transfer = ver->major == 1 && ver->minor == 0 && ver->micro == 25;
+
+    if (isBuggy_libusb_free_transfer && contexts)
+    {
+        for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+        {
+            contexts[i].transfer->dev_handle = dev_handle;
+        }
+    }
+#endif
+    delete[] contexts;
+    contexts = nullptr;
 }
 
 int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
@@ -308,13 +308,13 @@ bool USBGeneric::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 #ifdef __unix__
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-        //blocking not to waste CPU
+        // Blocking not to waste CPU
         std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
         return contexts[contextHandle].cv.wait_for(
             lck, std::chrono::milliseconds(timeout_ms), [&]() { return contexts[contextHandle].done.load(); });
     }
 #endif
-    return true; //there is nothing to wait for (signal wait finished)
+    return true; // There is nothing to wait for (signal wait finished)
 }
 
 int USBGeneric::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
@@ -352,7 +352,7 @@ int USBGeneric::GetUSBContextIndex()
 
     int i = 0;
     bool contextFound = false;
-    //find not used context
+    // Find not used context
     for (i = 0; i < USB_MAX_CONTEXTS; i++)
     {
         if (!contexts[i].used)

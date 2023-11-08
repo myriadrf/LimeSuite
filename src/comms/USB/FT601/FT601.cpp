@@ -71,14 +71,18 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 
     isConnected = true;
 #else
-    USBGeneric::Connect(vid, pid, serial);
+    bool isSuccessful = USBGeneric::Connect(vid, pid, serial);
+    if (!isSuccessful)
+    {
+        return false;
+    }
 
     FT_FlushPipe(ctrlBulkReadAddr); // Clear control endpoint rx buffer
     FT_SetStreamPipe(ctrlBulkReadAddr, 64);
     FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
 #endif
     contexts = new USBTransferContext_FT601[USB_MAX_CONTEXTS];
-    return 0;
+    return true;
 }
 
 void FT601::Disconnect()

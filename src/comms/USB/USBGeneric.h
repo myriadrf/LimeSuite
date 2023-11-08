@@ -22,6 +22,7 @@ namespace lime {
 class USBGeneric
 {
   public:
+    USBGeneric() = delete;
     USBGeneric(void* usbContext);
     virtual ~USBGeneric();
     static const int32_t defaultTimeout = 1000;
@@ -41,7 +42,6 @@ class USBGeneric
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms);
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle);
     virtual void AbortEndpointXfers(uint8_t endPointAddr);
-    virtual void WaitForXfers(uint8_t endPointAddr);
 
   protected:
     static const int USB_MAX_CONTEXTS{ 16 }; //maximum number of contexts for asynchronous transfers
@@ -52,6 +52,7 @@ class USBGeneric
     bool isConnected;
 
     int GetUSBContextIndex();
+    virtual void WaitForXfers(uint8_t endPointAddr);
 
 #ifdef __unix__
     static int activeUSBconnections;

@@ -35,47 +35,47 @@ USBTransferContext::~USBTransferContext()
 
 bool USBTransferContext::Reset()
 {
-    if (used)
-    {
-        return false;
-    }
-
-    return true;
+    return !used;
 }
 
 #ifdef __unix__
 libusb_context* USBEntry::ctx{ nullptr };
+uint USBEntry::ctxRefCount{ 0 };
 #endif
 
-USBEntry::USBEntry(const std::string& name, std::set<VidPid> deviceIds)
+USBEntry::USBEntry(const std::string& name, const std::set<VidPid>& deviceIds)
     : DeviceRegistryEntry(name)
     , mDeviceIds(deviceIds)
 {
 #ifdef __unix__
-    if (ctx == nullptr)
+    ++ctxRefCount;
+
+    if (ctx != nullptr)
     {
-        int returnCode = libusb_init(&ctx); // Initialize the library for the session we just declared
-        if (returnCode < 0)
-        {
-            lime::error("Init Error %i", returnCode); // There was an error
-        }
-    #if LIBUSBX_API_VERSION < 0x01000106
-        libusb_set_debug(ctx, 3); // Set verbosity level to 3, as suggested in the documentation
-    #else
-        libusb_set_option(
-            ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); // Set verbosity level to info, as suggested in the documentation
-    #endif
+        return;
     }
+
+    int returnCode = libusb_init(&ctx); // Initialize the library for the session we just declared
+    if (returnCode < 0)
+    {
+        lime::error("Init Error %i", returnCode); // There was an error
+    }
+
+    #if LIBUSBX_API_VERSION < 0x01000106
+    libusb_set_debug(ctx, 3); // Set verbosity level to 3, as suggested in the documentation
+    #else
+    libusb_set_option(
+        ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO); // Set verbosity level to info, as suggested in the documentation
+    #endif
 #endif
 }
 
 USBEntry::~USBEntry()
 {
 #ifdef __unix__
-    if (ctx != nullptr)
+    if (--ctxRefCount <= 0)
     {
         libusb_exit(ctx);
-        ctx = nullptr;
     }
 #endif
 }
@@ -143,16 +143,19 @@ std::string USBEntry::GetUSBDeviceSpeedString(libusb_device* device)
 {
     int speed = libusb_get_device_speed(device);
 
-    const std::unordered_map<int, std::string> mapping = { { LIBUSB_SPEED_UNKNOWN, "USB" },
-        { LIBUSB_SPEED_LOW, "USB" },
-        { LIBUSB_SPEED_FULL, "USB" },
-        { LIBUSB_SPEED_HIGH, "USB 2.0" },
-        { LIBUSB_SPEED_SUPER, "USB 3.0" } };
-
-    return mapping.at(speed);
+    switch (speed)
+    {
+    case LIBUSB_SPEED_HIGH:
+        return "USB 2.0";
+    case LIBUSB_SPEED_SUPER:
+        return "USB 3.0";
+    default:
+        return "USB";
+    }
 }
 
-DeviceHandle USBEntry::GetDeviceHandle(libusb_device_handle* tempHandle, libusb_device* device, libusb_device_descriptor desc)
+DeviceHandle USBEntry::GetDeviceHandle(
+    libusb_device_handle* tempHandle, libusb_device* device, const libusb_device_descriptor& desc)
 {
     DeviceHandle handle;
 

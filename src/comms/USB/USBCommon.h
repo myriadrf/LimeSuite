@@ -59,7 +59,7 @@ struct VidPid {
 class USBEntry : public DeviceRegistryEntry
 {
   public:
-    USBEntry(const std::string& name, std::set<VidPid> deviceIds);
+    USBEntry(const std::string& name, const std::set<VidPid>& deviceIds);
     virtual ~USBEntry();
 
     virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint);
@@ -67,12 +67,13 @@ class USBEntry : public DeviceRegistryEntry
   protected:
 #ifdef __unix__
     static libusb_context* ctx;
+    static uint ctxRefCount;
 #endif
   private:
     std::set<VidPid> mDeviceIds;
 #ifdef __unix__
     std::string GetUSBDeviceSpeedString(libusb_device* device);
-    DeviceHandle GetDeviceHandle(libusb_device_handle* tempHandle, libusb_device* device, libusb_device_descriptor desc);
+    DeviceHandle GetDeviceHandle(libusb_device_handle* tempHandle, libusb_device* device, const libusb_device_descriptor& desc);
 #endif
 };
 

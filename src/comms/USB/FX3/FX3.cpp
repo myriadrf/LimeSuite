@@ -23,10 +23,14 @@ FX3::~FX3()
 bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
     Disconnect();
-    USBGeneric::Connect(vid, pid, serial);
+    bool isSuccessful = USBGeneric::Connect(vid, pid, serial);
+    if (!isSuccessful)
+    {
+        return false;
+    }
 
     contexts = new USBTransferContext_FX3[USB_MAX_CONTEXTS];
-    return 0;
+    return true;
 }
 
 void FX3::Disconnect()
