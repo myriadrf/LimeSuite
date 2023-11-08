@@ -56,7 +56,12 @@ template<class T> struct sRect {
     }
 };
 
+/** @brief Structure for storing color information as 4 floats */
 struct GLG_color {
+    /**
+      @brief Construct a new GLG_color object using a specified color.
+      @param rgba An integer representing the RGBA color values. First 8 bits are the red value, next 8 are green, then blue, then the alpha.
+     */
     GLG_color(unsigned int rgba)
     {
         red = (rgba >> 24) / 255.0;
@@ -64,6 +69,8 @@ struct GLG_color {
         blue = ((rgba >> 8) & 0xFF) / 255.0;
         alpha = (rgba & 0xFF) / 255.0;
     }
+
+    /** @brief Construct a new GLG_color object using a default color of #797979FF. */
     GLG_color()
         : red(0.5)
         , green(0.5)
@@ -72,6 +79,10 @@ struct GLG_color {
     {
     }
 
+    /**
+      @brief Get the stored color as a packed integer value.
+      @return The packed integer value.
+     */
     unsigned int getColor4b()
     {
         unsigned int color = 0;
@@ -82,10 +93,10 @@ struct GLG_color {
         return color;
     }
 
-    float red;
-    float green;
-    float blue;
-    float alpha;
+    float red; ///< The red component of the color
+    float green; ///< The green component of the color
+    float blue; ///< The blue component of the color
+    float alpha; ///< The alpha component of the color
 };
 
 /// @brief Color data series

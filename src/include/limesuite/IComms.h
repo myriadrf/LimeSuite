@@ -5,38 +5,53 @@
 #include "limesuite/config.h"
 
 namespace lime {
+
+/** @brief An interface for Serial Peripheral Interface communications */
 class LIME_API ISPI
 {
   public:
-    // Default path for writing/reading registers
+    /**
+      @brief Default path for writing/reading registers.
+      @param MOSI Main Out Sub In (data output from main).
+      @param MISO Main In Sub Out (data output from sub).
+      @param count Input/output data length.
+     */
     virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 
-    // Writing/reading registers for specific slave
+    /**
+      @brief Writing/reading registers for specific slave.
+      @param spiBusAddress The address of the SPI device.
+      @param MOSI Main Out Sub In (data output from main).
+      @param MISO Main In Sub Out (data output from sub).
+      @param count Input/output data length.
+     */
     virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 };
 
+/** @brief An interface for Inter-Integrated Circuit communications */
 class LIME_API II2C
 {
   public:
     /*!
-     * Write to an available I2C slave.
-     * @param address I2C slave address
-     * @param data output buffer
-     * @param length output data length
-     * @return 0-success
+      @brief Write to an available Inter-Integrated Circuit slave.
+      @param address Inter-Integrated Circuit slave address.
+      @param data Output buffer.
+      @param length Output data length.
+      @return 0 on success.
      */
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
 
     /*!
-     * Read from an available I2C slave.
-     * The data parameter can be used to pass optional write data.
-     * Some implementations can combine a write + read transaction.
-     * If the device contains multiple I2C masters,
-     * the address bits can encode which master.
-     * \param address the address of the slave
-     * \param [inout] dest buffer to store read data from the slave
-     * \param length Number of bytes to read
-     * @return 0-success
+      @brief Read from an available Inter-Integrated Circuit slave.
+
+      The data parameter can be used to pass optional write data.
+      Some implementations can combine a write + read transaction.
+      If the device contains multiple I2C masters,
+      the address bits can encode which master.
+      @param address The address of the slave.
+      @param [inout] dest Buffer to store read data from the slave.
+      @param length Number of bytes to read.
+      @return 0 on success.
      */
     virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
 };
