@@ -3,19 +3,79 @@
 
 #include "limesuite/IComms.h"
 #include "LMS64CProtocol.h"
+#include "limesuite/DeviceHandle.h"
+#include "limesuite/DeviceRegistry.h"
+
+#include <atomic>
+#include <condition_variable>
 #include <memory>
+#include <set>
+
+#ifdef __unix__
+    #ifdef __GNUC__
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wpedantic"
+    #endif
+    #include <libusb.h>
+    #ifdef __GNUC__
+        #pragma GCC diagnostic pop
+    #endif
+#endif
 
 namespace lime {
 
 class USBTransferContext
 {
   public:
-    explicit USBTransferContext()
-        : used(false){};
-    virtual ~USBTransferContext(){};
-    virtual bool reset() = 0;
+    explicit USBTransferContext();
+    virtual ~USBTransferContext();
+    virtual bool Reset();
 
     bool used;
+
+#ifdef __unix__
+    libusb_transfer* transfer;
+    long bytesXfered;
+    std::atomic<bool> done;
+    std::mutex transferLock;
+    std::condition_variable cv;
+#endif
+};
+
+struct VidPid {
+    uint16_t vid;
+    uint16_t pid;
+
+    bool operator<(const VidPid& other) const
+    {
+        if (vid == other.vid)
+        {
+            return pid < other.pid;
+        }
+
+        return vid < other.vid;
+    }
+};
+
+class USBEntry : public DeviceRegistryEntry
+{
+  public:
+    USBEntry(const std::string& name, const std::set<VidPid>& deviceIds);
+    virtual ~USBEntry();
+
+    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint);
+
+  protected:
+#ifdef __unix__
+    static libusb_context* ctx;
+    static uint ctxRefCount;
+#endif
+  private:
+    std::set<VidPid> mDeviceIds;
+#ifdef __unix__
+    std::string GetUSBDeviceSpeedString(libusb_device* device);
+    DeviceHandle GetDeviceHandle(libusb_device_handle* tempHandle, libusb_device* device, const libusb_device_descriptor& desc);
+#endif
 };
 
 class USB_CSR_Pipe : public ISerialPort

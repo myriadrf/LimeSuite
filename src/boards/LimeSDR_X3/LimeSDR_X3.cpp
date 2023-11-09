@@ -280,9 +280,9 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     if (skipTune)
         return 0;
 
-    if (lms->SetFrequencySX(true, lms->GetFrequencySX(true)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
         return -1;
-    if (lms->SetFrequencySX(false, lms->GetFrequencySX(false)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
         return -1;
 
     // if (SetRate(10e6,2)!=0)
@@ -477,9 +477,9 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
     if (skipTune)
         return 0;
 
-    if (lms->SetFrequencySX(true, lms->GetFrequencySX(true)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
         return -1;
-    if (lms->SetFrequencySX(false, lms->GetFrequencySX(false)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
         return -1;
 
     // if (SetRate(10e6,2)!=0)
@@ -556,9 +556,9 @@ int LimeSDR_X3::InitLMS3(bool skipTune)
     if (skipTune)
         return 0;
 
-    if (lms->SetFrequencySX(true, lms->GetFrequencySX(true)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
         return -1;
-    if (lms->SetFrequencySX(false, lms->GetFrequencySX(false)) != 0)
+    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
         return -1;
     return 0;
 }
@@ -648,9 +648,9 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
         if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
-            chip->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
+            chip->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
         if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
-            chip->SetFrequencySX(true, cfg.channel[0].tx.centerFrequency);
+            chip->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
         if (tddMode)
             chip->EnableSXTDD(true);
 
@@ -702,62 +702,8 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             }
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal ? 1 : 0);
 
-            for (int dir = 0; dir < 2; ++dir)
-            {
-                const char* dirName = (dir == Rx) ? "Rx" : "Tx";
-                const SDRDevice::ChannelConfig::Direction& trx = (dir == 0) ? cfg.channel[ch].rx : cfg.channel[ch].tx;
-                if (socIndex == 1) // LMS2 uses external ADC/DAC
-                    EnableChannelLMS2(chip, (TRXDir)dir, ch, trx.enabled);
-                else
-                    chip->EnableChannel((TRXDir)dir, ch, trx.enabled);
-
-                if (socIndex == 0)
-                    LMS1SetPath((TRXDir)dir, ch, trx.path);
-                else if (socIndex == 1)
-                {
-                    uint8_t path;
-                    if (trx.enabled)
-                        path = trx.path;
-                    else
-                        path = (dir == Rx) ? uint8_t(ePathLMS2_Rx::NONE) : uint8_t(ePathLMS2_Tx::NONE);
-                    LMS2SetPath((TRXDir)dir, ch, path);
-                }
-                else if (socIndex == 2)
-                    LMS3SetPath((TRXDir)dir, ch, trx.path);
-
-                if (socIndex == 0)
-                {
-                    if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
-                        throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
-                }
-
-                if (trx.calibrate && trx.enabled)
-                {
-                    SetupCalibrations(chip, trx.sampleRate);
-                    int status;
-                    if (dir == Rx)
-                        status = CalibrateRx(false, false);
-                    else
-                        status = CalibrateTx(false);
-                    if (status != MCU_BD::MCU_NO_ERROR)
-                        throw std::runtime_error(
-                            strFormat("%s ch%i DC/IQ calibration failed: %s", dirName, ch, MCU_BD::MCUStatusMessage(status)));
-                }
-
-                if (trx.lpf > 0 && trx.enabled)
-                {
-                    SetupCalibrations(chip, trx.sampleRate);
-                    int status;
-                    if (dir == Rx)
-                        status = TuneRxFilter(trx.lpf);
-                    else
-                        status = TuneTxFilter(trx.lpf);
-
-                    if (status != MCU_BD::MCU_NO_ERROR)
-                        throw std::runtime_error(
-                            strFormat("%s ch%i filter calibration failed: %s", dirName, ch, MCU_BD::MCUStatusMessage(status)));
-                }
-            }
+            ConfigureDirection(TRXDir::Rx, chip, cfg, ch, socIndex);
+            ConfigureDirection(TRXDir::Tx, chip, cfg, ch, socIndex);
         }
 
         if (socIndex == 0)
@@ -783,6 +729,113 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } catch (std::runtime_error& e)
     {
         throw;
+    }
+}
+
+void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex)
+{
+    std::string dirName;
+    SDRDevice::ChannelConfig::Direction trx;
+
+    if (dir == TRXDir::Rx)
+    {
+        dirName = "Rx";
+        trx = cfg.channel[ch].rx;
+    }
+    else
+    {
+        dirName = "Tx";
+        trx = cfg.channel[ch].tx;
+    }
+
+    if (socIndex == 1) // LMS2 uses external ADC/DAC
+    {
+        EnableChannelLMS2(chip, dir, ch, trx.enabled);
+    }
+    else
+    {
+        chip->EnableChannel(dir, ch, trx.enabled);
+    }
+
+    SetLMSPath(dir, trx, ch, socIndex);
+
+    if (socIndex == 0)
+    {
+        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
+        {
+            throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
+        }
+    }
+
+    if (trx.calibrate && trx.enabled)
+    {
+        SetupCalibrations(chip, trx.sampleRate);
+
+        int status;
+        if (dir == TRXDir::Rx)
+        {
+            status = CalibrateRx(false, false);
+        }
+        else
+        {
+            status = CalibrateTx(false);
+        }
+
+        if (status != MCU_BD::MCU_NO_ERROR)
+        {
+            throw std::runtime_error(
+                strFormat("%s ch%i DC/IQ calibration failed: %s", dirName, ch, MCU_BD::MCUStatusMessage(status)));
+        }
+    }
+
+    if (trx.lpf > 0 && trx.enabled)
+    {
+        SetupCalibrations(chip, trx.sampleRate);
+        int status;
+
+        if (dir == TRXDir::Rx)
+        {
+            status = TuneRxFilter(trx.lpf);
+        }
+        else
+        {
+            status = TuneTxFilter(trx.lpf);
+        }
+
+        if (status != MCU_BD::MCU_NO_ERROR)
+        {
+            throw std::runtime_error(
+                strFormat("%s ch%i filter calibration failed: %s", dirName, ch, MCU_BD::MCUStatusMessage(status)));
+        }
+    }
+}
+
+void LimeSDR_X3::SetLMSPath(const TRXDir dir, const SDRDevice::ChannelConfig::Direction& trx, const int ch, const uint8_t socIndex)
+{
+    switch (socIndex)
+    {
+    case 0:
+        LMS1SetPath(dir, ch, trx.path);
+        break;
+    case 1:
+        uint8_t path;
+
+        if (trx.enabled)
+        {
+            path = trx.path;
+        }
+        else
+        {
+            path = (dir == TRXDir::Rx) ? uint8_t(ePathLMS2_Rx::NONE) : uint8_t(ePathLMS2_Tx::NONE);
+        }
+
+        LMS2SetPath(dir, ch, path);
+        break;
+    case 2:
+        LMS3SetPath(dir, ch, trx.path);
+        break;
+    default:
+        break;
     }
 }
 

@@ -73,7 +73,7 @@ bool TRXLooper_USB::GetSamplesPacket(SamplesPacketType** srcPkt)
         return false;
     }
 
-    NegateQ((*srcPkt), Tx);
+    NegateQ((*srcPkt), TRXDir::Tx);
 
     return true;
 }
@@ -363,7 +363,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             expectedTS = pkt->counter + samplesProduced;
             mRx.lastTimestamp.store(expectedTS, std::memory_order_relaxed);
 
-            NegateQ(outputPkt, Rx);
+            NegateQ(outputPkt, TRXDir::Rx);
 
             if (mRx.fifo->push(outputPkt, false))
             {

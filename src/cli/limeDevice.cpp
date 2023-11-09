@@ -11,6 +11,21 @@ static int printHelp(void)
     return EXIT_SUCCESS;
 }
 
+static std::string GPSLockToString(const SDRDevice::GPS_Lock::LockStatus& status)
+{
+    switch (status)
+    {
+    case SDRDevice::GPS_Lock::LockStatus::NotAvailable:
+        return std::string("Not available");
+    case SDRDevice::GPS_Lock::LockStatus::Has2D:
+        return std::string("2D");
+    case SDRDevice::GPS_Lock::LockStatus::Has3D:
+        return std::string("3D");
+    default:
+        return std::string("Undefined");
+    }
+}
+
 void PrintDeviceDetails(SDRDevice* device)
 {
     auto d = device->GetDescriptor();
@@ -30,6 +45,18 @@ void PrintDeviceDetails(SDRDevice* device)
          << "Memory devices\t\t:" << endl;
     for (const SDRDevice::DataStorage& mem : d.memoryDevices)
         cout << "\t\t\t\t  " << mem.name << endl;
+    cout << "\t"
+         << "GPS Lock:" << endl;
+    SDRDevice::GPS_Lock gpsStatus;
+    device->GetGPSLock(&gpsStatus);
+    cout << "\t\t"
+         << "GPS - " << GPSLockToString(gpsStatus.gps) << endl;
+    cout << "\t\t"
+         << "Glonass - " << GPSLockToString(gpsStatus.glonass) << endl;
+    cout << "\t\t"
+         << "Galileo - " << GPSLockToString(gpsStatus.galileo) << endl;
+    cout << "\t\t"
+         << "Beidou - " << GPSLockToString(gpsStatus.beidou) << endl;
 }
 
 int main(int argc, char* argv[])

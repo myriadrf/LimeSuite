@@ -5,6 +5,7 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
+#include "USBCommon.h"
 #include <vector>
 #include <memory>
 
@@ -75,13 +76,15 @@ class LimeSDR : public LMS7002M_SDRDevice
     std::shared_ptr<IComms> mfpgaPort;
 };
 
-class LimeSDREntry : public DeviceRegistryEntry
+class LimeSDREntry : public USBEntry
 {
   public:
     LimeSDREntry();
-    virtual ~LimeSDREntry();
-    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-    SDRDevice* make(const DeviceHandle& handle) override;
+
+#ifndef __unix__
+    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
+#endif
+    virtual SDRDevice* make(const DeviceHandle& handle) override;
 };
 
 } // namespace lime

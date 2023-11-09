@@ -98,6 +98,15 @@ class LIME_API SDRDevice
         uint32_t late;
     };
 
+    struct GPS_Lock {
+        enum LockStatus { Undefined = 0, NotAvailable = 1, Has2D = 2, Has3D = 3 };
+
+        LockStatus galileo;
+        LockStatus beidou;
+        LockStatus glonass;
+        LockStatus gps;
+    };
+
     // channels order and data transmission formats setup
     struct StreamConfig {
         struct Extras {
@@ -112,6 +121,7 @@ class LIME_API SDRDevice
             uint32_t txMaxPacketsInBatch;
             uint16_t txSamplesInPacket;
             bool negateQ;
+            bool waitPPS; // start sampling from next following PPS
         };
         typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
         enum DataFormat {
@@ -196,6 +206,7 @@ class LIME_API SDRDevice
 
     virtual int Init() = 0;
     virtual void Reset() = 0;
+    virtual void GetGPSLock(GPS_Lock* status) = 0;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) = 0;
 

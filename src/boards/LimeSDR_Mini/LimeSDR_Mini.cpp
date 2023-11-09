@@ -56,7 +56,7 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     mFPGA = new FPGA_Mini(spiFPGA, spiLMS);
 
     double refClk = mFPGA->DetectRefClk();
-    mLMSChips[0]->SetReferenceClk_SX(false, refClk);
+    mLMSChips[0]->SetReferenceClk_SX(TRXDir::Rx, refClk);
 
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, descriptor);
@@ -155,20 +155,20 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         if (rxUsed)
         {
-            mLMSChips[0]->SetFrequencySX(false, cfg.channel[0].rx.centerFrequency);
+            mLMSChips[0]->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
         }
 
         if (txUsed)
         {
-            mLMSChips[0]->SetFrequencySX(true, cfg.channel[0].rx.centerFrequency);
+            mLMSChips[0]->SetFrequencySX(TRXDir::Tx, cfg.channel[0].rx.centerFrequency);
         }
 
         for (int i = 0; i < 2; ++i)
         {
             const ChannelConfig& ch = cfg.channel[i];
             mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
-            mLMSChips[0]->EnableChannel(Rx, i, ch.rx.enabled);
-            mLMSChips[0]->EnableChannel(Tx, i, ch.tx.enabled);
+            mLMSChips[0]->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
+            mLMSChips[0]->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
             mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
 

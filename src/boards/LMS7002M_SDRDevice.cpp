@@ -88,11 +88,20 @@ void LMS7002M_SDRDevice::Reset()
         iter->ResetChip();
 }
 
+void LMS7002M_SDRDevice::GetGPSLock(GPS_Lock* status)
+{
+    uint16_t regValue = mFPGA->ReadRegister(0x114);
+    status->glonass = static_cast<GPS_Lock::LockStatus>((regValue >> 0) & 0x3);
+    status->gps = static_cast<GPS_Lock::LockStatus>((regValue >> 4) & 0x3);
+    status->beidou = static_cast<GPS_Lock::LockStatus>((regValue >> 8) & 0x3);
+    status->galileo = static_cast<GPS_Lock::LockStatus>((regValue >> 12) & 0x3);
+}
+
 double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
 {
     if (moduleIndex >= mLMSChips.size())
         throw std::logic_error("Invalid module index");
-    return mLMSChips[moduleIndex]->GetSampleRate(trx == TRXDir::Tx ? true : false, LMS7002M::Channel::ChA);
+    return mLMSChips[moduleIndex]->GetSampleRate(trx, LMS7002M::Channel::ChA);
 }
 
 void LMS7002M_SDRDevice::Synchronize(bool toChip)
@@ -166,10 +175,15 @@ int LMS7002M_SDRDevice::StreamTx(
 void LMS7002M_SDRDevice::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
 {
     TRXLooper* trx = mStreamers.at(moduleIndex);
-    if (rx)
-        *rx = trx->GetStats(false);
-    if (tx)
-        *tx = trx->GetStats(true);
+    if (rx != nullptr)
+    {
+        *rx = trx->GetStats(TRXDir::Rx);
+    }
+
+    if (tx != nullptr)
+    {
+        *tx = trx->GetStats(TRXDir::Tx);
+    }
 }
 
 bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)

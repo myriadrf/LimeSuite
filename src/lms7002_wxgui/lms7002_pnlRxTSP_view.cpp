@@ -1864,7 +1864,7 @@ void lms7002_pnlRXTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
         }
         double phaseOffset;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&phaseOffset);
-        lmsControl->SetNCOFrequencies(false, nco_freq, 16, phaseOffset);
+        lmsControl->SetNCOFrequencies(TRXDir::Rx, nco_freq, 16, phaseOffset);
     }
     else
     {
@@ -1876,7 +1876,7 @@ void lms7002_pnlRXTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
         double freq_MHz;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq_MHz);
         //LMS_SetNCOPhase(lmsControl, LMS_CH_RX, mChannel, nco_phase, freq_MHz);
-        lmsControl->SetNCOPhases(false, nco_phase, 16, freq_MHz);
+        lmsControl->SetNCOPhases(TRXDir::Rx, nco_phase, 16, freq_MHz);
     }
     UpdateGUI(); // API changes nco selection
 }
@@ -1885,7 +1885,7 @@ void lms7002_pnlRXTSP_view::OnbtnSetLPFClick(wxCommandEvent& event)
 {
     double bw;
     txtLPFBW->GetValue().ToDouble(&bw);
-    if (lmsControl->SetGFIRFilter(false, mChannel, true, bw * 1e6) != 0)
+    if (lmsControl->SetGFIRFilter(TRXDir::Rx, mChannel, true, bw * 1e6) != 0)
         wxMessageBox(_("GFIR configuration failed"), _("Error"));
 
     UpdateGUI(); // API changes nco selection
@@ -1897,7 +1897,7 @@ void lms7002_pnlRXTSP_view::UpdateNCOinputs()
     if (rgrMODE_RX->GetSelection() == 0) //FCW mode
     {
         double pho = 0;
-        auto freqVector = lmsControl->GetNCOFrequencies(false, &pho);
+        auto freqVector = lmsControl->GetNCOFrequencies(TRXDir::Rx, &pho);
         for (size_t i = 0; i < txtNCOinputs.size() && i < freqVector.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freqVector[i] / 1e6));
@@ -1911,7 +1911,7 @@ void lms7002_pnlRXTSP_view::UpdateNCOinputs()
     {
         double fcw = 0;
         //LMS_GetNCOPhase(lmsControl, LMS_CH_RX, mChannel, phase, &fcw);
-        auto angles_deg = lmsControl->GetNCOPhases(false, &fcw);
+        auto angles_deg = lmsControl->GetNCOPhases(TRXDir::Rx, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size() && i < angles_deg.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), angles_deg[i]));
@@ -1961,7 +1961,7 @@ void lms7002_pnlRXTSP_view::UpdateGUI()
     cmbCMIX_GAIN_RXTSP->SetSelection(value);
 
     double sr = 0;
-    sr = lmsControl->GetSampleRate(false);
+    sr = lmsControl->GetSampleRate(TRXDir::Rx);
     txtRateVal->SetLabel(wxString::Format("%3.3f MHz", sr / 1e6));
 
     //check if B channel is enabled
@@ -1980,7 +1980,7 @@ void lms7002_pnlRXTSP_view::PHOinputChanged(wxCommandEvent& event)
     {
         double angle{ 0 };
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
-        lmsControl->SetNCOPhaseOffsetForMode0(false, angle);
+        lmsControl->SetNCOPhaseOffsetForMode0(TRXDir::Rx, angle);
         //LMS_SetNCOFrequency(lmsControl, LMS_CH_RX, mChannel, nullptr, angle);
     }
     else //PHO mode
@@ -1988,7 +1988,7 @@ void lms7002_pnlRXTSP_view::PHOinputChanged(wxCommandEvent& event)
         double freq{ 0 };
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
         //LMS_SetNCOPhase(lmsControl, LMS_CH_RX, mChannel, nullptr, freq * 1e6);
-        lmsControl->SetNCOFrequency(false, 0, freq * 1e6);
+        lmsControl->SetNCOFrequency(TRXDir::Rx, 0, freq * 1e6);
     }
 
     assert(lblNCOangles.size() == 16);

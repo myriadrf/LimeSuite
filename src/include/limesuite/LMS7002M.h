@@ -285,15 +285,15 @@ class LIME_API LMS7002M
     ///@}
 
     ///@name CGEN and PLL
-    int SetReferenceClk_SX(bool tx, float_type freq_Hz);
-    float_type GetReferenceClk_SX(bool tx);
+    int SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
+    float_type GetReferenceClk_SX(TRXDir dir);
     float_type GetFrequencyCGEN();
     int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
     bool GetCGENLocked(void);
-    float_type GetFrequencySX(bool tx);
-    int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
-    int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
-    bool GetSXLocked(bool tx);
+    float_type GetFrequencySX(TRXDir dir);
+    int SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output = nullptr);
+    int SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
+    bool GetSXLocked(TRXDir dir);
     ///VCO modules available for tuning
     enum VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
@@ -301,33 +301,33 @@ class LIME_API LMS7002M
     ///@}
 
     ///@name TSP
-    int LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
-    int SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz);
-    float_type GetNCOFrequency(bool tx, uint8_t index, bool fromChip = true);
-    int SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
-    int SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
-    float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
-    int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t* coef, uint8_t coefCount);
-    int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t* coef, uint8_t coefCount);
-    float_type GetReferenceClk_TSP(bool tx);
+    int LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q);
+    int SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz);
+    float_type GetNCOFrequency(TRXDir dir, uint8_t index, bool fromChip = true);
+    int SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_Deg);
+    int SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_Deg);
+    float_type GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index);
+    int SetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, const int16_t* coef, uint8_t coefCount);
+    int GetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, int16_t* coef, uint8_t coefCount);
+    float_type GetReferenceClk_TSP(TRXDir dir);
 
-    int WriteGFIRCoefficients(bool tx, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
-    int SetGFIRFilter(bool tx, unsigned ch, bool enabled, double bandwidth);
+    int WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
+    int SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwidth);
 
-    int SetNCOFrequencies(bool tx, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
+    int SetNCOFrequencies(TRXDir dir, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     // @param phaseOffset optional will be filled with phase offset value
-    std::vector<float_type> GetNCOFrequencies(bool tx, float_type* phaseOffset = nullptr);
-    int SetNCOPhases(bool tx, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
+    std::vector<float_type> GetNCOFrequencies(TRXDir dir, float_type* phaseOffset = nullptr);
+    int SetNCOPhases(TRXDir dir, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
     // @param frequencyOffset optional will be filled with NCO frequency offset value
-    std::vector<float_type> GetNCOPhases(bool tx, float_type* frequencyOffset = nullptr);
+    std::vector<float_type> GetNCOPhases(TRXDir dir, float_type* frequencyOffset = nullptr);
     ///@}
 
     int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
     //! Get the sample rate in Hz
-    float_type GetSampleRate(bool tx, Channel ch);
+    float_type GetSampleRate(TRXDir dir, Channel ch);
 
     ///@name LML
     enum LMLSampleSource {
@@ -373,14 +373,14 @@ class LIME_API LMS7002M
      * @param Q the imaginary adjustment [+1.0, -1.0]
      * @return 0 for success for error condition
      */
-    int SetDCOffset(bool tx, const float_type I, const float_type Q);
+    int SetDCOffset(TRXDir dir, const float_type I, const float_type Q);
 
     /*!
      * Readback the TX DC offset adjustment.
      * @param [out] I the real adjustment [+1.0, -1.0]
      * @param [out] Q the imaginary adjustment [+1.0, -1.0]
      */
-    void GetDCOffset(bool tx, float_type& I, float_type& Q);
+    void GetDCOffset(TRXDir dir, float_type& I, float_type& Q);
 
     /*!
      * Set the IQ imbalance correction.
@@ -389,7 +389,7 @@ class LIME_API LMS7002M
      * @param gainI the real gain adjustment [+1.0, 0.0]
      * @param gainQ the imaginary gain adjustment [+1.0, 0.0]
      */
-    int SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ);
+    int SetIQBalance(const TRXDir dir, const float_type phase, const float_type gainI, const float_type gainQ);
 
     /*!
      * Get the IQ imbalance correction.
@@ -398,7 +398,7 @@ class LIME_API LMS7002M
      * @param [out] gainI the real gain adjustment [+1.0, 0.0]
      * @param [out] gainQ the imaginary gain adjustment [+1.0, 0.0]
      */
-    void GetIQBalance(const bool tx, float_type& phase, float_type& gainI, float_type& gainQ);
+    void GetIQBalance(const TRXDir dir, float_type& phase, float_type& gainI, float_type& gainQ);
 
     double GetClockFreq(ClockID clk_id, uint8_t channel);
     void SetClockFreq(ClockID clk_id, double freq, uint8_t channel);
@@ -455,7 +455,7 @@ class LIME_API LMS7002M
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
 
-    double GetSampleRate(bool tx, double* rf_rate_Hz = nullptr);
+    double GetSampleRate(TRXDir dir, double* rf_rate_Hz = nullptr);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 
@@ -483,11 +483,11 @@ class LIME_API LMS7002M
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC();
-    void AdjustAutoDC(const uint16_t address, bool tx);
+    void AdjustAutoDC(const uint16_t address, TRXDir dir);
     void CalibrateRxDCAuto();
     void CalibrateTxDCAuto();
     void CalibrateTxDC(int16_t* dccorri, int16_t* dccorrq);
-    void CalibrateIQImbalance(const bool tx, uint16_t* gainI = nullptr, uint16_t* gainQ = nullptr, int16_t* phase = nullptr);
+    void CalibrateIQImbalance(const TRXDir dir, uint16_t* gainI = nullptr, uint16_t* gainQ = nullptr, int16_t* phase = nullptr);
 
     int CalibrateTxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CalibrateRxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);

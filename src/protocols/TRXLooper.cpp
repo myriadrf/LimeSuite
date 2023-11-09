@@ -36,7 +36,6 @@ TRXLooper::TRXLooper(FPGA* f, LMS7002M* chip, int id)
     mRx.lastTimestamp.store(0, std::memory_order_relaxed);
     mRx.terminate.store(false, std::memory_order_relaxed);
     mTx.terminate.store(false, std::memory_order_relaxed);
-    mThreadsReady.store(0);
 }
 
 TRXLooper::~TRXLooper()
@@ -478,6 +477,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     assert(fpga);
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
+    fpga->WriteRegister(0xD, 0); //stop WFM
     mRx.lastTimestamp.store(0, std::memory_order_relaxed);
 
     // const uint16_t MIMO_EN = needMIMO << 8;
@@ -500,11 +500,12 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     fpga->WriteRegister(0x0007, channelEnables);
     fpga->ResetTimestamp();
 
-    assert(fpga);
-    fpga->WriteRegister(0xFFFF, 1 << chipId);
-    fpga->StopStreaming();
-    fpga->WriteRegister(0xD, 0); //stop WFM
-    fpga->ResetTimestamp();
+    constexpr uint16_t waitGPS_PPS = 1 << 2;
+    int interface_ctrl_000A = fpga->ReadRegister(0x000A);
+    interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
+    if (cfg.extraConfig && cfg.extraConfig->waitPPS)
+        interface_ctrl_000A |= waitGPS_PPS;
+    fpga->WriteRegister(0x000A, interface_ctrl_000A);
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.
     // if the thread blocks for too long, Linux can trigger RT throttling
@@ -564,7 +565,7 @@ void TRXLooper::Start()
         streamActive.notify_all();
     }
 
-    steamClockStart = steady_clock::now();
+    streamClockStart = steady_clock::now();
     //int64_t startPoint = std::chrono::time_point_cast<std::chrono::microseconds>(pcStreamStart).time_since_epoch().count();
     //printf("Stream%i start %lius\n", chipId, startPoint);
     // if (!mConfig.alignPhase)
@@ -615,7 +616,7 @@ int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::St
     //auto start = high_resolution_clock::now();
     while (samplesProduced < count)
     {
-        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 250))
+        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 2000))
             return samplesProduced;
         if (!timestampSet && meta)
         {
@@ -798,9 +799,9 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
     return count - samplesRemaining;
 }
 
-SDRDevice::StreamStats TRXLooper::GetStats(bool tx)
+SDRDevice::StreamStats TRXLooper::GetStats(TRXDir dir)
 {
-    return tx ? mTx.stats : mRx.stats;
+    return dir == TRXDir::Tx ? mTx.stats : mRx.stats;
 }
 
 } // namespace lime
