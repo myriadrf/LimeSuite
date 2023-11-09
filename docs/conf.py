@@ -114,3 +114,5 @@ breathe_projects = {
 }
 
 breathe_default_project = "LimeSuite2"
+
+mermaid_d3_zoom = True
