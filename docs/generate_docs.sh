@@ -9,7 +9,7 @@ fi
 if [[ $1 == "rebuild" ]]; then
     make --no-print-directory -C ../build doc
     rm -rf apidoc
-    breathe-apidoc --generate class,interface,struct,union --members --force --output-dir apidoc ../build/xml/
+    breathe-apidoc --generate class --members --force --output-dir apidoc ../build/xml/
 fi
 
 make html

@@ -43,9 +43,7 @@ class pnlBoardControls : public IModuleFrame
         int maxValue;
     };
 
-    class Param_GUI
-    {
-      public:
+    struct Param_GUI {
         Param_GUI()
             : title(nullptr)
             , units(nullptr)
