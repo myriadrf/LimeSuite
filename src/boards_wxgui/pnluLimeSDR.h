@@ -37,6 +37,7 @@ class pnluLimeSDR : public wxPanel
     wxStaticText* txtLB;
 
     lime::SDRDevice* device;
+    int fpgaSelect;
 
     DECLARE_EVENT_TABLE()
 };

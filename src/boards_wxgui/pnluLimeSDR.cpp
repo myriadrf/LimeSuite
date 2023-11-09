@@ -8,7 +8,6 @@
 #include <wx/msgdlg.h>
 #include "lms7suiteEvents.h"
 #include "pnlGPIO.h"
-#include "LimeSDR_Mini.h"
 #include "Logger.h"
 
 using namespace std;
@@ -17,6 +16,7 @@ BEGIN_EVENT_TABLE(pnluLimeSDR, wxPanel)
 END_EVENT_TABLE()
 
 pnluLimeSDR::pnluLimeSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
+    : fpgaSelect(-1)
 {
     device = nullptr;
 
@@ -69,6 +69,20 @@ void pnluLimeSDR::Initialize(lime::SDRDevice* newDevice)
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
     Layout();
+
+    if (device)
+    {
+        for (const auto& id : device->GetDescriptor().spiSlaveIds)
+        {
+            if (id.first == "FPGA")
+            {
+                fpgaSelect = id.second;
+                break;
+            }
+        }
+    }
+    else
+        fpgaSelect = -1;
 }
 
 pnluLimeSDR::~pnluLimeSDR()
@@ -88,11 +102,16 @@ void pnluLimeSDR::OnLoopbackChange(wxCommandEvent& event)
     value |= cmbRxPath->GetSelection() == 1 ? 1 << 9 : 1 << 8;
     value |= cmbTxPath->GetSelection() == 1 ? 1 << 13 : 1 << 12;
 
-    auto sdr = static_cast<lime::LimeSDR_Mini*>(device);
-
-    if (sdr && sdr->WriteFPGARegister(addr, value))
+    uint32_t mosi = (1 << 31) | addr << 16 | value;
+    if (device)
     {
-        wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
+        try
+        {
+            device->SPI(fpgaSelect, &mosi, nullptr, 1);
+        } catch (...)
+        {
+            wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
+        }
     }
 
     txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value >> 13) & 1) ? '1' : '2', ((value >> 9) & 1) ? 'H' : 'W'));
@@ -103,12 +122,19 @@ void pnluLimeSDR::UpdatePanel()
     uint16_t addr = 0x0017;
     uint16_t value = 0;
 
-    auto sdr = static_cast<lime::LimeSDR_Mini*>(device);
-
-    if (sdr && sdr->WriteFPGARegister(addr, value))
+    uint32_t mosi = addr;
+    uint32_t miso = 0;
+    if (device)
     {
-        wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
-        return;
+        try
+        {
+            device->SPI(fpgaSelect, &mosi, &miso, 1);
+            value = miso & 0xFFFF;
+        } catch (...)
+        {
+            wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
+            return;
+        }
     }
 
     chkTxLBSH->SetValue((value >> 2) & 0x1);

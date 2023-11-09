@@ -2,7 +2,6 @@
 #include "lms7suiteEvents.h"
 #include "Logger.h"
 #include "pnlGPIO.h"
-#include "LimeSDR.h"
 
 #include <wx/sizer.h>
 
@@ -13,6 +12,7 @@ BEGIN_EVENT_TABLE(pnlLimeSDR, wxPanel)
 END_EVENT_TABLE()
 
 pnlLimeSDR::pnlLimeSDR(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, int style, wxString name)
+    : fpgaSelect(-1)
 {
     device = nullptr;
     Create(parent, id, pos, size, style, name);
@@ -68,6 +68,20 @@ void pnlLimeSDR::Initialize(lime::SDRDevice* pControl)
             i->GetWindow()->Enable();
     }
 
+    if (device)
+    {
+        for (const auto& id : device->GetDescriptor().spiSlaveIds)
+        {
+            if (id.first == "FPGA")
+            {
+                fpgaSelect = id.second;
+                break;
+            }
+        }
+    }
+    else
+        fpgaSelect = -1;
+
     pnl_gpio->Initialize(device);
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
@@ -86,11 +100,16 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_AT->GetValue() << 5;
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
-    auto sdr = static_cast<lime::LimeSDR*>(device);
-
-    if (sdr && sdr->WriteFPGARegister(addr, value))
+    uint32_t mosi = (1 << 31) | addr << 16 | value;
+    if (device)
     {
-        lime::error("Board loopback change failed");
+        try
+        {
+            device->SPI(fpgaSelect, &mosi, nullptr, 1);
+        } catch (...)
+        {
+            wxMessageBox(_("Board loopback change failed"), _("Error"), wxICON_ERROR | wxOK);
+        }
     }
 }
 
@@ -113,21 +132,28 @@ void pnlLimeSDR::UpdatePanel()
     uint16_t addr = 0x0017;
     uint16_t value = 0;
 
-    auto sdr = static_cast<lime::LimeSDR*>(device);
-
-    if (sdr && (value = sdr->ReadFPGARegister(addr)) >= 0)
+    uint32_t mosi = addr;
+    uint32_t miso = 0;
+    if (device)
     {
-        chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
-        chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
-        chkTX1_2_LB_SH->SetValue((value >> 2) & 0x1);
+        try
+        {
+            device->SPI(fpgaSelect, &mosi, &miso, 1);
+            value = miso & 0xFFFF;
+            chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
+            chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
+            chkTX1_2_LB_SH->SetValue((value >> 2) & 0x1);
 
-        chkRFLB_B_EN->SetValue((value >> 4) & 0x1);
-        chkTX2_2_LB_AT->SetValue((value >> 5) & 0x1);
-        chkTX2_2_LB_SH->SetValue((value >> 6) & 0x1);
+            chkRFLB_B_EN->SetValue((value >> 4) & 0x1);
+            chkTX2_2_LB_AT->SetValue((value >> 5) & 0x1);
+            chkTX2_2_LB_SH->SetValue((value >> 6) & 0x1);
+            pnl_gpio->UpdatePanel();
+        } catch (...)
+        {
+            wxMessageBox(_("Board loopback read failed"), _("Error"), wxICON_ERROR | wxOK);
+            return;
+        }
     }
-    else
-        lime::error("Board loopback read failed");
-    pnl_gpio->UpdatePanel();
 }
 
 void pnlLimeSDR::OnReadAll(wxCommandEvent& event)

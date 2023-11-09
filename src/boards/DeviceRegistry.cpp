@@ -16,27 +16,14 @@ using namespace lime;
 static std::mutex gRegistryMutex;
 static std::map<std::string, DeviceRegistryEntry*> registryEntries;
 
-void __loadLimeSDR();
-void __loadLimeSDR_X3();
-void __loadLimeSDR_XTRX();
-void __loadLimeSDR_MMX8();
-void __loadLimeSDR_Mini();
-
-void __loadDevicesSupport()
-{
-    __loadLimeSDR();
-    __loadLimeSDR_X3();
-    __loadLimeSDR_XTRX();
-    __loadLimeSDR_MMX8();
-    __loadLimeSDR_Mini();
-}
+void __loadBoardSupport();
 
 /*******************************************************************
  * Registry implementation
  ******************************************************************/
 std::vector<DeviceHandle> DeviceRegistry::enumerate(const DeviceHandle& hint)
 {
-    __loadDevicesSupport();
+    __loadBoardSupport();
     std::lock_guard<std::mutex> lock(gRegistryMutex);
 
     std::vector<DeviceHandle> results;
@@ -54,7 +41,7 @@ std::vector<DeviceHandle> DeviceRegistry::enumerate(const DeviceHandle& hint)
 
 SDRDevice* DeviceRegistry::makeDevice(const DeviceHandle& handle)
 {
-    __loadDevicesSupport();
+    __loadBoardSupport();
     std::lock_guard<std::mutex> lock(gRegistryMutex);
 
     //use the identifier as a hint to perform a discovery
@@ -87,7 +74,7 @@ void DeviceRegistry::freeDevice(SDRDevice* device)
 
 std::vector<std::string> DeviceRegistry::moduleNames(void)
 {
-    __loadDevicesSupport();
+    __loadBoardSupport();
     std::vector<std::string> names;
     std::lock_guard<std::mutex> lock(gRegistryMutex);
     for (const auto& entry : registryEntries)
