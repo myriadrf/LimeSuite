@@ -1,0 +1,56 @@
+/* -- Extra CSS styles for MyriadRF (RTD theme) ----------------------- */
+
+/* make the page width fill the window */
+.wy-nav-content {
+   max-width: 1200px !important;
+}
+
+/* :option: link color */
+a code span.pre {
+   color: #00b27f;
+}
+
+/* Tweak sidebar colors for ACRN theme */
+
+.wy-side-nav-search {
+   background-color: #1f1f1f;
+}
+
+/* tweak doc version selection */
+.rst-versions {
+   position: static;
+}
+
+.rst-versions .rst-current-version {
+   padding: 5px;
+   background-color: #1f1f1f;
+   color: #80FF80;
+}
+
+.rst-versions .rst-other-versions {
+   padding: 5px;
+}
+
+div.rst-other-versions dl {
+   margin-bottom: 0;
+}
+
+
+/* bold the level1 headings in on-page toctree displays */
+.rst-content  .toctree-l1 > a {
+  font-weight: bold;
+
+/* add some space before the figure caption */
+p.caption  {
+#    border-top: 1px solid;
+    margin-top: 1em;
+}
+
+table.align-center {
+   display: table !important;
+}
+
+/* put the table caption at the bottom, as done for figures */
+table {
+   caption-side: bottom;
+}
