@@ -732,6 +732,7 @@ int MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, 
     for (uint32_t chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex)
     {
         writeView.SetAddress(address + bytesGot);
+        writeView.SetChunkSize(std::min(dataLen - bytesGot, chunkSize));
 
         if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
             return -1;
