@@ -112,3 +112,5 @@ html_static_path = ['_static']
 breathe_projects = {
     "LimeSuite2" : ( "../build/xml" )
 }
+
+breathe_default_project = "LimeSuite2"
