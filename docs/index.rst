@@ -4,6 +4,7 @@
 
    Introduction <self>
    documentation/index
+   graphs/index
    doxygen/index
 
 Introduction

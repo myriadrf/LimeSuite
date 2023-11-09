@@ -1,10 +1,4 @@
-Communications graph
-=====================
+Setup documentation
+================
 
-This is the commnications graph.
-
-.. mermaid:: /graphs/comms.mmd
-
-TRX Looper communications graph:
-
-.. mermaid:: /graphs/trxlooper.mmd
+This section contains information about how to set up LimeSuiteGUI2.
