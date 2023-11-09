@@ -10,4 +10,4 @@
 Introduction
 ============
 
-This is the documentation for the LimeSuite2 GUI.
+This is the documentation for the LimeSuiteGUI2.
