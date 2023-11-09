@@ -1,10 +1,6 @@
 #ifndef __pnlAnalog_view__
 #define __pnlAnalog_view__
 
-/**	@brief GUI for writing and reading analog controls
-	@author Lime Microsystems (www.limemicro.com)
-*/
-
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/string.h>
