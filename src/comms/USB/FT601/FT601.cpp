@@ -32,6 +32,9 @@ static constexpr int ctrlBulkReadAddr = 0x82;
 
 FT601::FT601(void* usbContext)
     : USBGeneric(usbContext)
+#ifdef __unix
+    , mUsbCounter(0)
+#endif
 {
 }
 
@@ -317,7 +320,7 @@ int FT601::ReinitPipe(unsigned char ep)
 int FT601::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
-    unsigned char wbuffer[20] = { 0 };
+    unsigned char wbuffer[20]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;

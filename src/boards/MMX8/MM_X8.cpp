@@ -21,9 +21,9 @@ static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
-    std::vector<lime::IComms*>& spiFPGA,
-    std::vector<lime::LitePCIe*> trxStreams,
+LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
+    std::vector<std::shared_ptr<IComms>>& spiFPGA,
+    std::vector<std::shared_ptr<LitePCIe>> trxStreams,
     ISPI* adfComms)
     : mTRXStreamPorts(trxStreams)
 {
@@ -40,12 +40,12 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
-    desc.socTree = new DeviceNode("X8", "SDRDevice", this);
+    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("X8", "SDRDevice", this));
 
     mADF = new ADF4002();
     // TODO: readback board's reference clock
     mADF->Initialize(adfComms, 30.72e6);
-    desc.socTree->childs.push_back(new DeviceNode("ADF4002", "ADF4002", mADF));
+    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("ADF4002", "ADF4002", mADF)));
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
@@ -96,7 +96,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<lime::IComms*>& spiLMS7002M,
         char ctemp[256];
         sprintf(ctemp, "%s#%li", d.socTree->name.c_str(), i + 1);
         d.socTree->name = std::string(ctemp);
-        desc.socTree->childs.push_back(d.socTree);
+        desc.socTree->children.push_back(d.socTree);
     }
 }
 

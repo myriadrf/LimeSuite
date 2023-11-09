@@ -239,6 +239,7 @@ int main(int argc, char** argv)
             LMS7002M* chip = static_cast<LMS7002M*>(device->GetInternalChip(moduleId));
             if (!chip)
             {
+                DeviceRegistry::freeDevice(device);
                 cerr << "Failed to get internal chip: " << moduleId << endl;
                 return EXIT_FAILURE;
             }
@@ -254,6 +255,7 @@ int main(int argc, char** argv)
         device->Configure(config, moduleId);
     } catch (std::runtime_error& e)
     {
+        DeviceRegistry::freeDevice(device);
         cerr << "Config failed: " << e.what() << endl;
         return EXIT_FAILURE;
     }

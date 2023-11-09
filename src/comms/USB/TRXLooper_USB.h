@@ -13,7 +13,7 @@ class USBGeneric;
 class TRXLooper_USB : public lime::TRXLooper
 {
   public:
-    TRXLooper_USB(USBGeneric* comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt);
+    TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt);
     virtual ~TRXLooper_USB();
 
     virtual void Setup(const lime::SDRDevice::StreamConfig& config) override;
@@ -25,7 +25,7 @@ class TRXLooper_USB : public lime::TRXLooper
     virtual int TxSetup() override;
     virtual void TransmitPacketsLoop() override;
 
-    USBGeneric* comms;
+    std::shared_ptr<USBGeneric> comms;
     const uint8_t rxEndPt;
     const uint8_t txEndPt;
 

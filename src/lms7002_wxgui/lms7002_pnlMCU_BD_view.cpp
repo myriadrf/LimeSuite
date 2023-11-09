@@ -409,7 +409,15 @@ lms7002_pnlMCU_BD_view::lms7002_pnlMCU_BD_view(wxWindow* parent, wxWindowID id)
 lms7002_pnlMCU_BD_view::~lms7002_pnlMCU_BD_view()
 {
     if (mThreadWorking)
+    {
         mWorkerThread.join();
+    }
+
+    if (progressPooler != nullptr)
+    {
+        delete progressPooler;
+        progressPooler = nullptr;
+    }
 }
 
 /** @brief Read program code from file into memory

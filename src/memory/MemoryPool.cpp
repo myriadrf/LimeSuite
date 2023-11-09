@@ -1,4 +1,5 @@
 #include "MemoryPool.h"
+#include <cstring>
 
 namespace lime {
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const char* name)
@@ -11,7 +12,11 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const char*
     {
         void* ptr = aligned_alloc(alignment, blockSize);
         if (!ptr)
+        {
             throw std::runtime_error("Failed to allocate memory");
+        }
+
+        std::memset(ptr, 0, blockSize);
         mFreeBlocks.push(ptr);
         ownedAddresses.insert(ptr);
     }

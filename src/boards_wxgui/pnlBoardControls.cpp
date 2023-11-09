@@ -247,6 +247,12 @@ pnlBoardControls::~pnlBoardControls()
     btnWriteAll->Disconnect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(pnlBoardControls::OnWriteAll), NULL, this);
     cmbBoardSelection->Disconnect(
         wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler(pnlBoardControls::OnUserChangedBoardType), NULL, this);
+
+    for (auto& widget : mGUI_widgets)
+    {
+        delete widget;
+        widget = nullptr;
+    }
 }
 
 void pnlBoardControls::OnReadAll(wxCommandEvent& event)

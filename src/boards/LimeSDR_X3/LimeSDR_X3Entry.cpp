@@ -77,30 +77,30 @@ std::vector<DeviceHandle> LimeSDR_X3Entry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
-    LitePCIe* control = new LitePCIe();
-    std::vector<LitePCIe*> trxStreams(3);
+    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
+    std::vector<std::shared_ptr<LitePCIe>> trxStreams(3);
 
     // protocol layer
-    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_PCIe(control);
-    IComms* route_fpga = new LMS64C_FPGA_Over_PCIe(control);
+    std::shared_ptr<LMS64C_LMS7002M_Over_PCIe> route_lms7002m{ new LMS64C_LMS7002M_Over_PCIe(control) };
+    std::shared_ptr<LMS64C_FPGA_Over_PCIe> route_fpga{ new LMS64C_FPGA_Over_PCIe(control) };
 
     try
     {
         std::string controlFile(handle.addr + "_control");
-        control->Open(controlFile.c_str(), O_RDWR);
+        control->Open(controlFile, O_RDWR);
 
         std::string streamFile("");
         for (int i = 0; i < 3; ++i)
         {
             char portName[128];
             sprintf(portName, "%s_trx%i", handle.addr.c_str(), i);
-            trxStreams[i] = new LitePCIe();
+            trxStreams[i] = std::shared_ptr<LitePCIe>(new LitePCIe());
             trxStreams[i]->SetPathName(portName);
         }
+
         return new LimeSDR_X3(route_lms7002m, route_fpga, std::move(trxStreams));
     } catch (std::runtime_error& e)
     {
-        delete control;
         char reason[256];
         sprintf(reason, "Unable to connect to device using handle(%s): %s", handle.Serialize().c_str(), e.what());
         throw std::runtime_error(reason);

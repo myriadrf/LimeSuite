@@ -38,7 +38,10 @@ static constexpr uint8_t spi_FPGA = 1;
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (runtime)", 0, 0, 255, false };
 static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
 
-LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, ISerialPort* commsPort)
+LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
+    std::shared_ptr<IComms> spiFPGA,
+    std::shared_ptr<USBGeneric> streamPort,
+    std::shared_ptr<ISerialPort> commsPort)
     : mStreamPort(streamPort)
     , mSerialPort(commsPort)
     , mlms7002mPort(spiLMS)
@@ -77,10 +80,10 @@ LimeSDR_Mini::LimeSDR_Mini(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGener
 
     descriptor.rfSOC.push_back(soc);
 
-    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA-Mini", mFPGA);
-    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
-    descriptor.socTree = new DeviceNode("SDR Mini", "SDRDevice", this);
-    descriptor.socTree->childs.push_back(fpgaNode);
+    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA-Mini", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS", "LMS7002M", mLMSChips[0])));
+    descriptor.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("SDR Mini", "SDRDevice", this));
+    descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
 }
@@ -93,7 +96,6 @@ LimeSDR_Mini::~LimeSDR_Mini()
         mStreamers[0] = nullptr;
     }
 
-    delete mStreamPort;
     delete mFPGA;
 }
 
@@ -623,7 +625,7 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 
     try
     {
-        auto connection = static_cast<FT601*>(mStreamPort);
+        auto connection = std::static_pointer_cast<FT601>(mStreamPort);
         connection->ResetStreamBuffers();
 
         mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkReadAddr, streamBulkWriteAddr);

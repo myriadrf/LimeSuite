@@ -145,24 +145,23 @@ SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
 
-    FX3* usbComms = new FX3(
+    std::shared_ptr<FX3> usbComms{ new FX3(
 #ifdef __unix__
         ctx
 #endif
-    );
+        ) };
     if (!usbComms->Connect(vid, pid, handle.serial))
     {
-        delete usbComms;
         char reason[256];
         sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
         throw std::runtime_error(reason);
     }
 
-    USB_CSR_Pipe* usbPipe = new USB_CSR_Pipe_SDR(*usbComms);
+    std::shared_ptr<USB_CSR_Pipe> usbPipe{ new USB_CSR_Pipe_SDR(*usbComms) };
 
     // protocol layer
-    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_USB(*usbPipe);
-    IComms* route_fpga = new LMS64C_FPGA_Over_USB(*usbPipe);
+    std::shared_ptr<lime::IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_USB(usbPipe) };
+    std::shared_ptr<lime::IComms> route_fpga{ new LMS64C_FPGA_Over_USB(usbPipe) };
 
     return new LimeSDR(route_lms7002m, route_fpga, usbComms, usbPipe);
 }

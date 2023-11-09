@@ -11,6 +11,7 @@
 #include "limesuite/config.h"
 #include "limesuite/LMS7002M_parameters.h"
 #include <cstdint>
+#include <memory>
 #include <sstream>
 #include <stdarg.h>
 #include <functional>
@@ -77,7 +78,7 @@ class LIME_API LMS7002M
         bool success;
     };
 
-    LMS7002M(ISPI* port);
+    LMS7002M(std::shared_ptr<ISPI> port);
 
     /*!
      * Set the connection for the LMS7002M driver.
@@ -85,9 +86,9 @@ class LIME_API LMS7002M
      * \param devIndex which RFIC index (default 0 for most devices)
      * \param dataPort connection used to get samples data when calibrating with FFT
      */
-    void SetConnection(ISPI* port);
+    void SetConnection(std::shared_ptr<ISPI> port);
 
-    ISPI* GetConnection(void) const { return controlPort; }
+    std::shared_ptr<ISPI> GetConnection(void) const { return controlPort; }
 
     virtual ~LMS7002M();
 
@@ -534,7 +535,7 @@ class LIME_API LMS7002M
     void Log(LogType type, const char* format, va_list argList);
 
     ///port used for communicating with LMS7002M
-    lime::ISPI* controlPort;
+    std::shared_ptr<ISPI> controlPort;
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];
     double _cachedRefClockRate;

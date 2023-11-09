@@ -91,7 +91,7 @@ struct CDCM_Outputs {
 class LIME_API CDCM_Dev
 {
   public:
-    CDCM_Dev(lime::ISPI* comms, uint16_t SPI_BASE_ADDR);
+    CDCM_Dev(std::shared_ptr<lime::ISPI> comms, uint16_t SPI_BASE_ADDR);
 
     int Init(double primaryFreq, double secondaryFreq);
     int Reset(double primaryFreq, double secondaryFreq);
@@ -144,7 +144,7 @@ class LIME_API CDCM_Dev
     CDCM_VCO FindVCOConfig();
     int PrepareToReadRegs();
 
-    lime::ISPI* comms;
+    std::shared_ptr<lime::ISPI> comms;
     CDCM_VCO VCO;
     CDCM_Outputs Outputs;
     uint16_t SPI_BASE_ADDR;

@@ -77,8 +77,8 @@ std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle& hint)
 class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 {
   public:
-    LMS64C_LMS7002M_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex)
-        : pipe(*dataPort)
+    LMS64C_LMS7002M_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex)
+        : pipe(dataPort)
         , subdeviceIndex(subdeviceIndex)
     {
     }
@@ -97,8 +97,8 @@ class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
 {
   public:
-    LMS64C_FPGA_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex)
-        : pipe(*dataPort)
+    LMS64C_FPGA_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex)
+        : pipe(dataPort)
         , subdeviceIndex(subdeviceIndex)
     {
     }
@@ -135,8 +135,8 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
 class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 {
   public:
-    LMS64C_ADF_Over_PCIe_MMX8(LitePCIe* dataPort, uint32_t subdeviceIndex)
-        : pipe(*dataPort)
+    LMS64C_ADF_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex)
+        : pipe(dataPort)
         , subdeviceIndex(subdeviceIndex)
     {
     }
@@ -156,17 +156,17 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 
 SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
 {
-    LitePCIe* control = new LitePCIe();
-    std::vector<LitePCIe*> trxStreams(8);
-    std::vector<IComms*> controls(8);
-    std::vector<IComms*> fpga(8);
+    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
+    std::vector<std::shared_ptr<LitePCIe>> trxStreams(8);
+    std::vector<std::shared_ptr<IComms>> controls(8);
+    std::vector<std::shared_ptr<IComms>> fpga(8);
     ISPI* adfComms = new LMS64C_ADF_Over_PCIe_MMX8(control, 0);
     for (size_t i = 0; i < controls.size(); ++i)
     {
-        controls[i] = new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i + 1);
-        fpga[i] = new LMS64C_FPGA_Over_PCIe_MMX8(control, i + 1);
+        controls[i] = std::shared_ptr<LMS64C_LMS7002M_Over_PCIe_MMX8>(new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i + 1));
+        fpga[i] = std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, i + 1));
     }
-    fpga.push_back(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0));
+    fpga.push_back(std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0)));
 
     try
     {
@@ -178,13 +178,12 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
         {
             char portName[128];
             sprintf(portName, "%s_trx%li", handle.addr.c_str(), i);
-            trxStreams[i] = new LitePCIe();
+            trxStreams[i] = std::shared_ptr<LitePCIe>(new LitePCIe());
             trxStreams[i]->SetPathName(portName);
         }
         return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams), adfComms);
     } catch (std::runtime_error& e)
     {
-        delete control;
         char reason[256];
         sprintf(reason, "Unable to connect to device using handle(%s): %s", handle.Serialize().c_str(), e.what());
         throw std::runtime_error(reason);
