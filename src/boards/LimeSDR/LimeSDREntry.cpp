@@ -145,8 +145,12 @@ SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
 
-    std::shared_ptr<FX3> usbComms{ new FX3(ctx) };
-    if (usbComms->Connect(vid, pid, handle.serial) != 0)
+    std::shared_ptr<FX3> usbComms{ new FX3(
+#ifdef __unix__
+        ctx
+#endif
+        ) };
+    if (!usbComms->Connect(vid, pid, handle.serial))
     {
         char reason[256];
         sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
