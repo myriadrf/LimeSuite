@@ -232,7 +232,6 @@ if (ENABLE_API_DOXYGEN)
 endif()
 
 if(DOXYGEN_FOUND)
-message(DOXYGEN_VERSION=${DOXYGEN_VERSION})
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
   add_custom_target(doc
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile 

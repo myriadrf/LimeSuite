@@ -27,7 +27,7 @@ In the root folder of the repository run these commands:
 After a successful compilation the resulting binaries are placed in the `build/bin/` folder
 located in the root directory of the repository.
 
-.. _GCC: https://gcc.gnu.org/
-.. _CMake: https://cmake.org/
-.. _wxWidgets: https://www.wxwidgets.org/
-.. _libusb: https://libusb.info/
+.. _`GCC`: https://gcc.gnu.org/
+.. _`CMake`: https://cmake.org/
+.. _`wxWidgets`: https://www.wxwidgets.org/
+.. _`libusb`: https://libusb.info/

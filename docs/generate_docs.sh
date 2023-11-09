@@ -9,6 +9,10 @@
 
 set -e
 
+if [[ ! -d "_build" && ! -d "apidoc" ]]; then
+    set "rebuild"
+fi
+
 if [[ $1 == "clean" ]]; then
     echo "Deleting _build folder"
     rm -rf _build
