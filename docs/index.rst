@@ -3,7 +3,7 @@
    :hidden:
 
    Introduction <self>
-   documentation/index
+   setup/index
    graphs/index
    doxygen/index
 
