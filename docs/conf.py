@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx-mathjax-offline',
+    'sphinxcontrib.mermaid',
     'sphinx_code_tabs',
     'sphinx_rtd_theme',
     'breathe'
