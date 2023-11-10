@@ -46,8 +46,6 @@ class IComms : public ISPI
   public:
     virtual ~IComms(){};
 
-    bool IsOpen();
-
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };

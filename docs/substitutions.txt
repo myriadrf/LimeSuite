@@ -21,3 +21,5 @@
 .. |rarr| unicode:: U+2192 .. RIGHTWARDS ARROW
 .. |darr| unicode:: U+2193 .. DOWNWARDS ARROW
 .. |harr| unicode:: U+2194 .. LEFT RIGHT ARROW
+
+.. |graph_note| replace:: You can zoom and move around the diagram using the mouse.

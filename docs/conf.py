@@ -34,14 +34,14 @@ highlight_language = 'console'
 # ones.
 
 extensions = [
+    'breathe',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx-mathjax-offline',
-    'sphinxcontrib.mermaid',
     'sphinx_code_tabs',
     'sphinx_rtd_theme',
-    'breathe'
+    'sphinxcontrib.mermaid',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -115,4 +115,5 @@ breathe_projects = {
 
 breathe_default_project = "LimeSuiteGUI2"
 
+mermaid_version = "10.6.1"
 mermaid_d3_zoom = True
