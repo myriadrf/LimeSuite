@@ -1,5 +1,7 @@
 #!/bin/sh
 
-cd build &&
-  cmake .. &&
-  make
+set -e
+
+cmake . -B build
+make -C build --no-print-directory
+ctest --test-dir build --output-on-failure

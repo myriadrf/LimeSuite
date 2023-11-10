@@ -169,6 +169,23 @@ if (ENABLE_NEW_GAIN_BEHAVIOUR)
 endif()
 
 ########################################################################
+# GTest
+########################################################################
+include(CTest)
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        b10fad38c4026a29ea6561ab15fc4818170d1c10 # latest main at the time of writing this
+)
+
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_subdirectory(tests)
+
+########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
 ########################################################################
 # use, i.e. don't skip the full RPATH for the build tree
@@ -297,5 +314,3 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
-
-
