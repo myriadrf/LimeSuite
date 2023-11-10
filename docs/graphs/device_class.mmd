@@ -53,6 +53,7 @@ classDiagram
         class USBEntry {
             <<abstract>>
             +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice *
         }
     %%}
 
@@ -604,52 +605,79 @@ classDiagram
         #LitePCIe port
     }
 
+    %% Device entry tree
+    DeviceRegistry <.. DeviceConnectionPanel
+    DeviceHandle <.. DeviceConnectionPanel
+
+    DeviceRegistryEntry <|-- USBEntry
+    LimeSDREntry --|> USBEntry
+    LimeSDR_MiniEntry --|> USBEntry
+
+    DeviceRegistryEntry <|-- LimeSDR_MMX8Entry
+    DeviceRegistryEntry <|-- LimeSDR_X3Entry
+    DeviceRegistryEntry <|-- LimeSDR_XTRXEntry
+
+    SDRDevice <.. DeviceRegistry
+    DeviceRegistry ..> DeviceHandle 
+    DeviceHandle <.. DeviceRegistryEntry
+    DeviceRegistry ..> DeviceRegistryEntry
+
+    %% Interface implementations
+    IComms ..|> ISPI
+
+    USB_CSR_Pipe ..|> ISerialPort
+    LMS64C_LMS7002M_Over_USB ..|> IComms
+    LMS64C_FPGA_Over_USB ..|> IComms
+
+    SlaveSelectShim ..|> ISPI
+    PCIE_CSR_Pipe ..|> ISerialPort
+
+    LMS64C_FPGA_Over_PCIe ..|> IComms
+    LMS64C_LMS7002M_Over_PCIe ..|> IComms
+
+    LMS64C_ADF_Over_PCIe_MMX8 ..|> ISPI
+    LMS64C_FPGA_Over_PCIe_MMX8 ..|> IComms
+    LMS64C_LMS7002M_Over_PCIe_MMX8 ..|> IComms
+
+    %% SDRDevice implementations
     SDRDevice <|-- LMS7002M_SDRDevice
+    SDRDevice <|-- LimeSDR_MMX8
     LMS7002M_SDRDevice <|-- LimeSDR
     LMS7002M_SDRDevice <|-- LimeSDR_Mini
     LMS7002M_SDRDevice <|-- LimeSDR_X3
     LMS7002M_SDRDevice <|-- LimeSDR_XTRX
-    SDRDevice <|-- LimeSDR_MMX8
 
-    DeviceRegistryEntry <|.. USBEntry
-    LimeSDREntry ..|> USBEntry
-    LimeSDR_MiniEntry ..|> USBEntry
+    %% USB entry connections
+    LimeSDREntry ..> FX3
+    LimeSDREntry ..> USB_CSR_Pipe_SDR
+    LimeSDREntry ..> LMS64C_LMS7002M_Over_USB
+    LimeSDREntry ..> LMS64C_FPGA_Over_USB
 
-    DeviceRegistryEntry <|.. LimeSDR_MMX8Entry
-    DeviceRegistryEntry <|.. LimeSDR_X3Entry
-    DeviceRegistryEntry <|.. LimeSDR_XTRXEntry
+    LimeSDR_MiniEntry ..> FT601
+    LimeSDR_MiniEntry ..> USB_CSR_Pipe_Mini
+    LimeSDR_MiniEntry ..> LMS64C_LMS7002M_Over_USB
+    LimeSDR_MiniEntry ..> LMS64C_FPGA_Over_USB
 
-    SDRDevice <.. DeviceRegistry
-    DeviceHandle <.. DeviceRegistry
-    DeviceHandle <.. DeviceRegistryEntry
-
-    DeviceConnectionPanel ..> DeviceRegistry
-    DeviceConnectionPanel ..> DeviceHandle
-
-    ISPI <|-- IComms
-
-    ISerialPort <|-- USB_CSR_Pipe
-    IComms <|-- LMS64C_LMS7002M_Over_USB
-    IComms <|-- LMS64C_FPGA_Over_USB
-
+    %% USB connections
     LMS64C_LMS7002M_Over_USB --* USB_CSR_Pipe
     LMS64C_FPGA_Over_USB --* USB_CSR_Pipe
 
     USB_CSR_Pipe_Mini --* FT601
     USB_CSR_Pipe_SDR --* FX3
 
-    USB_CSR_Pipe_Mini ..|> USB_CSR_Pipe
-    USB_CSR_Pipe_SDR ..|> USB_CSR_Pipe
+    USB_CSR_Pipe_Mini --|> USB_CSR_Pipe
+    USB_CSR_Pipe_SDR --|> USB_CSR_Pipe
 
-    FT601 ..|> USBGeneric
-    FX3 ..|> USBGeneric
+    FT601 --|> USBGeneric
+    FX3 --|> USBGeneric
 
-    USBTransferContext_FT601 ..|> USBTransferContext
-    USBTransferContext_FX3 ..|> USBTransferContext
+    USBTransferContext_FT601 --|> USBTransferContext
+    USBTransferContext_FX3 --|> USBTransferContext
 
     USBTransferContext_FT601 *-- FT601
     USBTransferContext_FX3 *-- FX3
 
+    %% USB devices
     LimeSDR ..> USBGeneric
     LimeSDR ..> ISerialPort
     LimeSDR ..> IComms
@@ -659,29 +687,38 @@ classDiagram
     LimeSDR_Mini ..> IComms
     LimeSDR_Mini ..> FPGA_Mini
 
-    LimeSDR_MMX8Entry ..> LitePCIe
+    %% PCIe connections
+    PCIE_CSR_Pipe ..> LitePCIe
+    SlaveSelectShim ..> IComms
+
+    LMS64C_FPGA_Over_PCIe ..> PCIE_CSR_Pipe
+    LMS64C_LMS7002M_Over_PCIe ..> PCIE_CSR_Pipe
+
+    LMS64C_ADF_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
+    LMS64C_FPGA_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
+    LMS64C_LMS7002M_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
+
+    %% PCIe entry connections
     LimeSDR_X3Entry ..> LitePCIe
+    LimeSDR_X3Entry ..> LMS64C_LMS7002M_Over_PCIe
+    LimeSDR_X3Entry ..> LMS64C_FPGA_Over_PCIe
+
     LimeSDR_XTRXEntry ..> LitePCIe
+    LimeSDR_XTRXEntry ..> LMS64C_LMS7002M_Over_PCIe
+    LimeSDR_XTRXEntry ..> LMS64C_FPGA_Over_PCIe
 
-    LimeSDR_X3Entry ..|> LMS64C_LMS7002M_Over_PCIe
-    LimeSDR_X3Entry ..|> LMS64C_FPGA_Over_PCIe
+    LimeSDR_MMX8Entry ..> LitePCIe
+    LimeSDR_MMX8Entry ..> LMS64C_LMS7002M_Over_PCIe_MMX8
+    LimeSDR_MMX8Entry ..> LMS64C_FPGA_Over_PCIe_MMX8
+    LimeSDR_MMX8Entry ..> LMS64C_ADF_Over_PCIe_MMX8
 
-    LimeSDR_XTRXEntry ..|> LMS64C_LMS7002M_Over_PCIe
-    LimeSDR_XTRXEntry ..|> LMS64C_FPGA_Over_PCIe
-
-    LimeSDR_MMX8Entry ..|> LMS64C_LMS7002M_Over_PCIe_MMX8
-    LimeSDR_MMX8Entry ..|> LMS64C_FPGA_Over_PCIe_MMX8
-    LimeSDR_MMX8Entry ..|> LMS64C_ADF_Over_PCIe_MMX8
-
+    %% PCIe devices
     LimeSDR_X3 ..> CDCM_Dev
     LimeSDR_X3 ..> Equalizer
     LimeSDR_X3 ..> LitePCIe
     LimeSDR_X3 ..> SlaveSelectShim
     LimeSDR_X3 ..> IComms
-    LimeSDR_X3 ..> FPGA_X3
-
-    SlaveSelectShim --|> ISPI
-    SlaveSelectShim ..> IComms
+    FPGA_X3 <.. LimeSDR_X3 
 
     LimeSDR_XTRX ..> IComms
     LimeSDR_XTRX ..> LitePCIe
@@ -692,12 +729,15 @@ classDiagram
     LimeSDR_MMX8 ..> LimeSDR_XTRX
     LimeSDR_MMX8 ..> ADF4002
 
+    %% Component dependencies
+    LMS7002M ..> ISPI
+
     LMS7002M_SDRDevice ..> LMS7002M
     LMS7002M_SDRDevice ..> TRXLooper
     LMS7002M_SDRDevice ..> FPGA
 
     FPGA_Mini --|> FPGA
-    FPGA_X3 --|> FPGA
+    FPGA <|-- FPGA_X3
     FPGA_XTRX --|> FPGA
 
     TRXLooper ..> FPGA
@@ -710,19 +750,7 @@ classDiagram
 
     TRXLooper_PCIE ..> LitePCIe
 
-    PCIE_CSR_Pipe ..> LitePCIe
-    PCIE_CSR_Pipe --|> ISerialPort
-
-    LMS64C_LMS7002M_Over_PCIe ..> PCIE_CSR_Pipe
-    LMS64C_FPGA_Over_PCIe ..> PCIE_CSR_Pipe
-    LMS64C_FPGA_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
-    LMS64C_LMS7002M_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
-    LMS64C_ADF_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
-
-    LMS64C_ADF_Over_PCIe_MMX8 --|> ISPI
-    LMS64C_LMS7002M_Over_PCIe --|> IComms
-    LMS64C_FPGA_Over_PCIe --|> IComms
-    LMS64C_FPGA_Over_PCIe_MMX8 --|> IComms
-    LMS64C_LMS7002M_Over_PCIe_MMX8 --|> IComms
-
-    LMS7002M ..> ISPI
+    ADF4002 ..> ISPI
+    CDCM_Dev ..> ISPI
+    Equalizer ..> ISPI
+    FPGA ..> ISPI
