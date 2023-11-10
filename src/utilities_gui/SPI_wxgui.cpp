@@ -7,10 +7,11 @@ using namespace lime;
 
 void SPI_wxgui::InsertSPIControlsRow(wxWindow* parent, wxWindowID id, wxFlexGridSizer* row, SPI_wxgui::SPIFields* controls)
 {
-    wxFlexGridSizer* fgSizer306;
-    fgSizer306 = new wxFlexGridSizer(0, 8, 5, 5);
-    fgSizer306->SetFlexibleDirection(wxBOTH);
-    fgSizer306->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
+    // This sizer appears unused?
+    // wxFlexGridSizer* fgSizer306;
+    // fgSizer306 = new wxFlexGridSizer(0, 8, 5, 5);
+    // fgSizer306->SetFlexibleDirection(wxBOTH);
+    // fgSizer306->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
     wxStaticText* addrText = new wxStaticText(parent, wxID_ANY, wxT("Address(Hex):"));
     row->Add(addrText, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);

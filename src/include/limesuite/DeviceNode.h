@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 namespace lime {
 
 struct DeviceNode {
@@ -13,7 +15,7 @@ struct DeviceNode {
     std::string name;
     std::string klass;
     void* ptr;
-    std::vector<DeviceNode*> childs;
+    std::vector<std::shared_ptr<DeviceNode>> children;
 };
 
 } // namespace lime

@@ -8,6 +8,7 @@
 #include <vector>
 #include <mutex>
 #include <array>
+#include <memory>
 
 #include "dataTypes.h"
 
@@ -24,7 +25,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
 {
   public:
     LimeSDR_XTRX() = delete;
-    LimeSDR_XTRX(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, lime::LitePCIe* sampleStream);
+    LimeSDR_XTRX(std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::shared_ptr<LitePCIe> sampleStream);
     virtual ~LimeSDR_XTRX();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -58,9 +59,9 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     enum class eMemoryDevice { FPGA_RAM = 0, FPGA_FLASH, COUNT };
 
   private:
-    IComms* lms7002mPort;
-    IComms* fpgaPort;
-    LitePCIe* mStreamPort;
+    std::shared_ptr<IComms> lms7002mPort;
+    std::shared_ptr<IComms> fpgaPort;
+    std::shared_ptr<LitePCIe> mStreamPort;
 
     std::mutex mCommsMutex;
     bool mConfigInProgress;

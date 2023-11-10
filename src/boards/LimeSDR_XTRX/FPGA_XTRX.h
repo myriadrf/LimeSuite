@@ -10,7 +10,7 @@ class ISPI;
 class FPGA_XTRX : public FPGA
 {
   public:
-    FPGA_XTRX(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI);
+    FPGA_XTRX(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI);
     virtual ~FPGA_XTRX(){};
     int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0) override;
     int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0) override;

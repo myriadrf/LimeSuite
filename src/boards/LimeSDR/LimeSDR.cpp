@@ -58,7 +58,10 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
-LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* streamPort, lime::ISerialPort* commsPort)
+LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
+    std::shared_ptr<IComms> spiFPGA,
+    std::shared_ptr<USBGeneric> streamPort,
+    std::shared_ptr<ISerialPort> commsPort)
     : mStreamPort(streamPort)
     , mSerialPort(commsPort)
     , mlms7002mPort(spiLMS)
@@ -88,10 +91,10 @@ LimeSDR::LimeSDR(lime::IComms* spiLMS, lime::IComms* spiFPGA, USBGeneric* stream
     soc.txPathNames = { "None", "Band1", "Band2" };
     descriptor.rfSOC.push_back(soc);
 
-    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA", mFPGA);
-    fpgaNode->childs.push_back(new DeviceNode("LMS", "LMS7002M", mLMSChips[0]));
-    descriptor.socTree = new DeviceNode("SDR-USB", "SDRDevice", this);
-    descriptor.socTree->childs.push_back(fpgaNode);
+    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS", "LMS7002M", mLMSChips[0])));
+    descriptor.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("SDR-USB", "SDRDevice", this));
+    descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
 
@@ -127,11 +130,7 @@ LimeSDR::~LimeSDR()
         mStreamers[0] = nullptr;
     }
 
-    delete mStreamPort;
     delete mFPGA;
-    delete mSerialPort;
-    delete mlms7002mPort;
-    delete mfpgaPort;
 }
 
 // Verify and configure given settings

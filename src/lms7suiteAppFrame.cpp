@@ -60,7 +60,7 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char*
 }
 
 struct DeviceTreeItemData : public wxTreeItemData {
-    DeviceTreeItemData(const DeviceNode* soc)
+    DeviceTreeItemData(const std::shared_ptr<DeviceNode> soc)
         : wxTreeItemData()
         , gui(nullptr)
         , soc(soc)
@@ -73,7 +73,7 @@ struct DeviceTreeItemData : public wxTreeItemData {
             gui->Destroy();
     }
     ISOCPanel* gui;
-    const DeviceNode* soc;
+    const std::shared_ptr<DeviceNode> soc;
 };
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
@@ -87,6 +87,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
     wxMenuItem* menuFileQuit = new wxMenuItem(
         fileMenu, idMenuQuit, wxString(wxT("&Quit")) + wxT('\t') + wxT("Alt+F4"), wxT("Quit the application"), wxITEM_NORMAL);
     fileMenu->Append(menuFileQuit);
+    mbar->Append(fileMenu, wxT("&File"));
 
     mnuModules = new wxMenu();
     mbar->Append(mnuModules, wxT("Modules"));
@@ -228,13 +229,13 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
     mContent = nullptr;
 }
 
-void CreateBranch(wxTreeCtrl* treeRoot, wxTreeItemId parentId, const DeviceNode* node)
+void CreateBranch(wxTreeCtrl* treeRoot, wxTreeItemId parentId, const std::shared_ptr<DeviceNode> node)
 {
     wxTreeItemId branchId = treeRoot->AppendItem(parentId, node->name, 0, 0, new DeviceTreeItemData(node));
-    if (node->childs.size() == 0)
+    if (node->children.size() == 0)
         return;
 
-    for (const auto& soc : node->childs)
+    for (const auto& soc : node->children)
         CreateBranch(treeRoot, branchId, soc);
 }
 
@@ -247,12 +248,12 @@ void FillDeviceTree(wxTreeCtrl* root, lime::SDRDevice* device, wxWindow* parentW
     sdrUI->Setup(device);
     sdrUI->Hide();
 
-    DeviceNode* node = device->GetDescriptor().socTree;
+    std::shared_ptr<DeviceNode> node = device->GetDescriptor().socTree;
     DeviceTreeItemData* treeRootData = new DeviceTreeItemData(node);
     treeRootData->gui = sdrUI;
     wxTreeItemId rootId = root->AddRoot(node->name, 0, 0, treeRootData);
 
-    for (const auto& soc : node->childs)
+    for (const auto& soc : node->children)
         CreateBranch(root, rootId, soc);
     root->ExpandAll();
     root->SelectItem(rootId, true);

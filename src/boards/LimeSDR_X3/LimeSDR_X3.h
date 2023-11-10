@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <array>
+#include <memory>
 
 #include "dataTypes.h"
 
@@ -25,7 +26,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
   public:
     LimeSDR_X3() = delete;
-    LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::vector<lime::LitePCIe*> trxStreams);
+    LimeSDR_X3(
+        std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams);
     virtual ~LimeSDR_X3();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -80,10 +82,10 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 
     CDCM_Dev* mClockGeneratorCDCM;
     Equalizer* mEqualizer;
-    std::vector<LitePCIe*> mTRXStreamPorts;
+    std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
 
-    SlaveSelectShim* mLMS7002Mcomms[3];
-    IComms* fpgaPort;
+    std::array<std::shared_ptr<SlaveSelectShim>, 3> mLMS7002Mcomms;
+    std::shared_ptr<IComms> fpgaPort;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
 };

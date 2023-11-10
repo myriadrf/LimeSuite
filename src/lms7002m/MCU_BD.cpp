@@ -54,7 +54,7 @@ MCU_BD::~MCU_BD()
     //dtor
 }
 
-void MCU_BD::Initialize(ISPI* pSerPort, unsigned size)
+void MCU_BD::Initialize(std::shared_ptr<ISPI> pSerPort, unsigned size)
 {
     m_serPort = pSerPort;
     if (size > 0)

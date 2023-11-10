@@ -142,12 +142,12 @@ include(boards/LimeSDR_XTRX/CMakeLists.txt)
 include(boards/MMX8/CMakeLists.txt)
 include(boards/LimeSDR_Mini/CMakeLists.txt)
 
-# configure_file(
-#     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
-#     ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
-# )
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/boards/BoardSupportLoader.in.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/BoardSupportLoader.cpp
+)
 
-# target_sources(LimeSuite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
+target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/BoardSupportLoader.cpp)
 
 ########################################################################
 ## wx widgets dependency

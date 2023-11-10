@@ -1978,14 +1978,14 @@ void lms7002_pnlRXTSP_view::PHOinputChanged(wxCommandEvent& event)
     // Write values for NCO phase or frequency each time they change - to ease the tuning of these values in measurements
     if (rgrMODE_RX->GetSelection() == 0)
     {
-        double angle;
+        double angle{ 0 };
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
         lmsControl->SetNCOPhaseOffsetForMode0(TRXDir::Rx, angle);
         //LMS_SetNCOFrequency(lmsControl, LMS_CH_RX, mChannel, nullptr, angle);
     }
     else //PHO mode
     {
-        double freq;
+        double freq{ 0 };
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
         //LMS_SetNCOPhase(lmsControl, LMS_CH_RX, mChannel, nullptr, freq * 1e6);
         lmsControl->SetNCOFrequency(TRXDir::Rx, 0, freq * 1e6);
@@ -1994,7 +1994,7 @@ void lms7002_pnlRXTSP_view::PHOinputChanged(wxCommandEvent& event)
     assert(lblNCOangles.size() == 16);
     if (rgrMODE_RX->GetSelection() == 1)
     {
-        double freq;
+        double freq{ 0 };
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
         for (int i = 0; i < 16; ++i)
         {
@@ -2003,7 +2003,7 @@ void lms7002_pnlRXTSP_view::PHOinputChanged(wxCommandEvent& event)
     }
     else
     {
-        double angle;
+        double angle{ 0 };
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
         for (int i = 0; i < 16; ++i)
         {

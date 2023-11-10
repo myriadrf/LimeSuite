@@ -10,7 +10,7 @@
 
 namespace lime {
 
-FPGA_XTRX::FPGA_XTRX(lime::ISPI* fpgaSPI, lime::ISPI* lms7002mSPI)
+FPGA_XTRX::FPGA_XTRX(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI)
     : FPGA(fpgaSPI, lms7002mSPI)
 {
 }

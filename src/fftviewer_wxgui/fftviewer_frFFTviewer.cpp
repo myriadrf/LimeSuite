@@ -84,6 +84,9 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow* parent, wxWindowID id)
     averageCount.store(50);
     spinAvgCount->SetValue(averageCount);
     updateGUI.store(true);
+    enableTransmitter.store(false);
+    windowFunctionID.store(false);
+    enableFFT.store(false);
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
@@ -147,7 +150,14 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer(wxWindow* parent, wxWindowID id)
 fftviewer_frFFTviewer::~fftviewer_frFFTviewer()
 {
     if (mStreamRunning == true)
+    {
         StopStreaming();
+    }
+
+    if (mGUIupdater != nullptr)
+    {
+        delete mGUIupdater;
+    }
 }
 
 void fftviewer_frFFTviewer::OnWindowFunctionChanged(wxCommandEvent& event)

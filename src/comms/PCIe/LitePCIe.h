@@ -15,7 +15,7 @@ class LitePCIe
     LitePCIe();
     ~LitePCIe();
 
-    int Open(const char* deviceFilename, uint32_t flags);
+    int Open(const std::string& deviceFilename, uint32_t flags);
     void Close();
     bool IsOpen();
 

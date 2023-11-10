@@ -57,7 +57,7 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
 class SlaveSelectShim : public ISPI
 {
   public:
-    SlaveSelectShim(IComms* comms, uint32_t slaveId)
+    SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId)
         : port(comms)
         , slaveId(slaveId){};
     virtual ~SlaveSelectShim(){};
@@ -69,13 +69,14 @@ class SlaveSelectShim : public ISPI
     virtual int ResetDevice() { return port->ResetDevice(slaveId); }
 
   private:
-    IComms* port;
+    std::shared_ptr<IComms> port;
     uint32_t slaveId;
 };
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::vector<lime::LitePCIe*> trxStreams)
+LimeSDR_X3::LimeSDR_X3(
+    std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams)
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
     , fpgaPort(spiFPGA)
@@ -99,7 +100,7 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::ve
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
 
-    mLMS7002Mcomms[0] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_1);
+    mLMS7002Mcomms[0] = std::shared_ptr<SlaveSelectShim>(new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_1));
 
     mFPGA = new lime::FPGA_X3(spiFPGA, mLMS7002Mcomms[0]);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
@@ -127,7 +128,7 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::ve
     soc.rxPathNames = { "None", "TDD", "FDD", "Calibration (LMS3)" };
     soc.txPathNames = { "None", "TDD", "FDD" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[1] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_2);
+    mLMS7002Mcomms[1] = std::shared_ptr<SlaveSelectShim>(new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_2));
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
     mLMSChips.push_back(lms2);
 
@@ -136,7 +137,7 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::ve
     soc.rxPathNames = { "None", "LNAH", "Calibration (LMS2)" };
     soc.txPathNames = { "None", "Band1" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[2] = new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_3);
+    mLMS7002Mcomms[2] = std::shared_ptr<SlaveSelectShim>(new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_3));
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
     mLMSChips.push_back(lms3);
 
@@ -149,14 +150,14 @@ LimeSDR_X3::LimeSDR_X3(lime::IComms* spiLMS7002M, lime::IComms* spiFPGA, std::ve
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    DeviceNode* fpgaNode = new DeviceNode("FPGA", "FPGA_X3", mFPGA);
-    fpgaNode->childs.push_back(new DeviceNode("LMS_1", "LMS7002M", lms1));
-    fpgaNode->childs.push_back(new DeviceNode("LMS_2", "LMS7002M", lms2));
-    fpgaNode->childs.push_back(new DeviceNode("LMS_3", "LMS7002M", lms3));
-    desc.socTree = new DeviceNode("X3", "SDRDevice", this);
-    desc.socTree->childs.push_back(fpgaNode);
+    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA_X3", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_1", "LMS7002M", lms1)));
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_2", "LMS7002M", lms2)));
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_3", "LMS7002M", lms3)));
+    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("X3", "SDRDevice", this));
+    desc.socTree->children.push_back(fpgaNode);
 
-    desc.socTree->childs.push_back(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
+    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM)));
 }
 
 LimeSDR_X3::~LimeSDR_X3()
@@ -168,8 +169,9 @@ LimeSDR_X3::~LimeSDR_X3()
     {
         delete mLMSChips[i];
         mLMSChips[i] = nullptr;
-        delete mLMS7002Mcomms[i];
     }
+
+    delete mFPGA;
 }
 
 inline bool InRange(double val, double min, double max)
@@ -934,7 +936,7 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
             mTRXStreamPorts.at(moduleIndex), mTRXStreamPorts.at(moduleIndex), mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
         if (mCallback_logMessage)
             mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
-        LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
+        std::shared_ptr<LitePCIe> trxPort{ mTRXStreamPorts.at(moduleIndex) };
         if (!trxPort->IsOpen())
         {
             int dirFlag = 0;
@@ -968,7 +970,7 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
 {
     LMS7002M_SDRDevice::StreamStop(moduleIndex);
-    LitePCIe* trxPort = mTRXStreamPorts.at(moduleIndex);
+    std::shared_ptr<LitePCIe> trxPort{ mTRXStreamPorts.at(moduleIndex) };
     if (trxPort && trxPort->IsOpen())
         trxPort->Close();
 }

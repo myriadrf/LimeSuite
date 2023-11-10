@@ -7,10 +7,12 @@
 #include <functional>
 #include <string.h>
 #include <string>
+#include <memory>
 
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/DeviceNode.h"
 #include "limesuite/IComms.h"
 
 namespace lime {
@@ -74,13 +76,13 @@ class LIME_API SDRDevice
         std::string gatewareTargetBoard; /// Which board should use this gateware
         std::string hardwareVersion; /// The hardware version as a string
         std::string protocolVersion; /// The protocol version as a string
-        uint64_t serialNumber; /// A unique board serial number
+        uint64_t serialNumber{ 0 }; /// A unique board serial number
 
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
         std::vector<DataStorage> memoryDevices;
-        DeviceNode* socTree;
+        std::shared_ptr<DeviceNode> socTree;
     };
 
     struct StreamStats {

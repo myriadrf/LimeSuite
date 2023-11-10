@@ -9,7 +9,7 @@
 #include "kissFFT/kiss_fft.h"
 #include <condition_variable>
 #include <mutex>
-#define USE_GNU_PLOT 1
+// #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
     #include "gnuPlotPipe.h"
 #endif
@@ -88,6 +88,7 @@ enum Args {
     SYNCPPS
 };
 
+#ifdef USE_GNU_PLOT
 class FFTPlotter
 {
   public:
@@ -230,6 +231,7 @@ class ConstellationPlotter
     std::thread plotThread;
     bool doWork;
 };
+#endif
 
 int main(int argc, char** argv)
 {
@@ -239,7 +241,9 @@ int main(int argc, char** argv)
     bool rx = true;
     bool tx = false;
     bool showFFT = false;
+#ifdef USE_GNU_PLOT
     bool showConstelation = false;
+#endif
     bool loopTx = false;
     int64_t samplesToCollect = 0;
     int64_t workTime = 0;
@@ -258,7 +262,9 @@ int main(int argc, char** argv)
         { "samplesCount", required_argument, 0, Args::SAMPLES_COUNT },
         { "time", required_argument, 0, Args::TIME },
         { "fft", no_argument, 0, Args::FFT },
+#ifdef USE_GNU_PLOT
         { "constellation", no_argument, 0, Args::CONSTELLATION },
+#endif
         { "log", required_argument, 0, Args::LOG },
         { "mimo", optional_argument, 0, Args::MIMO },
         { "repeater", optional_argument, 0, Args::REPEATER },
@@ -308,9 +314,11 @@ int main(int argc, char** argv)
         case Args::FFT:
             showFFT = true;
             break;
+#ifdef USE_GNU_PLOT
         case Args::CONSTELLATION:
             showConstelation = true;
             break;
+#endif
         case Args::LOG:
             if (optarg != NULL)
             {
@@ -472,10 +480,12 @@ int main(int argc, char** argv)
     txMeta.useTimestamp = true;
     txMeta.timestamp = sampleRate / 100; // send tx samples 10ms after start
 
+#ifdef USE_GNU_PLOT
     if (showFFT)
         fftplot.Start();
     if (showConstelation)
         constellationplot.Start();
+#endif
     device->StreamStart(chipIndex);
 
     auto startTime = std::chrono::high_resolution_clock::now();

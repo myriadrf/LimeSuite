@@ -79,12 +79,12 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
-    LitePCIe* control = new LitePCIe();
-    LitePCIe* stream = new LitePCIe();
+    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
+    std::shared_ptr<LitePCIe> stream{ new LitePCIe() };
 
     // protocol layer
-    IComms* route_lms7002m = new LMS64C_LMS7002M_Over_PCIe(control);
-    IComms* route_fpga = new LMS64C_FPGA_Over_PCIe(control);
+    std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_PCIe(control) };
+    std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_PCIe(control) };
 
     try
     {
@@ -97,8 +97,6 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
         return new LimeSDR_XTRX(route_lms7002m, route_fpga, stream);
     } catch (std::runtime_error& e)
     {
-        delete control;
-        delete stream;
         char reason[256];
         sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
         throw std::runtime_error(reason);

@@ -171,13 +171,17 @@ int main(int argc, char** argv)
 
     int32_t memorySelect = FindMemoryDeviceByName(device, targetName);
     if (memorySelect < 0)
+    {
+        DeviceRegistry::freeDevice(device);
         return EXIT_FAILURE;
+    }
 
     std::vector<char> data;
     std::ifstream inputFile;
     inputFile.open(filePath, std::ifstream::in | std::ifstream::binary);
     if (!inputFile)
     {
+        DeviceRegistry::freeDevice(device);
         cerr << "Failed to open file: " << filePath << endl;
         return EXIT_FAILURE;
     }
@@ -192,6 +196,7 @@ int main(int argc, char** argv)
     cerr << "Memory device id : " << memorySelect << endl;
     if (device->UploadMemory(memorySelect, data.data(), data.size(), progressCallBack) != 0)
     {
+        DeviceRegistry::freeDevice(device);
         cout << "Device programming failed." << endl;
         return EXIT_FAILURE;
     }
@@ -199,5 +204,7 @@ int main(int argc, char** argv)
         cerr << "Programming aborted." << endl;
     else
         cerr << "Programming completed." << endl;
+
+    DeviceRegistry::freeDevice(device);
     return EXIT_SUCCESS;
 }

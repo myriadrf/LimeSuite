@@ -40,7 +40,7 @@ class pnlLimeSDR : public wxPanel
     wxFlexGridSizer* controlsSizer;
     wxFlexGridSizer* mainSizer;
 
-    int chipSelect;
+    int fpgaSelect;
     lime::SDRDevice* device;
 
     DECLARE_EVENT_TABLE()
