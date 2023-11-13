@@ -13,6 +13,7 @@
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 #include "limesuite/DeviceNode.h"
+#include "CommonFunctions.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -172,22 +173,6 @@ LimeSDR_X3::~LimeSDR_X3()
     }
 
     delete mFPGA;
-}
-
-inline bool InRange(double val, double min, double max)
-{
-    return val >= min ? val <= max : false;
-}
-
-static inline const std::string strFormat(const char* format, ...)
-{
-    char ctemp[256];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(ctemp, 256, format, args);
-    va_end(args);
-    return std::string(ctemp);
 }
 
 // Setup default register values specifically for onboard LMS1 chip

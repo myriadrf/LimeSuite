@@ -133,25 +133,6 @@ LimeSDR::~LimeSDR()
     delete mFPGA;
 }
 
-// Verify and configure given settings
-// throw logic_error with description why the config is not possible
-inline bool InRange(double val, double min, double max)
-{
-    return val >= min ? val <= max : false;
-}
-
-static inline const std::string strFormat(const char* format, ...)
-{
-    char ctemp[256];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(ctemp, 256, format, args);
-    va_end(args);
-
-    return std::string(ctemp);
-}
-
 void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
     try

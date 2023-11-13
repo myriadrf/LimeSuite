@@ -21,6 +21,7 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
+    CommonFunctions.cpp
     boards/DeviceRegistry.cpp
     boards/DeviceHandle.cpp
     boards/LMS7002M_SDRDevice.cpp

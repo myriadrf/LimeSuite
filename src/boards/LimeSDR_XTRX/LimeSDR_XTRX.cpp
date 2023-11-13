@@ -10,6 +10,7 @@
 #include "FPGA_XTRX.h"
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
+#include "CommonFunctions.h"
 
 #include "limesuite/DeviceNode.h"
 #include "lms7002m/LMS7002M_validation.h"
@@ -102,22 +103,6 @@ LimeSDR_XTRX::LimeSDR_XTRX(
 
 LimeSDR_XTRX::~LimeSDR_XTRX()
 {
-}
-
-inline bool InRange(double val, double min, double max)
-{
-    return val >= min ? val <= max : false;
-}
-
-static inline const std::string strFormat(const char* format, ...)
-{
-    char ctemp[256];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(ctemp, 256, format, args);
-    va_end(args);
-    return std::string(ctemp);
 }
 
 static int InitLMS1(LMS7002M* lms, bool skipTune = false)

@@ -4,19 +4,12 @@
 #include <string>
 #include <cstdarg>
 #include "limesuite/SDRDevice.h"
+#include "CommonFunctions.h"
 
 namespace lime {
 
-static std::string strFormat(const char* format, ...)
-{
-    char buff[4096];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buff, sizeof(buff), format, args);
-    va_end(args);
-    return std::move(std::string(buff));
-}
-
+// Verify and configure given settings
+// throw logic_error with description why the config is not possible
 static inline bool InRange(double val, double min, double max)
 {
     return val >= min ? val <= max : false;
