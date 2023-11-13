@@ -327,7 +327,7 @@ void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
     I2CToSDR i2c(*device);
     lime::Si5351C clockGenerator(i2c);
     clockGenerator.LoadRegValuesFromFile(std::string(openFileDialog.GetPath().ToStdString()));
-    if (clockGenerator.UploadConfiguration() != 0)
+    if (clockGenerator.UploadConfiguration() != Si5351C::Status::SUCCESS)
         wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
@@ -398,7 +398,8 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
         clockGenerator.SetClock(i, clock, clock != 0, freq[i] < 0);
     }
 
-    if (clockGenerator.ConfigureClocks() != 0 || clockGenerator.UploadConfiguration() != 0)
+    if (clockGenerator.ConfigureClocks() != Si5351C::Status::SUCCESS ||
+        clockGenerator.UploadConfiguration() != Si5351C::Status::SUCCESS)
         wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
