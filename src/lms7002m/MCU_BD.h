@@ -19,7 +19,7 @@ class ISPI;
 class MCU_BD
 {
   public:
-    enum MCU_PROG_MODE { RESET = 0, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM };
+    enum class MCU_PROG_MODE { RESET = 0, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM };
     enum MCU_ERROR_CODES {
         MCU_NO_ERROR = 0,
         MCU_ERROR,

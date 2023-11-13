@@ -667,7 +667,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
         bool abort = false;
         //reset MCU, set mode
         wrdata[0] = (1 << 31) | controlAddr << 16 | 0;
-        wrdata[1] = (1 << 31) | controlAddr << 16 | (mode & 0x3);
+        wrdata[1] = (1 << 31) | controlAddr << 16 | (static_cast<uint32_t>(mode) & 0x3);
 
         m_serPort->SPI(wrdata, nullptr, 2);
 
