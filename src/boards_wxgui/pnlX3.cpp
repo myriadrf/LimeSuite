@@ -52,30 +52,34 @@ int pnlX3::LMS_WriteFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t 
     }
 }
 
-int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double val, const char* units)
+int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double val, const std::string& units)
 {
-    if (!device)
+    if (device == nullptr)
+    {
         return -1;
-    std::string str = units == nullptr ? "" : units;
+    }
+
     try
     {
-        return device->CustomParameterWrite(&param_id, &val, 1, str);
+        return device->CustomParameterWrite(&param_id, &val, 1, units);
     } catch (...)
     {
         return -1;
     }
 }
 
-int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double* val, char* units)
+int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double* val, std::string& units)
 {
-    if (!device)
+    if (device == nullptr)
+    {
         return -1;
-    std::string str;
+    }
+
+    std::vector<std::string> str{ units };
     try
     {
-        int ret = device->CustomParameterRead(&param_id, val, 1, &str);
-        if (units)
-            strncpy(units, str.c_str(), str.length() + 1);
+        int ret = device->CustomParameterRead(&param_id, val, 1, str);
+        units = str[0];
         return ret;
     } catch (...)
     {
@@ -490,9 +494,10 @@ void pnlX3::UpdatePanel()
     Lms1tx1En->SetValue((value >> 5) & 1);
 
     double dacVal = 0;
-    LMS_ReadCustomBoardParam(device, 2, &dacVal, nullptr);
+    std::string empty = "";
+    LMS_ReadCustomBoardParam(device, 2, &dacVal, empty);
     spinDac1->SetValue((int)dacVal);
-    LMS_ReadCustomBoardParam(device, 3, &dacVal, nullptr);
+    LMS_ReadCustomBoardParam(device, 3, &dacVal, empty);
     spinDac2->SetValue((int)dacVal);
 }
 

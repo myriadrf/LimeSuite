@@ -268,17 +268,18 @@ int LimeSDR_MMX8::CustomParameterWrite(const int32_t* ids, const double* values,
     return ret;
 }
 
-int LimeSDR_MMX8::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LimeSDR_MMX8::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
 {
     int ret = 0;
     for (size_t i = 0; i < count; ++i)
     {
         int subModuleIndex = (ids[i] >> 8) - 1;
         int id = ids[i] & 0xFF;
+        auto unit = std::vector<std::string>{ units[i] };
         if (subModuleIndex >= 0)
-            ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, &units[i]);
+            ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, unit);
         else
-            ret |= mMainFPGAcomms->CustomParameterRead(&id, &values[i], 1, &units[i]);
+            ret |= mMainFPGAcomms->CustomParameterRead(&id, &values[i], 1, unit);
     }
     return ret;
 }

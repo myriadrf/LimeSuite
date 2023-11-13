@@ -62,7 +62,8 @@ int LMS7002M_SDRDevice::CustomParameterWrite(const int32_t* ids, const double* v
 {
     throw(OperationNotSupported("CustomParameterWrite not implemented"));
 }
-int LMS7002M_SDRDevice::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+
+int LMS7002M_SDRDevice::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
 {
     throw(OperationNotSupported("CustomParameterRead not implemented"));
 }

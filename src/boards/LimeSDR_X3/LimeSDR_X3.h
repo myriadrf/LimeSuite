@@ -47,7 +47,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 
     virtual int CustomParameterWrite(
         const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) override;
+    virtual int CustomParameterRead(
+        const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;

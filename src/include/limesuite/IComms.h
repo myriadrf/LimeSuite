@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 #include "limesuite/config.h"
 
 namespace lime {
@@ -46,8 +47,6 @@ class IComms : public ISPI
   public:
     virtual ~IComms(){};
 
-    bool IsOpen();
-
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
@@ -57,7 +56,10 @@ class IComms : public ISPI
     {
         return -1;
     };
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) { return -1; };
+    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
+    {
+        return -1;
+    };
 
     typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
     virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)

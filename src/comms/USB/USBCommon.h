@@ -116,7 +116,8 @@ class LMS64C_FPGA_Over_USB : public IComms
 
     virtual int CustomParameterWrite(
         const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) override;
+    virtual int CustomParameterRead(
+        const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units) override;
 
     virtual int ProgramWrite(
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;

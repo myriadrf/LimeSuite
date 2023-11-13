@@ -272,7 +272,7 @@ int CustomParameterWrite(
 }
 
 int CustomParameterRead(
-    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::string* units, uint32_t subDevice)
+    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units, uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
@@ -296,16 +296,17 @@ int CustomParameterRead(
     for (size_t i = 0; i < count; ++i)
     {
         int unitsIndex = pkt.payload[i * 4 + 1];
-        if (units)
+
+        if (unitsIndex & 0x0F)
         {
-            if (unitsIndex & 0x0F)
-            {
-                const char adc_units_prefix[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
-                units[i] = adc_units_prefix[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
-            }
-            else
-                units[i] += adcUnits2string((unitsIndex & 0xF0) >> 4);
+            const char adc_units_prefix[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
+            units[i] = adc_units_prefix[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
         }
+        else
+        {
+            units[i] += adcUnits2string((unitsIndex & 0xF0) >> 4);
+        }
+
         if ((unitsIndex & 0xF0) >> 4 == RAW)
         {
             values[i] = (uint16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);

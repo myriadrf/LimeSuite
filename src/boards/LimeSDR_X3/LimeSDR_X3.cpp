@@ -1283,7 +1283,7 @@ int LimeSDR_X3::CustomParameterWrite(const int32_t* ids, const double* values, c
     return fpgaPort->CustomParameterWrite(ids, values, count, units);
 }
 
-int LimeSDR_X3::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LimeSDR_X3::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
 {
     return fpgaPort->CustomParameterRead(ids, values, count, units);
 }

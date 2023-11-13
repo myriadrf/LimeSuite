@@ -65,13 +65,15 @@ static wxString power2unitsString(int powerx3)
     }
 }
 
-static int ReadCustomBoardParam(SDRDevice* device, int32_t param_id, float_type* val, std::string& units)
+static int ReadCustomBoardParam(SDRDevice* device, int32_t param_id, float_type* val, std::string& unit)
 {
+    std::vector<std::string> units{ unit };
     if (device == nullptr)
         return -1;
     try
     {
-        int ret = device->CustomParameterRead(&param_id, val, 1, &units);
+        int ret = device->CustomParameterRead(&param_id, val, 1, units);
+        unit = units[0];
         return ret;
     } catch (...)
     {
@@ -189,7 +191,7 @@ pnlBoardControls::pnlBoardControls(
 
     wxArrayString unitChoices;
     for (int i = 0; i < ADC_UNITS_COUNT; ++i) //add all defined units
-        unitChoices.push_back(wxString::From8BitData(adcUnits2string(i)));
+        unitChoices.push_back(wxString(adcUnits2string(i)));
     for (int i = ADC_UNITS_COUNT; i < ADC_UNITS_COUNT + 4; ++i) //add some options to use undefined units
         unitChoices.push_back(wxString::Format(_("%i"), i));
     cmbCustomUnitsWr = new wxChoice(pnlCustomControls, wxNewId(), wxDefaultPosition, wxDefaultSize, unitChoices, 0);

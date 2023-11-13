@@ -705,7 +705,7 @@ int LimeSDR::CustomParameterWrite(const int32_t* ids, const double* values, cons
     return mfpgaPort->CustomParameterWrite(ids, values, count, units);
 }
 
-int LimeSDR::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LimeSDR::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
 {
     return mfpgaPort->CustomParameterRead(ids, values, count, units);
 }

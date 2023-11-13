@@ -5,13 +5,15 @@
 */
 #pragma once
 
+#include <array>
+
 namespace lime {
 
 enum eADC_UNITS { RAW, VOLTAGE, CURRENT, RESISTANCE, POWER, TEMPERATURE, ADC_UNITS_COUNT };
 
-static const char adc_units_text[][8] = { "", "V", "A", "Ohm", "W", "C" };
+static const std::array<std::string, ADC_UNITS_COUNT> adc_units_text{ "", "V", "A", "Ohm", "W", "C" };
 
-static const char* adcUnits2string(const unsigned units)
+static std::string adcUnits2string(const unsigned units)
 {
     if (units < ADC_UNITS_COUNT)
         return adc_units_text[units];

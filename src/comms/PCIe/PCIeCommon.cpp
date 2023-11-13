@@ -53,7 +53,8 @@ int LMS64C_FPGA_Over_PCIe::CustomParameterWrite(
     return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
 }
 
-int LMS64C_FPGA_Over_PCIe::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LMS64C_FPGA_Over_PCIe::CustomParameterRead(
+    const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
 {
     return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
 }
