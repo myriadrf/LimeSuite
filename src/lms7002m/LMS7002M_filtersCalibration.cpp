@@ -88,7 +88,7 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     if (g_tia == 1 && rx_lpf_freq_RF < 4e6)
     {
         rx_lpf_freq_RF = 4e6;
-        Log(LOG_WARNING, "Rx LPF min bandwidth is 4MHz when TIA gain is set to -12 dB");
+        Log(LogType::LOG_WARNING, "Rx LPF min bandwidth is 4MHz when TIA gain is set to -12 dB");
     }
 
     if (mcuControl->ReadMCUProgramID() != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
@@ -135,7 +135,7 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     float_type tx_lpf_IF = tx_lpf_freq_RF / 2;
     if (tx_lpf_freq_RF > TxLPF_RF_LimitLowMid && tx_lpf_freq_RF < TxLPF_RF_LimitMidHigh)
     {
-        Log(LOG_WARNING,
+        Log(LogType::LOG_WARNING,
             "Tx lpf(%g MHz) out of range %g-%g MHz and %g-%g MHz. Setting to %g MHz",
             tx_lpf_freq_RF / 1e6,
             TxLPF_RF_LimitLow / 1e6,
@@ -181,11 +181,11 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         this->SPI_read(addr, true);
 
     if (tx_lpf_IF <= TxLPF_RF_LimitLowMid / 2)
-        Log(LOG_INFO,
+        Log(LogType::LOG_INFO,
             "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
             "Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active",
             tx_lpf_IF / 1e6 * 2);
     else
-        Log(LOG_INFO, "Filter calibrated. Filter order-2nd, set to %g MHz", tx_lpf_IF / 1e6 * 2);
+        Log(LogType::LOG_INFO, "Filter calibrated. Filter order-2nd, set to %g MHz", tx_lpf_IF / 1e6 * 2);
     return 0;
 }

@@ -272,7 +272,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     gcorrq = Get_SPI_Reg_bits(LMS7_GCORRQ_TXTSP, true);
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_TXTSP, true));
 
-    Log("Tx calibration finished", LOG_INFO);
+    Log("Tx calibration finished", LogType::LOG_INFO);
     verbose_printf("Tx | DC  | GAIN | PHASE\n");
     verbose_printf("---+-----+------+------\n");
     verbose_printf("I: | %3i | %4i | %i\n", dccorri, gcorri, phaseOffset);
@@ -393,7 +393,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     gcorrq = Get_SPI_Reg_bits(LMS7_GCORRQ_RXTSP, true);
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_RXTSP, true));
 
-    Log("Rx calibration finished", LOG_INFO);
+    Log("Rx calibration finished", LogType::LOG_INFO);
     verbose_printf("RX | DC  | GAIN | PHASE\n");
     verbose_printf("---+-----+------+------\n");
     verbose_printf("I: | %3i | %4i | %i\n", dcoffi, gcorri, phaseOffset);

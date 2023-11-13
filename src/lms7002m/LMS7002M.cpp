@@ -98,27 +98,28 @@ class ChannelScope
 */
 void LMS7002M::Log(const char* text, LogType type)
 {
+    int intType = static_cast<int>(type);
     switch (type)
     {
-    case LOG_INFO:
+    case LogType::LOG_INFO:
         lime::info(text);
         if (log_callback)
-            log_callback(text, type);
+            log_callback(text, intType);
         break;
-    case LOG_WARNING:
+    case LogType::LOG_WARNING:
         lime::warning(text);
         if (log_callback)
-            log_callback(text, type);
+            log_callback(text, intType);
         break;
-    case LOG_ERROR:
+    case LogType::LOG_ERROR:
         lime::error(text);
         if (log_callback)
-            log_callback(text, type);
+            log_callback(text, intType);
         break;
-    case LOG_DATA:
+    case LogType::LOG_DATA:
         lime::debug(text);
         if (log_callback)
-            log_callback(text, type);
+            log_callback(text, intType);
         break;
     }
 }

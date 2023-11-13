@@ -450,7 +450,7 @@ class LIME_API LMS7002M
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
 
-    enum LogType { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
+    enum class LogType { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
     void SetLogCallback(std::function<void(const char*, int)> callback);
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
