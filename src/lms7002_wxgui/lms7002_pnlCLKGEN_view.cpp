@@ -880,7 +880,7 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick(wxCommandEvent& event)
 {
     LMS7002M* lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
-    if (lms->TuneVCO(lime::LMS7002M::VCO_CGEN) != 0)
+    if (lms->TuneVCO(lime::LMS7002M::VCO_Module::VCO_CGEN) != 0)
     {
         wxMessageBox(wxString(_("CLKGEN VCO Tune failed")));
         return;

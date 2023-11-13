@@ -1459,7 +1459,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick(wxCommandEvent& event)
 void lms7002_pnlSX_view::OnbtnTuneClick(wxCommandEvent& event)
 {
     assert(lmsControl != nullptr);
-    int status = lmsControl->TuneVCO(direction == TRXDir::Tx ? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
+    int status = lmsControl->TuneVCO(direction == TRXDir::Tx ? LMS7002M::VCO_Module::VCO_SXT : LMS7002M::VCO_Module::VCO_SXR);
     if (status != 0)
         wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();

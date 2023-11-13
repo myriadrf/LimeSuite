@@ -295,7 +295,7 @@ class LIME_API LMS7002M
     int SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
     bool GetSXLocked(TRXDir dir);
     ///VCO modules available for tuning
-    enum VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
+    enum class VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
     ///@}

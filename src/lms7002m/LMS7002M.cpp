@@ -731,13 +731,13 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
     {
         Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         if (!Get_SPI_Reg_bits(LMS7param(PD_VCO)))
-            TuneVCO(VCO_SXT);
+            TuneVCO(VCO_Module::VCO_SXT);
         Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         if (!Get_SPI_Reg_bits(LMS7param(PD_VCO)))
-            TuneVCO(VCO_SXR);
+            TuneVCO(VCO_Module::VCO_SXR);
         if (!Get_SPI_Reg_bits(LMS7param(PD_VCO_CGEN)))
         {
-            TuneVCO(VCO_CGEN);
+            TuneVCO(VCO_Module::VCO_CGEN);
             if (mCallback_onCGENChange)
                 return mCallback_onCGENChange(mCallback_onCGENChange_userData);
         }
@@ -1361,7 +1361,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
             SetNCOFrequency(TRXDir::Tx, i, txNCO[ch][i]);
     }
     this->SetActiveChannel(chBck);
-    if (TuneVCO(VCO_CGEN) != 0)
+    if (TuneVCO(VCO_Module::VCO_CGEN) != 0)
     {
         if (output)
         {
@@ -1442,7 +1442,7 @@ int LMS7002M::TuneCGENVCO()
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
-    if (module == VCO_CGEN)
+    if (module == VCO_Module::VCO_CGEN)
         return TuneCGENVCO();
     auto settlingTime = chrono::microseconds(50); //can be lower
     struct CSWInteval {
@@ -1450,7 +1450,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         int16_t low;
     };
     CSWInteval cswSearch[2];
-    const char* moduleName = (module == VCO_CGEN) ? "CGEN" : ((module == VCO_SXR) ? "SXR" : "SXT");
+    const char* moduleName = (module == VCO_Module::VCO_CGEN) ? "CGEN" : ((module == VCO_Module::VCO_SXR) ? "SXR" : "SXT");
     uint8_t cmphl; //comparators
     uint16_t addrVCOpd; // VCO power down address
     uint16_t addrCSW_VCO;
@@ -1460,7 +1460,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 
     Channel ch = this->GetActiveChannel(); //remember used channel
 
-    if (module != VCO_CGEN) //set addresses to SX module
+    if (module != VCO_Module::VCO_CGEN) //set addresses to SX module
     {
         this->SetActiveChannel(Channel(module));
         addrVCOpd = LMS7param(PD_VCO).address;
@@ -1808,7 +1808,7 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
         {
             lime::debug("Tuning %s :", vcoNames[sel_vco]);
             Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-            int status = TuneVCO(dir == TRXDir::Tx ? VCO_SXT : VCO_SXR);
+            int status = TuneVCO(dir == TRXDir::Tx ? VCO_Module::VCO_SXT : VCO_Module::VCO_SXR);
             if (status == 0)
             {
                 tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
