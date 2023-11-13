@@ -32,7 +32,7 @@ void intHandler(int dummy)
     runForever.store(false);
 }
 
-static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::DEBUG;
+static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::LogLevel::DEBUG;
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
     if (lvl > logVerbosity)

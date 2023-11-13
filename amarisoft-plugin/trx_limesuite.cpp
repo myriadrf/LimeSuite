@@ -28,7 +28,7 @@ typedef lime::SDRDevice::LogLevel LogLevel;
 
 std::mutex gainsMutex;
 
-static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::ERROR;
+static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::LogLevel::ERROR;
 static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 
 struct RxGainRow {

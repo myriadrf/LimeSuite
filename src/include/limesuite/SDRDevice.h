@@ -26,7 +26,7 @@ class LIME_API SDRDevice
     static constexpr uint8_t MAX_CHANNEL_COUNT = 16;
     static constexpr uint8_t MAX_RFSOC_COUNT = 16;
 
-    enum LogLevel { CRITICAL = 0, ERROR, WARNING, INFO, VERBOSE, DEBUG };
+    enum class LogLevel { CRITICAL = 0, ERROR, WARNING, INFO, VERBOSE, DEBUG };
     typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
     typedef void (*LogCallbackType)(LogLevel, const char*);
 
