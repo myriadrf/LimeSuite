@@ -34,7 +34,7 @@ LMS7002M_RegistersMap* LMS7002M::BackupRegisterMap(void)
     //BackupAllRegisters(); return NULL;
     auto backup = new LMS7002M_RegistersMap();
     Channel chBck = this->GetActiveChannel();
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     *backup = *mRegistersMap;
     this->SetActiveChannel(chBck);
     return backup;
@@ -65,7 +65,7 @@ void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap* backup)
         }
 
         //bulk write the original register values from backup
-        this->SetActiveChannel((ch == 0) ? ChA : ChB);
+        this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
         SPI_write_batch(restoreAddrs.data(), restoreData.data(), restoreData.size(), true);
     }
 

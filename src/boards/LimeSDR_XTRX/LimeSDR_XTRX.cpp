@@ -249,7 +249,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         for (int i = 0; i < 2; ++i)
         {
             const ChannelConfig& ch = cfg.channel[i];
-            chip->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
+            chip->SetActiveChannel((i & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
 
             chip->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
             chip->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
@@ -268,7 +268,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         // enabled ADC/DAC is required for FPGA to work
         chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
         chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
         double sampleRate;
         if (rxUsed)
@@ -280,7 +280,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         for (int i = 0; i < 2; ++i)
         {
-            chip->SetActiveChannel(i == 0 ? LMS7002M::ChA : LMS7002M::ChB);
+            chip->SetActiveChannel(i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
             const ChannelConfig& ch = cfg.channel[i];
 
             if (socIndex == 0)
@@ -327,7 +327,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             LMS1SetPath(false, i, ch.rx.path);
             LMS1SetPath(true, i, ch.tx.path);
         }
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
         // Workaround: Toggle LimeLights transmit port to flush residual value from data interface
         uint16_t txMux = chip->Get_SPI_Reg_bits(LMS7param(TX_MUX));

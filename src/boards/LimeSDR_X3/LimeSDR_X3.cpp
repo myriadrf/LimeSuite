@@ -280,12 +280,12 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
     //ChannelScope scope(this, channel);
 
     auto macBck = chip->GetActiveChannel();
-    const LMS7002M::Channel ch = channel > 0 ? LMS7002M::ChB : LMS7002M::ChA;
+    const LMS7002M::Channel ch = channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
     chip->SetActiveChannel(ch);
 
     const bool isTx = dir == TRXDir::Tx;
     //--- LML ---
-    if (ch == LMS7002M::ChA)
+    if (ch == LMS7002M::Channel::ChA)
     {
         if (isTx)
             chip->Modify_SPI_Reg_bits(LMS7param(TXEN_A), enable ? 1 : 0);
@@ -359,25 +359,25 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
     //--- synthesizers ---
     if (isTx)
     {
-        chip->SetActiveChannel(LMS7002M::ChSXT);
+        chip->SetActiveChannel(LMS7002M::Channel::ChSXT);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
         //chip->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels&3) == 3?0:1);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_G), 1);
-        if (ch == LMS7002M::ChB) //enable LO to channel B
+        if (ch == LMS7002M::Channel::ChB) //enable LO to channel B
         {
-            chip->SetActiveChannel(LMS7002M::ChA);
+            chip->SetActiveChannel(LMS7002M::Channel::ChA);
             chip->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), enable ? 1 : 0);
         }
     }
     else
     {
-        chip->SetActiveChannel(LMS7002M::ChSXR);
+        chip->SetActiveChannel(LMS7002M::Channel::ChSXR);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
         //chip->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels&0xC)==0xC?0:1);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_G), 1);
-        if (ch == LMS7002M::ChB) //enable LO to channel B
+        if (ch == LMS7002M::Channel::ChB) //enable LO to channel B
         {
-            chip->SetActiveChannel(LMS7002M::ChA);
+            chip->SetActiveChannel(LMS7002M::Channel::ChA);
             chip->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), enable ? 1 : 0);
         }
     }
@@ -642,7 +642,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         if (socIndex == 0)
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0); // enabled DAC is required for FPGA to work
 
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
         double sampleRate;
         if (rxUsed)
             sampleRate = cfg.channel[0].rx.sampleRate;
@@ -676,7 +676,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         for (int ch = 0; ch < 2; ++ch)
         {
-            chip->SetActiveChannel((ch & 1) ? LMS7002M::ChB : LMS7002M::ChA);
+            chip->SetActiveChannel((ch & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
 
             if (cfg.channel[ch].rx.testSignal)
             {
@@ -697,7 +697,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
         }
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
         // Workaround: Toggle LimeLights transmit port to flush residual value from data interface
         uint16_t txMux = chip->Get_SPI_Reg_bits(LMS7param(TX_MUX));

@@ -72,7 +72,7 @@ class ChannelScope
     {
         assert(index < 2);
         mStoredValue = chip->GetActiveChannel(!useCache);
-        auto expectedChannel = index > 0 ? LMS7002M::ChB : LMS7002M::ChA;
+        auto expectedChannel = index > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
         if (mStoredValue == expectedChannel)
             return;
 
@@ -270,7 +270,7 @@ LMS7002M::Channel LMS7002M::GetActiveChannel(bool fromChip)
 
 size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
 {
-    return this->GetActiveChannel(fromChip) == ChB ? 1 : 0;
+    return this->GetActiveChannel(fromChip) == Channel::ChB ? 1 : 0;
 }
 
 int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable)
@@ -278,11 +278,11 @@ int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable
     ChannelScope scope(this, channel);
 
     const Channel ch = this->GetActiveChannel();
-    this->SetActiveChannel(channel > 0 ? ChB : ChA);
+    this->SetActiveChannel(channel > 0 ? Channel::ChB : Channel::ChA);
 
     const bool isTx = dir == TRXDir::Tx;
     //--- LML ---
-    if (ch == ChA)
+    if (ch == Channel::ChA)
     {
         if (isTx)
             this->Modify_SPI_Reg_bits(LMS7param(TXEN_A), enable ? 1 : 0);
@@ -303,7 +303,7 @@ int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable
     if (!enable)
     {
         bool disable;
-        if (ch == ChA)
+        if (ch == Channel::ChA)
             disable = Get_SPI_Reg_bits(isTx ? LMS7_TXEN_B : LMS7_RXEN_B) == 0;
         else
             disable = Get_SPI_Reg_bits(isTx ? LMS7_TXEN_A : LMS7_RXEN_A) == 0;
@@ -312,7 +312,7 @@ int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable
     else
         Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE1 : LMS7_PD_RX_AFE1, 0);
 
-    if (ch == ChB)
+    if (ch == Channel::ChB)
         Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE2 : LMS7_PD_RX_AFE2, enable ? 0 : 1);
 
     int disabledChannels = (Get_SPI_Reg_bits(LMS7_PD_AFE.address, 4, 1) & 0xF); //check if all channels are disabled
@@ -389,23 +389,23 @@ int LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable
     //--- synthesizers ---
     if (isTx)
     {
-        this->SetActiveChannel(ChSXT);
+        this->SetActiveChannel(Channel::ChSXT);
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels & 3) == 3 ? 0 : 1);
-        if (ch == ChB) //enable LO to channel B
+        if (ch == Channel::ChB) //enable LO to channel B
         {
-            this->SetActiveChannel(ChA);
+            this->SetActiveChannel(Channel::ChA);
             this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), enable ? 1 : 0);
         }
     }
     else
     {
-        this->SetActiveChannel(ChSXR);
+        this->SetActiveChannel(Channel::ChSXR);
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels & 0xC) == 0xC ? 0 : 1);
-        if (ch == ChB) //enable LO to channel B
+        if (ch == Channel::ChB) //enable LO to channel B
         {
-            this->SetActiveChannel(ChA);
+            this->SetActiveChannel(Channel::ChA);
             this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), enable ? 1 : 0);
         }
     }
@@ -481,7 +481,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
             ini_t::sectionsit_t section = parser.sections.find("LMS7002 registers ch.A");
 
             uint16_t x0020_value = 0;
-            this->SetActiveChannel(ChA); //select A channel
+            this->SetActiveChannel(Channel::ChA); //select A channel
             for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
             {
                 sscanf(pairs->first.c_str(), "%hx", &addr);
@@ -546,7 +546,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
                 return status;
         }
 
-        this->SetActiveChannel(ChB);
+        this->SetActiveChannel(Channel::ChB);
 
         if (parser.select("LMS7002 registers ch.B") == true)
         {
@@ -560,7 +560,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
                 addrToWrite.push_back(addr);
                 dataToWrite.push_back(value);
             }
-            this->SetActiveChannel(ChB); //select B channel
+            this->SetActiveChannel(Channel::ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
@@ -640,7 +640,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
     {
         //try loading as legacy format
         status = LoadConfigLegacyFile(filename);
-        this->SetActiveChannel(ChA);
+        this->SetActiveChannel(Channel::ChA);
         return status;
     }
     string type = "";
@@ -665,7 +665,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
             ini_t::sectionsit_t section = parser.sections.find("lms7002_registers_a");
 
             uint16_t x0020_value = 0;
-            this->SetActiveChannel(ChA); //select A channel
+            this->SetActiveChannel(Channel::ChA); //select A channel
             for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
             {
                 sscanf(pairs->first.c_str(), "%hx", &addr);
@@ -696,7 +696,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
             status = SPI_write(0x0020, x0020_value);
             if (status != 0 && controlPort != nullptr)
                 return status;
-            this->SetActiveChannel(ChB);
+            this->SetActiveChannel(Channel::ChB);
             if (status != 0 && controlPort != nullptr)
                 return status;
         }
@@ -713,7 +713,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
                 addrToWrite.push_back(addr);
                 dataToWrite.push_back(value);
             }
-            this->SetActiveChannel(ChB); //select B channel
+            this->SetActiveChannel(Channel::ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
@@ -742,7 +742,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
                 return mCallback_onCGENChange(mCallback_onCGENChange_userData);
         }
     }
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     return 0;
 }
 
@@ -781,7 +781,7 @@ int LMS7002M::SaveConfig(const std::string& filename)
     dataReceived.resize(addrToRead.size(), 0);
 
     fout << "[lms7002_registers_a]" << endl;
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
         if (addrToRead[i] >= 0x5C3 && addrToRead[i] <= 0x5CA)
@@ -808,7 +808,7 @@ int LMS7002M::SaveConfig(const std::string& filename)
                 if (addr >= 0x0100)
                     addrToRead.push_back(addr);
 
-    this->SetActiveChannel(ChB);
+    this->SetActiveChannel(Channel::ChB);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
@@ -1310,7 +1310,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         txModeNCO = Get_SPI_Reg_bits(LMS7param(MODE_TX), true);
         for (int ch = 0; ch < 2; ++ch)
         {
-            this->SetActiveChannel((ch == 0) ? ChA : ChB);
+            this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
             for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
                 rxNCO[ch].push_back(GetNCOFrequency(TRXDir::Rx, i, false));
             for (int i = 0; i < 16 && txModeNCO == 0; ++i)
@@ -1354,7 +1354,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     //recalculate NCO
     for (int ch = 0; ch < 2 && retainNCOfrequencies; ++ch)
     {
-        this->SetActiveChannel((ch == 0) ? ChA : ChB);
+        this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
         for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
             SetNCOFrequency(TRXDir::Rx, i, rxNCO[ch][i]);
         for (int i = 0; i < 16 && txModeNCO == 0; ++i)
@@ -1385,7 +1385,7 @@ bool LMS7002M::GetCGENLocked(void)
 
 bool LMS7002M::GetSXLocked(TRXDir dir)
 {
-    SetActiveChannel(dir == TRXDir::Tx ? ChSXT : ChSXR);
+    SetActiveChannel(dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
     return (Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true) & 0x3) == 2;
 }
 
@@ -1745,7 +1745,7 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
                                 1048576);
 
     Channel ch = this->GetActiveChannel();
-    this->SetActiveChannel(dir == TRXDir::Tx ? ChSXT : ChSXR);
+    this->SetActiveChannel(dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
     Modify_SPI_Reg_bits(LMS7param(EN_INTONLY_SDM), 0);
     Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
     Modify_SPI_Reg_bits(0x011D, 15, 0, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
@@ -1948,7 +1948,7 @@ float_type LMS7002M::GetFrequencySX(TRXDir dir)
 {
     Channel ch = this->GetActiveChannel(); //remember previously used channel
     float_type dMul;
-    this->SetActiveChannel(dir == TRXDir::Tx ? ChSXT : ChSXR);
+    this->SetActiveChannel(dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
     uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0); // read whole register to reduce SPI transfers
     uint32_t gFRAC = ((gINT & 0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
 
@@ -2414,7 +2414,7 @@ int LMS7002M::RegistersTest(const std::string& fileName)
     ch1Data.resize(ch1Addresses.size(), 0);
 
     //backup A channel
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     status = SPI_read_batch(&ch1Addresses[0], &ch1Data[0], ch1Addresses.size());
     if (status != 0)
         return status;
@@ -2427,7 +2427,7 @@ int LMS7002M::RegistersTest(const std::string& fileName)
     vector<uint16_t> ch2Data;
     ch2Data.resize(ch2Addresses.size(), 0);
 
-    this->SetActiveChannel(ChB);
+    this->SetActiveChannel(Channel::ChB);
     status = SPI_read_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size());
     if (status != 0)
         return status;
@@ -2437,7 +2437,7 @@ int LMS7002M::RegistersTest(const std::string& fileName)
     Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0);
     Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
     Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
 
     stringstream ss;
 
@@ -2527,9 +2527,9 @@ int LMS7002M::RegistersTest(const std::string& fileName)
     }
 
     //restore register values
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     SPI_write_batch(&ch1Addresses[0], &ch1Data[0], ch1Addresses.size(), true);
-    this->SetActiveChannel(ChB);
+    this->SetActiveChannel(Channel::ChB);
     SPI_write_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size(), true);
     this->SetActiveChannel(ch);
 
@@ -2663,7 +2663,7 @@ bool LMS7002M::IsSynced()
     vector<uint16_t> dataReceived;
     dataReceived.resize(addrToRead.size(), 0);
 
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     std::vector<uint32_t> dataWr(addrToRead.size());
     std::vector<uint32_t> dataRd(addrToRead.size());
     for (size_t i = 0; i < addrToRead.size(); ++i)
@@ -2706,7 +2706,7 @@ bool LMS7002M::IsSynced()
     controlPort->SPI(dataWr.data(), dataRd.data(), dataWr.size());
     for (size_t i = 0; i < addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
-    this->SetActiveChannel(ChB);
+    this->SetActiveChannel(Channel::ChB);
 
     //check if local copy matches chip
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
@@ -2755,7 +2755,7 @@ int LMS7002M::UploadAll()
     vector<uint16_t> dataToWrite;
 
     uint16_t x0020_value = mRegistersMap->GetValue(0, 0x0020);
-    this->SetActiveChannel(ChA); //select A channel
+    this->SetActiveChannel(Channel::ChA); //select A channel
 
     addrToWrite = mRegistersMap->GetUsedAddresses(0);
     //remove 0x0020 register from list, to not change MAC
@@ -2770,7 +2770,7 @@ int LMS7002M::UploadAll()
     status = SPI_write(0x0020, x0020_value);
     if (status != 0)
         return status;
-    this->SetActiveChannel(ChB);
+    this->SetActiveChannel(Channel::ChB);
     if (status != 0)
         return status;
 
@@ -2780,7 +2780,7 @@ int LMS7002M::UploadAll()
     {
         dataToWrite.push_back(mRegistersMap->GetValue(1, address));
     }
-    this->SetActiveChannel(ChB); //select B channel
+    this->SetActiveChannel(Channel::ChB); //select B channel
     status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
     if (status != 0)
         return status;
@@ -2805,7 +2805,7 @@ int LMS7002M::DownloadAll()
     vector<uint16_t> addrToRead = mRegistersMap->GetUsedAddresses(0);
     vector<uint16_t> dataReceived;
     dataReceived.resize(addrToRead.size(), 0);
-    this->SetActiveChannel(ChA);
+    this->SetActiveChannel(Channel::ChA);
     status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
     if (status != 0)
         return status;
@@ -2819,7 +2819,7 @@ int LMS7002M::DownloadAll()
     addrToRead = mRegistersMap->GetUsedAddresses(1);
     dataReceived.resize(addrToRead.size(), 0);
 
-    this->SetActiveChannel(ChB);
+    this->SetActiveChannel(Channel::ChB);
     status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
     if (status != 0)
         return status;
@@ -3123,8 +3123,8 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
     }
     for (auto address : addrToWrite)
     {
-        uint16_t data = mRegistersMap->GetValue(src == ChA ? 0 : 1, address);
-        mRegistersMap->SetValue(dest == ChA ? 0 : 1, address, data);
+        uint16_t data = mRegistersMap->GetValue(src == Channel::ChA ? 0 : 1, address);
+        mRegistersMap->SetValue(dest == Channel::ChA ? 0 : 1, address, data);
     }
     if (controlPort)
         UploadAll();
