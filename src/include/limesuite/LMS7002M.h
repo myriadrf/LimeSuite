@@ -255,7 +255,7 @@ class LIME_API LMS7002M
     ///@}
 
     ///@name RF selection
-    enum PathRFE {
+    enum class PathRFE {
         PATH_RFE_NONE = 0,
         PATH_RFE_LNAH,
         PATH_RFE_LNAL,
