@@ -59,7 +59,7 @@ class MCU_BD
     std::string GetProgramFilename() const;
 
     void RunProcedure(uint8_t id);
-    enum MCU_Parameter {
+    enum class MCU_Parameter {
         MCU_REF_CLK,
         MCU_BW,
         MCU_EXT_LOOPBACK_PAIR,

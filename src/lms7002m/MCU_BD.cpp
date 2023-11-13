@@ -1150,7 +1150,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
 {
     const uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
-    if (param == MCU_REF_CLK || param == MCU_BW)
+    if (param == MCU_Parameter::MCU_REF_CLK || param == MCU_Parameter::MCU_BW)
     {
         uint8_t inputRegs[3];
         value /= 1e6;
@@ -1167,11 +1167,11 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
             this_thread::sleep_for(chrono::microseconds(5));
         }
     }
-    if (param == MCU_REF_CLK)
+    if (param == MCU_Parameter::MCU_REF_CLK)
         RunProcedure(4);
-    if (param == MCU_BW)
+    if (param == MCU_Parameter::MCU_BW)
         RunProcedure(3);
-    if (param == MCU_EXT_LOOPBACK_PAIR)
+    if (param == MCU_Parameter::MCU_EXT_LOOPBACK_PAIR)
     {
         uint8_t intVal = (int)value;
         mSPI_write(0, intVal);

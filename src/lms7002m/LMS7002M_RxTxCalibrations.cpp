@@ -238,10 +238,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(TRXDir::Rx);
-    mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+    mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_REF_CLK, refClk);
     verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
-    mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
+    mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_BW, bandwidth_Hz);
 
     {
         //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
@@ -252,7 +252,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
             // if(status != 0)
             //     return ReportError(EINVAL, "Tx Calibration: Failed to enable external loopback");
             uint8_t loopPair = GetExtLoopPair(*this, true);
-            mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
+            mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
@@ -358,10 +358,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(TRXDir::Rx);
-    mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+    mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_REF_CLK, refClk);
     verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
-    mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
+    mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_BW, bandwidth_Hz);
 
     {
         //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
@@ -372,7 +372,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
             // if(status != 0)
             //     return ReportError(EINVAL, "Rx Calibration: Failed to enable external loopback");
             uint8_t loopPair = GetExtLoopPair(*this, false);
-            mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
+            mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
 
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);
