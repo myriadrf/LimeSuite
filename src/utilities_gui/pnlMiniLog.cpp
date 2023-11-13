@@ -67,7 +67,7 @@ pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 void pnlMiniLog::HandleMessage(wxCommandEvent& event)
 {
     auto level = lime::LogLevel(event.GetInt());
-    if (level > log_level)
+    if (static_cast<int>(level) > log_level)
         return;
     time_t rawtime;
     struct tm* timeinfo;
@@ -87,11 +87,11 @@ void pnlMiniLog::HandleMessage(wxCommandEvent& event)
     wxTextAttr style = mDefaultStyle;
     switch (level)
     {
-    case lime::LOG_LEVEL_CRITICAL:
-    case lime::LOG_LEVEL_ERROR:
+    case lime::LogLevel::CRITICAL:
+    case lime::LogLevel::ERROR:
         style.SetTextColour(*wxRED);
         break;
-    case lime::LOG_LEVEL_WARNING:
+    case lime::LogLevel::WARNING:
         style.SetBackgroundColour(*wxYELLOW);
         style.SetTextColour(*wxBLACK);
         break;

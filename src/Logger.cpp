@@ -60,13 +60,13 @@ int lime::ReportError(const int errnum, const char* format, va_list argList)
 {
     _reportedErrorCode = errnum;
     vsnprintf(_reportedErrorMessage, MAX_MSG_LEN, format, argList);
-    lime::log(LOG_LEVEL_ERROR, _reportedErrorMessage);
+    lime::log(LogLevel::ERROR, _reportedErrorMessage);
     return errnum;
 }
 
 static void defaultLogHandler(const lime::LogLevel level, const char* message)
 {
-    if (level > lime::LogLevel::LOG_LEVEL_ERROR)
+    if (level > lime::LogLevel::ERROR)
         return;
     fprintf(stderr, "%s\n", message);
 }
@@ -90,15 +90,15 @@ const char* lime::logLevelToName(const LogLevel level)
 {
     switch (level)
     {
-    case lime::LOG_LEVEL_CRITICAL:
+    case lime::LogLevel::CRITICAL:
         return "CRITICAL";
-    case lime::LOG_LEVEL_ERROR:
+    case lime::LogLevel::ERROR:
         return "ERROR";
-    case lime::LOG_LEVEL_WARNING:
+    case lime::LogLevel::WARNING:
         return "WARNING";
-    case lime::LOG_LEVEL_INFO:
+    case lime::LogLevel::INFO:
         return "INFO";
-    case lime::LOG_LEVEL_DEBUG:
+    case lime::LogLevel::DEBUG:
         return "DEBUG";
     }
     return "";
