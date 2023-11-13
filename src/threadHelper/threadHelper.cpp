@@ -44,7 +44,8 @@ int lime::SetOSThreadPriority(ThreadPriority priority, ThreadPolicy policy, std:
 
     //scale values
     sched_param sch;
-    sch.sched_priority = int(((prio_max - prio_min) / (float)ThreadPriority::HIGHEST) * priority) + prio_min;
+    sch.sched_priority =
+        int(((prio_max - prio_min) / static_cast<float>(ThreadPriority::HIGHEST)) * static_cast<int>(priority)) + prio_min;
 
     if (int ret = pthread_setschedparam(thread->native_handle(), sched_policy, &sch))
     {
@@ -87,7 +88,8 @@ int lime::SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy polic
 
     //scale values
     sched_param sch;
-    sch.sched_priority = int(((prio_max - prio_min) / (float)ThreadPriority::HIGHEST) * priority) + prio_min;
+    sch.sched_priority =
+        int(((prio_max - prio_min) / static_cast<float>(ThreadPriority::HIGHEST)) * static_cast<int>(priority)) + prio_min;
 
     if (int ret = pthread_setschedparam(pthread_self(), sched_policy, &sch) != 0)
     {
