@@ -40,7 +40,7 @@ class MCU_BD
         MCU_ERROR_CODES_COUNT
     };
 
-    enum OperationStatus {
+    enum class OperationStatus {
         SUCCESS = 0,
         FAILURE,
         TIMEOUT,

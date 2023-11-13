@@ -1210,7 +1210,7 @@ MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MCU_BD::MCU_PROG_MODE
     if (enabled)
         regValue |= 0xC0;
     mSPI_write(0x8002, regValue);
-    return SUCCESS;
+    return OperationStatus::SUCCESS;
 }
 
 MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t* addr, uint8_t* values, const uint8_t count)
@@ -1222,38 +1222,38 @@ MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t* addr, uint8_t* values, c
         mSPI_write(0x8004, cmd); //REG4 write cmd
         retval = WaitUntilWritten();
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         mSPI_write(0x8004, addr[i]); //REG4 write IRAM address
         retval = WaitUntilWritten();
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         mSPI_write(0x8004, 0); //REG4 nop
         retval = WaitUntilWritten();
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         uint8_t result = 0;
         retval = ReadOneByte(&result);
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         retval = ReadOneByte(&result);
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         retval = ReadOneByte(&result);
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
         values[i] = result;
     }
-    return SUCCESS;
+    return OperationStatus::SUCCESS;
 }
 
 MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t* addr, const uint8_t* values, const uint8_t count)
 {
-    return FAILURE;
+    return OperationStatus::FAILURE;
 }
 
 uint8_t MCU_BD::ReadMCUProgramID()
