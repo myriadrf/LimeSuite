@@ -116,7 +116,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
         return;
 
     float cbuf[200];
-    int iVal = Parser::getcoeffs((const char*)dlg.GetPath().ToStdString().c_str(), cbuf, 200);
+    int iVal = Parser::getcoeffs(dlg.GetPath().ToStdString().c_str(), cbuf, 200);
 
     switch (iVal)
     {
@@ -160,7 +160,7 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile(wxCommandEvent& event)
         gridCoef->GetCellValue(i, 0).ToDouble(&ltemp);
         coefficients[i] = ltemp;
     }
-    Parser::saveToFile((const char*)dlg.GetPath().ToStdString().c_str(), coefficients, spinCoefCount->GetValue());
+    Parser::saveToFile(dlg.GetPath().ToStdString(), coefficients, spinCoefCount->GetValue());
 }
 
 void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)

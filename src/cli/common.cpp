@@ -2,7 +2,7 @@
 
 using namespace lime;
 
-SDRDevice* ConnectUsingNameHint(const char* hintArguments)
+SDRDevice* ConnectUsingNameHint(const std::string hintArguments)
 {
     DeviceHandle handle(hintArguments);
     auto handles = DeviceRegistry::enumerate(handle);

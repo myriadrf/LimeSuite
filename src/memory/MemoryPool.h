@@ -10,7 +10,7 @@ namespace lime {
 class MemoryPool
 {
   public:
-    MemoryPool(int blockCount, int blockSize, int alignment, const char* name);
+    MemoryPool(int blockCount, int blockSize, int alignment, const std::string name);
     ~MemoryPool();
 
     void* Allocate(int size);

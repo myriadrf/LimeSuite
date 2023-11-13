@@ -141,8 +141,10 @@ pnlBoardControls::pnlBoardControls(
     cmbBoardSelection->SetSelection(0);
     fgSizer248->Add(cmbBoardSelection, 0, wxALL, 5);
 
-    for (unsigned i = 0; i < board_list.size(); ++i)
-        cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName(board_list[i])));
+    for (const auto board : board_list)
+    {
+        cmbBoardSelection->AppendString(GetDeviceName(board));
+    }
 
     fgSizer247->Add(fgSizer248, 1, wxEXPAND, 5);
 

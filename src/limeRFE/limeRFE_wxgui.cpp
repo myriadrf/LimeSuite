@@ -124,9 +124,8 @@ void limeRFE_wxgui::OnbtnClosePort(wxCommandEvent& event) {
 	UpdateRFEForm();
 }
 
-void limeRFE_wxgui::AddMssg(const char* mssg) {
-	wxString s(mssg, wxConvUTF8);
-	AddMssg(s);
+void limeRFE_wxgui::AddMssg(const std::string& mssg) {
+	AddMssg(mssg);
 }
 
 void limeRFE_wxgui::AddMssg(const wxString& mssg) {

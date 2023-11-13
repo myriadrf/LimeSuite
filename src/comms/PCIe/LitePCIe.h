@@ -28,7 +28,7 @@ class LitePCIe
     int ReadRaw(uint8_t* buffer, int length, int timeout_ms = 100);
 
     const std::string& GetPathName() const { return mFilePath; };
-    void SetPathName(const char* filePath) { mFilePath = std::string(filePath); };
+    void SetPathName(const std::string filePath) { mFilePath = filePath; };
 
     int GetFd() const { return mFileDescriptor; };
 

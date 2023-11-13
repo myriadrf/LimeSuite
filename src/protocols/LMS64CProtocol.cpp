@@ -30,11 +30,11 @@ LMS64CPacket::LMS64CPacket()
 
 namespace LMS64CProtocol {
 
-static const char cmd_status_text[][32] = {
+static const std::array<std::string, eCMD_STATUS::STATUS_COUNT> cmd_status_text = {
     "Undefined/Failure", "Completed", "Unknown command", "Busy", "Too many blocks", "Error", "Wrong order", "Resource denied"
 };
 
-static inline const char* status2string(const int status)
+static inline const std::string status2string(const int status)
 {
     if (status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
         return cmd_status_text[status];
@@ -409,7 +409,7 @@ int ProgramWrite(ISerialPort& port,
 
         if (inPacket.status != STATUS_COMPLETED_CMD)
         {
-            sprintf(progressMsg, "Programming failed! %s", status2string(inPacket.status));
+            sprintf(progressMsg, "Programming failed! %s", status2string(inPacket.status).c_str());
             if (callback)
                 callback(bytesSent, length, progressMsg);
             return ReportError(EPROTO, progressMsg);
