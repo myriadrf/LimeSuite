@@ -466,7 +466,8 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         else
             channelEnables |= (1 << cfg.txChannels[i]); // << 8;
     }
-    if ((cfg.linkFormat != SDRDevice::StreamConfig::I12) && (cfg.linkFormat != SDRDevice::StreamConfig::I16))
+    if ((cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I12) &&
+        (cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I16))
         throw std::logic_error("Unsupported stream link format");
     mConfig = cfg;
 

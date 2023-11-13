@@ -30,7 +30,7 @@ class LIME_API SDRDevice
     typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
     typedef void (*LogCallbackType)(LogLevel, const char*);
 
-    enum ClockID {
+    enum class ClockID {
         CLK_REFERENCE = 0,
         CLK_SXR = 1, ///RX LO clock
         CLK_SXT = 2, ///TX LO clock
@@ -99,7 +99,7 @@ class LIME_API SDRDevice
     };
 
     struct GPS_Lock {
-        enum LockStatus { Undefined = 0, NotAvailable = 1, Has2D = 2, Has3D = 3 };
+        enum class LockStatus { Undefined = 0, NotAvailable = 1, Has2D = 2, Has3D = 3 };
 
         LockStatus galileo;
         LockStatus beidou;
@@ -124,7 +124,7 @@ class LIME_API SDRDevice
             bool waitPPS; // start sampling from next following PPS
         };
         typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
-        enum DataFormat {
+        enum class DataFormat {
             I16,
             I12,
             F32,

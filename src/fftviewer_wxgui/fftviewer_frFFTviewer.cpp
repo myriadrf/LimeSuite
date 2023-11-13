@@ -406,13 +406,14 @@ void fftviewer_frFFTviewer::StreamingLoop(
             samplesCaptured = 0;
         }
 
-    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::I16 : SDRDevice::StreamConfig::I12;
+    auto fmt =
+        pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::DataFormat::I16 : SDRDevice::StreamConfig::DataFormat::I12;
 
     SDRDevice::StreamConfig config;
     config.rxCount = channelsCount;
     if (runTx)
         config.txCount = channelsCount;
-    config.format = SDRDevice::StreamConfig::F32;
+    config.format = SDRDevice::StreamConfig::DataFormat::F32;
     config.linkFormat = fmt;
     for (int i = 0; i < channelsCount; ++i)
     {
