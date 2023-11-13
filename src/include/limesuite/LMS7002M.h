@@ -330,7 +330,7 @@ class LIME_API LMS7002M
     float_type GetSampleRate(TRXDir dir, Channel ch);
 
     ///@name LML
-    enum LMLSampleSource {
+    enum class LMLSampleSource {
         AI = 0,
         AQ = 1,
         BI = 2,

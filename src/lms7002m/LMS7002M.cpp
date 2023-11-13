@@ -2935,10 +2935,10 @@ void LMS7002M::ConfigureLML_RF2BB(
 {
     //map a sample source to a position
     std::map<LMLSampleSource, int> m;
-    m[AI] = 1;
-    m[AQ] = 0;
-    m[BI] = 3;
-    m[BQ] = 2;
+    m[LMLSampleSource::AI] = 1;
+    m[LMLSampleSource::AQ] = 0;
+    m[LMLSampleSource::BI] = 3;
+    m[LMLSampleSource::BQ] = 2;
 
     //load the same config on both LMLs
     //only one will get used based on direction
@@ -2965,15 +2965,15 @@ void LMS7002M::ConfigureLML_BB2RF(
 
     //load the same config on both LMLs
     //only one will get used based on direction
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_BQP), m[BQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_BIP), m[BI]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_AQP), m[AQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_AIP), m[AI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_BQP), m[LMLSampleSource::BQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_BIP), m[LMLSampleSource::BI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_AQP), m[LMLSampleSource::AQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_AIP), m[LMLSampleSource::AI]);
 
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_BQP), m[BQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_BIP), m[BI]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_AQP), m[AQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_AIP), m[AI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_BQP), m[LMLSampleSource::BQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_BIP), m[LMLSampleSource::BI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_AQP), m[LMLSampleSource::AQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_AIP), m[LMLSampleSource::AI]);
 }
 
 int LMS7002M::SetRxDCRemoval(const bool enable)
