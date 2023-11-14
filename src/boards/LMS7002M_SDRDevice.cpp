@@ -150,24 +150,22 @@ void LMS7002M_SDRDevice::StreamStop(uint8_t moduleIndex)
     mStreamers[moduleIndex] = nullptr;
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, lime::complex32f_t** dest, uint32_t count, StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex32f_t** dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, lime::complex16_t** dest, uint32_t count, StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t** dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(
-    uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(
-    uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
