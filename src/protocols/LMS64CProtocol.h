@@ -10,6 +10,7 @@
 
 #include "LMSBoards.h"
 #include "limesuite/SDRDevice.h"
+#include "ISerialPort.h"
 
 namespace lime {
 
@@ -25,15 +26,6 @@ struct LMS64CPacket {
     uint8_t subDevice;
     uint8_t reserved[3];
     uint8_t payload[payloadSize];
-};
-
-class ISerialPort
-{
-  public:
-    virtual ~ISerialPort(){};
-
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
 };
 
 namespace LMS64CProtocol {

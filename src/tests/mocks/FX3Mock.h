@@ -2,8 +2,7 @@
 
 #include "FX3/FX3.h"
 
-using namespace lime;
-
+namespace lime::testing {
 class FX3Mock : public FX3
 {
   public:
@@ -18,3 +17,5 @@ class FX3Mock : public FX3
     MOCK_METHOD(void, HandleLibusbEvents, (), (override));
 #endif
 };
+
+} // namespace lime::testing

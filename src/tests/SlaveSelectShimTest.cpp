@@ -6,6 +6,7 @@
 #include "SlaveSelectShim.h"
 
 using namespace lime;
+using namespace lime::testing;
 using ::testing::_;
 
 TEST(SlaveSelectShim, ChoosesCorrectSlaveOnSPICall)

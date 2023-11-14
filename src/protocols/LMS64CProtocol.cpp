@@ -14,7 +14,7 @@
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 #include <ADCUnits.h>
 #include <sstream>
-#include <string.h>
+#include <cstring>
 
 //! CMD_LMS7002_RST options
 const int LMS_RST_DEACTIVATE = 0;
@@ -25,7 +25,7 @@ namespace lime {
 
 LMS64CPacket::LMS64CPacket()
 {
-    memset(this, 0, sizeof(LMS64CPacket));
+    std::memset(this, 0, sizeof(LMS64CPacket));
 }
 
 namespace LMS64CProtocol {
@@ -59,7 +59,7 @@ static int SPI16(ISerialPort& port,
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
-    const int maxBlocks = 14;
+    constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
     while (srcIndex < count)
     {
         // fill packet with same direction operations

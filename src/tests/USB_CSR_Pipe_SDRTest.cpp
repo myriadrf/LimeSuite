@@ -5,6 +5,7 @@
 #include "USB_CSR_Pipe_SDR.h"
 
 using namespace lime;
+using namespace lime::testing;
 using ::testing::_;
 using ::testing::NiceMock;
 
