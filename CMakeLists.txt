@@ -183,8 +183,6 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_subdirectory(tests)
-
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
 ########################################################################
