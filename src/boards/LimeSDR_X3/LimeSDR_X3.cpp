@@ -14,6 +14,7 @@
 #include "DSP/Equalizer.h"
 #include "limesuite/DeviceNode.h"
 #include "CommonFunctions.h"
+#include "SlaveSelectShim.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -53,26 +54,6 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
     LMS7002M* soc = pthis->mLMSChips[chipIndex];
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
-
-// Communications helper to divert data to specific device
-class SlaveSelectShim : public ISPI
-{
-  public:
-    SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId)
-        : port(comms)
-        , slaveId(slaveId){};
-    virtual ~SlaveSelectShim(){};
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { port->SPI(slaveId, MOSI, MISO, count); }
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        port->SPI(spiBusAddress, MOSI, MISO, count);
-    }
-    virtual int ResetDevice() { return port->ResetDevice(slaveId); }
-
-  private:
-    std::shared_ptr<IComms> port;
-    uint32_t slaveId;
-};
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
