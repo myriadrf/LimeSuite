@@ -3,7 +3,7 @@ add_executable(
     LimeSuite2Test.cpp
 )
 
-target_include_directories(LimeSuite2Test PUBLIC ${LIME_SUITE_INCLUDES})
+target_include_directories(LimeSuite2Test PUBLIC ${LIME_SUITE_INCLUDES} mocks)
 target_link_libraries(
     LimeSuite2Test
     PUBLIC
