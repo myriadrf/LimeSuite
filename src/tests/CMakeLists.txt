@@ -1,11 +1,13 @@
+set(LIME_TEST_SUITE_NAME LimeSuite2Test)
+
 add_executable(
-    LimeSuite2Test
-    LimeSuite2Test.cpp
+    ${LIME_TEST_SUITE_NAME}
+    USB_CSR_Pipe_SDR_Test.cpp
 )
 
-target_include_directories(LimeSuite2Test PUBLIC ${LIME_SUITE_INCLUDES} mocks)
+target_include_directories(${LIME_TEST_SUITE_NAME} PUBLIC ${LIME_SUITE_INCLUDES} mocks)
 target_link_libraries(
-    LimeSuite2Test
+    ${LIME_TEST_SUITE_NAME}
     PUBLIC
     ${MAIN_LIBRARY_NAME}
     GTest::gtest_main
@@ -13,4 +15,4 @@ target_link_libraries(
 )
 
 include(GoogleTest)
-gtest_discover_tests(LimeSuite2Test)
+gtest_discover_tests(${LIME_TEST_SUITE_NAME})
