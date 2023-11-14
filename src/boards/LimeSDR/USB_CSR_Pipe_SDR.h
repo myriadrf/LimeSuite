@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-using namespace lime;
+namespace lime {
 
 class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
 {
@@ -18,3 +18,5 @@ class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
   protected:
     FX3& port;
 };
+
+} // namespace lime
