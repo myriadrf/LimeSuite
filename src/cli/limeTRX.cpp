@@ -64,8 +64,12 @@ static int printHelp(void)
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
     cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
     cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;
-    cerr << "    --linkformat [I16, I12]\t\t Data transfer format" << endl;
+    cerr << "    --linkFormat [I16, I12]\t\t Data transfer format" << endl;
     cerr << "    --syncPPS \t\t start sampling on next PPS" << endl;
+    cerr << "    --rxSamplesInPacket \t\t number of samples in Rx packet" << endl;
+    cerr << "    --txSamplesInPacket \t\t number of samples in Tx packet" << endl;
+    cerr << "    --rxPacketsInBatch \t\t number of Rx packets in data transfer" << endl;
+    cerr << "    --txPacketsInBatch \t\t number of Tx packets in data transfer" << endl;
 
     return EXIT_SUCCESS;
 }
@@ -85,7 +89,11 @@ enum Args {
     MIMO = 200,
     REPEATER,
     LINKFORMAT,
-    SYNCPPS
+    SYNCPPS,
+    RXSAMPLESINPACKET,
+    TXSAMPLESINPACKET,
+    RXPACKETSINBATCH,
+    TXPACKETSINBATCH
 };
 
 #ifdef USE_GNU_PLOT
@@ -252,6 +260,11 @@ int main(int argc, char** argv)
     bool repeater = false;
     int64_t repeaterDelay = 0;
     bool syncPPS = false;
+    int rxSamplesInPacket = 0;
+    int txSamplesInPacket = 0;
+    int rxPacketsInBatch = 0;
+    int txPacketsInBatch = 0;
+
     SDRDevice::StreamConfig::DataFormat linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
     static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
         { "device", required_argument, 0, Args::DEVICE },
@@ -270,6 +283,10 @@ int main(int argc, char** argv)
         { "repeater", optional_argument, 0, Args::REPEATER },
         { "linkFormat", required_argument, 0, Args::LINKFORMAT },
         { "syncPPS", no_argument, 0, Args::SYNCPPS },
+        { "rxSamplesInPacket", required_argument, 0, Args::RXSAMPLESINPACKET },
+        { "txSamplesInPacket", required_argument, 0, Args::TXSAMPLESINPACKET },
+        { "rxPacketsInBatch", required_argument, 0, Args::RXPACKETSINBATCH },
+        { "txPacketsInBatch", required_argument, 0, Args::TXPACKETSINBATCH },
         { 0, 0, 0, 0 } };
 
     int long_index = 0;
@@ -356,6 +373,18 @@ int main(int argc, char** argv)
         case Args::SYNCPPS:
             syncPPS = true;
             break;
+        case Args::RXSAMPLESINPACKET:
+            rxSamplesInPacket = optarg != NULL ? stoi(optarg) : 0;
+            break;
+        case Args::TXSAMPLESINPACKET:
+            txSamplesInPacket = optarg != NULL ? stoi(optarg) : 0;
+            break;
+        case Args::RXPACKETSINBATCH:
+            rxPacketsInBatch = optarg != NULL ? stoi(optarg) : 0;
+            break;
+        case Args::TXPACKETSINBATCH:
+            txPacketsInBatch = optarg != NULL ? stoi(optarg) : 0;
+            break;
         }
     }
 
@@ -403,10 +432,14 @@ int main(int argc, char** argv)
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = linkFormat;
 
-        if (syncPPS)
+        if (syncPPS || rxSamplesInPacket || rxPacketsInBatch || txSamplesInPacket || txPacketsInBatch)
         {
             stream.extraConfig = new SDRDevice::StreamConfig::Extras();
             stream.extraConfig->waitPPS = syncPPS;
+            stream.extraConfig->rxSamplesInPacket = rxSamplesInPacket;
+            stream.extraConfig->txSamplesInPacket = txSamplesInPacket;
+            stream.extraConfig->rxPacketsInBatch = rxPacketsInBatch;
+            stream.extraConfig->txMaxPacketsInBatch = txPacketsInBatch;
         }
         device->StreamSetup(stream, chipIndex);
     } catch (std::runtime_error& e)
