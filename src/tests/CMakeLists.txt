@@ -1,8 +1,8 @@
 set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
-add_executable(
-    ${LIME_TEST_SUITE_NAME}
-    USB_CSR_Pipe_SDR_Test.cpp
+add_executable(${LIME_TEST_SUITE_NAME}
+    SlaveSelectShimTest.cpp
+    USB_CSR_Pipe_SDRTest.cpp
 )
 
 target_include_directories(${LIME_TEST_SUITE_NAME} PUBLIC ${LIME_SUITE_INCLUDES} mocks)
