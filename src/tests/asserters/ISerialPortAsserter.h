@@ -12,7 +12,9 @@ enum class ReturnValue { Minimum, MinusOne, Zero, One, OneLess, Expected, OneMor
 class ISerialPortAsserter : public lime::ISerialPort
 {
   public:
-    ISerialPortAsserter(std::vector<lime::LMS64CPacket> packetsToReturnOnRead, ReturnValue returnValue, int expectedReturnValue);
+    ISerialPortAsserter(std::vector<lime::LMS64CPacket> packetsToReturnOnRead,
+        ReturnValue returnValue = ReturnValue::Expected,
+        int expectedReturnValue = sizeof(LMS64CPacket));
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
 
