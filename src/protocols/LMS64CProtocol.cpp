@@ -134,26 +134,29 @@ int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice)
     pkt.subDevice = subDevice;
     int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (sent != sizeof(pkt))
+    {
         return -1;
+    }
 
     int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
     if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
-        return -1;
-
-    if (pkt.status == STATUS_COMPLETED_CMD)
     {
-        info.firmware = pkt.payload[0];
-        info.deviceId = pkt.payload[1];
-        info.protocol = pkt.payload[2];
-        info.hardware = pkt.payload[3];
-        info.expansionBoardId = pkt.payload[4];
-        info.boardSerialNumber = 0;
-        for (int i = 10; i < 18; i++)
-        {
-            info.boardSerialNumber <<= 8;
-            info.boardSerialNumber |= pkt.payload[i];
-        }
+        return -1;
     }
+
+    info.firmware = pkt.payload[0];
+    info.deviceId = pkt.payload[1];
+    info.protocol = pkt.payload[2];
+    info.hardware = pkt.payload[3];
+    info.expansionBoardId = pkt.payload[4];
+    info.boardSerialNumber = 0;
+
+    for (int i = 10; i < 18; i++)
+    {
+        info.boardSerialNumber <<= 8;
+        info.boardSerialNumber |= pkt.payload[i];
+    }
+
     return 0;
 }
 
