@@ -377,7 +377,7 @@ int LimeSDR::Init()
 
 SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
 {
-    assert(mStreamPort);
+    assert(mSerialPort);
     SDRDevice::Descriptor deviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo info;
@@ -470,7 +470,7 @@ void LimeSDR::EnableCache(bool enable)
 
 void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    assert(mStreamPort);
+    assert(mSerialPort);
     assert(MOSI);
     LMS64CPacket pkt;
     pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
@@ -532,11 +532,11 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uin
 
         // flush packet
         //printPacket(pkt, 4, "Wr:");
-        int sent = mStreamPort->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("SPI failed");
 
-        int recv = mStreamPort->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
         if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD)
@@ -621,19 +621,17 @@ void LimeSDR::ResetUSBFIFO()
     pkt.blockCount = 1;
     pkt.payload[0] = 0;
 
-    int sentBytes = mStreamPort->ControlTransfer(
-        LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int sentBytes = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
+    {
         throw std::runtime_error("LimeSDR::ResetUSBFIFO write failed");
-    int gotBytes = mStreamPort->ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
-        CTR_R_REQCODE,
-        CTR_R_VALUE,
-        CTR_R_INDEX,
-        reinterpret_cast<uint8_t*>(&pkt),
-        sizeof(pkt),
-        100);
+    }
+
+    int gotBytes = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (gotBytes != sizeof(pkt))
+    {
         throw std::runtime_error("LimeSDR::ResetUSBFIFO read failed");
+    }
 }
 
 int LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)

@@ -12,7 +12,7 @@ static inline void SetWriteBit(uint32_t& in)
     in |= (1 << 31);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPIEmptyTest)
+TEST(LMS64CProtocol, LMS7002MSPIEmptyTest)
 {
     ISerialPortAsserter asserter{};
 
@@ -24,7 +24,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPIEmptyTest)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPIOneCountTestValueRead)
+TEST(LMS64CProtocol, LMS7002MSPIOneCountTestValueRead)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -46,7 +46,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPIOneCountTestValueRead)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPIOneCountTestValueWrite)
+TEST(LMS64CProtocol, LMS7002MSPIOneCountTestValueWrite)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -68,7 +68,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPIOneCountTestValueWrite)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPIWriteReadReadWrite)
+TEST(LMS64CProtocol, LMS7002MSPIWriteReadReadWrite)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -94,7 +94,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPIWriteReadReadWrite)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPIReadWriteReadReadWrite)
+TEST(LMS64CProtocol, LMS7002MSPIReadWriteReadReadWrite)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -122,7 +122,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPIReadWriteReadReadWrite)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPISixteenWrites)
+TEST(LMS64CProtocol, LMS7002MSPISixteenWrites)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -149,7 +149,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPISixteenWrites)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPISixteenReads)
+TEST(LMS64CProtocol, LMS7002MSPISixteenReads)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -175,7 +175,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPISixteenReads)
     EXPECT_EQ(returnValue, 0);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPINotFullyWritten)
+TEST(LMS64CProtocol, LMS7002MSPINotFullyWritten)
 {
     ISerialPortAsserter asserter{ {}, { 0 } };
 
@@ -194,7 +194,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPINotFullyWritten)
     EXPECT_EQ(returnValue, -1);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPINotFullyRead)
+TEST(LMS64CProtocol, LMS7002MSPINotFullyRead)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -218,7 +218,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPINotFullyRead)
     EXPECT_EQ(returnValue, -1);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPINotFullyWrittenOnSecondCall)
+TEST(LMS64CProtocol, LMS7002MSPINotFullyWrittenOnSecondCall)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};
@@ -244,7 +244,7 @@ TEST(LMS64CProtocolTest, LMS7002MSPINotFullyWrittenOnSecondCall)
     EXPECT_EQ(returnValue, -1);
 }
 
-TEST(LMS64CProtocolTest, LMS7002MSPINotFullyReadOnSecondCall)
+TEST(LMS64CProtocol, LMS7002MSPINotFullyReadOnSecondCall)
 {
     auto packetsToRead = std::vector<LMS64CPacket>();
     LMS64CPacket packet{};

@@ -17,6 +17,7 @@ ISerialPortAsserter::ISerialPortAsserter(
     , mPacketsToReturnOnRead(packetsToReturnOnRead)
     , mReturnValuesWrite(returnValuesWrite)
     , mReturnValuesRead(returnValuesRead)
+    , mWillRepeatLastWrittenBlockCount(false)
 {
     if (mPacketsToReturnOnRead.size() == 0)
     {
@@ -28,13 +29,13 @@ int ISerialPortAsserter::Write(const uint8_t* data, size_t length, int timeout_m
 {
     EXPECT_EQ(length, sizeof(LMS64CPacket));
 
-    const std::size_t returnValueIndex = std::min(mWriteCallCount, mReturnValuesWrite.size() - 1);
-    ++mWriteCallCount;
-
     LMS64CPacket packet;
     std::memcpy(&packet, data, length);
 
     mWrittenPackets.push_back(packet);
+
+    const std::size_t returnValueIndex = std::min(mWriteCallCount, mReturnValuesWrite.size() - 1);
+    ++mWriteCallCount;
 
     return mReturnValuesWrite.at(returnValueIndex);
 }
@@ -43,13 +44,17 @@ int ISerialPortAsserter::Read(uint8_t* data, size_t length, int timeout_ms)
 {
     EXPECT_EQ(length, sizeof(LMS64CPacket));
 
-    const std::size_t returnValueIndex = std::min(mReadCallCount, mReturnValuesRead.size() - 1);
-
     const std::size_t packetToReturnIndex = std::min(mReadCallCount, mPacketsToReturnOnRead.size() - 1);
-    const LMS64CPacket& packet = mPacketsToReturnOnRead.at(packetToReturnIndex);
+    LMS64CPacket& packet = mPacketsToReturnOnRead.at(packetToReturnIndex);
 
     std::memcpy(data, &packet, length);
 
+    if (mWillRepeatLastWrittenBlockCount)
+    {
+        packet.blockCount = mWrittenPackets.back().blockCount;
+    }
+
+    const std::size_t returnValueIndex = std::min(mReadCallCount, mReturnValuesRead.size() - 1);
     ++mReadCallCount;
 
     return mReturnValuesRead.at(returnValueIndex);
@@ -183,6 +188,11 @@ void ISerialPortAsserter::AssertWriteCalled(const uint times) const
 void ISerialPortAsserter::AssertReadCalled(const uint times) const
 {
     EXPECT_EQ(mReadCallCount, times);
+}
+
+void ISerialPortAsserter::SetWillRepeatLastWrittenBlockCount(const bool newValue)
+{
+    mWillRepeatLastWrittenBlockCount = newValue;
 }
 
 } // namespace lime::testing

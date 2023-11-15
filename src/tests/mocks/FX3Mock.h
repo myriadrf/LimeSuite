@@ -6,8 +6,9 @@ namespace lime::testing {
 class FX3Mock : public FX3
 {
   public:
-    FX3Mock(){};
-    ~FX3Mock(){};
+    MOCK_METHOD(bool, Connect, (uint16_t vid, uint16_t pid, const std::string& serial), (override));
+    MOCK_METHOD(void, Disconnect, (), (override));
+
     MOCK_METHOD(int32_t, BulkTransfer, (uint8_t endPoint, uint8_t* data, int length, int32_t timeout_ms), (override));
     MOCK_METHOD(int32_t,
         ControlTransfer,

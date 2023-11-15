@@ -2,6 +2,7 @@ set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
 add_executable(${LIME_TEST_SUITE_NAME}
     asserters/ISerialPortAsserter.cpp
+    LimeSDRTest.cpp
     LMS64CProtocolTest.cpp
     SlaveSelectShimTest.cpp
     USB_CSR_Pipe_SDRTest.cpp

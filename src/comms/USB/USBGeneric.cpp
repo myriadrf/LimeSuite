@@ -48,6 +48,11 @@ USBGeneric::USBGeneric(void* usbContext)
     dev_handle = nullptr;
     ctx = reinterpret_cast<libusb_context*>(usbContext);
 
+    if (ctx == nullptr)
+    {
+        return;
+    }
+
     if (activeUSBconnections == 0)
     {
         ++activeUSBconnections;

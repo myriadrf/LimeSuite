@@ -37,6 +37,8 @@ class ISerialPortAsserter : public ISerialPort
     void AssertWriteCalled(const uint times) const;
     void AssertReadCalled(const uint times) const;
 
+    void SetWillRepeatLastWrittenBlockCount(const bool newValue);
+
   private:
     std::size_t mWriteCallCount;
     std::size_t mReadCallCount;
@@ -44,6 +46,8 @@ class ISerialPortAsserter : public ISerialPort
     std::vector<LMS64CPacket> mPacketsToReturnOnRead;
     std::vector<int> mReturnValuesWrite;
     std::vector<int> mReturnValuesRead;
+
+    bool mWillRepeatLastWrittenBlockCount;
 };
 
 } // namespace lime::testing
