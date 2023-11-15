@@ -7,6 +7,7 @@ class FX3Mock : public FX3
 {
   public:
     FX3Mock(){};
+    ~FX3Mock(){};
     MOCK_METHOD(int32_t, BulkTransfer, (uint8_t endPoint, uint8_t* data, int length, int32_t timeout_ms), (override));
     MOCK_METHOD(int32_t,
         ControlTransfer,
