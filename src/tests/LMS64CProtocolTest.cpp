@@ -174,3 +174,98 @@ TEST(LMS64CProtocolTest, LMS7002MSPISixteenReads)
 
     EXPECT_EQ(returnValue, 0);
 }
+
+TEST(LMS64CProtocolTest, LMS7002MSPINotFullyWritten)
+{
+    ISerialPortAsserter asserter{ {}, { 0 } };
+
+    uint32_t mosi = 1;
+    uint32_t miso = 2;
+
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, &mosi, &miso, 1);
+
+    asserter.AssertWriteCalled(1);
+    asserter.AssertReadCalled(0);
+
+    asserter.AssertBlockCountSequence({ 1 });
+    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_RD);
+    asserter.AssertSubDeviceAll(0);
+
+    EXPECT_EQ(returnValue, -1);
+}
+
+TEST(LMS64CProtocolTest, LMS7002MSPINotFullyRead)
+{
+    auto packetsToRead = std::vector<LMS64CPacket>();
+    LMS64CPacket packet{};
+    packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
+    packetsToRead.push_back(packet);
+
+    ISerialPortAsserter asserter{ packetsToRead, { sizeof(LMS64CPacket) }, { 0 } };
+
+    uint32_t mosi = 1;
+    uint32_t miso = 2;
+
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, &mosi, &miso, 1);
+
+    asserter.AssertWriteCalled(1);
+    asserter.AssertReadCalled(1);
+
+    asserter.AssertBlockCountSequence({ 1 });
+    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_RD);
+    asserter.AssertSubDeviceAll(0);
+
+    EXPECT_EQ(returnValue, -1);
+}
+
+TEST(LMS64CProtocolTest, LMS7002MSPINotFullyWrittenOnSecondCall)
+{
+    auto packetsToRead = std::vector<LMS64CPacket>();
+    LMS64CPacket packet{};
+    packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
+    packetsToRead.push_back(packet);
+
+    ISerialPortAsserter asserter{ packetsToRead, { sizeof(LMS64CPacket), 0 } };
+
+    std::vector<uint32_t> mosi{ 1, 2 };
+    SetWriteBit(mosi[1]);
+
+    std::vector<uint32_t> miso{ 1, 2 };
+
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosi.data(), miso.data(), 2);
+
+    asserter.AssertWriteCalled(2);
+    asserter.AssertReadCalled(1);
+
+    asserter.AssertBlockCountSequence({ 1 });
+    asserter.AssertCommandSequence({ LMS64CProtocol::CMD_LMS7002_RD, LMS64CProtocol::CMD_LMS7002_WR });
+    asserter.AssertSubDeviceAll(0);
+
+    EXPECT_EQ(returnValue, -1);
+}
+
+TEST(LMS64CProtocolTest, LMS7002MSPINotFullyReadOnSecondCall)
+{
+    auto packetsToRead = std::vector<LMS64CPacket>();
+    LMS64CPacket packet{};
+    packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
+    packetsToRead.push_back(packet);
+
+    ISerialPortAsserter asserter{ packetsToRead, { sizeof(LMS64CPacket) }, { sizeof(LMS64CPacket), 0 } };
+
+    std::vector<uint32_t> mosi{ 1, 2 };
+    SetWriteBit(mosi[1]);
+
+    std::vector<uint32_t> miso{ 1, 2 };
+
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosi.data(), miso.data(), 2);
+
+    asserter.AssertWriteCalled(2);
+    asserter.AssertReadCalled(2);
+
+    asserter.AssertBlockCountSequence({ 1 });
+    asserter.AssertCommandSequence({ LMS64CProtocol::CMD_LMS7002_RD, LMS64CProtocol::CMD_LMS7002_WR });
+    asserter.AssertSubDeviceAll(0);
+
+    EXPECT_EQ(returnValue, -1);
+}

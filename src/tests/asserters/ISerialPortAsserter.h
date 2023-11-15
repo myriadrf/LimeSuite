@@ -7,19 +7,12 @@
 
 namespace lime::testing {
 
-enum class eReturnValue { Minimum, MinusOne, Zero, One, OneLess, Expected, OneMore, Maximum };
-
-struct ReturnValue {
-    eReturnValue returnValue;
-    int expectedReturnValue;
-};
-
-class ISerialPortAsserter : public lime::ISerialPort
+class ISerialPortAsserter : public ISerialPort
 {
   public:
-    ISerialPortAsserter(std::vector<lime::LMS64CPacket> packetsToReturnOnRead = std::vector<LMS64CPacket>(),
-        std::vector<ReturnValue> returnValuesWrite = { { eReturnValue::Expected, sizeof(LMS64CPacket) } },
-        std::vector<ReturnValue> returnValuesRead = { { eReturnValue::Expected, sizeof(LMS64CPacket) } });
+    ISerialPortAsserter(std::vector<LMS64CPacket> packetsToReturnOnRead = std::vector<LMS64CPacket>(),
+        std::vector<int> returnValuesWrite = { sizeof(LMS64CPacket) },
+        std::vector<int> returnValuesRead = { sizeof(LMS64CPacket) });
     virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
     virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
 
@@ -45,14 +38,12 @@ class ISerialPortAsserter : public lime::ISerialPort
     void AssertReadCalled(const uint times) const;
 
   private:
-    int GetReturnValue(const ReturnValue& returnValue) const;
-
     std::size_t mWriteCallCount;
     std::size_t mReadCallCount;
-    std::vector<lime::LMS64CPacket> mWrittenPackets;
-    std::vector<lime::LMS64CPacket> mPacketsToReturnOnRead;
-    std::vector<ReturnValue> mReturnValuesWrite;
-    std::vector<ReturnValue> mReturnValuesRead;
+    std::vector<LMS64CPacket> mWrittenPackets;
+    std::vector<LMS64CPacket> mPacketsToReturnOnRead;
+    std::vector<int> mReturnValuesWrite;
+    std::vector<int> mReturnValuesRead;
 };
 
 } // namespace lime::testing
