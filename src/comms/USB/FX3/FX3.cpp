@@ -49,19 +49,6 @@ void FX3::Disconnect()
 #ifndef __unix__
 int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 {
-    std::unique_lock<std::mutex> lock{ contextsLock };
-
-    int i = 0;
-    bool contextFound = false;
-    //find not used context
-    for (i = 0; i < USB_MAX_CONTEXTS; i++)
-    {
-        if (!contexts[i].used)
-        {
-            contextFound = true;
-            break;
-        }
-    }
     int index = GetUSBContextIndex();
 
     if (index < 0)
