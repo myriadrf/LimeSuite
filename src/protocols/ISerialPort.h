@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <stdint.h>
+#include <cstdint>
 
 namespace lime {
 
