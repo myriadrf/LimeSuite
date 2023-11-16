@@ -49,4 +49,3 @@ TEST(SlaveSelectShim, ResetsCorrectDevice)
     EXPECT_CALL(*mockComms, ResetDevice(slaveId)).Times(1);
     shim.ResetDevice();
 }
-

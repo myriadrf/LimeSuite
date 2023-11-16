@@ -1,9 +1,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "asserters/ISerialPortAsserter.h"
-#include "asserters/USB_CSR_PipeAsserter.h"
-#include "mocks/FX3Mock.h"
+#include "ISerialPortAsserter.h"
+#include "USB_CSR_PipeAsserter.h"
+#include "FX3Mock.h"
 #include "LimeSDR.h"
 #include "USB_CSR_Pipe_SDR.h"
 

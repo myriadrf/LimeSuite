@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "asserters/ISerialPortAsserter.h"
+#include "ISerialPortAsserter.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;

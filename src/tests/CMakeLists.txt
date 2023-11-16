@@ -1,14 +1,16 @@
 set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
-add_executable(${LIME_TEST_SUITE_NAME}
+set(LIME_TEST_SUITE_SOURCES 
     asserters/ISerialPortAsserter.cpp
-    LimeSDRTest.cpp
-    LMS64CProtocolTest.cpp
-    SlaveSelectShimTest.cpp
-    USB_CSR_Pipe_SDRTest.cpp
+    boards/LimeSDR/LimeSDRTest.cpp
+    boards/LimeSDR_X3/SlaveSelectShimTest.cpp
+    comms/USB/USB_CSR_Pipe_SDRTest.cpp
+    protocols/LMS64CProtocolTest.cpp
 )
 
-target_include_directories(${LIME_TEST_SUITE_NAME} PUBLIC ${LIME_SUITE_INCLUDES} mocks)
+add_executable(${LIME_TEST_SUITE_NAME} ${LIME_TEST_SUITE_SOURCES})
+
+target_include_directories(${LIME_TEST_SUITE_NAME} PUBLIC ${LIME_SUITE_INCLUDES} mocks asserters)
 target_link_libraries(
     ${LIME_TEST_SUITE_NAME}
     PUBLIC
