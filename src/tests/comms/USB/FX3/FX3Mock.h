@@ -3,6 +3,7 @@
 #include "FX3/FX3.h"
 
 namespace lime::testing {
+
 class FX3Mock : public FX3
 {
   public:

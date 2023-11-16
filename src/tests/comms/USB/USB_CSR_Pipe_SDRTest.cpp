@@ -1,8 +1,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "FX3Mock.h"
+#include "FX3/FX3Mock.h"
 #include "USB_CSR_Pipe_SDR.h"
+#include "LMS64CProtocol.h"
 
 using namespace lime;
 using namespace lime::testing;

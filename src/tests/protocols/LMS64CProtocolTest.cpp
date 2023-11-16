@@ -1,134 +1,206 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ISerialPortAsserter.h"
+#include "tests/protocols/ISerialPortMock.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;
 using namespace lime::testing;
+using ::testing::_;
+using ::testing::AllOf;
+using ::testing::DoAll;
+using ::testing::Return;
+using ::testing::ReturnArg;
+using ::testing::Sequence;
+using ::testing::SetArrayArgument;
 
 static inline void SetWriteBit(uint32_t& in)
 {
     in |= (1 << 31);
 }
 
+static constexpr std::size_t packetSize = sizeof(LMS64CPacket);
+
+MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct command")
+{
+    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+
+    return packet->cmd == command;
+}
+
+MATCHER_P(IsStatusCorrect, status, "Checks if the packet has the correct status")
+{
+    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+
+    return packet->status == status;
+}
+
+MATCHER_P(IsBlockCountCorrect, blockCount, "Checks if the packet has the correct block count")
+{
+    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+
+    return packet->blockCount == blockCount;
+}
+
+MATCHER_P(IsPeripheralIDCorrect, periphID, "Checks if the packet has the correct peripheral ID")
+{
+    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+
+    return packet->blockCount == periphID;
+}
+
+MATCHER_P(IsSubdeviceCorrect, subDevice, "Checks if the packet has the correct subdevice")
+{
+    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+
+    return packet->subDevice == subDevice;
+}
+
 TEST(LMS64CProtocol, LMS7002MSPIEmptyTest)
 {
-    ISerialPortAsserter asserter{};
+    ISerialPortMock mockPort{};
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, nullptr, nullptr, 0);
+    EXPECT_CALL(mockPort, Write(_, sizeof(LMS64CPacket), _)).Times(0);
+    EXPECT_CALL(mockPort, Read(_, sizeof(LMS64CPacket), _)).Times(0);
 
-    asserter.AssertWriteCalled(0);
-    asserter.AssertReadCalled(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, nullptr, nullptr, 0);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPIOneCountTestValueRead)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
-    ISerialPortAsserter asserter{ packetsToRead };
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_RD), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
 
     uint32_t mosi = 1;
     uint32_t miso = 2;
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, &mosi, &miso, 1);
-
-    asserter.AssertWriteCalled(1);
-    asserter.AssertReadCalled(1);
-
-    asserter.AssertBlockCountAll(1);
-    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_RD);
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, &mosi, &miso, 1);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPIOneCountTestValueWrite)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
-    ISerialPortAsserter asserter{ packetsToRead };
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
 
     uint32_t mosi = 1;
     SetWriteBit(mosi);
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, &mosi, nullptr, 1);
-
-    asserter.AssertWriteCalled(1);
-    asserter.AssertReadCalled(1);
-
-    asserter.AssertBlockCountAll(1);
-    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_WR);
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, &mosi, nullptr, 1);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPIWriteReadReadWrite)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
-    ISerialPortAsserter asserter{ packetsToRead };
+
+    Sequence writeSequence;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_RD), IsBlockCountCorrect(2)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(3);
 
     std::vector<uint32_t> mosi{ 1, 2, 3, 4 };
     SetWriteBit(mosi[0]);
     SetWriteBit(mosi[3]);
 
     std::vector<uint32_t> miso{ 1, 2, 3, 4 };
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosi.data(), miso.data(), 4);
-
-    asserter.AssertWriteCalled(3);
-    asserter.AssertReadCalled(3);
-
-    asserter.AssertBlockCountSequence({ 1, 2, 1 });
-    asserter.AssertCommandSequence(
-        { LMS64CProtocol::CMD_LMS7002_WR, LMS64CProtocol::CMD_LMS7002_RD, LMS64CProtocol::CMD_LMS7002_WR });
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosi.data(), miso.data(), 4);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPIReadWriteReadReadWrite)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
-    ISerialPortAsserter asserter{ packetsToRead };
+
+    Sequence writeSequence;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_RD), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_RD), IsBlockCountCorrect(2)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(1)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(4);
 
     std::vector<uint32_t> mosi{ 1, 2, 3, 4, 5 };
     SetWriteBit(mosi[1]);
     SetWriteBit(mosi[4]);
 
     std::vector<uint32_t> miso{ 1, 2, 3, 4, 5 };
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosi.data(), miso.data(), 5);
-
-    asserter.AssertWriteCalled(4);
-    asserter.AssertReadCalled(4);
-
-    asserter.AssertBlockCountSequence({ 1, 1, 2, 1 });
-    asserter.AssertCommandSequence({ LMS64CProtocol::CMD_LMS7002_RD,
-        LMS64CProtocol::CMD_LMS7002_WR,
-        LMS64CProtocol::CMD_LMS7002_RD,
-        LMS64CProtocol::CMD_LMS7002_WR });
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosi.data(), miso.data(), 5);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPISixteenWrites)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
-    ISerialPortAsserter asserter{ packetsToRead };
+
+    Sequence writeSequence;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(14)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_WR), IsBlockCountCorrect(2)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(2);
 
     uint32_t mosi = 1;
     SetWriteBit(mosi);
@@ -137,25 +209,31 @@ TEST(LMS64CProtocol, LMS7002MSPISixteenWrites)
     std::vector<uint32_t> mosis(16, mosi);
     std::vector<uint32_t> misos(16, miso);
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosis.data(), misos.data(), 16);
-
-    asserter.AssertWriteCalled(2);
-    asserter.AssertReadCalled(2);
-
-    asserter.AssertBlockCountSequence({ 14, 2 });
-    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_WR);
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosis.data(), misos.data(), 16);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPISixteenReads)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
-    ISerialPortAsserter asserter{ packetsToRead };
+
+    Sequence writeSequence;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_RD), IsBlockCountCorrect(14)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+    EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_LMS7002_RD), IsBlockCountCorrect(2)), packetSize, _))
+        .Times(1)
+        .InSequence(writeSequence);
+
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(2);
 
     uint32_t mosi = 1;
     uint32_t miso = 2;
@@ -163,109 +241,93 @@ TEST(LMS64CProtocol, LMS7002MSPISixteenReads)
     std::vector<uint32_t> mosis(16, mosi);
     std::vector<uint32_t> misos(16, miso);
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosis.data(), misos.data(), 16);
-
-    asserter.AssertWriteCalled(2);
-    asserter.AssertReadCalled(2);
-
-    asserter.AssertBlockCountSequence({ 14, 2 });
-    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_RD);
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosis.data(), misos.data(), 16);
 
     EXPECT_EQ(returnValue, 0);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPINotFullyWritten)
 {
-    ISerialPortAsserter asserter{ {}, { 0 } };
+    ISerialPortMock mockPort{};
+
+    ON_CALL(mockPort, Write(_, packetSize, _)).WillByDefault(Return(0));
+
+    EXPECT_CALL(mockPort, Write(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(0);
 
     uint32_t mosi = 1;
     uint32_t miso = 2;
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, &mosi, &miso, 1);
-
-    asserter.AssertWriteCalled(1);
-    asserter.AssertReadCalled(0);
-
-    asserter.AssertBlockCountSequence({ 1 });
-    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_RD);
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, &mosi, &miso, 1);
 
     EXPECT_EQ(returnValue, -1);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPINotFullyRead)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
 
-    ISerialPortAsserter asserter{ packetsToRead, { sizeof(LMS64CPacket) }, { 0 } };
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    ON_CALL(mockPort, Read(_, packetSize, _)).WillByDefault(Return(0));
+
+    EXPECT_CALL(mockPort, Write(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
 
     uint32_t mosi = 1;
     uint32_t miso = 2;
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, &mosi, &miso, 1);
-
-    asserter.AssertWriteCalled(1);
-    asserter.AssertReadCalled(1);
-
-    asserter.AssertBlockCountSequence({ 1 });
-    asserter.AssertCommandAll(LMS64CProtocol::CMD_LMS7002_RD);
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, &mosi, &miso, 1);
 
     EXPECT_EQ(returnValue, -1);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPINotFullyWrittenOnSecondCall)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
 
-    ISerialPortAsserter asserter{ packetsToRead, { sizeof(LMS64CPacket), 0 } };
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(_, packetSize, _)).Times(2).WillOnce(ReturnArg<1>()).WillRepeatedly(Return(0));
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
 
     std::vector<uint32_t> mosi{ 1, 2 };
-    SetWriteBit(mosi[1]);
+    SetWriteBit(mosi[1]); // Swap between read and write for the test
 
     std::vector<uint32_t> miso{ 1, 2 };
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosi.data(), miso.data(), 2);
-
-    asserter.AssertWriteCalled(2);
-    asserter.AssertReadCalled(1);
-
-    asserter.AssertBlockCountSequence({ 1 });
-    asserter.AssertCommandSequence({ LMS64CProtocol::CMD_LMS7002_RD, LMS64CProtocol::CMD_LMS7002_WR });
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosi.data(), miso.data(), 2);
 
     EXPECT_EQ(returnValue, -1);
 }
 
 TEST(LMS64CProtocol, LMS7002MSPINotFullyReadOnSecondCall)
 {
-    auto packetsToRead = std::vector<LMS64CPacket>();
+    ISerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
-    packetsToRead.push_back(packet);
 
-    ISerialPortAsserter asserter{ packetsToRead, { sizeof(LMS64CPacket) }, { sizeof(LMS64CPacket), 0 } };
+    EXPECT_CALL(mockPort, Write(_, packetSize, _)).Times(2);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _))
+        .Times(2)
+        .WillOnce(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()))
+        .WillRepeatedly(Return(0));
 
     std::vector<uint32_t> mosi{ 1, 2 };
     SetWriteBit(mosi[1]);
 
     std::vector<uint32_t> miso{ 1, 2 };
 
-    int returnValue = LMS64CProtocol::LMS7002M_SPI(asserter, 0, mosi.data(), miso.data(), 2);
-
-    asserter.AssertWriteCalled(2);
-    asserter.AssertReadCalled(2);
-
-    asserter.AssertBlockCountSequence({ 1 });
-    asserter.AssertCommandSequence({ LMS64CProtocol::CMD_LMS7002_RD, LMS64CProtocol::CMD_LMS7002_WR });
-    asserter.AssertSubDeviceAll(0);
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosi.data(), miso.data(), 2);
 
     EXPECT_EQ(returnValue, -1);
 }

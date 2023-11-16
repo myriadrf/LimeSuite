@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "ICommsMock.h"
+#include "tests/include/limesuite/ICommsMock.h"
 #include "SlaveSelectShim.h"
 
 using namespace lime;
