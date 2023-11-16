@@ -1,26 +1,7 @@
 #include "FT601.h"
-#include <thread>
-#include "Logger.h"
-#include <cassert>
 #include "dataTypes.h"
 #include "DeviceExceptions.h"
-
-#ifndef __unix__
-    #include "windows.h"
-    #include "FTD3XXLibrary/FTD3XX.h"
-#else
-    #ifdef __GNUC__
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wpedantic"
-    #endif
-    #include <libusb.h>
-    #ifdef __GNUC__
-        #pragma GCC diagnostic pop
-    #endif
-    #include <mutex>
-    #include <condition_variable>
-    #include <chrono>
-#endif
+#include "USBTransferContext_FT601.h"
 
 using namespace lime;
 
@@ -104,6 +85,7 @@ void FT601::Disconnect()
         dev_handle = nullptr;
     }
 #endif
+    isConnected = false;
 }
 
 #ifndef __unix__
@@ -319,7 +301,6 @@ int FT601::ReinitPipe(unsigned char ep)
 #ifdef __unix__
 int FT601::FT_FlushPipe(unsigned char ep)
 {
-    int actual = 0;
     unsigned char wbuffer[20]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     mUsbCounter++;
@@ -329,7 +310,7 @@ int FT601::FT_FlushPipe(unsigned char ep)
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
     wbuffer[4] = ep;
 
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
+    int actual = BulkTransfer(0x01, wbuffer, 20, 1000);
     if (actual != 20)
     {
         return -1;
@@ -343,7 +324,7 @@ int FT601::FT_FlushPipe(unsigned char ep)
     wbuffer[4] = ep;
     wbuffer[5] = 0x03;
 
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
+    actual = BulkTransfer(0x01, wbuffer, 20, 1000);
     if (actual != 20)
     {
         return -1;
@@ -354,7 +335,6 @@ int FT601::FT_FlushPipe(unsigned char ep)
 
 int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
-    int actual = 0;
     unsigned char wbuffer[20] = { 0 };
 
     mUsbCounter++;
@@ -364,7 +344,7 @@ int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
     wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
     wbuffer[4] = ep;
 
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
+    int actual = BulkTransfer(0x01, wbuffer, 20, 1000);
     if (actual != 20)
     {
         return -1;
@@ -381,7 +361,7 @@ int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
     wbuffer[10] = (size >> 16) & 0xFF;
     wbuffer[11] = (size >> 24) & 0xFF;
 
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
+    actual = BulkTransfer(0x01, wbuffer, 20, 1000);
 
     if (actual != 20)
     {

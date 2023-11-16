@@ -1,10 +1,13 @@
+#include "LimeSDR_MiniEntry.h"
 #include "LimeSDR_Mini.h"
 #include "DeviceExceptions.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
 #include "Logger.h"
-#include "USBCommon.h"
+#include "USB_CSR_Pipe_Mini.h"
+#include "LMS64C_LMS7002M_Over_USB.h"
+#include "LMS64C_FPGA_Over_USB.h"
 
 #include "FT601/FT601.h"
 
@@ -78,33 +81,6 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
     return handles;
 }
 #endif
-
-static constexpr int streamBulkWriteAddr = 0x03;
-static constexpr int streamBulkReadAddr = 0x83;
-
-static constexpr int ctrlBulkWriteAddr = 0x02;
-static constexpr int ctrlBulkReadAddr = 0x82;
-
-class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
-{
-  public:
-    explicit USB_CSR_Pipe_Mini(FT601& port)
-        : USB_CSR_Pipe()
-        , port(port){};
-
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.BulkTransfer(ctrlBulkWriteAddr, const_cast<uint8_t*>(data), length, timeout_ms);
-    }
-
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.BulkTransfer(ctrlBulkReadAddr, data, length, timeout_ms);
-    }
-
-  protected:
-    FT601& port;
-};
 
 SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
 {

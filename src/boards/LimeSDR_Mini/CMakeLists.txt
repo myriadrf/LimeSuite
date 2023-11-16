@@ -46,6 +46,7 @@ set(LIMESDR_MINI_SOURCES
     ${THIS_SOURCE_DIR}/LimeSDR_MiniEntry.cpp
     ${THIS_SOURCE_DIR}/LimeSDR_Mini.cpp
     ${THIS_SOURCE_DIR}/FPGA_Mini.cpp
+    ${THIS_SOURCE_DIR}/USB_CSR_Pipe_Mini.cpp
 )
 
 set(LIMESDR_MINI_LIBRARIES
