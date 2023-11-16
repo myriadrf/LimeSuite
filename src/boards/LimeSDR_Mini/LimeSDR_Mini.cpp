@@ -456,13 +456,13 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
 
         // flush packet
         //printPacket(pkt, 4, "Wr:");
-        int sent = mStreamPort->BulkTransfer(ctrlBulkWriteAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
         {
             throw std::runtime_error("SPI failed");
         }
 
-        int recv = mStreamPort->BulkTransfer(ctrlBulkReadAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
         if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD)
