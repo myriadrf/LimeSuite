@@ -1,8 +1,9 @@
 #include "LimeSDREntry.h"
 #include "LimeSDR.h"
 #include "FX3/FX3.h"
-#include "USBCommon.h"
 #include "USB_CSR_Pipe_SDR.h"
+#include "LMS64C_LMS7002M_Over_USB.h"
+#include "LMS64C_FPGA_Over_USB.h"
 
 #include <memory>
 

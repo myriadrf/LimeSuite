@@ -1,11 +1,9 @@
-#ifndef LIME_LIMESDR_MINI_H
-#define LIME_LIMESDR_MINI_H
+#pragma once
 
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
-#include "USBCommon.h"
 #include <vector>
 #include <memory>
 
@@ -73,16 +71,4 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     std::shared_ptr<IComms> mfpgaPort;
 };
 
-class LimeSDR_MiniEntry : public USBEntry
-{
-  public:
-    LimeSDR_MiniEntry();
-#ifndef __unix__
-    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-#endif
-    virtual SDRDevice* make(const DeviceHandle& handle) override;
-};
-
 } // namespace lime
-
-#endif /* LIME_LIMESDR_MINI_H */

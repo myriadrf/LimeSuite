@@ -1,14 +1,14 @@
 #pragma once
 
 #include "USBEntry.h"
+#include "limesuite/DeviceHandle.h"
 
 namespace lime {
 
-class LimeSDREntry : public USBEntry
+class LimeSDR_MiniEntry : public USBEntry
 {
   public:
-    LimeSDREntry();
-
+    LimeSDR_MiniEntry();
 #ifndef __unix__
     virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
 #endif

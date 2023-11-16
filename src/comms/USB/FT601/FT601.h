@@ -1,45 +1,13 @@
 #pragma once
 
-#include "USBCommon.h"
 #include "USBGeneric.h"
 
 #ifndef __unix__
     #include "windows.h"
     #include "FTD3XXLibrary/FTD3XX.h"
-#else
-    #ifdef __GNUC__
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wpedantic"
-    #endif
-    #include <libusb.h>
-    #ifdef __GNUC__
-        #pragma GCC diagnostic pop
-    #endif
-    #include <mutex>
-    #include <condition_variable>
-    #include <chrono>
-    #include <atomic>
 #endif
 
 namespace lime {
-
-class USBTransferContext_FT601 : public USBTransferContext
-{
-  public:
-    USBTransferContext_FT601()
-        : USBTransferContext()
-    {
-#ifndef __unix__
-        context = NULL;
-#endif
-    }
-
-#ifndef __unix__
-    PUCHAR context;
-    OVERLAPPED inOvLap;
-    uint8_t endPointAddr;
-#endif
-};
 
 class FT601 : public USBGeneric
 {

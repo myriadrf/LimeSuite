@@ -1,6 +1,6 @@
 #pragma once
 
-#include "USBCommon.h"
+#include "USB_CSR_Pipe.h"
 #include "FX3/FX3.h"
 
 #include <cstdint>

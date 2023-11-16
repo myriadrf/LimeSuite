@@ -1,12 +1,5 @@
 #include "FX3.h"
-#include <cstring>
-#include "Logger.h"
-#include <ciso646>
-#include <fstream>
-#include <thread>
-#include <chrono>
-#include <assert.h>
-#include <mutex>
+#include "USBTransferContext_FX3.h"
 
 using namespace lime;
 
@@ -44,6 +37,7 @@ void FX3::Disconnect()
         dev_handle = nullptr;
     }
 #endif
+    isConnected = false;
 }
 
 #ifndef __unix__
