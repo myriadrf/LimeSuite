@@ -17,11 +17,6 @@ if (ENABLE_HEADERS)
     )
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    include(CodeCoverage)
-    append_coverage_compiler_flags()
-endif()
-
 ########################################################################
 ## lime suite library
 ########################################################################
@@ -119,6 +114,11 @@ if (ENABLE_LIBRARY)
 
     if(BUILD_SHARED_LIBS)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
+    endif()
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        include(CodeCoverage)
+        append_coverage_compiler_flags_to_target(${MAIN_LIBRARY_NAME})
     endif()
 
     install(TARGETS ${MAIN_LIBRARY_NAME}
