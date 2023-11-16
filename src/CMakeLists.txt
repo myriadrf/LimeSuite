@@ -17,6 +17,11 @@ if (ENABLE_HEADERS)
     )
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    include(CodeCoverage)
+    append_coverage_compiler_flags()
+endif()
+
 ########################################################################
 ## lime suite library
 ########################################################################

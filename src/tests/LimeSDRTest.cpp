@@ -21,8 +21,6 @@ TEST(LimeSDR, Constructor)
     packetsToRead.push_back(packet);
 
     std::shared_ptr<FX3Mock> usbComms{ new FX3Mock() };
-    EXPECT_CALL(*usbComms, BulkTransfer(_, _, sizeof(LMS64CPacket), _)).WillRepeatedly(Return(sizeof(LMS64CPacket)));
-
     std::shared_ptr<USB_CSR_Pipe> usbPipe{ new USB_CSR_PipeAsserter{ packetsToRead } };
     std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_USB(usbPipe) };
     std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_USB(usbPipe) };
