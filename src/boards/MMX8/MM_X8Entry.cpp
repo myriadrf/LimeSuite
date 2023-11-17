@@ -155,17 +155,18 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 
 SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
 {
-    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
+    std::shared_ptr<LitePCIe> control{ std::make_shared<LitePCIe>() };
     std::vector<std::shared_ptr<LitePCIe>> trxStreams(8);
     std::vector<std::shared_ptr<IComms>> controls(8);
     std::vector<std::shared_ptr<IComms>> fpga(8);
     ISPI* adfComms = new LMS64C_ADF_Over_PCIe_MMX8(control, 0);
     for (size_t i = 0; i < controls.size(); ++i)
     {
-        controls[i] = std::shared_ptr<LMS64C_LMS7002M_Over_PCIe_MMX8>(new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i + 1));
-        fpga[i] = std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, i + 1));
+        controls[i] =
+            std::shared_ptr<LMS64C_LMS7002M_Over_PCIe_MMX8>(std::make_shared<LMS64C_LMS7002M_Over_PCIe_MMX8>(control, i + 1));
+        fpga[i] = std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(std::make_shared<LMS64C_FPGA_Over_PCIe_MMX8>(control, i + 1));
     }
-    fpga.push_back(std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0)));
+    fpga.push_back(std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(std::make_shared<LMS64C_FPGA_Over_PCIe_MMX8>(control, 0)));
 
     try
     {
@@ -177,7 +178,7 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
         {
             char portName[128];
             sprintf(portName, "%s_trx%li", handle.addr.c_str(), i);
-            trxStreams[i] = std::shared_ptr<LitePCIe>(new LitePCIe());
+            trxStreams[i] = std::shared_ptr<LitePCIe>(std::make_shared<LitePCIe>());
             trxStreams[i]->SetPathName(portName);
         }
         return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams), adfComms);

@@ -80,9 +80,9 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
 
     descriptor.rfSOC.push_back(soc);
 
-    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA-Mini", mFPGA) };
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS", "LMS7002M", mLMSChips[0])));
-    descriptor.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("SDR Mini", "SDRDevice", this));
+    std::shared_ptr<DeviceNode> fpgaNode{ std::make_shared<DeviceNode>("FPGA", "FPGA-Mini", mFPGA) };
+    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("LMS", "LMS7002M", mLMSChips[0])));
+    descriptor.socTree = std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("SDR Mini", "SDRDevice", this));
     descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;

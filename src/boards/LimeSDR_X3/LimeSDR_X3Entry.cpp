@@ -77,12 +77,12 @@ std::vector<DeviceHandle> LimeSDR_X3Entry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
-    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
+    std::shared_ptr<LitePCIe> control{ std::make_shared<LitePCIe>() };
     std::vector<std::shared_ptr<LitePCIe>> trxStreams(3);
 
     // protocol layer
-    std::shared_ptr<LMS64C_LMS7002M_Over_PCIe> route_lms7002m{ new LMS64C_LMS7002M_Over_PCIe(control) };
-    std::shared_ptr<LMS64C_FPGA_Over_PCIe> route_fpga{ new LMS64C_FPGA_Over_PCIe(control) };
+    std::shared_ptr<LMS64C_LMS7002M_Over_PCIe> route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_PCIe>(control) };
+    std::shared_ptr<LMS64C_FPGA_Over_PCIe> route_fpga{ std::make_shared<LMS64C_FPGA_Over_PCIe>(control) };
 
     try
     {
@@ -94,7 +94,7 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
         {
             char portName[128];
             sprintf(portName, "%s_trx%i", handle.addr.c_str(), i);
-            trxStreams[i] = std::shared_ptr<LitePCIe>(new LitePCIe());
+            trxStreams[i] = std::shared_ptr<LitePCIe>(std::make_shared<LitePCIe>());
             trxStreams[i]->SetPathName(portName);
         }
 

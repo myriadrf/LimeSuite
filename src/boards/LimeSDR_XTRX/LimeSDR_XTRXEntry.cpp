@@ -79,12 +79,12 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
-    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
-    std::shared_ptr<LitePCIe> stream{ new LitePCIe() };
+    std::shared_ptr<LitePCIe> control{ std::make_shared<LitePCIe>() };
+    std::shared_ptr<LitePCIe> stream{ std::make_shared<LitePCIe>() };
 
     // protocol layer
-    std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_PCIe(control) };
-    std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_PCIe(control) };
+    std::shared_ptr<IComms> route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_PCIe>(control) };
+    std::shared_ptr<IComms> route_fpga{ std::make_shared<LMS64C_FPGA_Over_PCIe>(control) };
 
     try
     {
