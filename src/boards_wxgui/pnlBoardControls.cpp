@@ -65,14 +65,13 @@ static wxString power2unitsString(int powerx3)
     }
 }
 
-static int ReadCustomBoardParam(SDRDevice* device, int32_t parameterID, float_type* val, std::string& unitOfMeasurement)
+static int ReadCustomBoardParam(SDRDevice* device, int32_t parameterID, float_type& val, std::string& unitOfMeasurement)
 {
-    std::vector<std::reference_wrapper<std::string>> units{ unitOfMeasurement };
     if (device == nullptr)
         return -1;
     try
     {
-        int ret = device->CustomParameterRead(&parameterID, val, 1, units);
+        int ret = device->CustomParameterRead(parameterID, val, unitOfMeasurement);
         return ret;
     } catch (...)
     {
@@ -88,7 +87,7 @@ static int WriteCustomBoardParam(
 
     try
     {
-        return device->CustomParameterWrite(&parameterID, &val, 1, unitOfMeasurement);
+        return device->CustomParameterWrite(parameterID, val, unitOfMeasurement);
     } catch (...)
     {
         return -1;
@@ -276,7 +275,7 @@ void pnlBoardControls::OnReadAll(wxCommandEvent& event)
     {
         float_type value;
         std::string units;
-        int status = ReadCustomBoardParam(mDevice, mParameters[i].channel, &value, units);
+        int status = ReadCustomBoardParam(mDevice, mParameters[i].channel, value, units);
         if (status != 0)
         {
             wxMessageBox(_("Error reading board parameters"), _("Warning"));
@@ -583,7 +582,7 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
     double value = 0;
     std::string units;
 
-    int status = ReadCustomBoardParam(mDevice, id, &value, units);
+    int status = ReadCustomBoardParam(mDevice, id, value, units);
     if (status != 0)
     {
         wxMessageBox(_("Failed to read value"), _("Warning"));

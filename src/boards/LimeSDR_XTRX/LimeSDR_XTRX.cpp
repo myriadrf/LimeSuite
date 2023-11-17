@@ -586,15 +586,14 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
         mFPGA->WriteRegister(sw_addr, sw_val);
 }
 
-int LimeSDR_XTRX::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LimeSDR_XTRX::CustomParameterWrite(const int32_t id, const double value, const std::string& units)
 {
-    return fpgaPort->CustomParameterWrite(ids, values, count, units);
+    return fpgaPort->CustomParameterWrite(id, value, units);
 }
 
-int LimeSDR_XTRX::CustomParameterRead(
-    const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units)
+int LimeSDR_XTRX::CustomParameterRead(const int32_t id, double& value, std::string& units)
 {
-    return fpgaPort->CustomParameterRead(ids, values, count, units);
+    return fpgaPort->CustomParameterRead(id, value, units);
 }
 
 bool LimeSDR_XTRX::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)

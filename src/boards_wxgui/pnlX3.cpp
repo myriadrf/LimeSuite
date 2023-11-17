@@ -61,24 +61,23 @@ int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, 
 
     try
     {
-        return device->CustomParameterWrite(&param_id, &val, 1, unitsofMeasurement);
+        return device->CustomParameterWrite(param_id, val, unitsofMeasurement);
     } catch (...)
     {
         return -1;
     }
 }
 
-int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double* val, std::string& unitsofMeasurement)
+int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double& val, std::string& unitsofMeasurement)
 {
     if (device == nullptr)
     {
         return -1;
     }
 
-    std::vector<std::reference_wrapper<std::string>> units{ unitsofMeasurement };
     try
     {
-        int ret = device->CustomParameterRead(&param_id, val, 1, units);
+        int ret = device->CustomParameterRead(param_id, val, unitsofMeasurement);
         return ret;
     } catch (...)
     {
@@ -494,9 +493,9 @@ void pnlX3::UpdatePanel()
 
     double dacVal = 0;
     std::string empty{ "" };
-    LMS_ReadCustomBoardParam(device, 2, &dacVal, empty);
+    LMS_ReadCustomBoardParam(device, 2, dacVal, empty);
     spinDac1->SetValue((int)dacVal);
-    LMS_ReadCustomBoardParam(device, 3, &dacVal, empty);
+    LMS_ReadCustomBoardParam(device, 3, dacVal, empty);
     spinDac2->SetValue((int)dacVal);
 }
 

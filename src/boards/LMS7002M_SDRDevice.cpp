@@ -58,12 +58,12 @@ int LMS7002M_SDRDevice::GPIODirRead(uint8_t* buffer, const size_t bufLength)
     throw(OperationNotSupported("GPIODirRead not implemented"));
 }
 
-int LMS7002M_SDRDevice::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LMS7002M_SDRDevice::CustomParameterWrite(const int32_t id, const double value, const std::string& units)
 {
     throw(OperationNotSupported("CustomParameterWrite not implemented"));
 }
 
-int LMS7002M_SDRDevice::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units)
+int LMS7002M_SDRDevice::CustomParameterRead(const int32_t id, double& value, std::string& units)
 {
     throw(OperationNotSupported("CustomParameterRead not implemented"));
 }

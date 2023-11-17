@@ -34,7 +34,7 @@ class pnlX3 : public wxPanel
     int LMS_ReadFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t* val);
     int LMS_WriteFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t val);
     int LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double val, const std::string& units);
-    int LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double* val, std::string& units);
+    int LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double& val, std::string& units);
     void OnInputChange(wxCommandEvent& event);
     void OnDacChange(wxCommandEvent& event);
 

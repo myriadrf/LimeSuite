@@ -114,10 +114,8 @@ class LMS64C_FPGA_Over_USB : public IComms
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
 
-    virtual int CustomParameterWrite(
-        const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
-    virtual int CustomParameterRead(
-        const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units) override;
+    virtual int CustomParameterWrite(const int32_t id, const double value, const std::string& units) override;
+    virtual int CustomParameterRead(const int32_t id, double& value, std::string& units) override;
 
     virtual int ProgramWrite(
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;

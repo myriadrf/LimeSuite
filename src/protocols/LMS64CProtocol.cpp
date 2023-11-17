@@ -242,102 +242,96 @@ int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count)
     return -1;
 }
 
-int CustomParameterWrite(
-    ISerialPort& port, const int32_t* ids, const double* values, const size_t count, const std::string& units, uint32_t subDevice)
+int CustomParameterWrite(ISerialPort& port, const int32_t id, const double value, const std::string& units, uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
     pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = count;
+    pkt.blockCount = 1;
     pkt.periphID = 0;
     pkt.subDevice = subDevice;
     int byteIndex = 0;
-    for (size_t i = 0; i < count; ++i)
+
+    pkt.payload[byteIndex++] = id;
+    int powerOf10 = 0;
+    if (value > 65535.0 && (units != ""))
     {
-        pkt.payload[byteIndex++] = ids[i];
-        int powerOf10 = 0;
-        if (values[i] > 65535.0 && (units != ""))
-            powerOf10 = log10(values[i] / 65.536) / 3;
-        if (values[i] < 65.536 && (units != ""))
-            powerOf10 = log10(values[i] / 65535.0) / 3;
-        int unitsId = 0; // need to convert given units to their enum
-        pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
-        int value = values[i] / pow(10, 3 * powerOf10);
-        pkt.payload[byteIndex++] = (value >> 8);
-        pkt.payload[byteIndex++] = (value & 0xFF);
+        powerOf10 = log10(value / 65.536) / 3;
     }
-    int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+
+    if (value < 65.536 && (units != ""))
+    {
+        powerOf10 = log10(value / 65535.0) / 3;
+    }
+
+    int unitsId = 0; // need to convert given units to their enum
+    pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
+    int realValue = value / pow(10, 3 * powerOf10);
+    pkt.payload[byteIndex++] = (realValue >> 8);
+    pkt.payload[byteIndex++] = (realValue & 0xFF);
+
+    int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sent != sizeof(pkt))
+    {
         throw std::runtime_error("CustomParameterWrite write failed");
-    int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    }
+
+    int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+    {
         throw std::runtime_error("CustomParameterWrite read failed");
+    }
+
     return 0;
 }
 
-int CustomParameterRead(ISerialPort& port,
-    const int32_t* ids,
-    double* values,
-    const size_t count,
-    std::vector<std::reference_wrapper<std::string>>& units,
-    uint32_t subDevice)
+int CustomParameterRead(ISerialPort& port, const int32_t id, double& value, std::string& units, uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
     pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = count;
+    pkt.blockCount = 1;
     pkt.periphID = 0;
     pkt.subDevice = subDevice;
-    int byteIndex = 0;
+    pkt.payload[0] = id;
 
-    for (size_t i = 0; i < count; ++i)
-    {
-        pkt.payload[byteIndex++] = ids[i];
-    }
-
-    int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sent != sizeof(pkt))
     {
         throw std::runtime_error("CustomParameterRead write failed");
     }
 
-    int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
     {
         throw std::runtime_error("CustomParameterRead read failed");
     }
 
-    assert(pkt.blockCount == count);
+    int unitsIndex = pkt.payload[1];
 
-    for (size_t i = 0; i < count; ++i)
+    if (unitsIndex & 0x0F)
     {
-        int unitsIndex = pkt.payload[i * 4 + 1];
+        units = ADC_UNITS_PREFIX[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
+    }
+    else
+    {
+        units += adcUnits2string((unitsIndex & 0xF0) >> 4);
+    }
 
-        if (unitsIndex & 0x0F)
-        {
-            std::string& unit = units[i].get();
-            unit = ADC_UNITS_PREFIX[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
-        }
-        else
-        {
-            std::string& unit = units[i].get();
-            unit += adcUnits2string((unitsIndex & 0xF0) >> 4);
-        }
+    if ((unitsIndex & 0xF0) >> 4 == RAW)
+    {
+        value = static_cast<uint16_t>(pkt.payload[2] << 8 | pkt.payload[3]);
+    }
+    else
+    {
+        value = static_cast<uint16_t>(pkt.payload[2] << 8 | pkt.payload[3]);
 
-        if ((unitsIndex & 0xF0) >> 4 == RAW)
+        if ((unitsIndex & 0xF0) >> 4 == TEMPERATURE)
         {
-            values[i] = (uint16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
-        }
-        else
-        {
-            values[i] = (int16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
-
-            if ((unitsIndex & 0xF0) >> 4 == TEMPERATURE)
-            {
-                values[i] /= 10;
-            }
+            value /= 10;
         }
     }
+
     return 0;
 }
 
