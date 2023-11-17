@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_LMS64C_FPGA_OVER_USB_H
+#define LIME_LMS64C_FPGA_OVER_USB_H
 
 #include "limesuite/IComms.h"
 #include "USB_CSR_Pipe.h"
@@ -31,3 +32,5 @@ class LMS64C_FPGA_Over_USB : public IComms
 };
 
 } // namespace lime
+
+#endif // LIME_LMS64C_FPGA_OVER_USB_H

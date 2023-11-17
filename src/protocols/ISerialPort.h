@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_ISERIALPORT_H
+#define LIME_ISERIALPORT_H
 
 #include <cstddef>
 #include <cstdint>
@@ -13,3 +14,5 @@ class ISerialPort
 };
 
 }
+
+#endif // LIME_ISERIALPORT_H

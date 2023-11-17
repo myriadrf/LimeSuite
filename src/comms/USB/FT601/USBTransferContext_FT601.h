@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIME_USBTRANSFERCONTEXT_FT601_H
+#define LIME_USBTRANSFERCONTEXT_FT601_H
+
 #include "USBTransferContext.h"
 
 #ifndef __unix__
@@ -21,3 +23,5 @@ class USBTransferContext_FT601 : public USBTransferContext
 };
 
 } // namespace lime
+
+#endif // LIME_USBTRANSFERCONTEXT_FT601_H

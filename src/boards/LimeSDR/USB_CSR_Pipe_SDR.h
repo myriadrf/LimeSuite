@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_USB_CSR_Pipe_SDR_H
+#define LIME_USB_CSR_Pipe_SDR_H
 
 #include "USB_CSR_Pipe.h"
 #include "FX3/FX3.h"
@@ -20,3 +21,5 @@ class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
 };
 
 } // namespace lime
+
+#endif // LIME_USB_CSR_Pipe_SDR_H

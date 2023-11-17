@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIME_USB_CSR_PIPE_MINI_H
+#define LIME_USB_CSR_PIPE_MINI_H
+
 #include "FT601/FT601.h"
 #include "USB_CSR_Pipe.h"
 
@@ -23,3 +25,5 @@ class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 };
 
 } // namespace lime
+
+#endif // LIME_USB_CSR_PIPE_MINI_H
