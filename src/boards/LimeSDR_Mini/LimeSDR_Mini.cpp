@@ -390,15 +390,17 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
     assert(mStreamPort);
     assert(MOSI);
     LMS64CPacket pkt;
-    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = chipSelect;
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
-    const int maxBlocks = 14;
+    constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
+
     while (srcIndex < count)
     {
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = chipSelect;
+
         // fill packet with same direction operations
         const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
 
@@ -480,9 +482,6 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
         {
             throw std::runtime_error("SPI failed");
         }
-
-        pkt.blockCount = 0;
-        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     }
 }
 

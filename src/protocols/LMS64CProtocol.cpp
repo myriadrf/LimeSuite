@@ -198,17 +198,19 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t 
 {
     // only writes are supported
     LMS64CPacket pkt;
-    pkt.cmd = CMD_ADF4002_WR;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = 0;
-    pkt.subDevice = subDevice;
 
     size_t srcIndex = 0;
-    const int maxBlocks = 14;
+    constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
     const int blockSize = 3;
+
     while (srcIndex < count)
     {
+        pkt.cmd = CMD_ADF4002_WR;
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = 0;
+        pkt.subDevice = subDevice;
+
         for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
         {
             int payloadOffset = pkt.blockCount * blockSize;
@@ -229,9 +231,6 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t 
         recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
         if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
             return -1;
-
-        pkt.blockCount = 0;
-        pkt.status = STATUS_UNDEFINED;
     }
     return 0;
 }
