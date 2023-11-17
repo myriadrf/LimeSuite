@@ -24,7 +24,7 @@ class limeRFE_wxgui : public limeRFE_view
 		// Handlers for AppFrame events.
 		void OnbtnOpenPort(wxCommandEvent& event);
 		void OnbtnClosePort(wxCommandEvent& event);
-		void AddMssg(const std::string& mssg);
+		void AddMssg(const char* mssg);
 		void AddMssg(const wxString& mssg);
 		void ReadPorts();
 		void OnbtnRefreshPorts(wxCommandEvent& event);
