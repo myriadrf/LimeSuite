@@ -23,16 +23,23 @@ static constexpr std::size_t packetSize = sizeof(LMS64CPacket);
 
 MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct command")
 {
-    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->cmd == command;
 }
 
 MATCHER_P(IsBlockCountCorrect, blockCount, "Checks if the packet has the correct block count")
 {
-    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
+    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->blockCount == blockCount;
+}
+
+MATCHER_P(IsPeripheralIDCorrect, periphID, "Checks if the packet has the correct peripheral ID")
+{
+    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
+
+    return packet->periphID == periphID;
 }
 
 TEST(LMS64CProtocol, LMS7002MSPIEmptyTest)
@@ -309,4 +316,29 @@ TEST(LMS64CProtocol, LMS7002MSPINotFullyReadOnSecondCall)
     int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, mosi.data(), miso.data(), 2);
 
     EXPECT_EQ(returnValue, -1);
+}
+
+TEST(LMS64CProtocol, LMS7002MSPIPassesThroughCorrectChip)
+{
+    ISerialPortMock mockPort{};
+    LMS64CPacket packet{};
+    packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
+
+    const uint8_t chip = 1;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    EXPECT_CALL(mockPort, Write(IsPeripheralIDCorrect(chip), packetSize, _)).Times(2);
+    EXPECT_CALL(mockPort, Read(IsPeripheralIDCorrect(chip), packetSize, _)).Times(2);
+
+    std::vector<uint32_t> mosi{ 1, 2 };
+    SetWriteBit(mosi[1]);
+
+    std::vector<uint32_t> miso{ 1, 2 };
+
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, chip, mosi.data(), miso.data(), 2);
+
+    EXPECT_EQ(returnValue, 0);
 }

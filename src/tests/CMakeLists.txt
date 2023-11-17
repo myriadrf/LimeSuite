@@ -5,7 +5,8 @@ set(LIME_TEST_SUITE_SOURCES
     boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
     boards/LimeSDR_X3/SlaveSelectShimTest.cpp
     comms/USB/USB_CSR_Pipe_SDRTest.cpp
-    protocols/LMS64CProtocolTest.cpp
+    protocols/LMS64CProtocol/FPGA_SPITest.cpp
+    protocols/LMS64CProtocol/LMS7002M_SPITest.cpp
 )
 
 add_executable(${LIME_TEST_SUITE_NAME} ${LIME_TEST_SUITE_SOURCES})
