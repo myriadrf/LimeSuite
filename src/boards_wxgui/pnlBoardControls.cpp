@@ -79,8 +79,7 @@ static int ReadCustomBoardParam(SDRDevice* device, int32_t parameterID, float_ty
     }
 }
 
-static int WriteCustomBoardParam(
-    SDRDevice* device, int32_t parameterID, float_type val, const std::string& unitOfMeasurement = std::string())
+static int WriteCustomBoardParam(SDRDevice* device, int32_t parameterID, float_type val, const std::string& unitOfMeasurement)
 {
     if (device == nullptr)
         return -1;
@@ -312,7 +311,7 @@ void pnlBoardControls::OnWriteAll(wxCommandEvent& event)
             continue;
         ids.push_back(mParameters[i].channel);
         values.push_back(mParameters[i].value);
-        int status = WriteCustomBoardParam(mDevice, mParameters[i].channel, mParameters[i].value);
+        int status = WriteCustomBoardParam(mDevice, mParameters[i].channel, mParameters[i].value, "");
         if (status != 0)
         {
             wxMessageBox(_("Failed to write values"), _("Warning"));
