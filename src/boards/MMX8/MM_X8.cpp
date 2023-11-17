@@ -253,30 +253,30 @@ void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
     return mSubDevices[index]->GetInternalChip(0);
 }
 
-int LimeSDR_MMX8::CustomParameterWrite(const int32_t id, const double value, const std::string& unitsOfMeasurement)
+int LimeSDR_MMX8::CustomParameterWrite(const int32_t id, const double value, const std::string& units)
 {
     int subModuleIndex = (id >> 8) - 1;
     int sendId = id & 0xFF;
 
     if (subModuleIndex >= 0)
     {
-        return mSubDevices[subModuleIndex]->CustomParameterWrite(sendId, value, unitsOfMeasurement);
+        return mSubDevices[subModuleIndex]->CustomParameterWrite(sendId, value, units);
     }
 
-    return mMainFPGAcomms->CustomParameterWrite(sendId, value, unitsOfMeasurement);
+    return mMainFPGAcomms->CustomParameterWrite(sendId, value, units);
 }
 
-int LimeSDR_MMX8::CustomParameterRead(const int32_t id, double& value, std::string& unitsOfMeasurement)
+int LimeSDR_MMX8::CustomParameterRead(const int32_t id, double& value, std::string& units)
 {
     int subModuleIndex = (id >> 8) - 1;
     int sendId = id & 0xFF;
 
     if (subModuleIndex >= 0)
     {
-        return mSubDevices[subModuleIndex]->CustomParameterRead(sendId, value, unitsOfMeasurement);
+        return mSubDevices[subModuleIndex]->CustomParameterRead(sendId, value, units);
     }
 
-    return mMainFPGAcomms->CustomParameterRead(sendId, value, unitsOfMeasurement);
+    return mMainFPGAcomms->CustomParameterRead(sendId, value, units);
 }
 
 bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
