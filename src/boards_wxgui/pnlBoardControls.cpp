@@ -65,15 +65,15 @@ static wxString power2unitsString(int powerx3)
     }
 }
 
-static int ReadCustomBoardParam(SDRDevice* device, int32_t param_id, float_type* val, std::string& unit)
+static int ReadCustomBoardParam(SDRDevice* device, int32_t parameterID, float_type* val, std::string& unitOfMeasurement)
 {
-    std::vector<std::string> units{ unit };
+    std::vector<std::string> units{ unitOfMeasurement };
     if (device == nullptr)
         return -1;
     try
     {
-        int ret = device->CustomParameterRead(&param_id, val, 1, units);
-        unit = units[0];
+        int ret = device->CustomParameterRead(&parameterID, val, 1, units);
+        unitOfMeasurement = units[0];
         return ret;
     } catch (...)
     {
@@ -81,14 +81,15 @@ static int ReadCustomBoardParam(SDRDevice* device, int32_t param_id, float_type*
     }
 }
 
-static int WriteCustomBoardParam(SDRDevice* device, int32_t param_id, float_type val, const std::string& units = std::string())
+static int WriteCustomBoardParam(
+    SDRDevice* device, int32_t parameterID, float_type val, const std::string& unitOfMeasurement = std::string())
 {
     if (device == nullptr)
         return -1;
 
     try
     {
-        return device->CustomParameterWrite(&param_id, &val, 1, units);
+        return device->CustomParameterWrite(&parameterID, &val, 1, unitOfMeasurement);
     } catch (...)
     {
         return -1;

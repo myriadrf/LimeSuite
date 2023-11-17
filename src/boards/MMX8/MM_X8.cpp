@@ -253,7 +253,8 @@ void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
     return mSubDevices[index]->GetInternalChip(0);
 }
 
-int LimeSDR_MMX8::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LimeSDR_MMX8::CustomParameterWrite(
+    const int32_t* ids, const double* values, const size_t count, const std::string& unitsOfMeasurement)
 {
     int ret = 0;
     for (size_t i = 0; i < count; ++i)
@@ -261,21 +262,22 @@ int LimeSDR_MMX8::CustomParameterWrite(const int32_t* ids, const double* values,
         int subModuleIndex = (ids[i] >> 8) - 1;
         int id = ids[i] & 0xFF;
         if (subModuleIndex >= 0)
-            ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, units);
+            ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, unitsOfMeasurement);
         else
-            ret |= mMainFPGAcomms->CustomParameterWrite(&id, &values[i], 1, units);
+            ret |= mMainFPGAcomms->CustomParameterWrite(&id, &values[i], 1, unitsOfMeasurement);
     }
     return ret;
 }
 
-int LimeSDR_MMX8::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
+int LimeSDR_MMX8::CustomParameterRead(
+    const int32_t* ids, double* values, const size_t count, std::vector<std::string>& unitsOfMeasurement)
 {
     int ret = 0;
     for (size_t i = 0; i < count; ++i)
     {
         int subModuleIndex = (ids[i] >> 8) - 1;
         int id = ids[i] & 0xFF;
-        auto unit = std::vector<std::string>{ units[i] };
+        std::vector<std::string> unit{ unitsOfMeasurement[i] };
         if (subModuleIndex >= 0)
             ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, unit);
         else
