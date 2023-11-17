@@ -5,11 +5,11 @@
 
 using namespace lime;
 
-static constexpr int streamBulkWriteAddr = 0x03;
-static constexpr int streamBulkReadAddr = 0x83;
+static const int STREAM_BULK_WRITE_ADDRESS = 0x03;
+static const int STREAM_BULK_READ_ADDRESS = 0x83;
 
-static constexpr int ctrlBulkWriteAddr = 0x02;
-static constexpr int ctrlBulkReadAddr = 0x82;
+static const int CONTROL_BULK_WRITE_ADDRESS = 0x02;
+static const int CONTROL_BULK_READ_ADDRESS = 0x82;
 
 FT601::FT601(void* usbContext)
     : USBGeneric(usbContext)
@@ -40,18 +40,18 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
         return -1;
     }
 
-    FT_AbortPipe(mFTHandle, streamBulkReadAddr);
-    FT_AbortPipe(mFTHandle, ctrlBulkReadAddr);
-    FT_AbortPipe(mFTHandle, ctrlBulkWriteAddr);
-    FT_AbortPipe(mFTHandle, streamBulkWriteAddr);
-    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlBulkReadAddr, 64);
-    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlBulkWriteAddr, 64);
-    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamBulkReadAddr, sizeof(FPGA_DataPacket));
-    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamBulkWriteAddr, sizeof(FPGA_DataPacket));
-    FT_SetPipeTimeout(mFTHandle, ctrlBulkWriteAddr, 500);
-    FT_SetPipeTimeout(mFTHandle, ctrlBulkReadAddr, 500);
-    FT_SetPipeTimeout(mFTHandle, streamBulkReadAddr, 0);
-    FT_SetPipeTimeout(mFTHandle, streamBulkWriteAddr, 0);
+    FT_AbortPipe(mFTHandle, STREAM_BULK_READ_ADDRESS);
+    FT_AbortPipe(mFTHandle, CONTROL_BULK_READ_ADDRESS);
+    FT_AbortPipe(mFTHandle, CONTROL_BULK_WRITE_ADDRESS);
+    FT_AbortPipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, CONTROL_BULK_READ_ADDRESS, 64);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, CONTROL_BULK_WRITE_ADDRESS, 64);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, STREAM_BULK_READ_ADDRESS, sizeof(FPGA_DataPacket));
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, STREAM_BULK_WRITE_ADDRESS, sizeof(FPGA_DataPacket));
+    FT_SetPipeTimeout(mFTHandle, CONTROL_BULK_WRITE_ADDRESS, 500);
+    FT_SetPipeTimeout(mFTHandle, CONTROL_BULK_READ_ADDRESS, 500);
+    FT_SetPipeTimeout(mFTHandle, STREAM_BULK_READ_ADDRESS, 0);
+    FT_SetPipeTimeout(mFTHandle, STREAM_BULK_WRITE_ADDRESS, 0);
 
     isConnected = true;
 #else
@@ -61,9 +61,9 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
         return false;
     }
 
-    FT_FlushPipe(ctrlBulkReadAddr); // Clear control endpoint rx buffer
-    FT_SetStreamPipe(ctrlBulkReadAddr, 64);
-    FT_SetStreamPipe(ctrlBulkWriteAddr, 64);
+    FT_FlushPipe(CONTROL_BULK_READ_ADDRESS); // Clear control endpoint rx buffer
+    FT_SetStreamPipe(CONTROL_BULK_READ_ADDRESS, 64);
+    FT_SetStreamPipe(CONTROL_BULK_WRITE_ADDRESS, 64);
 #endif
     contexts = new USBTransferContext_FT601[USB_MAX_CONTEXTS];
     return true;
@@ -77,8 +77,8 @@ void FT601::Disconnect()
 #else
     if (dev_handle != nullptr)
     {
-        FT_FlushPipe(streamBulkReadAddr);
-        FT_FlushPipe(ctrlBulkReadAddr);
+        FT_FlushPipe(STREAM_BULK_READ_ADDRESS);
+        FT_FlushPipe(CONTROL_BULK_READ_ADDRESS);
         libusb_release_interface(dev_handle, 0);
         libusb_release_interface(dev_handle, 1);
         libusb_close(dev_handle);
@@ -96,13 +96,13 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int
     OVERLAPPED vOverlapped = { 0 };
     FT_InitializeOverlapped(mFTHandle, &vOverlapped);
 
-    if (endPointAddr == ctrlBulkWriteAddr)
+    if (endPointAddr == CONTROL_BULK_WRITE_ADDRESS)
     {
-        ftStatus = FT_WritePipe(mFTHandle, ctrlBulkWriteAddr, data, length, &ulBytesTransferred, &vOverlapped);
+        ftStatus = FT_WritePipe(mFTHandle, CONTROL_BULK_WRITE_ADDRESS, data, length, &ulBytesTransferred, &vOverlapped);
     }
     else
     {
-        ftStatus = FT_ReadPipe(mFTHandle, ctrlBulkReadAddr, data, length, &ulBytesTransferred, &vOverlapped);
+        ftStatus = FT_ReadPipe(mFTHandle, CONTROL_BULK_READ_ADDRESS, data, length, &ulBytesTransferred, &vOverlapped);
     }
 
     if (ftStatus != FT_IO_PENDING)
@@ -151,13 +151,13 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
     FT_STATUS ftStatus = FT_OK;
     FT_InitializeOverlapped(mFTHandle, &contexts[index].inOvLap);
 
-    if (endPointAddr == streamBulkReadAddr)
+    if (endPointAddr == STREAM_BULK_READ_ADDRESS)
     {
-        ftStatus = FT_ReadPipe(mFTHandle, streamBulkReadAddr, buffer, length, &ulActual, &contexts[index].inOvLap);
+        ftStatus = FT_ReadPipe(mFTHandle, STREAM_BULK_READ_ADDRESS, buffer, length, &ulActual, &contexts[index].inOvLap);
     }
     else
     {
-        ftStatus = FT_WritePipe(mFTHandle, streamBulkWriteAddr, buffer, length, &ulActual, &contexts[index].inOvLap);
+        ftStatus = FT_WritePipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS, buffer, length, &ulActual, &contexts[index].inOvLap);
     }
 
     contexts[index].endPointAddr = endPointAddr;
@@ -226,9 +226,9 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
         }
     }
 
-    if (endPointAddr == streamBulkReadAddr)
+    if (endPointAddr == STREAM_BULK_READ_ADDRESS)
     {
-        FT_FlushPipe(mFTHandle, streamBulkReadAddr);
+        FT_FlushPipe(mFTHandle, STREAM_BULK_READ_ADDRESS);
     }
 
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, endPointAddr, sizeof(FPGA_DataPacket));
@@ -240,47 +240,47 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
 int FT601::ResetStreamBuffers()
 {
 #ifndef __unix__
-    if (FT_AbortPipe(mFTHandle, streamBulkReadAddr) != FT_OK)
+    if (FT_AbortPipe(mFTHandle, STREAM_BULK_READ_ADDRESS) != FT_OK)
     {
         return -1;
     }
 
-    if (FT_AbortPipe(mFTHandle, streamBulkWriteAddr) != FT_OK)
+    if (FT_AbortPipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS) != FT_OK)
     {
         return -1;
     }
 
-    if (FT_FlushPipe(mFTHandle, streamBulkReadAddr) != FT_OK)
+    if (FT_FlushPipe(mFTHandle, STREAM_BULK_READ_ADDRESS) != FT_OK)
     {
         return -1;
     }
 
-    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamBulkReadAddr, sizeof(FPGA_DataPacket)) != 0)
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, STREAM_BULK_READ_ADDRESS, sizeof(FPGA_DataPacket)) != 0)
     {
         return -1;
     }
 
-    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamBulkWriteAddr, sizeof(FPGA_DataPacket)) != 0)
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, STREAM_BULK_WRITE_ADDRESS, sizeof(FPGA_DataPacket)) != 0)
     {
         return -1;
     }
 #else
-    if (FT_FlushPipe(streamBulkWriteAddr) != 0)
+    if (FT_FlushPipe(STREAM_BULK_WRITE_ADDRESS) != 0)
     {
         return -1;
     }
 
-    if (FT_FlushPipe(streamBulkReadAddr) != 0)
+    if (FT_FlushPipe(STREAM_BULK_READ_ADDRESS) != 0)
     {
         return -1;
     }
 
-    if (FT_SetStreamPipe(streamBulkWriteAddr, sizeof(FPGA_DataPacket)) != 0)
+    if (FT_SetStreamPipe(STREAM_BULK_WRITE_ADDRESS, sizeof(FPGA_DataPacket)) != 0)
     {
         return -1;
     }
 
-    if (FT_SetStreamPipe(streamBulkReadAddr, sizeof(FPGA_DataPacket)) != 0)
+    if (FT_SetStreamPipe(STREAM_BULK_READ_ADDRESS, sizeof(FPGA_DataPacket)) != 0)
     {
         return -1;
     }

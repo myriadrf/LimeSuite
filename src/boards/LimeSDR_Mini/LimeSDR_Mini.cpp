@@ -26,14 +26,14 @@
 
 using namespace lime;
 
-static constexpr int streamBulkWriteAddr = 0x03;
-static constexpr int streamBulkReadAddr = 0x83;
+static const int STREAM_BULK_WRITE_ADDRESS = 0x03;
+static const int STREAM_BULK_READ_ADDRESS = 0x83;
 
-static constexpr int ctrlBulkWriteAddr = 0x02;
-static constexpr int ctrlBulkReadAddr = 0x82;
+static const int CONTROL_BULK_WRITE_ADDRESS = 0x02;
+static const int CONTROL_BULK_READ_ADDRESS = 0x82;
 
-static constexpr uint8_t spi_LMS7002M = 0;
-static constexpr uint8_t spi_FPGA = 1;
+static const uint8_t SPI_LMS7002M = 0;
+static const uint8_t SPI_FPGA = 1;
 
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (runtime)", 0, 0, 255, false };
 static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
@@ -70,7 +70,7 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
         descriptor.customParameters.push_back(CP_TEMPERATURE);
     }
 
-    descriptor.spiSlaveIds = { { "LMS7002M", spi_LMS7002M }, { "FPGA", spi_FPGA } };
+    descriptor.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
     RFSOCDescriptor soc;
     soc.name = "LMS";
@@ -434,10 +434,10 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
             {
                 switch (chipSelect)
                 {
-                case spi_LMS7002M:
+                case SPI_LMS7002M:
                     pkt.cmd = LMS64CProtocol::CMD_LMS7002_WR;
                     break;
-                case spi_FPGA:
+                case SPI_FPGA:
                     pkt.cmd = LMS64CProtocol::CMD_BRDSPI_WR;
                     break;
                 default:
@@ -454,10 +454,10 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
             {
                 switch (chipSelect)
                 {
-                case spi_LMS7002M:
+                case SPI_LMS7002M:
                     pkt.cmd = LMS64CProtocol::CMD_LMS7002_RD;
                     break;
-                case spi_FPGA:
+                case SPI_FPGA:
                     pkt.cmd = LMS64CProtocol::CMD_BRDSPI_RD;
                     break;
                 default:
@@ -602,7 +602,7 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
 
     const uint32_t addrs[] = { 0x0000, 0x0001, 0x0002, 0x0003 };
     uint32_t data[4];
-    SPI(spi_FPGA, addrs, data, 4);
+    SPI(SPI_FPGA, addrs, data, 4);
     auto boardID = static_cast<eLMS_DEV>(data[0]); //(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
     auto gatewareVersion = data[1]; //(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
     auto gatewareRevision = data[2]; //(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
@@ -628,7 +628,7 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         auto connection = std::static_pointer_cast<FT601>(mStreamPort);
         connection->ResetStreamBuffers();
 
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkReadAddr, streamBulkWriteAddr);
+        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_READ_ADDRESS, STREAM_BULK_WRITE_ADDRESS);
         mStreamers[0]->Setup(config);
 
         return 0;
