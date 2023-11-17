@@ -35,7 +35,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     // LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
     // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
-    // mFPGA = new lime::FPGA_X3(spiFPGA, spi_LMS7002M_1);
+    // mFPGA = new lime::FPGA_X3(spiFPGA, SPI_LMS7002M_1);
     // mFPGA->SetConnection(&mFPGAcomms);
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);

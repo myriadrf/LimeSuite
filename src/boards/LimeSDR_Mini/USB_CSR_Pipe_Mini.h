@@ -4,12 +4,6 @@
 #include "FT601/FT601.h"
 #include "USB_CSR_Pipe.h"
 
-static constexpr int streamBulkWriteAddr = 0x03;
-static constexpr int streamBulkReadAddr = 0x83;
-
-static constexpr int ctrlBulkWriteAddr = 0x02;
-static constexpr int ctrlBulkReadAddr = 0x82;
-
 namespace lime {
 
 class USB_CSR_Pipe_Mini : public USB_CSR_Pipe

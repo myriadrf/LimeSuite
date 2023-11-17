@@ -23,9 +23,9 @@
 namespace lime {
 
 // XTRX board specific devices ids and data
-static constexpr uint8_t spi_LMS7002M = 0;
-static constexpr uint8_t spi_FPGA = 1;
-static constexpr float xtrxDefaultRefClk = 26e6;
+static const uint8_t SPI_LMS7002M = 0;
+static const uint8_t SPI_FPGA = 1;
+static const float XTRX_DEFAULT_REFERENCE_CLOCK = 26e6;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 
@@ -65,7 +65,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     // LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
     // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
-    desc.spiSlaveIds = { { "LMS7002M", spi_LMS7002M }, { "FPGA", spi_FPGA } };
+    desc.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
     desc.memoryDevices = {
         //{"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
@@ -88,8 +88,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     mLMSChips.push_back(chip);
     for (auto iter : mLMSChips)
     {
-        iter->SetReferenceClk_SX(TRXDir::Rx, xtrxDefaultRefClk);
-        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, xtrxDefaultRefClk, 0);
+        iter->SetReferenceClk_SX(TRXDir::Rx, XTRX_DEFAULT_REFERENCE_CLOCK);
+        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, XTRX_DEFAULT_REFERENCE_CLOCK, 0);
     }
 
     const int chipCount = mLMSChips.size();
@@ -391,10 +391,10 @@ void LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
 {
     switch (chipSelect)
     {
-    case spi_LMS7002M:
+    case SPI_LMS7002M:
         lms7002mPort->SPI(MOSI, MISO, count);
         return;
-    case spi_FPGA:
+    case SPI_FPGA:
         fpgaPort->SPI(MOSI, MISO, count);
         return;
     default:

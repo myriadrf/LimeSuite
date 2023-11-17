@@ -8,16 +8,16 @@
 
 using namespace lime;
 
-#define CTR_W_REQCODE 0xC1
-#define CTR_W_VALUE 0x0000
-#define CTR_W_INDEX 0x0000
+static const int CTR_W_REQCODE = 0xC1;
+static const int CTR_W_VALUE = 0x0000;
+static const int CTR_W_INDEX = 0x0000;
 
-#define CTR_R_REQCODE 0xC0
-#define CTR_R_VALUE 0x0000
-#define CTR_R_INDEX 0x0000
+static const int CTR_R_REQCODE = 0xC0;
+static const int CTR_R_VALUE = 0x0000;
+static const int CTR_R_INDEX = 0x0000;
 
-static constexpr uint8_t ctrlBulkOutAddr = 0x0F;
-static constexpr uint8_t ctrlBulkInAddr = 0x8F;
+static const uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
+static const uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
 
 static const std::set<uint8_t> commandsToBulkTransfer = {
     LMS64CProtocol::CMD_BRDSPI_WR,
@@ -44,7 +44,7 @@ int USB_CSR_Pipe_SDR::Write(const uint8_t* data, size_t length, int timeout_ms)
 
     if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
     {
-        return port.BulkTransfer(ctrlBulkOutAddr, const_cast<uint8_t*>(data), length, timeout_ms);
+        return port.BulkTransfer(CONTROL_BULK_OUT_ADDRESS, const_cast<uint8_t*>(data), length, timeout_ms);
     }
 
     return port.ControlTransfer(
@@ -57,7 +57,7 @@ int USB_CSR_Pipe_SDR::Read(uint8_t* data, size_t length, int timeout_ms)
 
     if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
     {
-        return port.BulkTransfer(ctrlBulkInAddr, data, length, timeout_ms);
+        return port.BulkTransfer(CONTROL_BULK_IN_ADDRESS, data, length, timeout_ms);
     }
 
     return port.ControlTransfer(

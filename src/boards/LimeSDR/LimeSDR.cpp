@@ -40,14 +40,14 @@
 
 using namespace lime;
 
-static constexpr uint8_t ctrlBulkOutAddr = 0x0F;
-static constexpr uint8_t ctrlBulkInAddr = 0x8F;
+static const uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
+static const uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
 
-static constexpr uint8_t streamBulkOutAddr = 0x01;
-static constexpr uint8_t streamBulkInAddr = 0x81;
+static const uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
+static const uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
 
-static constexpr uint8_t spi_LMS7002M = 0;
-static constexpr uint8_t spi_FPGA = 1;
+static const uint8_t SPI_LMS7002M = 0;
+static const uint8_t SPI_FPGA = 1;
 
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
@@ -82,7 +82,7 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     descriptor.customParameters.push_back(CP_VCTCXO_DAC);
     descriptor.customParameters.push_back(CP_TEMPERATURE);
 
-    descriptor.spiSlaveIds = { { "LMS7002M", spi_LMS7002M }, { "FPGA", spi_FPGA } };
+    descriptor.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
     RFSOCDescriptor soc;
     soc.name = "LMS";
@@ -381,7 +381,7 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
 
     const uint32_t addrs[] = { 0x0000, 0x0001, 0x0002, 0x0003 };
     uint32_t data[4];
-    SPI(spi_FPGA, addrs, data, 4);
+    SPI(SPI_FPGA, addrs, data, 4);
     auto boardID = static_cast<eLMS_DEV>(data[0]); //(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
     auto gatewareVersion = data[1]; //(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
     auto gatewareRevision = data[2]; //(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
@@ -475,10 +475,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uin
             {
                 switch (chipSelect)
                 {
-                case spi_LMS7002M:
+                case SPI_LMS7002M:
                     pkt.cmd = LMS64CProtocol::CMD_LMS7002_WR;
                     break;
-                case spi_FPGA:
+                case SPI_FPGA:
                     pkt.cmd = LMS64CProtocol::CMD_BRDSPI_WR;
                     break;
                 default:
@@ -494,10 +494,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uin
             {
                 switch (chipSelect)
                 {
-                case spi_LMS7002M:
+                case SPI_LMS7002M:
                     pkt.cmd = LMS64CProtocol::CMD_LMS7002_RD;
                     break;
-                case spi_FPGA:
+                case SPI_FPGA:
                     pkt.cmd = LMS64CProtocol::CMD_BRDSPI_RD;
                     break;
                 default:
@@ -553,10 +553,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uin
         memcpy(pkt.payload, src, pkt.blockCount);
         src += pkt.blockCount;
         remainingBytes -= pkt.blockCount;
-        int sent = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = comms->BulkTransfer(CONTROL_BULK_OUT_ADDRESS, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("I2C write failed");
-        int recv = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = comms->BulkTransfer(CONTROL_BULK_IN_ADDRESS, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
 
         if (recv < pkt.headerSize || pkt.status != LMS64CProtocol::STATUS_COMPLETED_CMD)
             throw std::runtime_error("I2C write failed");
@@ -577,10 +577,10 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uin
         pkt.blockCount = remainingBytes > pkt.payloadSize ? pkt.payloadSize : remainingBytes;
         pkt.periphID = address;
 
-        int sent = comms->BulkTransfer(ctrlBulkOutAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = comms->BulkTransfer(CONTROL_BULK_OUT_ADDRESS, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("I2C read failed");
-        int recv = comms->BulkTransfer(ctrlBulkInAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = comms->BulkTransfer(CONTROL_BULK_IN_ADDRESS, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
 
         memcpy(dest, pkt.payload, pkt.blockCount);
         dest += pkt.blockCount;
@@ -621,7 +621,7 @@ int LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         return -1; // already running
     try
     {
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkInAddr, streamBulkOutAddr);
+        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
         mStreamers[0]->Setup(config);
 
         return 0;

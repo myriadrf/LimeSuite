@@ -25,10 +25,10 @@
 namespace lime {
 
 // X3 board specific subdevice ids
-static constexpr uint8_t spi_LMS7002M_1 = 0;
-static constexpr uint8_t spi_LMS7002M_2 = 1;
-static constexpr uint8_t spi_LMS7002M_3 = 2;
-static constexpr uint8_t spi_FPGA = 3;
+static const uint8_t SPI_LMS7002M_1 = 0;
+static const uint8_t SPI_LMS7002M_2 = 1;
+static const uint8_t SPI_LMS7002M_3 = 2;
+static const uint8_t SPI_FPGA = 3;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 static SDRDevice::CustomParameter cp_temperature = { "Board Temperature", 1, 0, 65535, true };
@@ -72,7 +72,7 @@ LimeSDR_X3::LimeSDR_X3(
     // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
     desc.spiSlaveIds = {
-        { "LMS7002M_1", spi_LMS7002M_1 }, { "LMS7002M_2", spi_LMS7002M_2 }, { "LMS7002M_3", spi_LMS7002M_3 }, { "FPGA", spi_FPGA }
+        { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
     desc.memoryDevices = {
@@ -82,13 +82,13 @@ LimeSDR_X3::LimeSDR_X3(
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
 
-    mLMS7002Mcomms[0] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, spi_LMS7002M_1));
+    mLMS7002Mcomms[0] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_1));
 
     mFPGA = new lime::FPGA_X3(spiFPGA, mLMS7002Mcomms[0]);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, desc);
 
-    mEqualizer = new Equalizer(spiFPGA, spi_FPGA);
+    mEqualizer = new Equalizer(spiFPGA, SPI_FPGA);
 
     mClockGeneratorCDCM = new CDCM_Dev(spiFPGA, CDCM2_BASE_ADDR);
     // TODO: read back cdcm values or mClockGeneratorCDCM->Reset(30.72e6, 25e6);
@@ -110,7 +110,7 @@ LimeSDR_X3::LimeSDR_X3(
     soc.rxPathNames = { "None", "TDD", "FDD", "Calibration (LMS3)" };
     soc.txPathNames = { "None", "TDD", "FDD" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[1] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, spi_LMS7002M_2));
+    mLMS7002Mcomms[1] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2));
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
     mLMSChips.push_back(lms2);
 
@@ -119,7 +119,7 @@ LimeSDR_X3::LimeSDR_X3(
     soc.rxPathNames = { "None", "LNAH", "Calibration (LMS2)" };
     soc.txPathNames = { "None", "Band1" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[2] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, spi_LMS7002M_3));
+    mLMS7002Mcomms[2] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3));
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
     mLMSChips.push_back(lms3);
 
@@ -876,16 +876,16 @@ void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, 
 {
     switch (chipSelect)
     {
-    case spi_LMS7002M_1:
+    case SPI_LMS7002M_1:
         mLMS7002Mcomms[0]->SPI(MOSI, MISO, count);
         return;
-    case spi_LMS7002M_2:
+    case SPI_LMS7002M_2:
         mLMS7002Mcomms[1]->SPI(MOSI, MISO, count);
         return;
-    case spi_LMS7002M_3:
+    case SPI_LMS7002M_3:
         mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
         return;
-    case spi_FPGA:
+    case SPI_FPGA:
         fpgaPort->SPI(MOSI, MISO, count);
         return;
     default:
