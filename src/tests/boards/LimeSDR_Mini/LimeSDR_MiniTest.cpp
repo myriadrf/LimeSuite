@@ -41,10 +41,10 @@ MATCHER_P2(IsPayloadByteCorrect, index, byte, "Checks if the packet has the corr
 
 TEST(LimeSDR_Mini, Constructor)
 {
-    std::shared_ptr<FT601Mock> usbComms{ new FT601Mock() };
-    std::shared_ptr<USB_CSR_PipeMock> usbPipeMock{ new USB_CSR_PipeMock{} };
-    std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_USB(usbPipeMock) };
-    std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_USB(usbPipeMock) };
+    std::shared_ptr<FT601Mock> usbComms{ std::make_shared<FT601Mock>() };
+    std::shared_ptr<USB_CSR_PipeMock> usbPipeMock{ std::make_shared<USB_CSR_PipeMock>() };
+    std::shared_ptr<IComms> route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipeMock) };
+    std::shared_ptr<IComms> route_fpga{ std::make_shared<LMS64C_FPGA_Over_USB>(usbPipeMock) };
 
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;

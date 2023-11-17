@@ -40,12 +40,12 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
-    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("X8", "SDRDevice", this));
+    desc.socTree = std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("X8", "SDRDevice", this));
 
     mADF = new ADF4002();
     // TODO: readback board's reference clock
     mADF->Initialize(adfComms, 30.72e6);
-    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("ADF4002", "ADF4002", mADF)));
+    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("ADF4002", "ADF4002", mADF)));
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
