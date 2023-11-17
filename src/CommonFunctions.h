@@ -3,5 +3,5 @@
 #include <string>
 
 namespace lime {
-    const std::string strFormat(const char* format, ...);
+const std::string strFormat(const char* format, ...);
 }

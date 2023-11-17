@@ -12,7 +12,7 @@ namespace lime {
 enum eADC_UNITS { RAW, VOLTAGE, CURRENT, RESISTANCE, POWER, TEMPERATURE, ADC_UNITS_COUNT };
 
 static const std::array<std::string, ADC_UNITS_COUNT> ADC_UNITS_TEXT{ "", "V", "A", "Ohm", "W", "C" };
-static const std::string UNKNOWN {" unknown"};
+static const std::string UNKNOWN{ " unknown" };
 
 static const std::string& adcUnits2string(const unsigned units)
 {
@@ -20,7 +20,7 @@ static const std::string& adcUnits2string(const unsigned units)
     {
         return ADC_UNITS_TEXT.at(units);
     }
-    
+
     return UNKNOWN;
 }
 
