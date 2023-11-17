@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_USB_CSR_PIPE_H
+#define LIME_USB_CSR_PIPE_H
 
 #include "ISerialPort.h"
 
@@ -14,3 +15,5 @@ class USB_CSR_Pipe : public ISerialPort
 };
 
 } // namespace lime
+
+#endif // LIME_USB_CSR_PIPE_H

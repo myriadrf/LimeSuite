@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_LIMESDR_MINI_H
+#define LIME_LIMESDR_MINI_H
 
 #include "LMS7002M_SDRDevice.h"
 #include "limesuite/DeviceRegistry.h"
@@ -71,3 +72,5 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
 };
 
 } // namespace lime
+
+#endif // LIME_LIMESDR_MINI_H

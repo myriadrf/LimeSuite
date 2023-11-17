@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_LIMESDRENTRY_H
+#define LIME_LIMESDRENTRY_H
 
 #include "USBEntry.h"
 
@@ -16,3 +17,5 @@ class LimeSDREntry : public USBEntry
 };
 
 } // namespace lime
+
+#endif // LIME_LIMESDRENTRY_H

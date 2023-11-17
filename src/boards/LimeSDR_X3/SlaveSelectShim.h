@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIME_SLAVESELECTSHIM_H
+#define LIME_SLAVESELECTSHIM_H
+
 #include "limesuite/IComms.h"
 #include <memory>
 
@@ -19,3 +21,5 @@ class SlaveSelectShim : public ISPI
 };
 
 } // namespace lime
+
+#endif // LIME_SLAVESELECTSHIM_H

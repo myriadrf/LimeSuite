@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_USBTRANSFERCONTEXT_H
+#define LIME_USBTRANSFERCONTEXT_H
 
 #include <atomic>
 #include <condition_variable>
@@ -36,3 +37,5 @@ class USBTransferContext
 };
 
 } // namespace lime
+
+#endif // LIME_USBTRANSFERCONTEXT_H

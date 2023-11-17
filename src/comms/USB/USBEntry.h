@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_USBENTRY_H
+#define LIME_USBENTRY_H
 
 #include "limesuite/DeviceRegistry.h"
 #include "USBEntry.h"
@@ -54,3 +55,5 @@ class USBEntry : public DeviceRegistryEntry
 };
 
 } // namespace lime
+
+#endif // LIME_USBENTRY_H

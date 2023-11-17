@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIME_USBTRANSFERCONTEXT_FX3_H
+#define LIME_USBTRANSFERCONTEXT_FX3_H
+
 #include "USBTransferContext.h"
 
 #ifndef __unix__
@@ -27,3 +29,5 @@ class USBTransferContext_FX3 : public USBTransferContext
 };
 
 } // namespace lime
+
+#endif // LIME_USBTRANSFERCONTEXT_FX3_H

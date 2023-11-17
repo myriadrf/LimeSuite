@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_LIMESDR_MINI_ENTRY_H
+#define LIME_LIMESDR_MINI_ENTRY_H
 
 #include "USBEntry.h"
 #include "limesuite/DeviceHandle.h"
@@ -16,3 +17,5 @@ class LimeSDR_MiniEntry : public USBEntry
 };
 
 } // namespace lime
+
+#endif // LIME_LIMESDR_MINI_ENTRY_H
