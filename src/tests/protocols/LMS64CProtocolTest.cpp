@@ -28,32 +28,11 @@ MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct comma
     return packet->cmd == command;
 }
 
-MATCHER_P(IsStatusCorrect, status, "Checks if the packet has the correct status")
-{
-    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
-
-    return packet->status == status;
-}
-
 MATCHER_P(IsBlockCountCorrect, blockCount, "Checks if the packet has the correct block count")
 {
     LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
 
     return packet->blockCount == blockCount;
-}
-
-MATCHER_P(IsPeripheralIDCorrect, periphID, "Checks if the packet has the correct peripheral ID")
-{
-    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
-
-    return packet->blockCount == periphID;
-}
-
-MATCHER_P(IsSubdeviceCorrect, subDevice, "Checks if the packet has the correct subdevice")
-{
-    LMS64CPacket* packet = reinterpret_cast<LMS64CPacket*>(const_cast<uint8_t*>(arg));
-
-    return packet->subDevice == subDevice;
 }
 
 TEST(LMS64CProtocol, LMS7002MSPIEmptyTest)
