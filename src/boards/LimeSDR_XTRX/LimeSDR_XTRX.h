@@ -43,7 +43,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     virtual int CustomParameterWrite(
         const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
     virtual int CustomParameterRead(
-        const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units) override;
+        const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback);
 

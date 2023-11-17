@@ -154,7 +154,7 @@ int CustomParameterRead(ISerialPort& port,
     const int32_t* ids,
     double* values,
     const size_t count,
-    std::vector<std::string>& units,
+    std::vector<std::reference_wrapper<std::string>>& units,
     uint32_t subDevice = 0);
 
 typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress

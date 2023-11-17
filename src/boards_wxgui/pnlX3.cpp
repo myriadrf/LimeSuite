@@ -52,7 +52,7 @@ int pnlX3::LMS_WriteFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t 
     }
 }
 
-int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double val, const std::string& units)
+int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double val, const std::string& unitsofMeasurement)
 {
     if (device == nullptr)
     {
@@ -61,25 +61,24 @@ int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, 
 
     try
     {
-        return device->CustomParameterWrite(&param_id, &val, 1, units);
+        return device->CustomParameterWrite(&param_id, &val, 1, unitsofMeasurement);
     } catch (...)
     {
         return -1;
     }
 }
 
-int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double* val, std::string& units)
+int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double* val, std::string& unitsofMeasurement)
 {
     if (device == nullptr)
     {
         return -1;
     }
 
-    std::vector<std::string> str{ units };
+    std::vector<std::reference_wrapper<std::string>> units{ unitsofMeasurement };
     try
     {
-        int ret = device->CustomParameterRead(&param_id, val, 1, str);
-        units = str[0];
+        int ret = device->CustomParameterRead(&param_id, val, 1, units);
         return ret;
     } catch (...)
     {

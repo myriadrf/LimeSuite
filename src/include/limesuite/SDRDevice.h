@@ -290,7 +290,8 @@ class LIME_API SDRDevice
     @param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
     @return the operation success state
     */
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
+    virtual int CustomParameterRead(
+        const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units)
     {
         return -1;
     };

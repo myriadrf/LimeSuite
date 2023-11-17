@@ -74,12 +74,14 @@ const std::array<std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
     "LimeSDR XTRX",
     "LimeSDR MMX8" };
 
-static inline const std::string GetDeviceName(const eLMS_DEV device)
+static inline const std::string& GetDeviceName(const eLMS_DEV device)
 {
     if (LMS_DEV_UNKNOWN < device && device < LMS_DEV_COUNT)
-        return LMS_DEV_NAMES[device];
-    else
-        return LMS_DEV_NAMES[LMS_DEV_UNKNOWN];
+    {
+        return LMS_DEV_NAMES.at(device);
+    }
+
+    return LMS_DEV_NAMES.at(LMS_DEV_UNKNOWN);
 }
 
 enum eEXP_BOARD {
@@ -110,12 +112,14 @@ const std::array<std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
     "Myriad7 Novena",
 };
 
-static inline const std::string GetExpansionBoardName(const eEXP_BOARD board)
+static inline const std::string& GetExpansionBoardName(const eEXP_BOARD board)
 {
     if (EXP_BOARD_UNKNOWN < board && board < EXP_BOARD_COUNT)
-        return EXP_BOARD_NAMES[board];
-    else
-        return EXP_BOARD_NAMES[EXP_BOARD_UNKNOWN];
+    {
+        return EXP_BOARD_NAMES.at(board);
+    }
+
+    return EXP_BOARD_NAMES.at(EXP_BOARD_UNKNOWN);
 }
 
 } // namespace lime

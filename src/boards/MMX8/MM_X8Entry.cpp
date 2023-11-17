@@ -117,7 +117,7 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
         return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units, subdeviceIndex);
     };
     virtual int CustomParameterRead(
-        const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units) override
+        const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units) override
     {
         return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units, subdeviceIndex);
     }

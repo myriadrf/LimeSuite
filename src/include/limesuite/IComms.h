@@ -56,7 +56,8 @@ class IComms : public ISPI
     {
         return -1;
     };
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units)
+    virtual int CustomParameterRead(
+        const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units)
     {
         return -1;
     };

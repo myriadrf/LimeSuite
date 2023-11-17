@@ -69,7 +69,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     virtual int CustomParameterWrite(
         const int32_t* ids, const double* values, const size_t count, const std::string& units) override;
     virtual int CustomParameterRead(
-        const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units) override;
+        const int32_t* ids, double* values, const size_t count, std::vector<std::reference_wrapper<std::string>>& units) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback){};
     virtual void SetMessageLogCallback(LogCallbackType callback) override;

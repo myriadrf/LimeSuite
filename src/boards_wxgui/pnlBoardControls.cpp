@@ -67,13 +67,12 @@ static wxString power2unitsString(int powerx3)
 
 static int ReadCustomBoardParam(SDRDevice* device, int32_t parameterID, float_type* val, std::string& unitOfMeasurement)
 {
-    std::vector<std::string> units{ unitOfMeasurement };
+    std::vector<std::reference_wrapper<std::string>> units{ unitOfMeasurement };
     if (device == nullptr)
         return -1;
     try
     {
         int ret = device->CustomParameterRead(&parameterID, val, 1, units);
-        unitOfMeasurement = units[0];
         return ret;
     } catch (...)
     {

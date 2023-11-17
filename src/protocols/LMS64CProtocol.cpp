@@ -275,8 +275,12 @@ int CustomParameterWrite(
     return 0;
 }
 
-int CustomParameterRead(
-    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::vector<std::string>& units, uint32_t subDevice)
+int CustomParameterRead(ISerialPort& port,
+    const int32_t* ids,
+    double* values,
+    const size_t count,
+    std::vector<std::reference_wrapper<std::string>>& units,
+    uint32_t subDevice)
 {
     LMS64CPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
@@ -285,15 +289,23 @@ int CustomParameterRead(
     pkt.periphID = 0;
     pkt.subDevice = subDevice;
     int byteIndex = 0;
+
     for (size_t i = 0; i < count; ++i)
+    {
         pkt.payload[byteIndex++] = ids[i];
+    }
 
     int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
     if (sent != sizeof(pkt))
+    {
         throw std::runtime_error("CustomParameterRead write failed");
+    }
+
     int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
     if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+    {
         throw std::runtime_error("CustomParameterRead read failed");
+    }
 
     assert(pkt.blockCount == count);
 
@@ -303,11 +315,13 @@ int CustomParameterRead(
 
         if (unitsIndex & 0x0F)
         {
-            units[i] = ADC_UNITS_PREFIX[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
+            std::string& unit = units[i].get();
+            unit = ADC_UNITS_PREFIX[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
         }
         else
         {
-            units[i] += adcUnits2string((unitsIndex & 0xF0) >> 4);
+            std::string& unit = units[i].get();
+            unit += adcUnits2string((unitsIndex & 0xF0) >> 4);
         }
 
         if ((unitsIndex & 0xF0) >> 4 == RAW)
@@ -317,8 +331,11 @@ int CustomParameterRead(
         else
         {
             values[i] = (int16_t)(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+
             if ((unitsIndex & 0xF0) >> 4 == TEMPERATURE)
+            {
                 values[i] /= 10;
+            }
         }
     }
     return 0;
