@@ -7,14 +7,12 @@
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include <chrono>
-#include <iostream>
-#include <assert.h>
-#include <math.h>
+#include <cassert>
+#include <cmath>
 #include <algorithm>
-#include <iso646.h> // alternative operators for visual c++: not, and, or...
-#include <ADCUnits.h>
-#include <sstream>
-#include <string.h>
+#include <ciso646> // alternative operators for visual c++: not, and, or...
+#include "ADCUnits.h"
+#include <cstring>
 
 //! CMD_LMS7002_RST options
 const int LMS_RST_DEACTIVATE = 0;
@@ -25,22 +23,28 @@ namespace lime {
 
 LMS64CPacket::LMS64CPacket()
 {
-    memset(this, 0, sizeof(LMS64CPacket));
+    std::memset(this, 0, sizeof(LMS64CPacket));
 }
 
 namespace LMS64CProtocol {
 
-static const std::array<std::string, eCMD_STATUS::STATUS_COUNT> cmd_status_text = {
+static const std::array<std::string, eCMD_STATUS::STATUS_COUNT> COMMAND_STATUS_TEXT = {
     "Undefined/Failure", "Completed", "Unknown command", "Busy", "Too many blocks", "Error", "Wrong order", "Resource denied"
 };
 
-static inline const std::string status2string(const int status)
+static const std::string UNKNOWN{ "Unknown status" };
+
+static inline const std::string& status2string(const int status)
 {
     if (status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
-        return cmd_status_text[status];
-    else
-        return "Unknown status";
+    {
+        return COMMAND_STATUS_TEXT.at(status);
+    }
+
+    return UNKNOWN;
 }
+
+static const char ADC_UNITS_PREFIX[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
 
 static int SPI16(ISerialPort& port,
     uint8_t chipSelect,
@@ -299,8 +303,7 @@ int CustomParameterRead(
 
         if (unitsIndex & 0x0F)
         {
-            const char adc_units_prefix[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
-            units[i] = adc_units_prefix[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
+            units[i] = ADC_UNITS_PREFIX[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
         }
         else
         {
