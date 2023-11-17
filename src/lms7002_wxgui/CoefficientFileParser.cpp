@@ -217,7 +217,7 @@ int Parser::getcoeffs2(const char* filename, float* v1, float* v2, int max)
 // ***************************************************************
 // Saves given coefficients to fir file
 // ***************************************************************
-void Parser::saveToFile(const std::string& filename, const float* coefficients, int cCount)
+void Parser::saveToFile(const std::string& filename, const float* coefficients, int coefficientCount)
 {
     fstream fout;
     fout.open(filename, ios::out);
@@ -247,10 +247,10 @@ void Parser::saveToFile(const std::string& filename, const float* coefficients, 
     fout << "   REVISIONS:\t" << endl;
     fout << "   ****************************************************************** */" << endl << endl;
 
-    for (int i = 0; i < cCount; ++i)
+    for (int i = 0; i < coefficientCount; ++i)
     {
         fout << "\t" << std::fixed << coefficients[i];
-        if (i < cCount - 1)
+        if (i < coefficientCount - 1)
             fout << ',' << endl;
     }
     fout.close();

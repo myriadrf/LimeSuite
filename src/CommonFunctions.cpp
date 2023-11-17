@@ -4,9 +4,10 @@
 
 namespace lime {
 
+static constexpr uint BUFFER_SIZE = 256;
+
 const std::string strFormat(const char* format, ...)
 {
-    constexpr uint BUFFER_SIZE = 256;
     char ctemp[BUFFER_SIZE];
 
     va_list args;
