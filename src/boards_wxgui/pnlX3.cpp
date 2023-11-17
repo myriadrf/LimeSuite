@@ -494,7 +494,7 @@ void pnlX3::UpdatePanel()
     Lms1tx1En->SetValue((value >> 5) & 1);
 
     double dacVal = 0;
-    std::string empty = "";
+    std::string empty{ "" };
     LMS_ReadCustomBoardParam(device, 2, &dacVal, empty);
     spinDac1->SetValue((int)dacVal);
     LMS_ReadCustomBoardParam(device, 3, &dacVal, empty);

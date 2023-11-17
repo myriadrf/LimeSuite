@@ -16,4 +16,4 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
 
-lime::SDRDevice* ConnectUsingNameHint(const std::string name);
+lime::SDRDevice* ConnectUsingNameHint(const std::string& name);
