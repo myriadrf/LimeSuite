@@ -5,6 +5,7 @@ set(LIME_TEST_SUITE_SOURCES
     boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
     boards/LimeSDR_X3/SlaveSelectShimTest.cpp
     comms/USB/USB_CSR_Pipe_SDRTest.cpp
+    protocols/LMS64CProtocol/CustomParameterWriteTest.cpp
     protocols/LMS64CProtocol/DeviceResetTest.cpp
     protocols/LMS64CProtocol/FirmwareToDescriptorTest.cpp
     protocols/LMS64CProtocol/FPGA_SPITest.cpp
