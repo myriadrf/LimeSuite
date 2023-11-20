@@ -265,6 +265,29 @@ TEST(LMS64CProtocol, FPGASPINotFullyRead)
     EXPECT_EQ(returnValue, -1);
 }
 
+TEST(LMS64CProtocol, FPGASPIWrongStatus)
+{
+    ISerialPortMock mockPort{};
+    LMS64CPacket packet{};
+    packet.status = LMS64CProtocol::STATUS_UNKNOWN_CMD;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    ON_CALL(mockPort, Read(_, packetSize, _)).WillByDefault(Return(0));
+
+    EXPECT_CALL(mockPort, Write(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
+
+    uint32_t mosi = 1;
+    uint32_t miso = 2;
+
+    int returnValue = LMS64CProtocol::FPGA_SPI(mockPort, &mosi, &miso, 1);
+
+    EXPECT_EQ(returnValue, -1);
+}
+
 TEST(LMS64CProtocol, FPGASPINotFullyWrittenOnSecondCall)
 {
     ISerialPortMock mockPort{};

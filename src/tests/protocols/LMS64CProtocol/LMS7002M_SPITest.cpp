@@ -272,6 +272,29 @@ TEST(LMS64CProtocol, LMS7002MSPINotFullyRead)
     EXPECT_EQ(returnValue, -1);
 }
 
+TEST(LMS64CProtocol, LMS7002MSPIWrongStatus)
+{
+    ISerialPortMock mockPort{};
+    LMS64CPacket packet{};
+    packet.status = LMS64CProtocol::STATUS_ERROR_CMD;
+
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+
+    ON_CALL(mockPort, Read(_, packetSize, _)).WillByDefault(Return(0));
+
+    EXPECT_CALL(mockPort, Write(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
+
+    uint32_t mosi = 1;
+    uint32_t miso = 2;
+
+    int returnValue = LMS64CProtocol::LMS7002M_SPI(mockPort, 0, &mosi, &miso, 1);
+
+    EXPECT_EQ(returnValue, -1);
+}
+
 TEST(LMS64CProtocol, LMS7002MSPINotFullyWrittenOnSecondCall)
 {
     ISerialPortMock mockPort{};
