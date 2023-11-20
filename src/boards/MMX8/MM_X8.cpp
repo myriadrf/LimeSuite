@@ -289,7 +289,8 @@ int LimeSDR_MMX8::CustomParameterRead(std::vector<CustomParameterIO>& parameters
         else
             ret |= mMainFPGAcomms->CustomParameterRead(parameter);
 
-        param = parameter[0];
+        param.value = parameter[0].value;
+        param.units = parameter[0].units;
     }
 
     return ret;
