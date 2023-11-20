@@ -224,7 +224,9 @@ TEST(LMS64CProtocol, CustomParameterWriteWrongStatus)
 
     uint32_t subdevice = 1;
 
-    ON_CALL(mockPort, Read(_, packetSize, _)).WillByDefault(Return(0));
+    ON_CALL(mockPort, Read(_, packetSize, _))
+        .WillByDefault(DoAll(
+            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_WR), IsBlockCountCorrect(1), IsSubdeviceCorrect(subdevice)),
