@@ -257,7 +257,7 @@ int CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>
         pkt.periphID = 0;
         pkt.subDevice = subDevice;
         int byteIndex = 0;
-        const int maxBlocks = 14;
+        constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
 
         while (pkt.blockCount < maxBlocks && index < parameters.size())
         {
@@ -306,8 +306,7 @@ int CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& param
         pkt.periphID = 0;
         pkt.subDevice = subDevice;
         int byteIndex = 0;
-
-        const int maxBlocks = 14;
+        constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
 
         while (pkt.blockCount < maxBlocks && index < parameters.size())
         {
