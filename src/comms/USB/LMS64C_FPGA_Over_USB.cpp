@@ -38,15 +38,14 @@ int LMS64C_FPGA_Over_USB::GPIOWrite(const uint8_t* buffer, const size_t bufLengt
     return LMS64CProtocol::GPIOWrite(*pipe, buffer, bufLength);
 }
 
-int LMS64C_FPGA_Over_USB::CustomParameterWrite(
-    const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LMS64C_FPGA_Over_USB::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return LMS64CProtocol::CustomParameterWrite(*pipe, ids, values, count, units);
+    return LMS64CProtocol::CustomParameterWrite(*pipe, parameters);
 }
 
-int LMS64C_FPGA_Over_USB::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LMS64C_FPGA_Over_USB::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return LMS64CProtocol::CustomParameterRead(*pipe, ids, values, count, units);
+    return LMS64CProtocol::CustomParameterRead(*pipe, parameters);
 }
 
 int LMS64C_FPGA_Over_USB::ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
