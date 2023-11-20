@@ -20,6 +20,7 @@ build-linux:
     - ./.gitlab-ci/build-linux.sh
   rules:
     - changes:
+      - "**/CMakeLists.txt"
       - "**/*.h"
       - "**/*.c"
       - "**/*.cpp"

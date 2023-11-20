@@ -5,6 +5,9 @@
 */
 #pragma once
 
+#include <array>
+#include <string>
+
 namespace lime {
 
 enum eLMS_DEV {
@@ -41,7 +44,7 @@ enum eLMS_DEV {
     LMS_DEV_COUNT
 };
 
-const char LMS_DEV_NAMES[][80] = { "UNKNOWN",
+const std::array<std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
     "EVB6",
     "DigiGreen",
     "DigiRed",
@@ -71,12 +74,14 @@ const char LMS_DEV_NAMES[][80] = { "UNKNOWN",
     "LimeSDR XTRX",
     "LimeSDR MMX8" };
 
-static inline const char* GetDeviceName(const eLMS_DEV device)
+static inline const std::string& GetDeviceName(const eLMS_DEV device)
 {
     if (LMS_DEV_UNKNOWN < device && device < LMS_DEV_COUNT)
-        return LMS_DEV_NAMES[device];
-    else
-        return LMS_DEV_NAMES[LMS_DEV_UNKNOWN];
+    {
+        return LMS_DEV_NAMES.at(device);
+    }
+
+    return LMS_DEV_NAMES.at(LMS_DEV_UNKNOWN);
 }
 
 enum eEXP_BOARD {
@@ -94,7 +99,7 @@ enum eEXP_BOARD {
     EXP_BOARD_COUNT
 };
 
-const char EXP_BOARD_NAMES[][80] = {
+const std::array<std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
     "UNKNOWN",
     "UNSUPPORTED",
     "NOT AVAILABLE",
@@ -107,12 +112,14 @@ const char EXP_BOARD_NAMES[][80] = {
     "Myriad7 Novena",
 };
 
-static inline const char* GetExpansionBoardName(const eEXP_BOARD board)
+static inline const std::string& GetExpansionBoardName(const eEXP_BOARD board)
 {
     if (EXP_BOARD_UNKNOWN < board && board < EXP_BOARD_COUNT)
-        return EXP_BOARD_NAMES[board];
-    else
-        return EXP_BOARD_NAMES[EXP_BOARD_UNKNOWN];
+    {
+        return EXP_BOARD_NAMES.at(board);
+    }
+
+    return EXP_BOARD_NAMES.at(EXP_BOARD_UNKNOWN);
 }
 
 } // namespace lime

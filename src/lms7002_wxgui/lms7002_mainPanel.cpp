@@ -321,7 +321,7 @@ void lms7002_mainPanel::OnOpenProject(wxCommandEvent& event)
     }
     try
     {
-        if (chip->LoadConfig(dlg.GetPath().To8BitData()) != 0)
+        if (chip->LoadConfig(dlg.GetPath().ToStdString()) != 0)
             wxMessageBox(_("Failed to load file"), _("Warning"));
     } catch (std::runtime_error& e)
     {
@@ -346,7 +346,7 @@ void lms7002_mainPanel::OnSaveProject(wxCommandEvent& event)
         return;
     }
 
-    if (chip->SaveConfig(dlg.GetPath().To8BitData()) != 0)
+    if (chip->SaveConfig(dlg.GetPath().ToStdString()) != 0)
         wxMessageBox(_("Failed to save file"), _("Warning"));
 }
 

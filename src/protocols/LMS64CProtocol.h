@@ -144,14 +144,8 @@ int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
 int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
 int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
 
-int CustomParameterWrite(ISerialPort& port,
-    const int32_t* ids,
-    const double* values,
-    const size_t count,
-    const std::string& units,
-    uint32_t subDevice = 0);
-int CustomParameterRead(
-    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::string* units, uint32_t subDevice = 0);
+int CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
+int CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
 
 typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
 int ProgramWrite(ISerialPort& port,

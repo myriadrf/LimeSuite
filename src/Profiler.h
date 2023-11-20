@@ -2,6 +2,7 @@
 #define LIME_PROFILER_H
 
 #include <stdint.h>
+#include <string>
 #include <sys/types.h>
 #include <vector>
 
@@ -14,14 +15,14 @@ struct ProfilerEvent {
     int64_t startNano;
     int32_t duration;
     uint8_t category;
-    char name[32];
+    std::string name;
 };
 
 class ProfilerScope
 {
   public:
     ProfilerScope() = delete;
-    ProfilerScope(Profiler* p, const char* title, uint8_t cat = 0);
+    ProfilerScope(Profiler* p, const std::string& title, uint8_t cat = 0);
     ~ProfilerScope();
 
     Profiler* parent;

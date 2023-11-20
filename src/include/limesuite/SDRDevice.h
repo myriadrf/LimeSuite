@@ -272,25 +272,16 @@ class LIME_API SDRDevice
      **********************************************************************/
 
     /** @brief Sets custom on board control to given value units
-    @param ids indexes of selected controls
-    @param values new control values
-    @param count number of values to write
-    @param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
-    @return the operation success state
+    @param parameters A vector of parameters describing the parameter to write
+    @return The operation success state
     */
-    virtual int CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
-    {
-        return -1;
-    };
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
 
     /** @brief Returns value of custom on board control
-    @param ids indexes of controls to read
-    @param values retrieved control values
-    @param count number of values to read
-    @param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
-    @return the operation success state
+    @param parameters A vector of parameters describing the parameter to read
+    @return The operation success state
     */
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) { return -1; };
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
 
     /// @brief Sets callback function which gets called each time data is sent or received
     virtual void SetDataLogCallback(DataCallbackType callback){};
