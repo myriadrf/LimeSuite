@@ -169,7 +169,7 @@ void FirmwareToDescriptor(const FirmwareInfo& fw, SDRDevice::Descriptor& descrip
     {
         char strTemp[64];
         sprintf(strTemp, "Unknown (0x%X)", fw.expansionBoardId);
-        descriptor.name = std::string(strTemp);
+        descriptor.expansionName = std::string(strTemp);
     }
     else
         descriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(fw.expansionBoardId));
