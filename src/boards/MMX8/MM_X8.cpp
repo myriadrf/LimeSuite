@@ -253,33 +253,46 @@ void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
     return mSubDevices[index]->GetInternalChip(0);
 }
 
-int LimeSDR_MMX8::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LimeSDR_MMX8::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
     int ret = 0;
-    for (size_t i = 0; i < count; ++i)
+
+    for (const CustomParameterIO& param : parameters)
     {
-        int subModuleIndex = (ids[i] >> 8) - 1;
-        int id = ids[i] & 0xFF;
+        int subModuleIndex = (param.id >> 8) - 1;
+        int id = param.id & 0xFF;
+
+        std::vector<CustomParameterIO> parameter{ { id, param.value, param.units } };
+
         if (subModuleIndex >= 0)
-            ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(&id, &values[i], 1, units);
+            ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(parameter);
         else
-            ret |= mMainFPGAcomms->CustomParameterWrite(&id, &values[i], 1, units);
+            ret |= mMainFPGAcomms->CustomParameterWrite(parameter);
     }
+
     return ret;
 }
 
-int LimeSDR_MMX8::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LimeSDR_MMX8::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
     int ret = 0;
-    for (size_t i = 0; i < count; ++i)
+
+    for (CustomParameterIO& param : parameters)
     {
-        int subModuleIndex = (ids[i] >> 8) - 1;
-        int id = ids[i] & 0xFF;
+        int subModuleIndex = (param.id >> 8) - 1;
+        int id = param.id & 0xFF;
+
+        std::vector<CustomParameterIO> parameter{ { id, param.value, param.units } };
+
         if (subModuleIndex >= 0)
-            ret |= mSubDevices[subModuleIndex]->CustomParameterRead(&id, &values[i], 1, &units[i]);
+            ret |= mSubDevices[subModuleIndex]->CustomParameterRead(parameter);
         else
-            ret |= mMainFPGAcomms->CustomParameterRead(&id, &values[i], 1, &units[i]);
+            ret |= mMainFPGAcomms->CustomParameterRead(parameter);
+
+        param.value = parameter[0].value;
+        param.units = parameter[0].units;
     }
+
     return ret;
 }
 

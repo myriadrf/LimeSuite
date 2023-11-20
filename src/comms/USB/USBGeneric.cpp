@@ -170,7 +170,7 @@ void USBGeneric::Disconnect()
     // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
     const bool isBuggy_libusb_free_transfer = ver->major == 1 && ver->minor == 0 && ver->micro == 25;
 
-    if (isBuggy_libusb_free_transfer && contexts)
+    if (isBuggy_libusb_free_transfer)
     {
         for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
         {

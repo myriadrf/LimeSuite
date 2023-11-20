@@ -20,11 +20,11 @@ double LIME_API GetTimeSinceStartup()
     return chrono::duration_cast<chrono::microseconds>(chrono::steady_clock::now() - startupTime).count();
 }
 
-ProfilerScope::ProfilerScope(Profiler* p, const char* title, uint8_t cat)
+ProfilerScope::ProfilerScope(Profiler* p, const std::string& title, uint8_t cat)
     : parent(p)
 {
     evt.startNano = GetTimeSinceStartup();
-    strcpy(evt.name, title);
+    evt.name = title;
     evt.category = cat;
 }
 

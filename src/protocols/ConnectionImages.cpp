@@ -188,7 +188,7 @@ int LMS64CProtocol::ProgramUpdate(const bool download, const bool force, IConnec
         //open file
         std::ifstream file;
         const auto path = lime::locateImageResource(entry.gw_img);
-        file.open(path.c_str(), std::ios::in | std::ios::binary);
+        file.open(path, std::ios::in | std::ios::binary);
         if (not file.good())
             return lime::ReportError("Error opening %s", path.c_str());
 

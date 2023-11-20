@@ -99,25 +99,6 @@ LimeSDR_Mini::~LimeSDR_Mini()
     delete mFPGA;
 }
 
-// Verify and configure given settings
-// throw logic_error with description why the config is not possible
-inline bool InRange(double val, double min, double max)
-{
-    return val >= min ? val <= max : false;
-}
-
-static inline const std::string strFormat(const char* format, ...)
-{
-    char ctemp[256];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(ctemp, 256, format, args);
-    va_end(args);
-
-    return std::string(ctemp);
-}
-
 void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
     try
@@ -755,14 +736,14 @@ int LimeSDR_Mini::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
     return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
-int LimeSDR_Mini::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LimeSDR_Mini::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return mfpgaPort->CustomParameterWrite(ids, values, count, units);
+    return mfpgaPort->CustomParameterWrite(parameters);
 }
 
-int LimeSDR_Mini::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LimeSDR_Mini::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return mfpgaPort->CustomParameterRead(ids, values, count, units);
+    return mfpgaPort->CustomParameterRead(parameters);
 }
 
 int LimeSDR_Mini::ReadFPGARegister(uint32_t address)

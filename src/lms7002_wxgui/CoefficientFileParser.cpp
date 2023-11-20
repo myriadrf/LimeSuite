@@ -217,37 +217,40 @@ int Parser::getcoeffs2(const char* filename, float* v1, float* v2, int max)
 // ***************************************************************
 // Saves given coefficients to fir file
 // ***************************************************************
-void Parser::saveToFile(const char* filename, const float* coefficients, int cCount)
+void Parser::saveToFile(const std::string& filename, const float* coefficients, int coefficientCount)
 {
     fstream fout;
     fout.open(filename, ios::out);
 
-    char fname[81];
-    char* name_pos = 0;
+    std::string fname;
+    std::size_t name_pos = filename.rfind('\\');
 
-    name_pos = strrchr((char*)filename, '\\');
-    if (name_pos == NULL)
-        name_pos = strrchr((char*)filename, '/');
+    if (name_pos == std::string::npos)
+    {
+        name_pos = filename.rfind('/');
+    }
 
     fout << "/* ******************************************************************" << endl;
     fout << "   FILE:\t";
-    if (name_pos != NULL)
+    if (name_pos != std::string::npos)
     {
-        strncpy(fname, name_pos + 1, 80);
-        fname[80] = '\0';
+        fname = filename.substr(name_pos + 1);
         fout << fname << endl;
     }
     else
+    {
         fout << "???" << endl;
+    }
+
     fout << "   DESCRIPTION:\t" << endl;
     fout << "   DATE:\t" << endl;
     fout << "   REVISIONS:\t" << endl;
     fout << "   ****************************************************************** */" << endl << endl;
 
-    for (int i = 0; i < cCount; ++i)
+    for (int i = 0; i < coefficientCount; ++i)
     {
         fout << "\t" << std::fixed << coefficients[i];
-        if (i < cCount - 1)
+        if (i < coefficientCount - 1)
             fout << ',' << endl;
     }
     fout.close();

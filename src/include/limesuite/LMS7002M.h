@@ -147,8 +147,8 @@ class LIME_API LMS7002M
     int SoftReset();
     int ResetLogicregisters();
 
-    int LoadConfig(const char* filename, bool tuneDynamicValues = true);
-    int SaveConfig(const char* filename);
+    int LoadConfig(const std::string& filename, bool tuneDynamicValues = true);
+    int SaveConfig(const std::string& filename);
     ///@}
 
     ///@name Registers writing and reading
@@ -158,7 +158,7 @@ class LIME_API LMS7002M
     int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
     int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
-    int RegistersTest(const char* fileName = "registersTest.txt");
+    int RegistersTest(const std::string& fileName = "registersTest.txt");
     static const LMS7Parameter* GetParam(const std::string& name);
     ///@}
 
@@ -539,7 +539,7 @@ class LIME_API LMS7002M
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];
     double _cachedRefClockRate;
-    int LoadConfigLegacyFile(const char* filename);
+    int LoadConfigLegacyFile(const std::string& filename);
 };
 } // namespace lime
 #endif

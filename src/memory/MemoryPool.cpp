@@ -2,7 +2,7 @@
 #include <cstring>
 
 namespace lime {
-MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const char* name)
+MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)
     : name(name)
     , allocCnt(0)
     , freeCnt(0)

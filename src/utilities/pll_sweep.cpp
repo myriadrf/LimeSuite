@@ -22,7 +22,7 @@ int printHelp(void);
 
 int log_level = 3;
 
-void log_func(const lime::LogLevel level, const char* message)
+void log_func(const lime::LogLevel level, const std::string& message)
 {
     if (level <= log_level)
         std::cout << message << std::endl;

@@ -13,6 +13,7 @@
 #include "LMS64CProtocol.h"
 #include "DSP/Equalizer.h"
 #include "limesuite/DeviceNode.h"
+#include "CommonFunctions.h"
 #include "SlaveSelectShim.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
@@ -156,22 +157,6 @@ LimeSDR_X3::~LimeSDR_X3()
     delete mFPGA;
 }
 
-inline bool InRange(double val, double min, double max)
-{
-    return val >= min ? val <= max : false;
-}
-
-static inline const std::string strFormat(const char* format, ...)
-{
-    char ctemp[256];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(ctemp, 256, format, args);
-    va_end(args);
-    return std::string(ctemp);
-}
-
 // Setup default register values specifically for onboard LMS1 chip
 int LimeSDR_X3::InitLMS1(bool skipTune)
 {
@@ -179,8 +164,8 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     LMS1_PA_Enable(1, false);
 
     double dacVal = 65535;
-    CustomParameterWrite(&cp_lms1_tx1dac.id, &dacVal, 1, "");
-    CustomParameterWrite(&cp_lms1_tx2dac.id, &dacVal, 1, "");
+    const std::vector<CustomParameterIO> params{ { cp_lms1_tx1dac.id, dacVal, "" }, { cp_lms1_tx2dac.id, dacVal, "" } };
+    CustomParameterWrite(params);
 
     struct regVal {
         uint16_t adr;
@@ -1275,14 +1260,14 @@ void LimeSDR_X3::LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz)
         throw std::runtime_error("CDCM is not locked");
 }
 
-int LimeSDR_X3::CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LimeSDR_X3::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterWrite(ids, values, count, units);
+    return fpgaPort->CustomParameterWrite(parameters);
 }
 
-int LimeSDR_X3::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterRead(ids, values, count, units);
+    return fpgaPort->CustomParameterRead(parameters);
 }
 
 bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)

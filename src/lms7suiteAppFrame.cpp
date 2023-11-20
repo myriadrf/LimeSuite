@@ -349,12 +349,12 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
     wxQueueEvent(obj_ptr, evt);
 }
 
-void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const char* title)
+void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const std::string& title)
 {
     wxWindowID moduleId = module->GetId();
     printf("Add module %i\n", moduleId);
     wxMenuItem* item;
-    item = new wxMenuItem(mnuModules, moduleId, wxString(title), wxEmptyString, wxITEM_NORMAL);
+    item = new wxMenuItem(mnuModules, moduleId, title, wxEmptyString, wxITEM_NORMAL);
     mnuModules->Append(item);
 
     mModules[moduleId] = module;

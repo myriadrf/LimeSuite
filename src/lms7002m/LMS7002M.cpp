@@ -435,7 +435,7 @@ int LMS7002M::SoftReset()
     return 0;
 }
 
-int LMS7002M::LoadConfigLegacyFile(const char* filename)
+int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
 {
     ifstream f(filename);
     if (f.good() == false) //file not found
@@ -619,7 +619,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     @param filename Configuration source file
     @return 0-success, other-failure
 */
-int LMS7002M::LoadConfig(const char* filename, bool tuneDynamicValues)
+int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
 {
     ifstream f(filename);
     if (f.good() == false) //file not found
@@ -760,7 +760,7 @@ int LMS7002M::ResetLogicregisters()
     @param filename destination filename
     @return 0-success, other failure
 */
-int LMS7002M::SaveConfig(const char* filename)
+int LMS7002M::SaveConfig(const std::string& filename)
 {
     ofstream fout;
     fout.open(filename);
@@ -2393,7 +2393,7 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
 /** @brief Performs registers test by writing known data and confirming readback data
     @return 0-registers test passed, other-failure
 */
-int LMS7002M::RegistersTest(const char* fileName)
+int LMS7002M::RegistersTest(const std::string& fileName)
 {
     char chex[16];
     if (!controlPort)
@@ -2469,7 +2469,7 @@ int LMS7002M::RegistersTest(const char* fileName)
         RxGFIR3c,
         LimeLight,
         LDO };
-    const char* moduleNames[] = { "AFE",
+    const std::string moduleNames[] = { "AFE",
         "BIAS",
         "XBUF",
         "CGEN",
@@ -2533,7 +2533,7 @@ int LMS7002M::RegistersTest(const char* fileName)
     SPI_write_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size(), true);
     this->SetActiveChannel(ch);
 
-    if (fileName)
+    if (!fileName.empty())
     {
         fstream fout;
         fout.open(fileName, ios::out);

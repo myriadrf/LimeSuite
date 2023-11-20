@@ -130,29 +130,46 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
     if (mDevice)
     {
         const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
-        if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
+
+        if (desc.name.find(lime::GetDeviceName(lime::LMS_DEV_LIMESDR)) != std::string::npos)
         {
             if (deviceSelection.find("FPGA") != wxString::npos)
+            {
                 wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
+            }
             else
+            {
                 wildcards = "img(*.img)|*.img|All files(*.*)|*.*";
+            }
         }
-        else if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)))
+        else if (desc.name.find(lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) != std::string::npos)
+        {
             wildcards = "bit(*.bit)|*.bit|All files(*.*)|*.*";
-        else if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
+        }
+        else if (desc.name.find(lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)) != std::string::npos)
+        {
             wildcards = "rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
-        else if (strstr(desc.name.c_str(), lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE)))
+        }
+        else if (desc.name.find(lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE)) != std::string::npos)
+        {
             wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
+        }
     }
     else if (deviceSelection.find("FPGA") != wxString::npos)
+    {
         wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*";
+    }
     else
+    {
         wildcards = "img(*.img)|*.img|rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
+    }
 
     wxFileDialog dlg(this, _("Select file"), _(""), _(""), wildcards, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
     if (dlg.ShowModal() == wxID_CANCEL)
+    {
         return;
+    }
 
     lblFilename->SetLabel(dlg.GetPath());
 }
