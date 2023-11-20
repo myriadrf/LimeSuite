@@ -52,7 +52,7 @@ int pnlX3::LMS_WriteFPGAReg(lime::SDRDevice* device, uint32_t address, uint16_t 
     }
 }
 
-int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double val, const std::string& unitsofMeasurement)
+int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, const std::vector<CustomParameterIO>& parameters)
 {
     if (device == nullptr)
     {
@@ -61,14 +61,14 @@ int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, int32_t param_id, 
 
     try
     {
-        return device->CustomParameterWrite(param_id, val, unitsofMeasurement);
+        return device->CustomParameterWrite(parameters);
     } catch (...)
     {
         return -1;
     }
 }
 
-int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, double& val, std::string& unitsofMeasurement)
+int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, std::vector<CustomParameterIO>& parameters)
 {
     if (device == nullptr)
     {
@@ -77,7 +77,7 @@ int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, int32_t param_id, d
 
     try
     {
-        int ret = device->CustomParameterRead(param_id, val, unitsofMeasurement);
+        int ret = device->CustomParameterRead(parameters);
         return ret;
     } catch (...)
     {
@@ -445,10 +445,8 @@ void pnlX3::OnInputChange(wxCommandEvent& event)
 
 void pnlX3::OnDacChange(wxCommandEvent& event)
 {
-    LMS_WriteCustomBoardParam(device, 2, spinDac1->GetValue(), "");
-    LMS_WriteCustomBoardParam(device, 3, spinDac2->GetValue(), "");
-
-    return;
+    LMS_WriteCustomBoardParam(
+        device, { { 2, static_cast<double>(spinDac1->GetValue()), "" }, { 3, static_cast<double>(spinDac2->GetValue()), "" } });
 }
 
 void pnlX3::UpdatePanel()
@@ -491,12 +489,12 @@ void pnlX3::UpdatePanel()
     Lms1tx2En->SetValue((value >> 4) & 1);
     Lms1tx1En->SetValue((value >> 5) & 1);
 
-    double dacVal = 0;
-    std::string empty{ "" };
-    LMS_ReadCustomBoardParam(device, 2, dacVal, empty);
-    spinDac1->SetValue((int)dacVal);
-    LMS_ReadCustomBoardParam(device, 3, dacVal, empty);
-    spinDac2->SetValue((int)dacVal);
+    std::vector<CustomParameterIO> params{ { 2, 0, "" }, { 3, 0, "" } };
+
+    LMS_ReadCustomBoardParam(device, params);
+
+    spinDac1->SetValue(static_cast<int>(params[0].value));
+    spinDac2->SetValue(static_cast<int>(params[1].value));
 }
 
 void pnlX3::OnReadAll(wxCommandEvent& event)

@@ -42,6 +42,12 @@ class LIME_API II2C
     virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
 };
 
+struct CustomParameterIO {
+    int32_t id;
+    double value;
+    std::string units;
+};
+
 class IComms : public ISPI
 {
   public:
@@ -52,8 +58,8 @@ class IComms : public ISPI
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    virtual int CustomParameterWrite(const int32_t id, const double value, const std::string& units) { return -1; };
-    virtual int CustomParameterRead(const int32_t id, double& value, std::string& units) { return -1; };
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
 
     typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
     virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)

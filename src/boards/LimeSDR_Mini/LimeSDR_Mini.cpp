@@ -737,14 +737,14 @@ int LimeSDR_Mini::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
     return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
-int LimeSDR_Mini::CustomParameterWrite(const int32_t id, const double value, const std::string& units)
+int LimeSDR_Mini::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return mfpgaPort->CustomParameterWrite(id, value, units);
+    return mfpgaPort->CustomParameterWrite(parameters);
 }
 
-int LimeSDR_Mini::CustomParameterRead(const int32_t id, double& value, std::string& units)
+int LimeSDR_Mini::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return mfpgaPort->CustomParameterRead(id, value, units);
+    return mfpgaPort->CustomParameterRead(parameters);
 }
 
 int LimeSDR_Mini::ReadFPGARegister(uint32_t address)

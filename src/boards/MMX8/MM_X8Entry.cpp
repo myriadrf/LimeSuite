@@ -111,13 +111,13 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
         LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
 
-    virtual int CustomParameterWrite(const int32_t id, const double value, const std::string& units) override
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override
     {
-        return LMS64CProtocol::CustomParameterWrite(pipe, id, value, units, subdeviceIndex);
+        return LMS64CProtocol::CustomParameterWrite(pipe, parameters, subdeviceIndex);
     };
-    virtual int CustomParameterRead(const int32_t id, double& value, std::string& units) override
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override
     {
-        return LMS64CProtocol::CustomParameterRead(pipe, id, value, units, subdeviceIndex);
+        return LMS64CProtocol::CustomParameterRead(pipe, parameters, subdeviceIndex);
     }
     virtual int ProgramWrite(
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override

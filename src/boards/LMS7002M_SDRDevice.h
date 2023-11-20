@@ -60,8 +60,8 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int CustomParameterWrite(const int32_t id, const double value, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t id, double& value, std::string& units) override;
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback) override;
     virtual void SetMessageLogCallback(LogCallbackType callback) override;

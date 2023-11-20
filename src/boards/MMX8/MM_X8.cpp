@@ -253,30 +253,46 @@ void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
     return mSubDevices[index]->GetInternalChip(0);
 }
 
-int LimeSDR_MMX8::CustomParameterWrite(const int32_t id, const double value, const std::string& units)
+int LimeSDR_MMX8::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    int subModuleIndex = (id >> 8) - 1;
-    int sendId = id & 0xFF;
+    int ret = 0;
 
-    if (subModuleIndex >= 0)
+    for (const CustomParameterIO& param : parameters)
     {
-        return mSubDevices[subModuleIndex]->CustomParameterWrite(sendId, value, units);
+        int subModuleIndex = (param.id >> 8) - 1;
+        int id = param.id & 0xFF;
+
+        std::vector<CustomParameterIO> parameter{ { id, param.value, param.units } };
+
+        if (subModuleIndex >= 0)
+            ret |= mSubDevices[subModuleIndex]->CustomParameterWrite(parameter);
+        else
+            ret |= mMainFPGAcomms->CustomParameterWrite(parameter);
     }
 
-    return mMainFPGAcomms->CustomParameterWrite(sendId, value, units);
+    return ret;
 }
 
-int LimeSDR_MMX8::CustomParameterRead(const int32_t id, double& value, std::string& units)
+int LimeSDR_MMX8::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    int subModuleIndex = (id >> 8) - 1;
-    int sendId = id & 0xFF;
+    int ret = 0;
 
-    if (subModuleIndex >= 0)
+    for (CustomParameterIO& param : parameters)
     {
-        return mSubDevices[subModuleIndex]->CustomParameterRead(sendId, value, units);
+        int subModuleIndex = (param.id >> 8) - 1;
+        int id = param.id & 0xFF;
+
+        std::vector<CustomParameterIO> parameter{ { id, param.value, param.units } };
+
+        if (subModuleIndex >= 0)
+            ret |= mSubDevices[subModuleIndex]->CustomParameterRead(parameter);
+        else
+            ret |= mMainFPGAcomms->CustomParameterRead(parameter);
+
+        param = parameter[0];
     }
 
-    return mMainFPGAcomms->CustomParameterRead(sendId, value, units);
+    return ret;
 }
 
 bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)

@@ -1145,7 +1145,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                     // TODO: this is board specific, need general API
                     int32_t paramId = 2 + ch;
                     std::string units = "";
-                    s->device[p]->CustomParameterWrite(paramId, dac, units);
+                    s->device[p]->CustomParameterWrite({ { paramId, dac, units } });
                 }
             }
 

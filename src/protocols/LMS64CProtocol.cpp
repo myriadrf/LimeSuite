@@ -242,93 +242,105 @@ int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count)
     return -1;
 }
 
-int CustomParameterWrite(ISerialPort& port, const int32_t id, const double value, const std::string& units, uint32_t subDevice)
+int CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>& parameters, uint32_t subDevice)
 {
     LMS64CPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_WR;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 1;
-    pkt.periphID = 0;
-    pkt.subDevice = subDevice;
-    int byteIndex = 0;
+    std::size_t index = 0;
 
-    pkt.payload[byteIndex++] = id;
-    int powerOf10 = 0;
-    if (value > 65535.0 && (units != ""))
+    while (index < parameters.size())
     {
-        powerOf10 = log10(value / 65.536) / 3;
-    }
+        pkt.cmd = CMD_ANALOG_VAL_WR;
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = 0;
+        pkt.subDevice = subDevice;
+        int byteIndex = 0;
+        const int maxBlocks = 14;
 
-    if (value < 65.536 && (units != ""))
-    {
-        powerOf10 = log10(value / 65535.0) / 3;
-    }
+        while (pkt.blockCount < maxBlocks && index < parameters.size())
+        {
+            pkt.payload[byteIndex++] = parameters[index].id;
+            int powerOf10 = 0;
 
-    int unitsId = 0; // need to convert given units to their enum
-    pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
-    int realValue = value / pow(10, 3 * powerOf10);
-    pkt.payload[byteIndex++] = (realValue >> 8);
-    pkt.payload[byteIndex++] = (realValue & 0xFF);
+            if (parameters[index].value > 65535.0 && (parameters[index].units != ""))
+                powerOf10 = log10(parameters[index].value / 65.536) / 3;
 
-    int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-    if (sent != sizeof(pkt))
-    {
-        throw std::runtime_error("CustomParameterWrite write failed");
-    }
+            if (parameters[index].value < 65.536 && (parameters[index].units != ""))
+                powerOf10 = log10(parameters[index].value / 65535.0) / 3;
 
-    int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-    if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-    {
-        throw std::runtime_error("CustomParameterWrite read failed");
+            int unitsId = 0; // need to convert given units to their enum
+            pkt.payload[byteIndex++] = unitsId << 4 | powerOf10;
+
+            int value = parameters[index].value / pow(10, 3 * powerOf10);
+            pkt.payload[byteIndex++] = (value >> 8);
+            pkt.payload[byteIndex++] = (value & 0xFF);
+
+            ++pkt.blockCount;
+            ++index;
+        }
+
+        int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            throw std::runtime_error("CustomParameterWrite write failed");
+
+        int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+            throw std::runtime_error("CustomParameterWrite read failed");
     }
 
     return 0;
 }
 
-int CustomParameterRead(ISerialPort& port, const int32_t id, double& value, std::string& units, uint32_t subDevice)
+int CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& parameters, uint32_t subDevice)
 {
     LMS64CPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_RD;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 1;
-    pkt.periphID = 0;
-    pkt.subDevice = subDevice;
-    pkt.payload[0] = id;
+    std::size_t index = 0;
 
-    int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-    if (sent != sizeof(pkt))
+    while (index < parameters.size())
     {
-        throw std::runtime_error("CustomParameterRead write failed");
-    }
+        pkt.cmd = CMD_ANALOG_VAL_RD;
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = 0;
+        pkt.subDevice = subDevice;
+        int byteIndex = 0;
 
-    int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
-    if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
-    {
-        throw std::runtime_error("CustomParameterRead read failed");
-    }
+        const int maxBlocks = 14;
 
-    int unitsIndex = pkt.payload[1];
-
-    if (unitsIndex & 0x0F)
-    {
-        units = ADC_UNITS_PREFIX[unitsIndex & 0x0F] + adcUnits2string((unitsIndex & 0xF0) >> 4);
-    }
-    else
-    {
-        units += adcUnits2string((unitsIndex & 0xF0) >> 4);
-    }
-
-    if ((unitsIndex & 0xF0) >> 4 == RAW)
-    {
-        value = static_cast<uint16_t>(pkt.payload[2] << 8 | pkt.payload[3]);
-    }
-    else
-    {
-        value = static_cast<uint16_t>(pkt.payload[2] << 8 | pkt.payload[3]);
-
-        if ((unitsIndex & 0xF0) >> 4 == TEMPERATURE)
+        while (pkt.blockCount < maxBlocks && index < parameters.size())
         {
-            value /= 10;
+            pkt.payload[byteIndex++] = parameters[index].id;
+            ++pkt.blockCount;
+            ++index;
+        }
+
+        int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            throw std::runtime_error("CustomParameterRead write failed");
+
+        int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
+            throw std::runtime_error("CustomParameterRead read failed");
+
+        for (std::size_t i = 0; i < pkt.blockCount; ++i)
+        {
+            int unitsIndex = pkt.payload[i * 4 + 1];
+            std::size_t parameterIndex = index - pkt.blockCount + i;
+
+            if (unitsIndex & 0x0F)
+                parameters[parameterIndex].units = ADC_UNITS_PREFIX[unitsIndex & 0x0F];
+
+            parameters[parameterIndex].units += adcUnits2string((unitsIndex & 0xF0) >> 4);
+
+            if ((unitsIndex & 0xF0) >> 4 == RAW)
+                parameters[parameterIndex].value = static_cast<uint16_t>(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+            else
+            {
+                parameters[parameterIndex].value = static_cast<int16_t>(pkt.payload[i * 4 + 2] << 8 | pkt.payload[i * 4 + 3]);
+
+                if ((unitsIndex & 0xF0) >> 4 == TEMPERATURE)
+                    parameters[parameterIndex].value /= 10;
+            }
         }
     }
 

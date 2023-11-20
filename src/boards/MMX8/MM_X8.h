@@ -66,8 +66,8 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
     virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) override;
 
-    virtual int CustomParameterWrite(const int32_t id, const double value, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t id, double& value, std::string& units) override;
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback){};
     virtual void SetMessageLogCallback(LogCallbackType callback) override;

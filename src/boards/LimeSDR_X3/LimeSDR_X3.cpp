@@ -182,8 +182,8 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     LMS1_PA_Enable(1, false);
 
     double dacVal = 65535;
-    CustomParameterWrite(cp_lms1_tx1dac.id, dacVal, "");
-    CustomParameterWrite(cp_lms1_tx2dac.id, dacVal, "");
+    const std::vector<CustomParameterIO> params{ { cp_lms1_tx1dac.id, dacVal, "" }, { cp_lms1_tx2dac.id, dacVal, "" } };
+    CustomParameterWrite(params);
 
     struct regVal {
         uint16_t adr;
@@ -1278,14 +1278,14 @@ void LimeSDR_X3::LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz)
         throw std::runtime_error("CDCM is not locked");
 }
 
-int LimeSDR_X3::CustomParameterWrite(const int32_t id, const double value, const std::string& units)
+int LimeSDR_X3::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterWrite(id, value, units);
+    return fpgaPort->CustomParameterWrite(parameters);
 }
 
-int LimeSDR_X3::CustomParameterRead(const int32_t id, double& value, std::string& units)
+int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterRead(id, value, units);
+    return fpgaPort->CustomParameterRead(parameters);
 }
 
 bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)

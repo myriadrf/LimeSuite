@@ -40,8 +40,8 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int CustomParameterWrite(const int32_t id, const double value, const std::string& units) override;
-    virtual int CustomParameterRead(const int32_t id, double& value, std::string& units) override;
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback);
 
