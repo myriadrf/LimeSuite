@@ -75,7 +75,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     enum class ePathLMS2_Rx : uint8_t { NONE, TDD, FDD, CALIBRATION };
     enum class ePathLMS2_Tx : uint8_t { NONE, TDD, FDD };
 
-    enum class eMemoryDevice : uint32_t { FPGA_RAM, FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_RAM, FPGA_FLASH, COUNT };
 
   private:
     void ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex);

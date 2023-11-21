@@ -335,7 +335,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     }
     verbose_printf("Rx calibration using %s loopback\n", (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-        ch == static_cast<uint16_t>(Channel::ChA) ? "A" : "B",
+        ch == static_cast<uint8_t>(Channel::ChA) ? "A" : "B",
         rxFreq / 1e6,
         bandwidth_Hz / 1e6,
         lnaName,

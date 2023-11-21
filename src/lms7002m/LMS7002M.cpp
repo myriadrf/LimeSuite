@@ -259,13 +259,13 @@ void LMS7002M::SetActiveChannel(const Channel ch)
 {
     if (ch == this->GetActiveChannel(false))
         return;
-    this->Modify_SPI_Reg_bits(LMS7param(MAC), int(ch));
+    this->Modify_SPI_Reg_bits(LMS7param(MAC), static_cast<uint16_t>(ch));
 }
 
 LMS7002M::Channel LMS7002M::GetActiveChannel(bool fromChip)
 {
     auto ch = Get_SPI_Reg_bits(LMS7param(MAC), fromChip);
-    return Channel(ch);
+    return static_cast<Channel>(ch);
 }
 
 size_t LMS7002M::GetActiveChannelIndex(bool fromChip)

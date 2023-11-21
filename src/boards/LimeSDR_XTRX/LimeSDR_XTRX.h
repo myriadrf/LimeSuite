@@ -55,7 +55,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     enum class ePathLMS1_Rx : uint8_t { NONE, LNAH, LNAL, LNAW };
     enum class ePathLMS1_Tx : uint8_t { NONE, BAND1, BAND2 };
 
-    enum class eMemoryDevice : uint32_t { FPGA_RAM, FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_RAM, FPGA_FLASH, COUNT };
 
   private:
     std::shared_ptr<IComms> lms7002mPort;

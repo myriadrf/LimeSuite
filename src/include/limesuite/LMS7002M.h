@@ -96,7 +96,7 @@ class LIME_API LMS7002M
      * Enum for configuring the channel selection.
      * @see MAC register
      */
-    enum class Channel : uint16_t {
+    enum class Channel : uint8_t {
         ChA = 1U,
         ChB = 2U,
         ChAB = 3U,
