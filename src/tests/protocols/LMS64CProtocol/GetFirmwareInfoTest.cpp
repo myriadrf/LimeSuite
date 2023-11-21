@@ -17,14 +17,14 @@ static constexpr std::size_t packetSize = sizeof(LMS64CPacket);
 
 MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct command")
 {
-    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
+    auto packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->cmd == command;
 }
 
 MATCHER_P(IsSubdeviceCorrect, subDevice, "Checks if the packet has the correct subdevice")
 {
-    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
+    auto packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->subDevice == subDevice;
 }

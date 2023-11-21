@@ -23,21 +23,21 @@ static constexpr std::size_t packetSize = sizeof(LMS64CPacket);
 
 MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct command")
 {
-    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
+    auto packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->cmd == command;
 }
 
 MATCHER_P(IsBlockCountCorrect, blockCount, "Checks if the packet has the correct block count")
 {
-    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
+    auto packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->blockCount == blockCount;
 }
 
 MATCHER_P(IsPeripheralIDCorrect, periphID, "Checks if the packet has the correct peripheral ID")
 {
-    const LMS64CPacket* packet = reinterpret_cast<const LMS64CPacket*>(arg);
+    auto packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
     return packet->periphID == periphID;
 }
