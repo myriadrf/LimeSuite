@@ -9,8 +9,8 @@ class SPIToSDR : public lime::ISPI
 {
   public:
     SPIToSDR(lime::SDRDevice& sdr, uint32_t spiDefaultSlave);
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count);
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count);
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count);
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count);
 
   private:
     lime::SDRDevice& device;

@@ -8,14 +8,14 @@ LMS64C_LMS7002M_Over_USB::LMS64C_LMS7002M_Over_USB(std::shared_ptr<USB_CSR_Pipe>
 {
 }
 
-void LMS64C_LMS7002M_Over_USB::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_LMS7002M_Over_USB::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::LMS7002M_SPI(*pipe, 0, MOSI, MISO, count);
+    return LMS64CProtocol::LMS7002M_SPI(*pipe, 0, MOSI, MISO, count);
 }
 
-void LMS64C_LMS7002M_Over_USB::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_LMS7002M_Over_USB::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::LMS7002M_SPI(*pipe, spiBusAddress, MOSI, MISO, count);
+    return LMS64CProtocol::LMS7002M_SPI(*pipe, spiBusAddress, MOSI, MISO, count);
 }
 
 int LMS64C_LMS7002M_Over_USB::ResetDevice(int chipSelect)

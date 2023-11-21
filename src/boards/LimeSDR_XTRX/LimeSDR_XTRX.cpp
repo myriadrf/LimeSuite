@@ -387,16 +387,14 @@ void LimeSDR_XTRX::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
 }
 
-void LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     switch (chipSelect)
     {
     case SPI_LMS7002M:
-        lms7002mPort->SPI(MOSI, MISO, count);
-        return;
+        return lms7002mPort->SPI(MOSI, MISO, count);
     case SPI_FPGA:
-        fpgaPort->SPI(MOSI, MISO, count);
-        return;
+        return fpgaPort->SPI(MOSI, MISO, count);
     default:
         throw std::logic_error("invalid SPI chip select");
     }

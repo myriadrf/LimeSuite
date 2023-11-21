@@ -231,7 +231,7 @@ class LIME_API SDRDevice
         return -1;
     }
 
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
     virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
 

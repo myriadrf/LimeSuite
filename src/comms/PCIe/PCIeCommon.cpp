@@ -21,15 +21,14 @@ LMS64C_LMS7002M_Over_PCIe::LMS64C_LMS7002M_Over_PCIe(std::shared_ptr<LitePCIe> d
 {
 }
 
-void LMS64C_LMS7002M_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_LMS7002M_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    SPI(0, MOSI, MISO, count);
-    return;
+    return SPI(0, MOSI, MISO, count);
 }
-void LMS64C_LMS7002M_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+
+int LMS64C_LMS7002M_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-    return;
+    return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
 }
 
 LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
@@ -37,14 +36,14 @@ LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
 {
 }
 
-void LMS64C_FPGA_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_FPGA_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    SPI(0, MOSI, MISO, count);
+    return SPI(0, MOSI, MISO, count);
 }
 
-void LMS64C_FPGA_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_FPGA_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+    return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
 }
 
 int LMS64C_FPGA_Over_PCIe::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)

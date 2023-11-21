@@ -8,14 +8,14 @@ LMS64C_FPGA_Over_USB::LMS64C_FPGA_Over_USB(std::shared_ptr<USB_CSR_Pipe> dataPor
 {
 }
 
-void LMS64C_FPGA_Over_USB::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_FPGA_Over_USB::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    SPI(0, MOSI, MISO, count);
+    return SPI(0, MOSI, MISO, count);
 }
 
-void LMS64C_FPGA_Over_USB::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_FPGA_Over_USB::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::FPGA_SPI(*pipe, MOSI, MISO, count);
+    return LMS64CProtocol::FPGA_SPI(*pipe, MOSI, MISO, count);
 }
 
 int LMS64C_FPGA_Over_USB::GPIODirRead(uint8_t* buffer, const size_t bufLength)

@@ -8,8 +8,8 @@ class ICommsMock : public IComms
 {
   public:
     ICommsMock(){};
-    MOCK_METHOD(void, SPI, (const uint32_t* MOSI, uint32_t* MISO, uint32_t count), (override));
-    MOCK_METHOD(void, SPI, (uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count), (override));
+    MOCK_METHOD(int, SPI, (const uint32_t* MOSI, uint32_t* MISO, uint32_t count), (override));
+    MOCK_METHOD(int, SPI, (uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count), (override));
     MOCK_METHOD(int, GPIODirRead, (uint8_t * buffer, const size_t bufLength), (override));
     MOCK_METHOD(int, GPIORead, (uint8_t * buffer, const size_t bufLength), (override));
     MOCK_METHOD(int, GPIODirWrite, (const uint8_t* buffer, const size_t bufLength), (override));

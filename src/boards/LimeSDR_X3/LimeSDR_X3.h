@@ -40,7 +40,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;

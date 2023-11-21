@@ -82,10 +82,10 @@ class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
         , subdeviceIndex(subdeviceIndex)
     {
     }
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { SPI(0, MOSI, MISO, count); }
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { return SPI(0, MOSI, MISO, count); }
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
+        return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
     }
     virtual int ResetDevice(int chipSelect) override { return LMS64CProtocol::DeviceReset(pipe, chipSelect, subdeviceIndex); };
 
@@ -102,13 +102,14 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
         , subdeviceIndex(subdeviceIndex)
     {
     }
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+    int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
+        return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+
+    int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
+        return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
 
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override
@@ -139,13 +140,14 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
         , subdeviceIndex(subdeviceIndex)
     {
     }
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+
+    int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
+        return LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
     }
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+    int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
+        return LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
     }
 
   private:

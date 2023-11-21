@@ -12,8 +12,8 @@ class LMS64C_FPGA_Over_USB : public IComms
   public:
     LMS64C_FPGA_Over_USB(std::shared_ptr<USB_CSR_Pipe> dataPort);
 
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;

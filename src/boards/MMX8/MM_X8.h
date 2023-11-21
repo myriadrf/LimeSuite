@@ -62,7 +62,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
         uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
     virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) override;
 
