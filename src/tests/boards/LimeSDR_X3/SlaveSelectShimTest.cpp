@@ -10,7 +10,7 @@ using namespace lime::testing;
 
 TEST(SlaveSelectShim, ChoosesCorrectSlaveOnSPICall)
 {
-    std::shared_ptr<ICommsMock> mockComms{ std::make_shared<ICommsMock>() };
+    auto mockComms{ std::make_shared<ICommsMock>() };
     constexpr int slaveId{ 1 };
 
     SlaveSelectShim shim{ mockComms, slaveId };
@@ -25,7 +25,7 @@ TEST(SlaveSelectShim, ChoosesCorrectSlaveOnSPICall)
 
 TEST(SlaveSelectShim, SPICalledCorrectly)
 {
-    std::shared_ptr<ICommsMock> mockComms{ std::make_shared<ICommsMock>() };
+    auto mockComms{ std::make_shared<ICommsMock>() };
     constexpr int slaveId{ 1 };
 
     SlaveSelectShim shim{ mockComms, slaveId };
@@ -41,7 +41,7 @@ TEST(SlaveSelectShim, SPICalledCorrectly)
 
 TEST(SlaveSelectShim, ResetsCorrectDevice)
 {
-    std::shared_ptr<ICommsMock> mockComms{ std::make_shared<ICommsMock>() };
+    auto mockComms{ std::make_shared<ICommsMock>() };
     constexpr int slaveId{ 1 };
 
     SlaveSelectShim shim{ mockComms, slaveId };

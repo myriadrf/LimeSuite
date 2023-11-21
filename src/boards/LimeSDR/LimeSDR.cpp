@@ -91,9 +91,9 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.txPathNames = { "None", "Band1", "Band2" };
     descriptor.rfSOC.push_back(soc);
 
-    std::shared_ptr<DeviceNode> fpgaNode{ std::make_shared<DeviceNode>("FPGA", "FPGA", mFPGA) };
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("LMS", "LMS7002M", mLMSChips[0])));
-    descriptor.socTree = std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("SDR-USB", "SDRDevice", this));
+    auto fpgaNode{ std::make_shared<DeviceNode>("FPGA", "FPGA", mFPGA) };
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS", "LMS7002M", mLMSChips[0]));
+    descriptor.socTree = std::make_shared<DeviceNode>("SDR-USB", "SDRDevice", this);
     descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
@@ -101,7 +101,7 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     //must configure synthesizer before using LimeSDR
     /*if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
     {
-        std::shared_ptr<Si5351C> si5351module(std::make_shared<Si5351C>());
+        auto si5351module{ std::make_shared<Si5351C>() };
         si5351module->Initialize(conn);
         si5351module->SetPLL(0, 25000000, 0);
         si5351module->SetPLL(1, 25000000, 0);

@@ -82,7 +82,7 @@ LimeSDR_X3::LimeSDR_X3(
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
 
-    mLMS7002Mcomms[0] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_1));
+    mLMS7002Mcomms[0] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_1);
 
     mFPGA = new lime::FPGA_X3(spiFPGA, mLMS7002Mcomms[0]);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
@@ -110,7 +110,7 @@ LimeSDR_X3::LimeSDR_X3(
     soc.rxPathNames = { "None", "TDD", "FDD", "Calibration (LMS3)" };
     soc.txPathNames = { "None", "TDD", "FDD" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[1] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2));
+    mLMS7002Mcomms[1] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2);
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
     mLMSChips.push_back(lms2);
 
@@ -119,7 +119,7 @@ LimeSDR_X3::LimeSDR_X3(
     soc.rxPathNames = { "None", "LNAH", "Calibration (LMS2)" };
     soc.txPathNames = { "None", "Band1" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[2] = std::shared_ptr<SlaveSelectShim>(std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3));
+    mLMS7002Mcomms[2] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3);
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
     mLMSChips.push_back(lms3);
 
@@ -132,15 +132,14 @@ LimeSDR_X3::LimeSDR_X3(
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    std::shared_ptr<DeviceNode> fpgaNode{ std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA) };
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("LMS_1", "LMS7002M", lms1)));
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("LMS_2", "LMS7002M", lms2)));
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("LMS_3", "LMS7002M", lms3)));
-    desc.socTree = std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("X3", "SDRDevice", this));
+    auto fpgaNode{ std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA) };
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", "LMS7002M", lms1));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", "LMS7002M", lms2));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", "LMS7002M", lms3));
+    desc.socTree = std::make_shared<DeviceNode>("X3", "SDRDevice", this);
     desc.socTree->children.push_back(fpgaNode);
 
-    desc.socTree->children.push_back(
-        std::shared_ptr<DeviceNode>(std::make_shared<DeviceNode>("CDCM6208", "CDCM6208", mClockGeneratorCDCM)));
+    desc.socTree->children.push_back(std::make_shared<DeviceNode>("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
 }
 
 LimeSDR_X3::~LimeSDR_X3()
