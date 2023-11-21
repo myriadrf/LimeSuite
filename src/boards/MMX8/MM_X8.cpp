@@ -213,23 +213,21 @@ void LimeSDR_MMX8::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx,
     mSubDevices[moduleIndex]->StreamStatus(0, rx, tx);
 }
 
-void LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     if (chipSelect == 0)
     {
-        mMainFPGAcomms->SPI(MOSI, MISO, count);
-        return;
+        return mMainFPGAcomms->SPI(MOSI, MISO, count);
     }
 
     SDRDevice* dev = chipSelectToDevice.at(chipSelect);
     if (!dev)
     {
         throw std::logic_error("invalid SPI chip select");
-        return;
     }
 
     uint32_t subSelect = chipSelect & 0xFF;
-    dev->SPI(subSelect, MOSI, MISO, count);
+    return dev->SPI(subSelect, MOSI, MISO, count);
 }
 
 int LimeSDR_MMX8::I2CWrite(int address, const uint8_t* data, uint32_t length)

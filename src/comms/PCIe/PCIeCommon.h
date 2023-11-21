@@ -22,8 +22,8 @@ class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
 {
   public:
     LMS64C_LMS7002M_Over_PCIe(std::shared_ptr<LitePCIe> dataPort);
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
   private:
     PCIE_CSR_Pipe pipe;
@@ -34,8 +34,8 @@ class LMS64C_FPGA_Over_PCIe : public lime::IComms
   public:
     LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort);
 
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;

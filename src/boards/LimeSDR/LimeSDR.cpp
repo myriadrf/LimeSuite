@@ -449,7 +449,7 @@ void LimeSDR::EnableCache(bool enable)
         mFPGA->EnableValuesCache(enable);
 }
 
-void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mSerialPort);
     assert(MOSI);
@@ -538,6 +538,8 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uin
             throw std::runtime_error("SPI failed");
         }
     }
+
+    return 0;
 }
 
 /*int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)

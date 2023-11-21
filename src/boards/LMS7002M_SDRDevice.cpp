@@ -23,7 +23,7 @@ LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
     }
 }
 
-void LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     throw(OperationNotSupported("TransactSPI not implemented"));
 }

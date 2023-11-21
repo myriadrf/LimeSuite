@@ -8,14 +8,14 @@ SlaveSelectShim::SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId
     : port(comms)
     , slaveId(slaveId){};
 
-void SlaveSelectShim::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int SlaveSelectShim::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    port->SPI(slaveId, MOSI, MISO, count);
+    return port->SPI(slaveId, MOSI, MISO, count);
 }
 
-void SlaveSelectShim::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int SlaveSelectShim::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    port->SPI(spiBusAddress, MOSI, MISO, count);
+    return port->SPI(spiBusAddress, MOSI, MISO, count);
 }
 
 int SlaveSelectShim::ResetDevice()

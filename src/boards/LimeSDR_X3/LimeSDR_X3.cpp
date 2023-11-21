@@ -871,22 +871,18 @@ void LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
 }
 
-void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     switch (chipSelect)
     {
     case SPI_LMS7002M_1:
-        mLMS7002Mcomms[0]->SPI(MOSI, MISO, count);
-        return;
+        return mLMS7002Mcomms[0]->SPI(MOSI, MISO, count);
     case SPI_LMS7002M_2:
-        mLMS7002Mcomms[1]->SPI(MOSI, MISO, count);
-        return;
+        return mLMS7002Mcomms[1]->SPI(MOSI, MISO, count);
     case SPI_LMS7002M_3:
-        mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
-        return;
+        return mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
     case SPI_FPGA:
-        fpgaPort->SPI(MOSI, MISO, count);
-        return;
+        return fpgaPort->SPI(MOSI, MISO, count);
     default:
         throw std::logic_error("invalid SPI chip select");
     }

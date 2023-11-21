@@ -50,7 +50,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual int StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
     virtual int I2CRead(int addr, uint8_t* dest, uint32_t length) override;

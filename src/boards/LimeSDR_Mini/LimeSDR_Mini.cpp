@@ -385,7 +385,7 @@ void LimeSDR_Mini::EnableCache(bool enable)
     }
 }
 
-void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mStreamPort);
     assert(MOSI);
@@ -483,6 +483,8 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
             throw std::runtime_error("SPI failed");
         }
     }
+
+    return 0;
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
