@@ -41,7 +41,7 @@ class MCU_BD
     };
 
     enum class OperationStatus : bool {
-        SUCCESS = 0,
+        SUCCESS,
         FAILURE,
     };
 
