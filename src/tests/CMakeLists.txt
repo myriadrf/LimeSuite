@@ -2,9 +2,9 @@ set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
 set(LIME_TEST_SUITE_SOURCES 
     boards/LimeSDR/LimeSDRTest.cpp
+    boards/LimeSDR/USB_CSR_Pipe_SDRTest.cpp
     boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
     boards/LimeSDR_X3/SlaveSelectShimTest.cpp
-    comms/USB/USB_CSR_Pipe_SDRTest.cpp
     protocols/LMS64CProtocol/CustomParameterReadTest.cpp
     protocols/LMS64CProtocol/CustomParameterWriteTest.cpp
     protocols/LMS64CProtocol/DeviceResetTest.cpp
