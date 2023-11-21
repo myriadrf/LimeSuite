@@ -56,7 +56,7 @@ class II2C;
 class LIME_API Si5351C
 {
   public:
-    enum class Status {
+    enum class Status : bool {
         SUCCESS,
         FAILED,
     };
