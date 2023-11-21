@@ -15,7 +15,7 @@
 
 namespace lime {
 
-enum class LogLevel {
+enum class LogLevel : uint8_t {
     CRITICAL = 0, //!< A critical error. The application might not be able to continue running successfully.
     ERROR = 1, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
     WARNING = 2, //!< A warning. An operation completed with an unexpected result.

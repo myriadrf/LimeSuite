@@ -19,7 +19,7 @@ class ISPI;
 class MCU_BD
 {
   public:
-    enum class MCU_PROG_MODE { RESET = 0, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM };
+    enum class MCU_PROG_MODE : uint8_t { RESET = 0, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM };
     enum MCU_ERROR_CODES {
         MCU_NO_ERROR = 0,
         MCU_ERROR,
@@ -40,10 +40,9 @@ class MCU_BD
         MCU_ERROR_CODES_COUNT
     };
 
-    enum class OperationStatus {
+    enum class OperationStatus : bool {
         SUCCESS = 0,
         FAILURE,
-        TIMEOUT,
     };
 
     struct ProgressInfo {
@@ -59,7 +58,7 @@ class MCU_BD
     std::string GetProgramFilename() const;
 
     void RunProcedure(uint8_t id);
-    enum class MCU_Parameter {
+    enum class MCU_Parameter : uint8_t {
         MCU_REF_CLK,
         MCU_BW,
         MCU_EXT_LOOPBACK_PAIR,

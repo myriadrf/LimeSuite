@@ -26,11 +26,11 @@ class LIME_API SDRDevice
     static constexpr uint8_t MAX_CHANNEL_COUNT = 16;
     static constexpr uint8_t MAX_RFSOC_COUNT = 16;
 
-    enum class LogLevel { CRITICAL = 0, ERROR, WARNING, INFO, VERBOSE, DEBUG };
+    enum class LogLevel : uint8_t { CRITICAL = 0, ERROR, WARNING, INFO, VERBOSE, DEBUG };
     typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
     typedef void (*LogCallbackType)(LogLevel, const char*);
 
-    enum class ClockID {
+    enum class ClockID : uint8_t {
         CLK_REFERENCE = 0,
         CLK_SXR = 1, ///RX LO clock
         CLK_SXT = 2, ///TX LO clock
@@ -99,7 +99,7 @@ class LIME_API SDRDevice
     };
 
     struct GPS_Lock {
-        enum class LockStatus { Undefined = 0, NotAvailable = 1, Has2D = 2, Has3D = 3 };
+        enum class LockStatus : uint8_t { Undefined = 0, NotAvailable = 1, Has2D = 2, Has3D = 3 };
 
         LockStatus galileo;
         LockStatus beidou;
@@ -124,7 +124,7 @@ class LIME_API SDRDevice
             bool waitPPS; // start sampling from next following PPS
         };
         typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
-        enum class DataFormat {
+        enum class DataFormat : uint8_t {
             I16,
             I12,
             F32,

@@ -52,12 +52,12 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
     static int LMS1_UpdateFPGAInterface(void* userData);
 
-    enum class ePathLMS1_Rx { NONE = 0, LNAH = 1, LNAL = 2, LNAW = 3 };
-    enum class ePathLMS1_Tx { NONE = 0, BAND1 = 1, BAND2 = 2 };
-    enum class ePathLMS2_Rx { NONE = 0, TDD = 1, FDD = 2, CALIBRATION = 3 };
-    enum class ePathLMS2_Tx { NONE = 0, TDD = 1, FDD = 2 };
+    enum class ePathLMS1_Rx : uint8_t { NONE = 0, LNAH = 1, LNAL = 2, LNAW = 3 };
+    enum class ePathLMS1_Tx : uint8_t { NONE = 0, BAND1 = 1, BAND2 = 2 };
+    enum class ePathLMS2_Rx : uint8_t { NONE = 0, TDD = 1, FDD = 2, CALIBRATION = 3 };
+    enum class ePathLMS2_Tx : uint8_t { NONE = 0, TDD = 1, FDD = 2 };
 
-    enum class eMemoryDevice { FPGA_RAM = 0, FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_RAM = 0, FPGA_FLASH, COUNT };
 
   private:
     std::shared_ptr<IComms> lms7002mPort;

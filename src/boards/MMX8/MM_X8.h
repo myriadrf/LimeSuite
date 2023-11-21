@@ -80,7 +80,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:
-    enum class eMemoryDevice { FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_FLASH, COUNT };
 
   private:
     std::shared_ptr<IComms> mMainFPGAcomms;

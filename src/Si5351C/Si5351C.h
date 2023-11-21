@@ -13,7 +13,7 @@
 //---------------------------------------------------------------------------
 namespace lime {
 
-enum class eSi_CLOCK_INPUT { Si_CLKIN, Si_XTAL, Si_CMOS };
+enum class eSi_CLOCK_INPUT : uint8_t { Si_CLKIN, Si_XTAL, Si_CMOS };
 
 struct Si5351_Channel {
     Si5351_Channel()

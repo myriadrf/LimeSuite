@@ -44,7 +44,7 @@ class LIME_API LMS7002M
   public:
     static constexpr double CGEN_MAX_FREQ = 640e6;
 
-    enum class ClockID {
+    enum class ClockID : uint8_t {
         CLK_REFERENCE = 0,
         CLK_SXR = 1, ///RX LO clock
         CLK_SXT = 2, ///TX LO clock
@@ -96,7 +96,7 @@ class LIME_API LMS7002M
      * Enum for configuring the channel selection.
      * @see MAC register
      */
-    enum class Channel {
+    enum class Channel : uint8_t {
         ChA = 1,
         ChB = 2,
         ChAB = 3,
@@ -255,7 +255,7 @@ class LIME_API LMS7002M
     ///@}
 
     ///@name RF selection
-    enum class PathRFE {
+    enum class PathRFE : uint8_t {
         PATH_RFE_NONE = 0,
         PATH_RFE_LNAH,
         PATH_RFE_LNAL,
@@ -295,7 +295,7 @@ class LIME_API LMS7002M
     int SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
     bool GetSXLocked(TRXDir dir);
     ///VCO modules available for tuning
-    enum class VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
+    enum class VCO_Module : uint8_t { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
     ///@}
@@ -330,7 +330,7 @@ class LIME_API LMS7002M
     float_type GetSampleRate(TRXDir dir, Channel ch);
 
     ///@name LML
-    enum class LMLSampleSource {
+    enum class LMLSampleSource : uint8_t {
         AI = 0,
         AQ = 1,
         BI = 2,
@@ -450,7 +450,7 @@ class LIME_API LMS7002M
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
 
-    enum class LogType { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
+    enum class LogType : uint8_t { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
     void SetLogCallback(std::function<void(const char*, int)> callback);
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
