@@ -492,6 +492,11 @@ int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice)
 
 int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
     pkt.blockCount = bufLength;
@@ -518,6 +523,11 @@ int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 
 int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
     pkt.blockCount = bufLength;
@@ -544,9 +554,19 @@ int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 
 int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_WR;
     pkt.blockCount = bufLength;
+
+    for (size_t i = 0; i < bufLength; ++i)
+    {
+        pkt.payload[i] = buffer[i];
+    }
 
     int bytesSent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
@@ -565,9 +585,19 @@ int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLengt
 
 int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_WR;
     pkt.blockCount = bufLength;
+
+    for (size_t i = 0; i < bufLength; ++i)
+    {
+        pkt.payload[i] = buffer[i];
+    }
 
     int bytesSent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))

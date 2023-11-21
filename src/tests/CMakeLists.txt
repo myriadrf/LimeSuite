@@ -11,6 +11,10 @@ set(LIME_TEST_SUITE_SOURCES
     protocols/LMS64CProtocol/FirmwareToDescriptorTest.cpp
     protocols/LMS64CProtocol/FPGA_SPITest.cpp
     protocols/LMS64CProtocol/GetFirmwareInfoTest.cpp
+    protocols/LMS64CProtocol/GPIODirReadTest.cpp
+    protocols/LMS64CProtocol/GPIODirWriteTest.cpp
+    protocols/LMS64CProtocol/GPIOReadTest.cpp
+    protocols/LMS64CProtocol/GPIOWriteTest.cpp
     protocols/LMS64CProtocol/LMS7002M_SPITest.cpp
 )
 
