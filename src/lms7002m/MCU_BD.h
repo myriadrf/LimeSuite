@@ -40,9 +40,10 @@ class MCU_BD
         MCU_ERROR_CODES_COUNT
     };
 
-    enum class OperationStatus : bool {
+    enum class OperationStatus : uint8_t {
         SUCCESS,
         FAILURE,
+        TIMEOUT,
     };
 
     struct ProgressInfo {
