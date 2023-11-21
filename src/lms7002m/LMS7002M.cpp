@@ -98,28 +98,27 @@ class ChannelScope
 */
 void LMS7002M::Log(const char* text, LogType type)
 {
-    int intType = static_cast<int>(type);
     switch (type)
     {
     case LogType::LOG_INFO:
         lime::info(text);
         if (log_callback)
-            log_callback(text, intType);
+            log_callback(text, type);
         break;
     case LogType::LOG_WARNING:
         lime::warning(text);
         if (log_callback)
-            log_callback(text, intType);
+            log_callback(text, type);
         break;
     case LogType::LOG_ERROR:
         lime::error(text);
         if (log_callback)
-            log_callback(text, intType);
+            log_callback(text, type);
         break;
     case LogType::LOG_DATA:
         lime::debug(text);
         if (log_callback)
-            log_callback(text, intType);
+            log_callback(text, type);
         break;
     }
 }
@@ -3106,7 +3105,7 @@ float_type LMS7002M::GetTemperature()
     return temperature;
 }
 
-void LMS7002M::SetLogCallback(std::function<void(const char*, int)> callback)
+void LMS7002M::SetLogCallback(std::function<void(const char*, LogType)> callback)
 {
     log_callback = callback;
 }

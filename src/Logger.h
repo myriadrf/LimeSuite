@@ -15,12 +15,12 @@
 
 namespace lime {
 
-enum class LogLevel : uint8_t {
-    CRITICAL = 0, //!< A critical error. The application might not be able to continue running successfully.
-    ERROR = 1, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
-    WARNING = 2, //!< A warning. An operation completed with an unexpected result.
-    INFO = 3, //!< An informational message, usually denoting the successful completion of an operation.
-    DEBUG = 4, //!< A debugging message, only shown in Debug configuration.
+enum class LogLevel : int {
+    CRITICAL, //!< A critical error. The application might not be able to continue running successfully.
+    ERROR, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
+    WARNING, //!< A warning. An operation completed with an unexpected result.
+    INFO, //!< An informational message, usually denoting the successful completion of an operation.
+    DEBUG, //!< A debugging message, only shown in Debug configuration.
 };
 
 //! Log a critical error message with formatting

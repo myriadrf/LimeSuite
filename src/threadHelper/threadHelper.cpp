@@ -90,7 +90,8 @@ int lime::SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy polic
     //scale values
     sched_param sch;
     sch.sched_priority =
-        int(((prio_max - prio_min) / static_cast<float>(ThreadPriority::HIGHEST)) * static_cast<int>(priority)) + prio_min;
+        static_cast<int>(((prio_max - prio_min) / static_cast<float>(ThreadPriority::HIGHEST)) * static_cast<int>(priority)) +
+        prio_min;
 
     if (int ret = pthread_setschedparam(pthread_self(), sched_policy, &sch) != 0)
     {

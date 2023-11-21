@@ -95,7 +95,7 @@ LimeSDR_X3::LimeSDR_X3(
     };
 
     desc.memoryDevices = {
-        { "FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH },
+        { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) },
     };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
@@ -1293,9 +1293,9 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
     int progMode;
     LMS64CProtocol::ProgramWriteTarget target;
     target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-    if (id == (int)eMemoryDevice::FPGA_RAM)
+    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_RAM))
         progMode = 0;
-    if (id == (int)eMemoryDevice::FPGA_FLASH)
+    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH))
         progMode = 1;
     else
         return false;

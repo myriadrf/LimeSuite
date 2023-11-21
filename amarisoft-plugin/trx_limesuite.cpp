@@ -851,7 +851,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
 
     LimeState* s = new LimeState();
     if (trx_get_param_double(hostState, &val, "logLevel") >= 0)
-        logVerbosity = (LogLevel)min((int)val, (int)LogLevel::DEBUG);
+        logVerbosity = std::min(static_cast<LogLevel>(val), LogLevel::DEBUG);
 
     try
     {
