@@ -8,52 +8,93 @@
 using namespace lime;
 using namespace lime::testing;
 using ::testing::_;
-using ::testing::NiceMock;
+using ::testing::Pointer;
+
+static const int CTR_W_REQCODE = 0xC1;
+static const int CTR_W_VALUE = 0x0000;
+static const int CTR_W_INDEX = 0x0000;
+
+static const int CTR_R_REQCODE = 0xC0;
+static const int CTR_R_VALUE = 0x0000;
+static const int CTR_R_INDEX = 0x0000;
+
+static const uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
+static const uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
 
 TEST(USB_CSR_Pipe_SDR, WriteBulkTransfer)
 {
-    NiceMock<FX3Mock> mockConnection{};
+    FX3Mock mockConnection{};
     USB_CSR_Pipe_SDR pipe{ mockConnection };
 
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
 
-    EXPECT_CALL(mockConnection, BulkTransfer(_, _, _, _)).Times(1);
-    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int timeout = 100;
+    int length = sizeof(LMS64CPacket);
+
+    EXPECT_CALL(mockConnection, BulkTransfer(CONTROL_BULK_OUT_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+        .Times(1);
+    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_SDR, WriteControlTransfer)
 {
-    NiceMock<FX3Mock> mockConnection{};
+    FX3Mock mockConnection{};
     USB_CSR_Pipe_SDR pipe{ mockConnection };
 
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
 
-    EXPECT_CALL(mockConnection, ControlTransfer(_, _, _, _, _, _, _)).Times(1);
-    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int timeout = 100;
+    int length = sizeof(LMS64CPacket);
+
+    EXPECT_CALL(mockConnection,
+        ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR,
+            CTR_W_REQCODE,
+            CTR_W_VALUE,
+            CTR_W_INDEX,
+            Pointer(reinterpret_cast<uint8_t*>(&pkt)),
+            length,
+            timeout))
+        .Times(1);
+    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_SDR, ReadBulkTransfer)
 {
-    NiceMock<FX3Mock> mockConnection{};
+    FX3Mock mockConnection{};
     USB_CSR_Pipe_SDR pipe{ mockConnection };
 
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
 
-    EXPECT_CALL(mockConnection, BulkTransfer(_, _, _, _)).Times(1);
-    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int timeout = 100;
+    int length = sizeof(LMS64CPacket);
+
+    EXPECT_CALL(mockConnection, BulkTransfer(CONTROL_BULK_IN_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+        .Times(1);
+    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_SDR, ReadControlTransfer)
 {
-    NiceMock<FX3Mock> mockConnection{};
+    FX3Mock mockConnection{};
     USB_CSR_Pipe_SDR pipe{ mockConnection };
 
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GET_INFO;
 
-    EXPECT_CALL(mockConnection, ControlTransfer(_, _, _, _, _, _, _)).Times(1);
-    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int timeout = 100;
+    int length = sizeof(LMS64CPacket);
+
+    EXPECT_CALL(mockConnection,
+        ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
+            CTR_R_REQCODE,
+            CTR_R_VALUE,
+            CTR_R_INDEX,
+            Pointer(reinterpret_cast<uint8_t*>(&pkt)),
+            length,
+            timeout))
+        .Times(1);
+    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
 }

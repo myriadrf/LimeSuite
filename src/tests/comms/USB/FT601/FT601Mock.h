@@ -6,6 +6,7 @@ namespace lime::testing {
 
 class FT601Mock : public FT601
 {
+  public:
     MOCK_METHOD(bool, Connect, (uint16_t vid, uint16_t pid, const std::string& serial), (override));
     MOCK_METHOD(void, Disconnect, (), (override));
 
