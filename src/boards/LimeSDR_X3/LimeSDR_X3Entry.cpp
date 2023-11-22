@@ -98,7 +98,8 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
             trxStreams[i]->SetPathName(portName);
         }
 
-        return new LimeSDR_X3(route_lms7002m, route_fpga, std::move(trxStreams));
+        auto controlPipe{ std::make_shared<PCIE_CSR_Pipe>(control) };
+        return new LimeSDR_X3(route_lms7002m, route_fpga, std::move(trxStreams), controlPipe);
     } catch (std::runtime_error& e)
     {
         char reason[256];
