@@ -134,7 +134,7 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    auto fpgaNode{ std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA) };
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA);
     fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", "LMS7002M", lms1));
     fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", "LMS7002M", lms2));
     fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", "LMS7002M", lms3));

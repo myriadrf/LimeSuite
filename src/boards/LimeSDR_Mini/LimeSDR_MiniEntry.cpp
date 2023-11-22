@@ -88,11 +88,11 @@ SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
 
-    auto usbComms{ std::make_shared<FT601>(
+    auto usbComms = std::make_shared<FT601>(
 #ifdef __unix__
         ctx
 #endif
-        ) };
+    );
     if (!usbComms->Connect(vid, pid, handle.serial))
     {
         char reason[256];
@@ -100,11 +100,11 @@ SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
         throw std::runtime_error(reason);
     }
 
-    auto usbPipe{ std::make_shared<USB_CSR_Pipe_Mini>(*usbComms) };
+    auto usbPipe = std::make_shared<USB_CSR_Pipe_Mini>(*usbComms);
 
     // protocol layer
-    auto route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipe) };
-    auto route_fpga{ std::make_shared<LMS64C_FPGA_Over_USB>(usbPipe) };
+    auto route_lms7002m = std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipe);
+    auto route_fpga = std::make_shared<LMS64C_FPGA_Over_USB>(usbPipe);
 
     return new LimeSDR_Mini(route_lms7002m, route_fpga, usbComms, usbPipe);
 }

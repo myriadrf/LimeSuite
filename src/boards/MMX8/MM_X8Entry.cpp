@@ -157,7 +157,7 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 
 SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
 {
-    auto control{ std::make_shared<LitePCIe>() };
+    auto control = std::make_shared<LitePCIe>();
     std::vector<std::shared_ptr<LitePCIe>> trxStreams(8);
     std::vector<std::shared_ptr<IComms>> controls(8);
     std::vector<std::shared_ptr<IComms>> fpga(8);
