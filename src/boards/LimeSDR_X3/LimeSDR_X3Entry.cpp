@@ -77,12 +77,12 @@ std::vector<DeviceHandle> LimeSDR_X3Entry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
-    auto control{ std::make_shared<LitePCIe>() };
+    auto control = std::make_shared<LitePCIe>();
     std::vector<std::shared_ptr<LitePCIe>> trxStreams(3);
 
     // protocol layer
-    auto route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_PCIe>(control) };
-    auto route_fpga{ std::make_shared<LMS64C_FPGA_Over_PCIe>(control) };
+    auto route_lms7002m = std::make_shared<LMS64C_LMS7002M_Over_PCIe>(control);
+    auto route_fpga = std::make_shared<LMS64C_FPGA_Over_PCIe>(control);
 
     try
     {
@@ -98,7 +98,7 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
             trxStreams[i]->SetPathName(portName);
         }
 
-        auto controlPipe{ std::make_shared<PCIE_CSR_Pipe>(control) };
+        auto controlPipe = std::make_shared<PCIE_CSR_Pipe>(control);
         return new LimeSDR_X3(route_lms7002m, route_fpga, std::move(trxStreams), controlPipe);
     } catch (std::runtime_error& e)
     {
