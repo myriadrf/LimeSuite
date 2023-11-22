@@ -26,8 +26,10 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
   public:
     LimeSDR_X3() = delete;
-    LimeSDR_X3(
-        std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams);
+    LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
+        std::shared_ptr<IComms> spiFPGA,
+        std::vector<std::shared_ptr<LitePCIe>> trxStreams,
+        std::shared_ptr<ISerialPort> control);
     virtual ~LimeSDR_X3();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -84,7 +86,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
 
     std::array<std::shared_ptr<SlaveSelectShim>, 3> mLMS7002Mcomms;
-    std::shared_ptr<IComms> fpgaPort;
+    std::shared_ptr<IComms> mfpgaPort;
+    std::shared_ptr<ISerialPort> mSerialPort;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
 };

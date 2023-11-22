@@ -57,19 +57,21 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_X3::LimeSDR_X3(
-    std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams)
+LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
+    std::shared_ptr<IComms> spiFPGA,
+    std::vector<std::shared_ptr<LitePCIe>> trxStreams,
+    std::shared_ptr<ISerialPort> control)
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
-    , fpgaPort(spiFPGA)
+    , mfpgaPort(spiFPGA)
+    , mSerialPort(control)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
-    desc.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
 
-    // LMS64CProtocol::FirmwareInfo fw;
-    // LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
-    // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
+    LMS64CProtocol::FirmwareInfo fw;
+    LMS64CProtocol::GetFirmwareInfo(*mSerialPort, fw);
+    LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
     desc.spiSlaveIds = {
         { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
@@ -882,7 +884,7 @@ int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, u
     case SPI_LMS7002M_3:
         return mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
     case SPI_FPGA:
-        return fpgaPort->SPI(MOSI, MISO, count);
+        return mfpgaPort->SPI(MOSI, MISO, count);
     default:
         throw std::logic_error("invalid SPI chip select");
     }
@@ -1257,12 +1259,12 @@ void LimeSDR_X3::LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz)
 
 int LimeSDR_X3::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterWrite(parameters);
+    return mfpgaPort->CustomParameterWrite(parameters);
 }
 
 int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterRead(parameters);
+    return mfpgaPort->CustomParameterRead(parameters);
 }
 
 bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
@@ -1276,7 +1278,7 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
         progMode = 1;
     else
         return false;
-    return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
+    return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
 int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
