@@ -56,16 +56,17 @@ static int SPI16(ISerialPort& port,
     uint32_t subDevice)
 {
     LMS64CPacket pkt;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = chipSelect;
-    pkt.subDevice = subDevice;
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
     constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
     while (srcIndex < count)
     {
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = chipSelect;
+        pkt.subDevice = subDevice;
+
         // fill packet with same direction operations
         const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
         for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
@@ -113,10 +114,8 @@ static int SPI16(ISerialPort& port,
             MISO[destIndex] = (pkt.payload[i * 4 + 2] << 8) | pkt.payload[i * 4 + 3];
             ++destIndex;
         }
-
-        pkt.blockCount = 0;
-        pkt.status = STATUS_UNDEFINED;
     }
+
     return 0;
 }
 
