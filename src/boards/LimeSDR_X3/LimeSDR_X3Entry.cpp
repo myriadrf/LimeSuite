@@ -2,6 +2,7 @@
     #include <unistd.h>
 #endif
 
+#include "LimeSDR_X3Entry.h"
 #include "LitePCIe.h"
 #include "LimeSDR_X3.h"
 #include "PCIeCommon.h"

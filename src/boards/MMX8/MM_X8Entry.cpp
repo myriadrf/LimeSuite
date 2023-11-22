@@ -2,6 +2,7 @@
     #include <unistd.h>
 #endif
 
+#include "MM_X8Entry.h"
 #include "LitePCIe.h"
 #include "MM_X8.h"
 #include "PCIeCommon.h"

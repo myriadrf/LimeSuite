@@ -2,6 +2,7 @@
     #include <unistd.h>
 #endif
 
+#include "LimeSDR_XTRXEntry.h"
 #include "LitePCIe.h"
 #include "LimeSDR_XTRX.h"
 #include "protocols/LMS64CProtocol.h"

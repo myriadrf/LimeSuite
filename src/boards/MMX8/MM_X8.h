@@ -91,15 +91,6 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     lime::ADF4002* mADF;
 };
 
-class LimeSDR_MMX8Entry : public DeviceRegistryEntry
-{
-  public:
-    LimeSDR_MMX8Entry();
-    virtual ~LimeSDR_MMX8Entry();
-    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-    SDRDevice* make(const DeviceHandle& handle) override;
-};
-
 } // namespace lime
 
 #endif // LIME_LIMESDR_5G_H

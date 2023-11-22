@@ -92,15 +92,6 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     bool mConfigInProgress;
 };
 
-class LimeSDR_X3Entry : public DeviceRegistryEntry
-{
-  public:
-    LimeSDR_X3Entry();
-    virtual ~LimeSDR_X3Entry();
-    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-    SDRDevice* make(const DeviceHandle& handle) override;
-};
-
 } // namespace lime
 
 #endif // LIME_LIMESDR_5G_H
