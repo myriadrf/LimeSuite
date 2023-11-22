@@ -41,10 +41,10 @@ MATCHER_P2(IsPayloadByteCorrect, index, byte, "Checks if the packet has the corr
 
 TEST(LimeSDR_Mini, Constructor)
 {
-    auto usbComms{ std::make_shared<FT601Mock>() };
-    auto usbPipeMock{ std::make_shared<USB_CSR_PipeMock>() };
-    auto route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipeMock) };
-    auto route_fpga{ std::make_shared<LMS64C_FPGA_Over_USB>(usbPipeMock) };
+    auto usbComms = std::make_shared<FT601Mock>();
+    auto usbPipeMock = std::make_shared<USB_CSR_PipeMock>();
+    auto lms7002mRoute = std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipeMock);
+    auto fpgaRoute = std::make_shared<LMS64C_FPGA_Over_USB>(usbPipeMock);
 
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
@@ -52,7 +52,7 @@ TEST(LimeSDR_Mini, Constructor)
     LMS64CPacket detectRefClkPacket{};
     detectRefClkPacket.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
     detectRefClkPacket.blockCount = 1;
-    detectRefClkPacket.payload[3] |= 0x4;
+    detectRefClkPacket.payload[3] |= 0b100;
 
     ON_CALL(*usbPipeMock, Read(_, packetSize, _))
         .WillByDefault(DoAll(
@@ -75,5 +75,5 @@ TEST(LimeSDR_Mini, Constructor)
 
     auto usbPipe = std::static_pointer_cast<USB_CSR_Pipe>(usbPipeMock);
 
-    LimeSDR_Mini(route_lms7002m, route_fpga, usbComms, usbPipe);
+    LimeSDR_Mini(lms7002mRoute, fpgaRoute, usbComms, usbPipe);
 }

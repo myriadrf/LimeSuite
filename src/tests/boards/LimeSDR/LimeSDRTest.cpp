@@ -16,10 +16,10 @@ using ::testing::SetArrayArgument;
 
 TEST(LimeSDR, Constructor)
 {
-    auto usbCommsMock{ std::make_shared<FX3Mock>() };
-    auto usbPipeMock{ std::make_shared<USB_CSR_PipeMock>() };
-    auto route_lms7002m{ std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipeMock) };
-    auto route_fpga{ std::make_shared<LMS64C_FPGA_Over_USB>(usbPipeMock) };
+    auto usbCommsMock = std::make_shared<FX3Mock>();
+    auto usbPipeMock = std::make_shared<USB_CSR_PipeMock>();
+    auto lms7002mRoute = std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipeMock);
+    auto fpgaRoute = std::make_shared<LMS64C_FPGA_Over_USB>(usbPipeMock);
 
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
@@ -33,5 +33,5 @@ TEST(LimeSDR, Constructor)
 
     auto usbPipe = std::static_pointer_cast<USB_CSR_Pipe>(usbPipeMock);
 
-    LimeSDR(route_lms7002m, route_fpga, usbCommsMock, usbPipe);
+    LimeSDR(lms7002mRoute, fpgaRoute, usbCommsMock, usbPipe);
 }
