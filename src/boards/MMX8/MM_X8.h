@@ -3,10 +3,8 @@
 
 #include "CDCM6208/CDCM6208_Dev.h"
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
 #include "limesuite/IComms.h"
 #include "ADF4002/ADF4002.h"
-
 #include "protocols/LMS64CProtocol.h"
 
 #include <vector>
@@ -18,11 +16,7 @@
 
 namespace lime {
 
-class LMS7002M;
 class LitePCIe;
-class FPGA;
-class Equalizer;
-class TRXLooper_PCIE;
 class LimeSDR_XTRX;
 
 class LimeSDR_MMX8 : public lime::SDRDevice
@@ -84,10 +78,10 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     std::shared_ptr<IComms> mMainFPGAcomms;
     Descriptor mDeviceDescriptor;
     std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
-    std::vector<lime::LimeSDR_XTRX*> mSubDevices;
-    std::map<uint32_t, lime::LimeSDR_XTRX*> chipSelectToDevice;
-    std::map<uint32_t, lime::LimeSDR_XTRX*> memorySelectToDevice;
-    std::map<uint32_t, lime::LimeSDR_XTRX*> customParameterToDevice;
+    std::vector<LimeSDR_XTRX*> mSubDevices;
+    std::map<uint32_t, LimeSDR_XTRX*> chipSelectToDevice;
+    std::map<uint32_t, LimeSDR_XTRX*> memorySelectToDevice;
+    std::map<uint32_t, LimeSDR_XTRX*> customParameterToDevice;
     lime::ADF4002* mADF;
 };
 

@@ -3,23 +3,17 @@
 
 #include "CDCM6208/CDCM6208_Dev.h"
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
-
 #include "protocols/LMS64CProtocol.h"
+#include "dataTypes.h"
 
 #include <vector>
 #include <array>
 #include <memory>
 
-#include "dataTypes.h"
-
 namespace lime {
 
-class LMS7002M;
 class LitePCIe;
-class FPGA;
 class Equalizer;
-class TRXLooper_PCIE;
 class SlaveSelectShim;
 
 class LimeSDR_X3 : public LMS7002M_SDRDevice

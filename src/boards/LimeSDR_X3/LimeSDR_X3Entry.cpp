@@ -9,7 +9,6 @@
 
 #include <fstream>
 #include <map>
-#include <unistd.h>
 #include <fcntl.h>
 
 using namespace lime;

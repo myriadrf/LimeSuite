@@ -2,7 +2,6 @@
 #define LIME_LIMESDR_XTRX_H
 
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
 #include "limesuite/IComms.h"
 
 #include <vector>
@@ -14,12 +13,7 @@
 
 namespace lime {
 
-class LMS7002M;
-class IGenericComms;
 class LitePCIe;
-class FPGA;
-class Equalizer;
-class TRXLooper_PCIE;
 
 class LimeSDR_XTRX : public LMS7002M_SDRDevice
 {

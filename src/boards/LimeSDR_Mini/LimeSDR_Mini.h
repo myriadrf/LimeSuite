@@ -2,20 +2,15 @@
 #define LIME_LIMESDR_MINI_H
 
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
-#include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
+#include "dataTypes.h"
+
 #include <vector>
 #include <memory>
 
-#include "dataTypes.h"
 namespace lime {
 
 class USBGeneric;
-class LMS7002M;
-class Streamer;
-class FPGA;
-class TRXLooper_USB;
 
 class LimeSDR_Mini : public LMS7002M_SDRDevice
 {

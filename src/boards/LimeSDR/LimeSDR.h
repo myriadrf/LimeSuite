@@ -2,16 +2,15 @@
 #define LIME_LIMESDR_H
 
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
-#include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
-#include "USBGeneric.h"
+#include "dataTypes.h"
+
 #include <vector>
 #include <memory>
 
-#include "dataTypes.h"
-
 namespace lime {
+
+class USBGeneric;
 
 class LimeSDR : public LMS7002M_SDRDevice
 {

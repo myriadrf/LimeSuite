@@ -10,9 +10,7 @@
 
 #include <fstream>
 #include <map>
-#include <unistd.h>
 #include <fcntl.h>
-#include "LMSBoards.h"
 
 using namespace lime;
 
