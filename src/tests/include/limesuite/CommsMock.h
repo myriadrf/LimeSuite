@@ -4,7 +4,7 @@
 
 namespace lime::testing {
 
-class ICommsMock : public IComms
+class CommsMock : public IComms
 {
   public:
     MOCK_METHOD(int, SPI, (const uint32_t* MOSI, uint32_t* MISO, uint32_t count), (override));

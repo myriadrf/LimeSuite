@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "tests/protocols/ISerialPortMock.h"
+#include "tests/protocols/SerialPortMock.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;
@@ -13,7 +13,7 @@ using ::testing::Return;
 using ::testing::ReturnArg;
 using ::testing::SetArrayArgument;
 
-static constexpr std::size_t packetSize = sizeof(LMS64CPacket);
+static constexpr std::size_t PACKET_SIZE = sizeof(LMS64CPacket);
 
 MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct command")
 {
@@ -31,22 +31,22 @@ MATCHER_P(IsSubdeviceCorrect, subDevice, "Checks if the packet has the correct s
 
 TEST(LMS64CProtocol, GetFirmwareInfoGetsInfo)
 {
-    ISerialPortMock mockPort{};
+    SerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
 
     LMS64CProtocol::FirmwareInfo info;
 
-    uint32_t subdevice = 1;
+    uint32_t subdevice = 1U;
 
-    ON_CALL(mockPort, Read(_, packetSize, _))
+    ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
             SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(
-        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), packetSize, _))
+        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), PACKET_SIZE, _))
         .Times(1);
-    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
@@ -55,17 +55,17 @@ TEST(LMS64CProtocol, GetFirmwareInfoGetsInfo)
 
 TEST(LMS64CProtocol, GetFirmwareInfoNotFullyWritten)
 {
-    ISerialPortMock mockPort{};
+    SerialPortMock mockPort{};
     LMS64CProtocol::FirmwareInfo info;
 
-    uint32_t subdevice = 1;
+    uint32_t subdevice = 1U;
 
-    ON_CALL(mockPort, Write(_, packetSize, _)).WillByDefault(Return(0));
+    ON_CALL(mockPort, Write(_, PACKET_SIZE, _)).WillByDefault(Return(0));
 
     EXPECT_CALL(
-        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), packetSize, _))
+        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), PACKET_SIZE, _))
         .Times(1);
-    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(0);
+    EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
     int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
@@ -74,17 +74,17 @@ TEST(LMS64CProtocol, GetFirmwareInfoNotFullyWritten)
 
 TEST(LMS64CProtocol, GetFirmwareInfoNotFullyRead)
 {
-    ISerialPortMock mockPort{};
+    SerialPortMock mockPort{};
     LMS64CProtocol::FirmwareInfo info;
 
-    uint32_t subdevice = 1;
+    uint32_t subdevice = 1U;
 
-    ON_CALL(mockPort, Read(_, packetSize, _)).WillByDefault(Return(0));
+    ON_CALL(mockPort, Read(_, PACKET_SIZE, _)).WillByDefault(Return(0));
 
     EXPECT_CALL(
-        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), packetSize, _))
+        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), PACKET_SIZE, _))
         .Times(1);
-    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
@@ -93,22 +93,22 @@ TEST(LMS64CProtocol, GetFirmwareInfoNotFullyRead)
 
 TEST(LMS64CProtocol, GetFirmwareInfoWrongStatus)
 {
-    ISerialPortMock mockPort{};
+    SerialPortMock mockPort{};
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_RESOURCE_DENIED_CMD;
 
     LMS64CProtocol::FirmwareInfo info;
 
-    uint32_t subdevice = 1;
+    uint32_t subdevice = 1U;
 
-    ON_CALL(mockPort, Read(_, packetSize, _))
+    ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
             SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(
-        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), packetSize, _))
+        mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO), IsSubdeviceCorrect(subdevice)), PACKET_SIZE, _))
         .Times(1);
-    EXPECT_CALL(mockPort, Read(_, packetSize, _)).Times(1);
+    EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 

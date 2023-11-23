@@ -18,7 +18,7 @@ using ::testing::ReturnArg;
 using ::testing::Sequence;
 using ::testing::SetArrayArgument;
 
-static constexpr std::size_t packetSize = sizeof(LMS64CPacket);
+static constexpr std::size_t PACKET_SIZE = sizeof(LMS64CPacket);
 
 MATCHER_P(IsCommandCorrect, command, "Checks if the packet has the correct command")
 {
@@ -73,18 +73,18 @@ TEST(LimeSDR_Mini, Constructor)
 
     Sequence FPGADetectRefClockSequence;
 
-    ON_CALL(*usbPipeMock, Read(_, packetSize, _))
+    ON_CALL(*usbPipeMock, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
             SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
 
     // Sink uninteresting calls so that any new changes don't immediately break tests
-    EXPECT_CALL(*usbPipeMock, Write(_, packetSize, _)).Times(AnyNumber());
-    EXPECT_CALL(*usbPipeMock, Read(_, packetSize, _)).Times(AnyNumber());
+    EXPECT_CALL(*usbPipeMock, Write(_, PACKET_SIZE, _)).Times(AnyNumber());
+    EXPECT_CALL(*usbPipeMock, Read(_, PACKET_SIZE, _)).Times(AnyNumber());
 
     // Calls about getting the device information
     auto getInfoMatcher = IsCommandCorrect(LMS64CProtocol::CMD_GET_INFO);
-    EXPECT_CALL(*usbPipeMock, Write(getInfoMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(getInfoMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Write(getInfoMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Read(getInfoMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
 
     // Calls the FPGA's device information
     const uint8_t GetDeviceInformationPayloadBytes[]{ 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03 };
@@ -92,8 +92,8 @@ TEST(LimeSDR_Mini, Constructor)
         IsBlockCountCorrect(4),
         IsPeripheralIDCorrect(1),
         ArePayloadBytesCorrect(8, GetDeviceInformationPayloadBytes));
-    EXPECT_CALL(*usbPipeMock, Write(callFPGAForDeviceInformationMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(callFPGAForDeviceInformationMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Write(callFPGAForDeviceInformationMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Read(callFPGAForDeviceInformationMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
 
     // Calls the LMS7002M chip for its chip revision
     const uint8_t LMS7002ChipRevisionBytes[]{ 0x00, 0x2f };
@@ -101,8 +101,8 @@ TEST(LimeSDR_Mini, Constructor)
         IsBlockCountCorrect(1),
         IsPeripheralIDCorrect(0),
         ArePayloadBytesCorrect(2, LMS7002ChipRevisionBytes));
-    EXPECT_CALL(*usbPipeMock, Write(callForLMS7002MChipRevisionMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(callForLMS7002MChipRevisionMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Write(callForLMS7002MChipRevisionMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Read(callForLMS7002MChipRevisionMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
 
     // Writes to the FPGA values to set up the reference clock detection
     const uint8_t FPGADetectRefClockSetupBytes[]{ 0x80, 0x61, 0x00, 0x00, 0x80, 0x63, 0x00, 0x00 };
@@ -110,11 +110,11 @@ TEST(LimeSDR_Mini, Constructor)
         IsBlockCountCorrect(2),
         IsPeripheralIDCorrect(0),
         ArePayloadBytesCorrect(8, FPGADetectRefClockSetupBytes));
-    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClockSetupMatcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClockSetupMatcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClockSetupMatcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClockSetupMatcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
@@ -125,11 +125,11 @@ TEST(LimeSDR_Mini, Constructor)
         IsBlockCountCorrect(1),
         IsPeripheralIDCorrect(0),
         ArePayloadBytesCorrect(4, FPGADetectRefClockStartBytes));
-    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClockStartMatcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClockStartMatcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClockStartMatcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClockStartMatcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
@@ -142,11 +142,11 @@ TEST(LimeSDR_Mini, Constructor)
 
     auto FPGADetectRefClkReadRegister0x65Matcher =
         AllOf(IsCommandCorrect(LMS64CProtocol::CMD_BRDSPI_RD), IsBlockCountCorrect(1), IsPayloadByteCorrect(1, 0x65));
-    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClkReadRegister0x65Matcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClkReadRegister0x65Matcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClkReadRegister0x65Matcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClkReadRegister0x65Matcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .WillOnce(DoAll(SetArrayArgument<0>(
@@ -160,11 +160,11 @@ TEST(LimeSDR_Mini, Constructor)
         IsBlockCountCorrect(2),
         IsPeripheralIDCorrect(0),
         ArePayloadBytesCorrect(4, FPGADetectRefClockReadClockCounterBytes));
-    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClockReadClockCounterMatcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Write(FPGADetectRefClockReadClockCounterMatcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClockReadClockCounterMatcher, packetSize, _))
+    EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClockReadClockCounterMatcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
         .RetiresOnSaturation();
@@ -174,8 +174,8 @@ TEST(LimeSDR_Mini, Constructor)
         IsBlockCountCorrect(4),
         IsPeripheralIDCorrect(0),
         ArePayloadBytesCorrect(8, GetDeviceInformationPayloadBytes));
-    EXPECT_CALL(*usbPipeMock, Write(callFPGAForGatewareInformationMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
-    EXPECT_CALL(*usbPipeMock, Read(callFPGAForGatewareInformationMatcher, packetSize, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Write(callFPGAForGatewareInformationMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
+    EXPECT_CALL(*usbPipeMock, Read(callFPGAForGatewareInformationMatcher, PACKET_SIZE, _)).Times(1).RetiresOnSaturation();
 
     auto usbPipe = std::static_pointer_cast<USB_CSR_Pipe>(usbPipeMock);
 

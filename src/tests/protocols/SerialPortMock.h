@@ -5,10 +5,10 @@
 
 namespace lime::testing {
 
-class ISerialPortMock : public ISerialPort
+class SerialPortMock : public ISerialPort
 {
   public:
-    ISerialPortMock()
+    SerialPortMock()
     {
         ON_CALL(*this, Write).WillByDefault([this](const uint8_t* data, size_t length, int timeout_ms) { return length; });
         ON_CALL(*this, Read).WillByDefault([this](uint8_t* data, size_t length, int timeout_ms) { return length; });
