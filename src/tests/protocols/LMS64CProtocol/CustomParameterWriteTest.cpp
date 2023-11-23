@@ -94,12 +94,11 @@ TEST(LMS64CProtocol, CustomParameterWriteTestSixteenParameters)
 
     Sequence writeSequence;
 
-    std::vector<CustomParameterIO> parameters;
-    parameters.reserve(16);
+    std::vector<CustomParameterIO> parameters(16);
 
     for (int i = 0; i < 16; i++)
     {
-        parameters.push_back({ i, 127, "Ohm" });
+        parameters[i] = { i, 127, "Ohm" };
     }
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
