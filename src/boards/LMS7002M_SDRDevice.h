@@ -44,15 +44,13 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamTx(
-        uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(
-        uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, complex16_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
     virtual int I2CRead(int addr, uint8_t* dest, uint32_t length) override;

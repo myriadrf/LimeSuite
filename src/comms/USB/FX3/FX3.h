@@ -1,6 +1,5 @@
 #pragma once
 #include "USBGeneric.h"
-#include "USBCommon.h"
 
 #include <vector>
 #include <set>
@@ -10,68 +9,7 @@
 #include <thread>
 #include <ciso646>
 
-#ifndef __unix__
-    #include "windows.h"
-    #include "CyAPI.h"
-#else
-    #ifdef __GNUC__
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wpedantic"
-    #endif
-    #include <libusb.h>
-    #ifdef __GNUC__
-        #pragma GCC diagnostic pop
-    #endif
-    #include <mutex>
-    #include <condition_variable>
-    #include <chrono>
-#endif
-
 namespace lime {
-
-class USBTransferContext_FX3 : public USBTransferContext
-{
-  public:
-    USBTransferContext_FX3()
-        : USBTransferContext()
-    {
-#ifndef __unix__
-        inOvLap = new OVERLAPPED;
-        memset(inOvLap, 0, sizeof(OVERLAPPED));
-        inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
-        context = NULL;
-        EndPt = nullptr;
-#endif
-    }
-
-#ifndef __unix__
-    ~USBTransferContext_FX3()
-    {
-        CloseHandle(inOvLap->hEvent);
-        delete inOvLap;
-    }
-#endif
-
-    bool Reset() override
-    {
-        if (used)
-        {
-            return false;
-        }
-#ifndef __unix__
-        CloseHandle(inOvLap->hEvent);
-        memset(inOvLap, 0, sizeof(OVERLAPPED));
-        inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
-#endif
-        return true;
-    }
-
-#ifndef __unix__
-    PUCHAR context;
-    CCyUSBEndPoint* EndPt;
-    OVERLAPPED* inOvLap;
-#endif
-};
 
 class FX3 : public USBGeneric
 {

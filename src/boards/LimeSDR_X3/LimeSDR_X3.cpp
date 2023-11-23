@@ -14,6 +14,7 @@
 #include "DSP/Equalizer.h"
 #include "limesuite/DeviceNode.h"
 #include "CommonFunctions.h"
+#include "SlaveSelectShim.h"
 
 #include "mcu_program/common_src/lms7002m_calibrations.h"
 #include "mcu_program/common_src/lms7002m_filters.h"
@@ -24,10 +25,10 @@
 namespace lime {
 
 // X3 board specific subdevice ids
-static constexpr uint8_t spi_LMS7002M_1 = 0;
-static constexpr uint8_t spi_LMS7002M_2 = 1;
-static constexpr uint8_t spi_LMS7002M_3 = 2;
-static constexpr uint8_t spi_FPGA = 3;
+static const uint8_t SPI_LMS7002M_1 = 0;
+static const uint8_t SPI_LMS7002M_2 = 1;
+static const uint8_t SPI_LMS7002M_3 = 2;
+static const uint8_t SPI_FPGA = 3;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 static SDRDevice::CustomParameter cp_temperature = { "Board Temperature", 1, 0, 65535, true };
@@ -54,44 +55,26 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-// Communications helper to divert data to specific device
-class SlaveSelectShim : public ISPI
-{
-  public:
-    SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId)
-        : port(comms)
-        , slaveId(slaveId){};
-    virtual ~SlaveSelectShim(){};
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { port->SPI(slaveId, MOSI, MISO, count); }
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        port->SPI(spiBusAddress, MOSI, MISO, count);
-    }
-    virtual int ResetDevice() { return port->ResetDevice(slaveId); }
-
-  private:
-    std::shared_ptr<IComms> port;
-    uint32_t slaveId;
-};
-
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
-LimeSDR_X3::LimeSDR_X3(
-    std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams)
+LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
+    std::shared_ptr<IComms> spiFPGA,
+    std::vector<std::shared_ptr<LitePCIe>> trxStreams,
+    std::shared_ptr<ISerialPort> control)
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
-    , fpgaPort(spiFPGA)
+    , mfpgaPort(spiFPGA)
+    , mSerialPort(control)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
-    desc.name = GetDeviceName(LMS_DEV_LIMESDR_X3);
 
-    // LMS64CProtocol::FirmwareInfo fw;
-    // LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
-    // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
+    LMS64CProtocol::FirmwareInfo fw;
+    LMS64CProtocol::GetFirmwareInfo(*mSerialPort, fw);
+    LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
     desc.spiSlaveIds = {
-        { "LMS7002M_1", spi_LMS7002M_1 }, { "LMS7002M_2", spi_LMS7002M_2 }, { "LMS7002M_3", spi_LMS7002M_3 }, { "FPGA", spi_FPGA }
+        { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
     desc.memoryDevices = {
@@ -101,13 +84,13 @@ LimeSDR_X3::LimeSDR_X3(
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
 
-    mLMS7002Mcomms[0] = std::shared_ptr<SlaveSelectShim>(new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_1));
+    mLMS7002Mcomms[0] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_1);
 
     mFPGA = new lime::FPGA_X3(spiFPGA, mLMS7002Mcomms[0]);
     FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     FPGA::GatewareToDescriptor(gw, desc);
 
-    mEqualizer = new Equalizer(spiFPGA, spi_FPGA);
+    mEqualizer = new Equalizer(spiFPGA, SPI_FPGA);
 
     mClockGeneratorCDCM = new CDCM_Dev(spiFPGA, CDCM2_BASE_ADDR);
     // TODO: read back cdcm values or mClockGeneratorCDCM->Reset(30.72e6, 25e6);
@@ -129,7 +112,7 @@ LimeSDR_X3::LimeSDR_X3(
     soc.rxPathNames = { "None", "TDD", "FDD", "Calibration (LMS3)" };
     soc.txPathNames = { "None", "TDD", "FDD" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[1] = std::shared_ptr<SlaveSelectShim>(new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_2));
+    mLMS7002Mcomms[1] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2);
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
     mLMSChips.push_back(lms2);
 
@@ -138,7 +121,7 @@ LimeSDR_X3::LimeSDR_X3(
     soc.rxPathNames = { "None", "LNAH", "Calibration (LMS2)" };
     soc.txPathNames = { "None", "Band1" };
     desc.rfSOC.push_back(soc);
-    mLMS7002Mcomms[2] = std::shared_ptr<SlaveSelectShim>(new SlaveSelectShim(spiLMS7002M, spi_LMS7002M_3));
+    mLMS7002Mcomms[2] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3);
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
     mLMSChips.push_back(lms3);
 
@@ -151,14 +134,14 @@ LimeSDR_X3::LimeSDR_X3(
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA_X3", mFPGA) };
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_1", "LMS7002M", lms1)));
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_2", "LMS7002M", lms2)));
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS_3", "LMS7002M", lms3)));
-    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("X3", "SDRDevice", this));
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA);
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", "LMS7002M", lms1));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", "LMS7002M", lms2));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", "LMS7002M", lms3));
+    desc.socTree = std::make_shared<DeviceNode>("X3", "SDRDevice", this);
     desc.socTree->children.push_back(fpgaNode);
 
-    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("CDCM6208", "CDCM6208", mClockGeneratorCDCM)));
+    desc.socTree->children.push_back(std::make_shared<DeviceNode>("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
 }
 
 LimeSDR_X3::~LimeSDR_X3()
@@ -890,22 +873,18 @@ void LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
 }
 
-void LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     switch (chipSelect)
     {
-    case spi_LMS7002M_1:
-        mLMS7002Mcomms[0]->SPI(MOSI, MISO, count);
-        return;
-    case spi_LMS7002M_2:
-        mLMS7002Mcomms[1]->SPI(MOSI, MISO, count);
-        return;
-    case spi_LMS7002M_3:
-        mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
-        return;
-    case spi_FPGA:
-        fpgaPort->SPI(MOSI, MISO, count);
-        return;
+    case SPI_LMS7002M_1:
+        return mLMS7002Mcomms[0]->SPI(MOSI, MISO, count);
+    case SPI_LMS7002M_2:
+        return mLMS7002Mcomms[1]->SPI(MOSI, MISO, count);
+    case SPI_LMS7002M_3:
+        return mLMS7002Mcomms[2]->SPI(MOSI, MISO, count);
+    case SPI_FPGA:
+        return mfpgaPort->SPI(MOSI, MISO, count);
     default:
         throw std::logic_error("invalid SPI chip select");
     }
@@ -1280,12 +1259,12 @@ void LimeSDR_X3::LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz)
 
 int LimeSDR_X3::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterWrite(parameters);
+    return mfpgaPort->CustomParameterWrite(parameters);
 }
 
 int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return fpgaPort->CustomParameterRead(parameters);
+    return mfpgaPort->CustomParameterRead(parameters);
 }
 
 bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
@@ -1299,7 +1278,7 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
         progMode = 1;
     else
         return false;
-    return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
+    return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
 int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)

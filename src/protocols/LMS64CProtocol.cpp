@@ -56,16 +56,17 @@ static int SPI16(ISerialPort& port,
     uint32_t subDevice)
 {
     LMS64CPacket pkt;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = chipSelect;
-    pkt.subDevice = subDevice;
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
-    const int maxBlocks = 14;
+    constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
     while (srcIndex < count)
     {
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = chipSelect;
+        pkt.subDevice = subDevice;
+
         // fill packet with same direction operations
         const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
         for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
@@ -97,11 +98,11 @@ static int SPI16(ISerialPort& port,
         int sent = 0;
         int recv = 0;
 
-        sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+        sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             return -1;
 
-        recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
+        recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
         if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
             return -1;
 
@@ -113,10 +114,8 @@ static int SPI16(ISerialPort& port,
             MISO[destIndex] = (pkt.payload[i * 4 + 2] << 8) | pkt.payload[i * 4 + 3];
             ++destIndex;
         }
-
-        pkt.blockCount = 0;
-        pkt.status = STATUS_UNDEFINED;
     }
+
     return 0;
 }
 
@@ -132,28 +131,31 @@ int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice)
     LMS64CPacket pkt;
     pkt.cmd = CMD_GET_INFO;
     pkt.subDevice = subDevice;
-    int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sent != sizeof(pkt))
-        return -1;
-
-    int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
-    if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
-        return -1;
-
-    if (pkt.status == STATUS_COMPLETED_CMD)
     {
-        info.firmware = pkt.payload[0];
-        info.deviceId = pkt.payload[1];
-        info.protocol = pkt.payload[2];
-        info.hardware = pkt.payload[3];
-        info.expansionBoardId = pkt.payload[4];
-        info.boardSerialNumber = 0;
-        for (int i = 10; i < 18; i++)
-        {
-            info.boardSerialNumber <<= 8;
-            info.boardSerialNumber |= pkt.payload[i];
-        }
+        return -1;
     }
+
+    int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
+    if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
+    {
+        return -1;
+    }
+
+    info.firmware = pkt.payload[0];
+    info.deviceId = pkt.payload[1];
+    info.protocol = pkt.payload[2];
+    info.hardware = pkt.payload[3];
+    info.expansionBoardId = pkt.payload[4];
+    info.boardSerialNumber = 0;
+
+    for (int i = 10; i < 18; i++)
+    {
+        info.boardSerialNumber <<= 8;
+        info.boardSerialNumber |= pkt.payload[i];
+    }
+
     return 0;
 }
 
@@ -171,7 +173,7 @@ void FirmwareToDescriptor(const FirmwareInfo& fw, SDRDevice::Descriptor& descrip
     {
         char strTemp[64];
         sprintf(strTemp, "Unknown (0x%X)", fw.expansionBoardId);
-        descriptor.name = std::string(strTemp);
+        descriptor.expansionName = std::string(strTemp);
     }
     else
         descriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(fw.expansionBoardId));
@@ -195,17 +197,19 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t 
 {
     // only writes are supported
     LMS64CPacket pkt;
-    pkt.cmd = CMD_ADF4002_WR;
-    pkt.status = STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = 0;
-    pkt.subDevice = subDevice;
 
     size_t srcIndex = 0;
-    const int maxBlocks = 14;
+    constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
     const int blockSize = 3;
+
     while (srcIndex < count)
     {
+        pkt.cmd = CMD_ADF4002_WR;
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = 0;
+        pkt.subDevice = subDevice;
+
         for (int i = 0; i < maxBlocks && srcIndex < count; ++i)
         {
             int payloadOffset = pkt.blockCount * blockSize;
@@ -219,16 +223,13 @@ int ADF4002_SPI(ISerialPort& port, const uint32_t* MOSI, size_t count, uint32_t 
         int sent = 0;
         int recv = 0;
 
-        sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+        sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             return -1;
 
-        recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 1000);
+        recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 1000);
         if (recv != sizeof(pkt) || pkt.status != STATUS_COMPLETED_CMD)
             return -1;
-
-        pkt.blockCount = 0;
-        pkt.status = STATUS_UNDEFINED;
     }
     return 0;
 }
@@ -255,7 +256,7 @@ int CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>
         pkt.periphID = 0;
         pkt.subDevice = subDevice;
         int byteIndex = 0;
-        const int maxBlocks = 14;
+        constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
 
         while (pkt.blockCount < maxBlocks && index < parameters.size())
         {
@@ -304,8 +305,7 @@ int CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& param
         pkt.periphID = 0;
         pkt.subDevice = subDevice;
         int byteIndex = 0;
-
-        const int maxBlocks = 14;
+        constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
 
         while (pkt.blockCount < maxBlocks && index < parameters.size())
         {
@@ -421,13 +421,13 @@ int ProgramWrite(ISerialPort& port,
             data += chunkSize;
         }
 
-        if (port.Write((uint8_t*)&packet, sizeof(packet), progTimeout_ms) != sizeof(packet))
+        if (port.Write(reinterpret_cast<uint8_t*>(&packet), sizeof(packet), progTimeout_ms) != sizeof(packet))
         {
             if (callback)
                 callback(bytesSent, length, "Programming failed! Write operation failed");
             return false;
         }
-        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), progTimeout_ms) != sizeof(inPacket))
+        if (port.Read(reinterpret_cast<uint8_t*>(&inPacket), sizeof(inPacket), progTimeout_ms) != sizeof(inPacket))
         {
             if (callback)
                 callback(bytesSent, length, "Programming failed! Read operation failed");
@@ -481,10 +481,10 @@ int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice)
 
     pkt.payload[0] = LMS_RST_PULSE;
 
-    int sent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    int sent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (sent != sizeof(pkt))
         throw std::runtime_error("DeviceReset write failed");
-    int recv = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    int recv = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (recv < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
         throw std::runtime_error("DeviceReset read failed");
     return 0;
@@ -492,17 +492,22 @@ int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice)
 
 int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_RD;
     pkt.blockCount = bufLength;
 
-    int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    int bytesSent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
     {
         throw std::runtime_error("GPIODirRead write failed");
     }
 
-    int bytesReceived = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    int bytesReceived = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesReceived < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
     {
         throw std::runtime_error("GPIODirRead read failed");
@@ -518,17 +523,22 @@ int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 
 int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_RD;
     pkt.blockCount = bufLength;
 
-    int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    int bytesSent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
     {
         throw std::runtime_error("GPIORead write failed");
     }
 
-    int bytesReceived = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    int bytesReceived = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesReceived < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
     {
         throw std::runtime_error("GPIORead read failed");
@@ -544,17 +554,27 @@ int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength)
 
 int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_DIR_WR;
     pkt.blockCount = bufLength;
 
-    int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    for (size_t i = 0; i < bufLength; ++i)
+    {
+        pkt.payload[i] = buffer[i];
+    }
+
+    int bytesSent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
     {
         throw std::runtime_error("GPIODirWrite write failed");
     }
 
-    int bytesReceived = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    int bytesReceived = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesReceived < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
     {
         throw std::runtime_error("GPIODirWrite read failed");
@@ -565,17 +585,27 @@ int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLengt
 
 int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength)
 {
+    if (bufLength > LMS64CPacket::payloadSize)
+    {
+        throw std::invalid_argument("Buffer is too big for one packet.");
+    }
+
     LMS64CPacket pkt;
     pkt.cmd = LMS64CProtocol::CMD_GPIO_WR;
     pkt.blockCount = bufLength;
 
-    int bytesSent = port.Write((uint8_t*)&pkt, sizeof(pkt), 100);
+    for (size_t i = 0; i < bufLength; ++i)
+    {
+        pkt.payload[i] = buffer[i];
+    }
+
+    int bytesSent = port.Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesSent != sizeof(pkt))
     {
         throw std::runtime_error("GPIOWrite write failed");
     }
 
-    int bytesReceived = port.Read((uint8_t*)&pkt, sizeof(pkt), 100);
+    int bytesReceived = port.Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
     if (bytesReceived < pkt.headerSize || pkt.status != STATUS_COMPLETED_CMD)
     {
         throw std::runtime_error("GPIOWrite read failed");

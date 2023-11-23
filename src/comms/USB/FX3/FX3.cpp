@@ -1,12 +1,5 @@
 #include "FX3.h"
-#include <cstring>
-#include "Logger.h"
-#include <ciso646>
-#include <fstream>
-#include <thread>
-#include <chrono>
-#include <assert.h>
-#include <mutex>
+#include "USBTransferContext_FX3.h"
 
 using namespace lime;
 
@@ -44,24 +37,12 @@ void FX3::Disconnect()
         dev_handle = nullptr;
     }
 #endif
+    isConnected = false;
 }
 
 #ifndef __unix__
 int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 {
-    std::unique_lock<std::mutex> lock{ contextsLock };
-
-    int i = 0;
-    bool contextFound = false;
-    //find not used context
-    for (i = 0; i < USB_MAX_CONTEXTS; i++)
-    {
-        if (!contexts[i].used)
-        {
-            contextFound = true;
-            break;
-        }
-    }
     int index = GetUSBContextIndex();
 
     if (index < 0)

@@ -26,14 +26,14 @@
 
 using namespace lime;
 
-static constexpr int streamBulkWriteAddr = 0x03;
-static constexpr int streamBulkReadAddr = 0x83;
+static const int STREAM_BULK_WRITE_ADDRESS = 0x03;
+static const int STREAM_BULK_READ_ADDRESS = 0x83;
 
-static constexpr int ctrlBulkWriteAddr = 0x02;
-static constexpr int ctrlBulkReadAddr = 0x82;
+static const int CONTROL_BULK_WRITE_ADDRESS = 0x02;
+static const int CONTROL_BULK_READ_ADDRESS = 0x82;
 
-static constexpr uint8_t spi_LMS7002M = 0;
-static constexpr uint8_t spi_FPGA = 1;
+static const uint8_t SPI_LMS7002M = 0;
+static const uint8_t SPI_FPGA = 1;
 
 static const SDRDevice::CustomParameter CP_VCTCXO_DAC = { "VCTCXO DAC (runtime)", 0, 0, 255, false };
 static const SDRDevice::CustomParameter CP_TEMPERATURE = { "Board Temperature", 1, 0, 65535, true };
@@ -70,7 +70,7 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
         descriptor.customParameters.push_back(CP_TEMPERATURE);
     }
 
-    descriptor.spiSlaveIds = { { "LMS7002M", spi_LMS7002M }, { "FPGA", spi_FPGA } };
+    descriptor.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
     RFSOCDescriptor soc;
     soc.name = "LMS";
@@ -80,9 +80,9 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
 
     descriptor.rfSOC.push_back(soc);
 
-    std::shared_ptr<DeviceNode> fpgaNode{ new DeviceNode("FPGA", "FPGA-Mini", mFPGA) };
-    fpgaNode->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("LMS", "LMS7002M", mLMSChips[0])));
-    descriptor.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("SDR Mini", "SDRDevice", this));
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA-Mini", mFPGA);
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS", "LMS7002M", mLMSChips[0]));
+    descriptor.socTree = std::make_shared<DeviceNode>("SDR Mini", "SDRDevice", this);
     descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
@@ -385,20 +385,22 @@ void LimeSDR_Mini::EnableCache(bool enable)
     }
 }
 
-void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mStreamPort);
     assert(MOSI);
     LMS64CPacket pkt;
-    pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
-    pkt.blockCount = 0;
-    pkt.periphID = chipSelect;
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
-    const int maxBlocks = 14;
+    constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
+
     while (srcIndex < count)
     {
+        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
+        pkt.blockCount = 0;
+        pkt.periphID = chipSelect;
+
         // fill packet with same direction operations
         const bool willDoWrite = MOSI[srcIndex] & (1 << 31);
 
@@ -415,10 +417,10 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
             {
                 switch (chipSelect)
                 {
-                case spi_LMS7002M:
+                case SPI_LMS7002M:
                     pkt.cmd = LMS64CProtocol::CMD_LMS7002_WR;
                     break;
-                case spi_FPGA:
+                case SPI_FPGA:
                     pkt.cmd = LMS64CProtocol::CMD_BRDSPI_WR;
                     break;
                 default:
@@ -435,10 +437,10 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
             {
                 switch (chipSelect)
                 {
-                case spi_LMS7002M:
+                case SPI_LMS7002M:
                     pkt.cmd = LMS64CProtocol::CMD_LMS7002_RD;
                     break;
-                case spi_FPGA:
+                case SPI_FPGA:
                     pkt.cmd = LMS64CProtocol::CMD_BRDSPI_RD;
                     break;
                 default:
@@ -456,13 +458,13 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
 
         // flush packet
         //printPacket(pkt, 4, "Wr:");
-        int sent = mStreamPort->BulkTransfer(ctrlBulkWriteAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
         {
             throw std::runtime_error("SPI failed");
         }
 
-        int recv = mStreamPort->BulkTransfer(ctrlBulkReadAddr, reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
         if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD)
@@ -480,10 +482,9 @@ void LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO
         {
             throw std::runtime_error("SPI failed");
         }
-
-        pkt.blockCount = 0;
-        pkt.status = LMS64CProtocol::STATUS_UNDEFINED;
     }
+
+    return 0;
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
@@ -583,7 +584,7 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
 
     const uint32_t addrs[] = { 0x0000, 0x0001, 0x0002, 0x0003 };
     uint32_t data[4];
-    SPI(spi_FPGA, addrs, data, 4);
+    SPI(SPI_FPGA, addrs, data, 4);
     auto boardID = static_cast<eLMS_DEV>(data[0]); //(pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
     auto gatewareVersion = data[1]; //(pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
     auto gatewareRevision = data[2]; //(pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
@@ -609,7 +610,7 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         auto connection = std::static_pointer_cast<FT601>(mStreamPort);
         connection->ResetStreamBuffers();
 
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], streamBulkReadAddr, streamBulkWriteAddr);
+        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_READ_ADDRESS, STREAM_BULK_WRITE_ADDRESS);
         mStreamers[0]->Setup(config);
 
         return 0;

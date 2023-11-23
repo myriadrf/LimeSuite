@@ -2,22 +2,15 @@
 #define LIME_LIMESDR_H
 
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
-#include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
-#include "USBCommon.h"
+#include "dataTypes.h"
+
 #include <vector>
 #include <memory>
-
-#include "dataTypes.h"
 
 namespace lime {
 
 class USBGeneric;
-class LMS7002M;
-class Streamer;
-class FPGA;
-class TRXLooper_USB;
 
 class LimeSDR : public LMS7002M_SDRDevice
 {
@@ -39,7 +32,7 @@ class LimeSDR : public LMS7002M_SDRDevice
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
 
@@ -73,17 +66,6 @@ class LimeSDR : public LMS7002M_SDRDevice
     std::shared_ptr<ISerialPort> mSerialPort;
     std::shared_ptr<IComms> mlms7002mPort;
     std::shared_ptr<IComms> mfpgaPort;
-};
-
-class LimeSDREntry : public USBEntry
-{
-  public:
-    LimeSDREntry();
-
-#ifndef __unix__
-    virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-#endif
-    virtual SDRDevice* make(const DeviceHandle& handle) override;
 };
 
 } // namespace lime

@@ -35,17 +35,17 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     // LMS64CProtocol::GetFirmwareInfo(controlPipe, fw);
     // LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
-    // mFPGA = new lime::FPGA_X3(spiFPGA, spi_LMS7002M_1);
+    // mFPGA = new lime::FPGA_X3(spiFPGA, SPI_LMS7002M_1);
     // mFPGA->SetConnection(&mFPGAcomms);
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
-    desc.socTree = std::shared_ptr<DeviceNode>(new DeviceNode("X8", "SDRDevice", this));
+    desc.socTree = std::make_shared<DeviceNode>("X8", "SDRDevice", this);
 
     mADF = new ADF4002();
     // TODO: readback board's reference clock
     mADF->Initialize(adfComms, 30.72e6);
-    desc.socTree->children.push_back(std::shared_ptr<DeviceNode>(new DeviceNode("ADF4002", "ADF4002", mADF)));
+    desc.socTree->children.push_back(std::make_shared<DeviceNode>("ADF4002", "ADF4002", mADF));
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
@@ -213,23 +213,21 @@ void LimeSDR_MMX8::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx,
     mSubDevices[moduleIndex]->StreamStatus(0, rx, tx);
 }
 
-void LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     if (chipSelect == 0)
     {
-        mMainFPGAcomms->SPI(MOSI, MISO, count);
-        return;
+        return mMainFPGAcomms->SPI(MOSI, MISO, count);
     }
 
     SDRDevice* dev = chipSelectToDevice.at(chipSelect);
     if (!dev)
     {
         throw std::logic_error("invalid SPI chip select");
-        return;
     }
 
     uint32_t subSelect = chipSelect & 0xFF;
-    dev->SPI(subSelect, MOSI, MISO, count);
+    return dev->SPI(subSelect, MOSI, MISO, count);
 }
 
 int LimeSDR_MMX8::I2CWrite(int address, const uint8_t* data, uint32_t length)

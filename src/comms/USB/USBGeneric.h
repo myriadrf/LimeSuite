@@ -1,10 +1,9 @@
 #pragma once
 
-#include <chrono>
 #include <mutex>
 #include <string>
 #include <thread>
-#include "USBCommon.h"
+#include "USBTransferContext.h"
 
 #ifdef __unix__
     #ifdef __GNUC__

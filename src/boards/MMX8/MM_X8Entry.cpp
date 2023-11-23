@@ -2,6 +2,7 @@
     #include <unistd.h>
 #endif
 
+#include "MM_X8Entry.h"
 #include "LitePCIe.h"
 #include "MM_X8.h"
 #include "PCIeCommon.h"
@@ -82,10 +83,10 @@ class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
         , subdeviceIndex(subdeviceIndex)
     {
     }
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { SPI(0, MOSI, MISO, count); }
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { return SPI(0, MOSI, MISO, count); }
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
+        return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
     }
     virtual int ResetDevice(int chipSelect) override { return LMS64CProtocol::DeviceReset(pipe, chipSelect, subdeviceIndex); };
 
@@ -102,13 +103,14 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
         , subdeviceIndex(subdeviceIndex)
     {
     }
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+    int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
+        return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+
+    int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
+        return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
     }
 
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override
@@ -139,13 +141,14 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
         , subdeviceIndex(subdeviceIndex)
     {
     }
-    void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+
+    int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
+        return LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
     }
-    void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
+    int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
     {
-        LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
+        return LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
     }
 
   private:
@@ -155,17 +158,17 @@ class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 
 SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
 {
-    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
+    auto control = std::make_shared<LitePCIe>();
     std::vector<std::shared_ptr<LitePCIe>> trxStreams(8);
     std::vector<std::shared_ptr<IComms>> controls(8);
     std::vector<std::shared_ptr<IComms>> fpga(8);
     ISPI* adfComms = new LMS64C_ADF_Over_PCIe_MMX8(control, 0);
     for (size_t i = 0; i < controls.size(); ++i)
     {
-        controls[i] = std::shared_ptr<LMS64C_LMS7002M_Over_PCIe_MMX8>(new LMS64C_LMS7002M_Over_PCIe_MMX8(control, i + 1));
-        fpga[i] = std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, i + 1));
+        controls[i] = std::make_shared<LMS64C_LMS7002M_Over_PCIe_MMX8>(control, i + 1);
+        fpga[i] = std::make_shared<LMS64C_FPGA_Over_PCIe_MMX8>(control, i + 1);
     }
-    fpga.push_back(std::shared_ptr<LMS64C_FPGA_Over_PCIe_MMX8>(new LMS64C_FPGA_Over_PCIe_MMX8(control, 0)));
+    fpga.push_back(std::make_shared<LMS64C_FPGA_Over_PCIe_MMX8>(control, 0));
 
     try
     {
@@ -177,7 +180,7 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
         {
             char portName[128];
             sprintf(portName, "%s_trx%li", handle.addr.c_str(), i);
-            trxStreams[i] = std::shared_ptr<LitePCIe>(new LitePCIe());
+            trxStreams[i] = std::make_shared<LitePCIe>();
             trxStreams[i]->SetPathName(portName);
         }
         return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams), adfComms);

@@ -1,10 +1,13 @@
+#include "LimeSDR_MiniEntry.h"
 #include "LimeSDR_Mini.h"
 #include "DeviceExceptions.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
 #include "Logger.h"
-#include "USBCommon.h"
+#include "USB_CSR_Pipe_Mini.h"
+#include "LMS64C_LMS7002M_Over_USB.h"
+#include "LMS64C_FPGA_Over_USB.h"
 
 #include "FT601/FT601.h"
 
@@ -79,44 +82,17 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
 }
 #endif
 
-static constexpr int streamBulkWriteAddr = 0x03;
-static constexpr int streamBulkReadAddr = 0x83;
-
-static constexpr int ctrlBulkWriteAddr = 0x02;
-static constexpr int ctrlBulkReadAddr = 0x82;
-
-class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
-{
-  public:
-    explicit USB_CSR_Pipe_Mini(FT601& port)
-        : USB_CSR_Pipe()
-        , port(port){};
-
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.BulkTransfer(ctrlBulkWriteAddr, const_cast<uint8_t*>(data), length, timeout_ms);
-    }
-
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override
-    {
-        return port.BulkTransfer(ctrlBulkReadAddr, data, length, timeout_ms);
-    }
-
-  protected:
-    FT601& port;
-};
-
 SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
 {
     const auto splitPos = handle.addr.find(":");
     const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
     const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
 
-    std::shared_ptr<FT601> usbComms{ new FT601(
+    auto usbComms = std::make_shared<FT601>(
 #ifdef __unix__
         ctx
 #endif
-        ) };
+    );
     if (!usbComms->Connect(vid, pid, handle.serial))
     {
         char reason[256];
@@ -124,11 +100,11 @@ SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
         throw std::runtime_error(reason);
     }
 
-    std::shared_ptr<USB_CSR_Pipe> usbPipe{ new USB_CSR_Pipe_Mini(*usbComms) };
+    auto usbPipe = std::make_shared<USB_CSR_Pipe_Mini>(*usbComms);
 
     // protocol layer
-    std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_USB(usbPipe) };
-    std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_USB(usbPipe) };
+    auto route_lms7002m = std::make_shared<LMS64C_LMS7002M_Over_USB>(usbPipe);
+    auto route_fpga = std::make_shared<LMS64C_FPGA_Over_USB>(usbPipe);
 
     return new LimeSDR_Mini(route_lms7002m, route_fpga, usbComms, usbPipe);
 }
