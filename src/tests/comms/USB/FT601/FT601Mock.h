@@ -1,3 +1,6 @@
+#ifndef LIME_FT601MOCK_H
+#define LIME_FT601MOCK_H
+
 #include <gmock/gmock.h>
 
 #include "FT601/FT601.h"
@@ -14,3 +17,5 @@ class FT601Mock : public FT601
 };
 
 } // namespace lime::testing
+
+#endif // LIME_FT601MOCK_H

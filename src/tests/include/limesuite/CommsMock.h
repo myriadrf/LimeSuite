@@ -1,3 +1,6 @@
+#ifndef LIME_COMMSMOCK_H
+#define LIME_COMMSMOCK_H
+
 #include <gmock/gmock.h>
 
 #include "limesuite/IComms.h"
@@ -21,3 +24,5 @@ class CommsMock : public IComms
 };
 
 } // namespace lime::testing
+
+#endif // LIME_COMMSMOCK_H

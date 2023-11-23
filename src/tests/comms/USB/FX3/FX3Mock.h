@@ -1,3 +1,6 @@
+#ifndef LIME_FX3MOCK_H
+#define LIME_FX3MOCK_H
+
 #include <gmock/gmock.h>
 
 #include "FX3/FX3.h"
@@ -22,3 +25,5 @@ class FX3Mock : public FX3
 };
 
 } // namespace lime::testing
+
+#endif // LIME_FX3MOCK_H

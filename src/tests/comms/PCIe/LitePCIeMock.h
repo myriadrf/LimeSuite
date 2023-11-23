@@ -1,3 +1,6 @@
+#ifndef LIME_LITEPCIEMOCK_H
+#define LIME_LITEPCIEMOCK_H
+
 #include <gmock/gmock.h>
 
 #include "LitePCIe.h"
@@ -12,3 +15,5 @@ class LitePCIeMock : public LitePCIe
 };
 
 } // namespace lime::testing
+
+#endif // LIME_LITEPCIEMOCK_H
