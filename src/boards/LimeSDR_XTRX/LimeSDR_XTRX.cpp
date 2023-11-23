@@ -68,8 +68,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     desc.spiSlaveIds = { { "LMS7002M", spi_LMS7002M }, { "FPGA", spi_FPGA } };
 
     desc.memoryDevices = {
-        //{"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
-        { "FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH },
+        //{"FPGA RAM", static_cast<uint32_t>(eMemoryDevice::FPGA_RAM)},
+        { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) },
     };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
@@ -249,7 +249,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         for (int i = 0; i < 2; ++i)
         {
             const ChannelConfig& ch = cfg.channel[i];
-            chip->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
+            chip->SetActiveChannel((i & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
 
             chip->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
             chip->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
@@ -268,7 +268,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         // enabled ADC/DAC is required for FPGA to work
         chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
         chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
         double sampleRate;
         if (rxUsed)
@@ -280,7 +280,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         for (int i = 0; i < 2; ++i)
         {
-            chip->SetActiveChannel(i == 0 ? LMS7002M::ChA : LMS7002M::ChB);
+            chip->SetActiveChannel(i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
             const ChannelConfig& ch = cfg.channel[i];
 
             if (socIndex == 0)
@@ -327,7 +327,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             LMS1SetPath(false, i, ch.rx.path);
             LMS1SetPath(true, i, ch.tx.path);
         }
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
         // Workaround: Toggle LimeLights transmit port to flush residual value from data interface
         uint16_t txMux = chip->Get_SPI_Reg_bits(LMS7param(TX_MUX));
@@ -557,16 +557,16 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
         switch (ePathLMS1_Rx(pathId))
         {
         case ePathLMS1_Rx::NONE:
-            path = LMS7002M::PATH_RFE_NONE;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_NONE);
             break;
         case ePathLMS1_Rx::LNAH:
-            path = LMS7002M::PATH_RFE_LNAH;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAH);
             break;
         case ePathLMS1_Rx::LNAL:
-            path = LMS7002M::PATH_RFE_LNAL;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAL);
             break;
         case ePathLMS1_Rx::LNAW:
-            path = LMS7002M::PATH_RFE_LNAW;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAW);
             break;
         default:
             throw std::logic_error("Invalid LMS1 Rx path");
@@ -601,9 +601,9 @@ bool LimeSDR_XTRX::UploadMemory(uint32_t id, const char* data, size_t length, Up
     int progMode;
     LMS64CProtocol::ProgramWriteTarget target;
     target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-    if (id == (int)eMemoryDevice::FPGA_RAM)
+    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_RAM))
         progMode = 0;
-    if (id == (int)eMemoryDevice::FPGA_FLASH)
+    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH))
         progMode = 1;
     else
         return false;

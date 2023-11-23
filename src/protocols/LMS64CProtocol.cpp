@@ -460,12 +460,12 @@ int ProgramWrite(ISerialPort& port,
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
     if ((device == 2 && prog_mode == 2) == false)
-        lime::log(LOG_LEVEL_INFO,
+        lime::log(LogLevel::INFO,
             "Programming finished, %li bytes sent! %li ms\n",
             length,
             std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     else
-        lime::log(LOG_LEVEL_INFO, "FPGA configuring initiated\n");
+        lime::log(LogLevel::INFO, "FPGA configuring initiated\n");
 #endif
     return 0;
 }

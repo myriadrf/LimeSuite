@@ -667,7 +667,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
         bool abort = false;
         //reset MCU, set mode
         wrdata[0] = (1 << 31) | controlAddr << 16 | 0;
-        wrdata[1] = (1 << 31) | controlAddr << 16 | (mode & 0x3);
+        wrdata[1] = (1 << 31) | controlAddr << 16 | (static_cast<uint32_t>(mode) & 0x3);
 
         m_serPort->SPI(wrdata, nullptr, 2);
 
@@ -1150,7 +1150,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
 {
     const uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
-    if (param == MCU_REF_CLK || param == MCU_BW)
+    if (param == MCU_Parameter::MCU_REF_CLK || param == MCU_Parameter::MCU_BW)
     {
         uint8_t inputRegs[3];
         value /= 1e6;
@@ -1167,11 +1167,11 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
             this_thread::sleep_for(chrono::microseconds(5));
         }
     }
-    if (param == MCU_REF_CLK)
+    if (param == MCU_Parameter::MCU_REF_CLK)
         RunProcedure(4);
-    if (param == MCU_BW)
+    if (param == MCU_Parameter::MCU_BW)
         RunProcedure(3);
-    if (param == MCU_EXT_LOOPBACK_PAIR)
+    if (param == MCU_Parameter::MCU_EXT_LOOPBACK_PAIR)
     {
         uint8_t intVal = (int)value;
         mSPI_write(0, intVal);
@@ -1210,7 +1210,7 @@ MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MCU_BD::MCU_PROG_MODE
     if (enabled)
         regValue |= 0xC0;
     mSPI_write(0x8002, regValue);
-    return SUCCESS;
+    return OperationStatus::SUCCESS;
 }
 
 MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t* addr, uint8_t* values, const uint8_t count)
@@ -1222,38 +1222,38 @@ MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t* addr, uint8_t* values, c
         mSPI_write(0x8004, cmd); //REG4 write cmd
         retval = WaitUntilWritten();
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         mSPI_write(0x8004, addr[i]); //REG4 write IRAM address
         retval = WaitUntilWritten();
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         mSPI_write(0x8004, 0); //REG4 nop
         retval = WaitUntilWritten();
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         uint8_t result = 0;
         retval = ReadOneByte(&result);
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         retval = ReadOneByte(&result);
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
 
         retval = ReadOneByte(&result);
         if (retval == -1)
-            return FAILURE;
+            return OperationStatus::FAILURE;
         values[i] = result;
     }
-    return SUCCESS;
+    return OperationStatus::SUCCESS;
 }
 
 MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t* addr, const uint8_t* values, const uint8_t count)
 {
-    return FAILURE;
+    return OperationStatus::FAILURE;
 }
 
 uint8_t MCU_BD::ReadMCUProgramID()

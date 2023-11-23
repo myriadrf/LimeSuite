@@ -147,7 +147,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
         for (int i = 0; i < 2; ++i)
         {
             const ChannelConfig& ch = cfg.channel[i];
-            mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::ChB : LMS7002M::ChA);
+            mLMSChips[0]->SetActiveChannel((i & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
             mLMSChips[0]->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
             mLMSChips[0]->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
@@ -162,7 +162,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             // TODO: set gains, filters...
         }
 
-        mLMSChips[0]->SetActiveChannel(LMS7002M::ChA);
+        mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
         // sampling rate
         double sampleRate;
 

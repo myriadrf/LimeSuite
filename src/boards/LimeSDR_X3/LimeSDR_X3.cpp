@@ -95,7 +95,7 @@ LimeSDR_X3::LimeSDR_X3(
     };
 
     desc.memoryDevices = {
-        { "FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH },
+        { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) },
     };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
@@ -280,12 +280,12 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
     //ChannelScope scope(this, channel);
 
     auto macBck = chip->GetActiveChannel();
-    const LMS7002M::Channel ch = channel > 0 ? LMS7002M::ChB : LMS7002M::ChA;
+    const LMS7002M::Channel ch = channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
     chip->SetActiveChannel(ch);
 
     const bool isTx = dir == TRXDir::Tx;
     //--- LML ---
-    if (ch == LMS7002M::ChA)
+    if (ch == LMS7002M::Channel::ChA)
     {
         if (isTx)
             chip->Modify_SPI_Reg_bits(LMS7param(TXEN_A), enable ? 1 : 0);
@@ -359,25 +359,25 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
     //--- synthesizers ---
     if (isTx)
     {
-        chip->SetActiveChannel(LMS7002M::ChSXT);
+        chip->SetActiveChannel(LMS7002M::Channel::ChSXT);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
         //chip->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels&3) == 3?0:1);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_G), 1);
-        if (ch == LMS7002M::ChB) //enable LO to channel B
+        if (ch == LMS7002M::Channel::ChB) //enable LO to channel B
         {
-            chip->SetActiveChannel(LMS7002M::ChA);
+            chip->SetActiveChannel(LMS7002M::Channel::ChA);
             chip->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), enable ? 1 : 0);
         }
     }
     else
     {
-        chip->SetActiveChannel(LMS7002M::ChSXR);
+        chip->SetActiveChannel(LMS7002M::Channel::ChSXR);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
         //chip->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels&0xC)==0xC?0:1);
         chip->Modify_SPI_Reg_bits(LMS7param(EN_G), 1);
-        if (ch == LMS7002M::ChB) //enable LO to channel B
+        if (ch == LMS7002M::Channel::ChB) //enable LO to channel B
         {
-            chip->SetActiveChannel(LMS7002M::ChA);
+            chip->SetActiveChannel(LMS7002M::Channel::ChA);
             chip->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), enable ? 1 : 0);
         }
     }
@@ -642,7 +642,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         if (socIndex == 0)
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0); // enabled DAC is required for FPGA to work
 
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
         double sampleRate;
         if (rxUsed)
             sampleRate = cfg.channel[0].rx.sampleRate;
@@ -676,7 +676,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         for (int ch = 0; ch < 2; ++ch)
         {
-            chip->SetActiveChannel((ch & 1) ? LMS7002M::ChB : LMS7002M::ChA);
+            chip->SetActiveChannel((ch & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
 
             if (cfg.channel[ch].rx.testSignal)
             {
@@ -697,7 +697,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
         }
-        chip->SetActiveChannel(LMS7002M::ChA);
+        chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
         // Workaround: Toggle LimeLights transmit port to flush residual value from data interface
         uint16_t txMux = chip->Get_SPI_Reg_bits(LMS7param(TX_MUX));
@@ -1086,13 +1086,13 @@ void LimeSDR_X3::LMS1SetPath(TRXDir dir, uint8_t chan, uint8_t pathId)
         switch (ePathLMS1_Rx(pathId))
         {
         case ePathLMS1_Rx::NONE:
-            path = LMS7002M::PATH_RFE_NONE;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_NONE);
             break;
         case ePathLMS1_Rx::LNAH:
-            path = LMS7002M::PATH_RFE_LNAH;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAH);
             break;
         case ePathLMS1_Rx::LNAL:
-            path = LMS7002M::PATH_RFE_LNAL;
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAL);
             break;
         //case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
         default:
@@ -1217,7 +1217,7 @@ void LimeSDR_X3::LMS2SetPath(TRXDir dir, uint8_t chan, uint8_t path)
     mFPGA->WriteRegister(sw_addr, sw_val);
     lime::LMS7002M* lms = mLMSChips.at(1);
     lms->SetBandTRF(1); // LMS2 uses only BAND1
-    lms->SetPathRFE(lime::LMS7002M::PathRFE(LMS7002M::PATH_RFE_LNAH)); // LMS2 only uses LNAH
+    lms->SetPathRFE(LMS7002M::PathRFE::PATH_RFE_LNAH); // LMS2 only uses LNAH
 }
 
 void LimeSDR_X3::LMS3SetPath(TRXDir dir, uint8_t chan, uint8_t path)
@@ -1293,9 +1293,9 @@ bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, Uplo
     int progMode;
     LMS64CProtocol::ProgramWriteTarget target;
     target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-    if (id == (int)eMemoryDevice::FPGA_RAM)
+    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_RAM))
         progMode = 0;
-    if (id == (int)eMemoryDevice::FPGA_FLASH)
+    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH))
         progMode = 1;
     else
         return false;

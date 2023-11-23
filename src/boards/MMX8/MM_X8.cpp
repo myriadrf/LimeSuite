@@ -49,7 +49,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
-    desc.memoryDevices.push_back({ "FPGA FLASH", (uint32_t)eMemoryDevice::FPGA_FLASH });
+    desc.memoryDevices.push_back({ "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) });
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i = 0; i < mSubDevices.size(); ++i)
