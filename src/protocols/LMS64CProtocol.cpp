@@ -59,9 +59,7 @@ static int SPI16(ISerialPort& port,
 
     size_t srcIndex = 0;
     size_t destIndex = 0;
-
     constexpr int maxBlocks = LMS64CPacket::payloadSize / (sizeof(uint32_t) / sizeof(uint8_t)); // = 14
-
     while (srcIndex < count)
     {
         pkt.status = STATUS_UNDEFINED;

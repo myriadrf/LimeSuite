@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_SERIALPORTMOCK_H
+#define LIME_SERIALPORTMOCK_H
 
 #include "protocols/ISerialPort.h"
 #include "LMS64CProtocol.h"
@@ -19,3 +20,5 @@ class SerialPortMock : public ISerialPort
 };
 
 } // namespace lime::testing
+
+#endif // LIME_SERIALPORTMOCK_H

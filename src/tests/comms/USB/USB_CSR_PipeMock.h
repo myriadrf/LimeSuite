@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIME_USB_CSR_PIPEMOCK_H
+#define LIME_USB_CSR_PIPEMOCK_H
 
 #include "tests/protocols/SerialPortMock.h"
 #include "USB_CSR_Pipe.h"
@@ -19,3 +20,5 @@ class USB_CSR_PipeMock
 };
 
 } // namespace lime::testing
+
+#endif // LIME_USB_CSR_PIPEMOCK_H
