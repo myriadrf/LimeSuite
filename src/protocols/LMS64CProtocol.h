@@ -47,15 +47,6 @@ class LMS64CPacketMemoryWriteView
     LMS64CPacket* packet;
 };
 
-class ISerialPort
-{
-  public:
-    virtual ~ISerialPort(){};
-
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
-};
-
 namespace LMS64CProtocol {
 
 enum eCMD_LMS {

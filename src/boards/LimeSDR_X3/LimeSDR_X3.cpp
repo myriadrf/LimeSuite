@@ -1217,14 +1217,14 @@ int LimeSDR_X3::MemoryWrite(uint32_t id, uint32_t address, const void* data, siz
 {
     if (id != (int)eMemoryDevice::EEPROM)
         return -1;
-    return fpgaPort->MemoryWrite(address, data, len);
+    return mfpgaPort->MemoryWrite(address, data, len);
 }
 
 int LimeSDR_X3::MemoryRead(uint32_t id, uint32_t address, void* data, size_t len)
 {
     if (id != (int)eMemoryDevice::EEPROM)
         return -1;
-    return fpgaPort->MemoryRead(address, data, len);
+    return mfpgaPort->MemoryRead(address, data, len);
 }
 
 int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
