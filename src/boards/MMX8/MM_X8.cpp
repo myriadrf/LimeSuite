@@ -18,6 +18,7 @@
 namespace lime {
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
+static double X8ReferenceClock = 30.72e6;
 
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
@@ -51,10 +52,17 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     desc.spiSlaveIds["FPGA"] = 0;
     desc.memoryDevices.push_back({ "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) });
 
+    DataStorage* eeprom = new DataStorage();
+    eeprom->name = "EEPROM";
+    eeprom->id = (int)eMemoryDevice::EEPROM;
+    DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
+    eeprom->map.push_back(vctcxoValue);
+    desc.memoryDevices.push_back(*eeprom);
+
     desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i = 0; i < mSubDevices.size(); ++i)
     {
-        mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i]);
+        mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i], X8ReferenceClock);
         const SDRDevice::Descriptor& d = mSubDevices[i]->GetDescriptor();
 
         for (const auto& soc : d.rfSOC)
@@ -79,9 +87,14 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
             char ctemp[512];
             sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
             lime::SDRDevice::DataStorage* storage = new lime::SDRDevice::DataStorage();
-            storage->name = s.name;
+            storage->name = ctemp;
             storage->id = (static_cast<uint32_t>(i) + 1) << 8 | s.id;
             storage->map = s.map;
+            for (auto& region : storage->map)
+            {
+                sprintf(ctemp, "%s@%li", region.name.c_str(), i + 1);
+                region.name = ctemp;
+            }
             desc.memoryDevices.push_back(*storage);
             //desc.memoryDevices.push_back({ ctemp, (static_cast<uint32_t>(i) + 1) << 8 | s.id });
             memorySelectToDevice[(i + 1) << 8 | s.id] = mSubDevices[i];
@@ -153,7 +166,9 @@ void LimeSDR_MMX8::GetGPSLock(GPS_Lock* status)
 
 double LimeSDR_MMX8::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
 {
-    return mSubDevices[moduleIndex]->GetSampleRate(0, trx);
+    if (moduleIndex < 8)
+        return mSubDevices[moduleIndex]->GetSampleRate(0, trx);
+    return mSubDevices[0]->GetSampleRate(0, trx);
 }
 
 double LimeSDR_MMX8::GetClockFreq(uint8_t clk_id, uint8_t channel)
@@ -186,11 +201,17 @@ int LimeSDR_MMX8::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 void LimeSDR_MMX8::StreamStart(uint8_t moduleIndex)
 {
     mSubDevices[moduleIndex]->StreamStart(0);
+
+    FPGA tempFPGA(mMainFPGAcomms, nullptr);
+    tempFPGA.StartStreaming();
 }
 
 void LimeSDR_MMX8::StreamStop(uint8_t moduleIndex)
 {
     mSubDevices[moduleIndex]->StreamStop(0);
+
+    FPGA tempFPGA(mMainFPGAcomms, nullptr);
+    tempFPGA.StopStreaming();
 }
 
 int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex32f_t** dest, uint32_t count, StreamMeta* meta)
@@ -253,7 +274,7 @@ void LimeSDR_MMX8::SetMessageLogCallback(LogCallbackType callback)
 
 void* LimeSDR_MMX8::GetInternalChip(uint32_t index)
 {
-    return mSubDevices[index]->GetInternalChip(0);
+    return mSubDevices[index % mSubDevices.size()]->GetInternalChip(0);
 }
 
 int LimeSDR_MMX8::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
@@ -323,7 +344,7 @@ bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, Up
 
 int LimeSDR_MMX8::MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t length)
 {
-    if (id == 0)
+    if ((id & ~0xFF) == 0)
         return mMainFPGAcomms->MemoryWrite(address, data, length);
 
     SDRDevice* dev = memorySelectToDevice.at(id);
@@ -339,7 +360,7 @@ int LimeSDR_MMX8::MemoryWrite(uint32_t id, uint32_t address, const void* data, s
 
 int LimeSDR_MMX8::MemoryRead(uint32_t id, uint32_t address, void* data, size_t length)
 {
-    if (id == 0)
+    if ((id & ~0xFF) == 0)
         return mMainFPGAcomms->MemoryRead(address, data, length);
 
     SDRDevice* dev = memorySelectToDevice.at(id);

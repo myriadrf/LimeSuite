@@ -128,6 +128,16 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
             pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback, subdeviceIndex);
     }
 
+    int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
+    {
+        return LMS64CProtocol::MemoryWrite(pipe, address, data, dataLength, subdeviceIndex);
+    }
+
+    int MemoryRead(uint32_t address, void* data, uint32_t dataLength)
+    {
+        return LMS64CProtocol::MemoryRead(pipe, address, data, dataLength, subdeviceIndex);
+    }
+
   private:
     PCIE_CSR_Pipe pipe;
     uint32_t subdeviceIndex;

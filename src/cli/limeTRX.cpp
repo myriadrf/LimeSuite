@@ -1,6 +1,7 @@
 #include "cli/common.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/StreamComposite.h"
 #include <iostream>
 #include <chrono>
 #include <math.h>
@@ -50,10 +51,10 @@ static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 
 static int printHelp(void)
 {
-    cerr << "limeSPI [options]" << endl;
+    cerr << "limeTRX [options]" << endl;
     cerr << "    -h, --help\t\t\t This help" << endl;
     cerr << "    -d, --device <name>\t\t\t Specifies which device to use" << endl;
-    cerr << "    -c, --chip <name>\t\t Selects destination chip" << endl;
+    cerr << "    -c, --chip <indexes>\t\t Specify chip index, or index list for aggregation [0,1...]" << endl;
     cerr << "    -i, --input \"filepath\"\t\t Waveform file for samples transmitting" << endl;
     cerr << "    -o, --output \"filepath\"\t\t Waveform file for received samples" << endl;
     cerr << "    --looptx \t Loop tx samples transmission" << endl;
@@ -241,8 +242,32 @@ class ConstellationPlotter
 };
 #endif
 
+static std::vector<int> ParseIntArray(const std::string& str)
+{
+    std::vector<int> numbers;
+    size_t parsed = 0;
+    while (parsed < str.length())
+    {
+        try {
+            int nr = stoi(&str[parsed]);
+            numbers.push_back(nr);
+            size_t next = str.find_first_of(',', parsed);
+            if (next == string::npos)
+                return numbers;
+            else
+                parsed = next+1;
+        }
+        catch (...)
+        {
+            return numbers;
+        }
+    }
+    return numbers;
+}
+
 int main(int argc, char** argv)
 {
+    StreamComposite* composite = nullptr;
     char* devName = nullptr;
     char* rxFilename = nullptr;
     char* txFilename = nullptr;
@@ -255,6 +280,7 @@ int main(int argc, char** argv)
     bool loopTx = false;
     int64_t samplesToCollect = 0;
     int64_t workTime = 0;
+    std::vector<int> chipIndexes;
     int chipIndex = 0;
     int channelCount = 1;
     bool repeater = false;
@@ -264,6 +290,7 @@ int main(int argc, char** argv)
     int txSamplesInPacket = 0;
     int rxPacketsInBatch = 0;
     int txPacketsInBatch = 0;
+    bool useComposite = false;
 
     SDRDevice::StreamConfig::DataFormat linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
     static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
@@ -303,7 +330,13 @@ int main(int argc, char** argv)
             break;
         case Args::CHIP:
             if (optarg != NULL)
-                chipIndex = stoi(optarg);
+                chipIndexes = ParseIntArray(optarg);
+
+            if (chipIndexes.empty())
+            {
+                cerr << "Invalid chip index" << endl;
+                return -1;
+            }
             break;
         case Args::OUTPUT:
             if (optarg != NULL)
@@ -416,7 +449,6 @@ int main(int argc, char** argv)
     }
 
     device->SetMessageLogCallback(LogCallback);
-    //device->Init();
 
     try
     {
@@ -441,7 +473,27 @@ int main(int argc, char** argv)
             stream.extraConfig->rxPacketsInBatch = rxPacketsInBatch;
             stream.extraConfig->txMaxPacketsInBatch = txPacketsInBatch;
         }
-        device->StreamSetup(stream, chipIndex);
+
+        useComposite = chipIndexes.size() > 1;
+        if (useComposite)
+        {
+            std::vector<StreamAggregate> aggregates(chipIndexes.size());
+            for (size_t i=0; i<chipIndexes.size(); ++i)
+            {
+                aggregates[i].device = device;
+                aggregates[i].streamIndex = chipIndexes[i];
+                int deviceChannelCount = device->GetDescriptor().rfSOC[chipIndexes[i]].channelCount;
+                for (int j=0; j<deviceChannelCount; ++j)
+                    aggregates[i].channels.push_back(j);
+            }
+            composite = new StreamComposite(std::move(aggregates));
+            composite->StreamSetup(stream);
+        }
+        else
+        {
+            chipIndex = chipIndexes[0];
+            device->StreamSetup(stream, chipIndex);
+        }
     } catch (std::runtime_error& e)
     {
         std::cout << "Failed to configure settings: " << e.what() << std::endl;
@@ -455,8 +507,8 @@ int main(int argc, char** argv)
     signal(SIGINT, intHandler);
 
     const int fftSize = 16384;
-    std::vector<complex16_t> rxData[2];
-    for (int i = 0; i < 2; ++i)
+    std::vector<complex16_t> rxData[16];
+    for (int i = 0; i < 16; ++i)
         rxData[i].resize(fftSize);
 
     std::vector<complex16_t> txData;
@@ -519,7 +571,10 @@ int main(int argc, char** argv)
     if (showConstelation)
         constellationplot.Start();
 #endif
-    device->StreamStart(chipIndex);
+    if (useComposite)
+        composite->StreamStart();
+    else
+        device->StreamStart(chipIndex);
 
     auto startTime = std::chrono::high_resolution_clock::now();
     auto t1 = startTime - std::chrono::seconds(2); // rewind t1 to do update on first loop
@@ -542,8 +597,12 @@ int main(int argc, char** argv)
             }
             if (toSend > 0)
             {
-                const complex16_t* txSamples[2] = { &txData[txSent], &txData[txSent] };
-                int samplesSent = device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
+                const complex16_t* txSamples[16];
+                for (int i=0; i < 16; ++i)
+                    txSamples[i] = &txData[txSent];
+                int samplesSent = useComposite
+                    ? composite->StreamTx(txSamples, toSend, &txMeta)
+                    : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
                 if (samplesSent > 0)
                 {
                     txSent += samplesSent;
@@ -552,8 +611,12 @@ int main(int argc, char** argv)
             }
         }
 
-        complex16_t* rxSamples[2] = { rxData[0].data(), rxData[1].data() };
-        int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        complex16_t* rxSamples[16];
+        for (int i=0; i<16; ++i)
+            rxSamples[i] = rxData[i].data();
+        int samplesRead = useComposite
+            ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
+            : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
 
@@ -562,7 +625,10 @@ int main(int argc, char** argv)
             txMeta.timestamp = rxMeta.timestamp + samplesRead + repeaterDelay;
             txMeta.useTimestamp = true;
             txMeta.flush = true;
-            device->StreamTx(chipIndex, rxSamples, samplesRead, &txMeta);
+            if (useComposite)
+                composite->StreamTx(rxSamples, samplesRead, &txMeta);
+            else
+                device->StreamTx(chipIndex, rxSamples, samplesRead, &txMeta);
         }
 
         // process samples
@@ -628,7 +694,13 @@ int main(int argc, char** argv)
     // some sleep for GNU plot data to flush, otherwise sometimes cout spams  gnuplot "invalid command"
     this_thread::sleep_for(std::chrono::milliseconds(500));
 #endif
-    device->StreamStop(chipIndex);
+    if (useComposite)
+        composite->StreamStop();
+    else
+        device->StreamStop(chipIndex);
+
+    if (composite)
+        delete composite;
     DeviceRegistry::freeDevice(device);
 
     rxFile.close();

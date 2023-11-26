@@ -105,11 +105,7 @@ class LIME_API SDRDevice
     // channels order and data transmission formats setup
     struct StreamConfig {
         struct Extras {
-            Extras()
-            {
-                memset(this, 0, sizeof(Extras));
-                usePoll = true;
-            };
+            Extras();
             bool usePoll;
             uint16_t rxSamplesInPacket;
             uint32_t rxPacketsInBatch;
@@ -125,7 +121,9 @@ class LIME_API SDRDevice
             F32,
         };
 
-        StreamConfig() { memset(this, 0, sizeof(StreamConfig)); }
+        StreamConfig();
+        ~StreamConfig();
+        StreamConfig& operator=(const StreamConfig &srd);
 
         uint8_t rxCount;
         uint8_t rxChannels[MAX_CHANNEL_COUNT];

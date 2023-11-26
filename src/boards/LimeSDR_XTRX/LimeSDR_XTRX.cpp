@@ -25,7 +25,6 @@ namespace lime {
 // XTRX board specific devices ids and data
 static const uint8_t SPI_LMS7002M = 0;
 static const uint8_t SPI_FPGA = 1;
-static const float XTRX_DEFAULT_REFERENCE_CLOCK = 26e6;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 
@@ -105,7 +104,7 @@ int LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 // Do not perform any unnecessary configuring to device in constructor, so you
 // could read back it's state for debugging purposes
 LimeSDR_XTRX::LimeSDR_XTRX(
-    std::shared_ptr<IComms> spiRFsoc, std::shared_ptr<IComms> spiFPGA, std::shared_ptr<LitePCIe> sampleStream)
+    std::shared_ptr<IComms> spiRFsoc, std::shared_ptr<IComms> spiFPGA, std::shared_ptr<LitePCIe> sampleStream, double refClk)
     : LMS7002M_SDRDevice()
     , lms7002mPort(spiRFsoc)
     , fpgaPort(spiFPGA)
@@ -149,8 +148,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     mLMSChips.push_back(chip);
     for (auto iter : mLMSChips)
     {
-        iter->SetReferenceClk_SX(TRXDir::Rx, XTRX_DEFAULT_REFERENCE_CLOCK);
-        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, XTRX_DEFAULT_REFERENCE_CLOCK, 0);
+        iter->SetReferenceClk_SX(TRXDir::Rx, refClk);
+        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, refClk, 0);
     }
 
     const int chipCount = mLMSChips.size();

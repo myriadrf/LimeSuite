@@ -21,6 +21,8 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
+    SDRDevice.cpp
+    StreamComposite.cpp
     CommonFunctions.cpp
     boards/DeviceRegistry.cpp
     boards/DeviceHandle.cpp
