@@ -319,8 +319,13 @@ void pnlBoardControls::OnReadAll(wxCommandEvent& event)
     }
     if (mMemoryGUI_widgets.size() > 0)
     {
+        int status = 0;
         for (auto& row : mMemoryGUI_widgets)
-            ReadMemory(row);
+        {
+            status |= ReadMemory(row);
+        }
+        if (status != 0)
+            wxMessageBox(_("Memory read failed"), _("Error"));
         // uint16_t val;
         // TODO: LMS_VCTCXORead(mDevice, &val);
         // txtDACValue->SetValue(wxString::Format("%d", val));
@@ -420,15 +425,14 @@ void pnlBoardControls::OnMemoryWrite(wxCommandEvent& event)
         wxMessageBox(_("Memory write failed"), _("Error"));
 }
 
-void pnlBoardControls::ReadMemory(MemoryParamGUI* gui)
+int pnlBoardControls::ReadMemory(MemoryParamGUI* gui)
 {
     long val = 0;
     assert(sizeof(val) >= size_t(gui->mem.size));
     int rez = mDevice->MemoryRead(gui->id, gui->mem.address, &val, gui->mem.size);
-    if (rez != 0)
-        wxMessageBox(_("Memory read failed"), _("Error"));
-    else
+    if (rez == 0)
         gui->txtValue->SetValue(wxString::Format("%li", val));
+    return rez;
 }
 
 void pnlBoardControls::OnMemoryRead(wxCommandEvent& event)
