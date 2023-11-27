@@ -117,7 +117,7 @@ if (ENABLE_LIBRARY)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
     endif()
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_TESTING)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_CODE_COVERAGE)
         include(CodeCoverage)
         append_coverage_compiler_flags_to_target(${MAIN_LIBRARY_NAME})
     endif()

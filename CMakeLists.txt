@@ -186,6 +186,8 @@ if(ENABLE_TESTING)
     FetchContent_MakeAvailable(googletest)
 
     enable_testing()
+
+    option(ENABLE_CODE_COVERAGE "Use gcov/lcov to generate a code coverage report" ON)
 endif()
 
 ########################################################################

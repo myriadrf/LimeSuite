@@ -34,7 +34,7 @@ target_link_libraries(
 include(GoogleTest)
 gtest_discover_tests(${LIME_TEST_SUITE_NAME})
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_CODE_COVERAGE)
     include(CodeCoverage)
     # append_coverage_compiler_flags_to_target(${LIME_TEST_SUITE_NAME})
     setup_target_for_coverage_lcov(NAME ${LIME_TEST_SUITE_NAME}_coverage EXECUTABLE ${LIME_TEST_SUITE_NAME} EXCLUDE "/usr/*" "build/*" "external/*")
