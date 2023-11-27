@@ -11,13 +11,13 @@ using namespace lime::testing;
 TEST(SlaveSelectShim, ChoosesCorrectSlaveOnSPICall)
 {
     auto mockComms = std::make_shared<CommsMock>();
-    uint32_t slaveId = 1U;
+    uint32_t slaveId = 4U;
 
     SlaveSelectShim shim{ mockComms, slaveId };
 
-    uint32_t MOSI = 2U;
-    uint32_t MISO = 3U;
-    uint32_t count = 4U;
+    uint32_t MOSI = 3U;
+    uint32_t MISO = 2U;
+    uint32_t count = 1U;
 
     EXPECT_CALL(*mockComms, SPI(slaveId, &MOSI, &MISO, count)).Times(1);
     shim.SPI(&MOSI, &MISO, count);
@@ -26,14 +26,14 @@ TEST(SlaveSelectShim, ChoosesCorrectSlaveOnSPICall)
 TEST(SlaveSelectShim, SPICalledCorrectly)
 {
     auto mockComms = std::make_shared<CommsMock>();
-    uint32_t slaveId = 1U;
+    uint32_t slaveId = 5U;
 
     SlaveSelectShim shim{ mockComms, slaveId };
 
-    uint32_t spiBusAddress = 2U;
+    uint32_t spiBusAddress = 4U;
     uint32_t MOSI = 3U;
-    uint32_t MISO = 4U;
-    uint32_t count = 5U;
+    uint32_t MISO = 2U;
+    uint32_t count = 1U;
 
     EXPECT_CALL(*mockComms, SPI(spiBusAddress, &MOSI, &MISO, count)).Times(1);
     shim.SPI(spiBusAddress, &MOSI, &MISO, count);
