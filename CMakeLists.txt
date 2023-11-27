@@ -172,7 +172,9 @@ endif()
 ########################################################################
 # GTest
 ########################################################################
-option(ENABLE_TESTING "Use GoogleTest to test the library" ON)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_TESTING "Use GoogleTest to test the library" ON "NOT BUILD_SHARED_LIBS" OFF)
+cmake_dependent_option(ENABLE_CODE_COVERAGE "Use gcov/lcov to generate a code coverage report" ON "ENABLE_TESTING" OFF)
 
 if(ENABLE_TESTING)
     include(CTest)
@@ -186,8 +188,6 @@ if(ENABLE_TESTING)
     FetchContent_MakeAvailable(googletest)
 
     enable_testing()
-
-    option(ENABLE_CODE_COVERAGE "Use gcov/lcov to generate a code coverage report" ON)
 endif()
 
 ########################################################################
