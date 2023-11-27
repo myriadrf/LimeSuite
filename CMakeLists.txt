@@ -172,17 +172,21 @@ endif()
 ########################################################################
 # GTest
 ########################################################################
-include(CTest)
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        b10fad38c4026a29ea6561ab15fc4818170d1c10 # latest main at the time of writing this
-)
+option(ENABLE_TESTING "Use GoogleTest to test the library" ON)
 
-FetchContent_MakeAvailable(googletest)
+if(ENABLE_TESTING)
+    include(CTest)
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG        b10fad38c4026a29ea6561ab15fc4818170d1c10 # latest main at the time of writing this
+    )
 
-enable_testing()
+    FetchContent_MakeAvailable(googletest)
+
+    enable_testing()
+endif()
 
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
