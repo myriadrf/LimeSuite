@@ -1,7 +1,7 @@
 ########################################################################
 ## Create lime-suite project
 ########################################################################
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING INTERNAL FORCE)
 project("LimeSuite2")
 
