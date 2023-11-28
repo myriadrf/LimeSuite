@@ -27,3 +27,7 @@ target_link_libraries(dualRXTX ${MAIN_LIBRARY_NAME})
 add_executable(basicTX basicTX.cpp)
 set_target_properties(basicTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir})
 target_link_libraries(basicTX PUBLIC ${MAIN_LIBRARY_NAME})
+
+# add_executable(legacyDualRXTX legacy/dualRXTX.cpp)
+# set_target_properties(legacyDualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir})
+# target_link_libraries(legacyDualRXTX PUBLIC ${MAIN_LIBRARY_NAME})
