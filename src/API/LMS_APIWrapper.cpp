@@ -20,6 +20,14 @@ struct StreamHandle {
     LMS_APIDevice* parent;
     bool isStreamStartedFromAPI;
     bool isStreamActuallyStarted;
+
+    StreamHandle() = delete;
+    StreamHandle(LMS_APIDevice* parent)
+        : parent(parent)
+        , isStreamStartedFromAPI(false)
+        , isStreamActuallyStarted(false)
+    {
+    }
 };
 
 static std::vector<StreamHandle*> streamHandles;
@@ -37,11 +45,21 @@ struct StatsDeltas {
     }
 };
 
+struct StreamBuffer {
+    void* buffer;
+    lime::TRXDir direction;
+    uint8_t channel;
+
+    StreamBuffer() = delete;
+};
+
 struct LMS_APIDevice {
     lime::SDRDevice* device;
     lime::SDRDevice::SDRConfig lastSavedSDRConfig;
     lime::SDRDevice::StreamConfig lastSavedStreamConfig;
     StatsDeltas statsDeltas;
+
+    std::vector<StreamBuffer> streamBuffers;
 
     LMS_APIDevice() = delete;
     LMS_APIDevice(lime::SDRDevice* device)
@@ -99,7 +117,7 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
 //     return conn;
 // }
 
-inline std::size_t GetStreamHandle()
+inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
 {
     for (std::size_t i = 0; i < streamHandles.size(); i++)
     {
@@ -109,7 +127,7 @@ inline std::size_t GetStreamHandle()
         }
     }
 
-    streamHandles.push_back(new StreamHandle{ nullptr, false, false });
+    streamHandles.push_back(new StreamHandle{ parent });
     return streamHandles.size() - 1;
 }
 
@@ -1030,8 +1048,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         apiDevice->lastSavedStreamConfig = config;
     }
 
-    stream->handle = GetStreamHandle();
-    streamHandles.at(stream->handle)->parent = apiDevice;
+    stream->handle = GetStreamHandle(apiDevice);
 
     return returnValue;
 }
@@ -1069,7 +1086,7 @@ API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t* stream)
     }
 
     auto& handle = streamHandles.at(stream->handle);
-    if (handle->parent == nullptr)
+    if (handle == nullptr || handle->parent == nullptr)
     {
         return -1;
     }
@@ -1102,7 +1119,7 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
     }
 
     auto& handle = streamHandles.at(stream->handle);
-    if (handle->parent == nullptr)
+    if (handle == nullptr || handle->parent == nullptr)
     {
         return -1;
     }
@@ -1136,12 +1153,10 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
     }
 
     auto& handle = streamHandles.at(stream->handle);
-    if (handle->parent == nullptr)
+    if (handle == nullptr || handle->parent == nullptr)
     {
         return -1;
     }
-
-    // handle.device->
 
     lime::SDRDevice::StreamMeta metadata{ 0, false, false };
     int samplesProduced = 0;
@@ -1178,7 +1193,7 @@ API_EXPORT int CALL_CONV LMS_SendStream(
     }
 
     auto& handle = streamHandles.at(stream->handle);
-    if (handle->parent == nullptr)
+    if (handle == nullptr || handle->parent == nullptr)
     {
         return -1;
     }
@@ -1259,7 +1274,7 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_st
     }
 
     auto& handle = streamHandles.at(stream->handle);
-    if (handle->parent == nullptr)
+    if (handle == nullptr || handle->parent == nullptr)
     {
         return -1;
     }
