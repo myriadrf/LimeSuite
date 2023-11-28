@@ -7,7 +7,7 @@
 #include <iostream>
 #include <chrono>
 #ifdef USE_GNU_PLOT
-#include "gnuPlotPipe.h"
+    #include "gnuPlotPipe.h"
 #endif
 
 using namespace std;
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
 
     //Initialize data buffers
     const int bufersize = 1024 * 8; //complex samples per buffer
-    int16_t * buffers[chCount];
+    int16_t* buffers[chCount];
     for (int i = 0; i < chCount; ++i)
     {
         buffers[i] = new int16_t[bufersize * 2]; //buffer to hold complex values (2*samples))
