@@ -12,26 +12,48 @@
 #include <string>
 #include <vector>
 
+namespace {
+
+struct LMS_APIDevice;
+
 struct StreamHandle {
-    lime::SDRDevice* device;
+    LMS_APIDevice* parent;
     bool isStreamStartedFromAPI;
     bool isStreamActuallyStarted;
 };
+
+static std::vector<StreamHandle*> streamHandles;
 
 struct StatsDeltas {
     lime::DeltaVariable<uint32_t> underrun;
     lime::DeltaVariable<uint32_t> overrun;
     lime::DeltaVariable<uint32_t> droppedPackets;
+
+    StatsDeltas()
+        : underrun(0)
+        , overrun(0)
+        , droppedPackets(0)
+    {
+    }
 };
 
-static lime::SDRDevice::SDRConfig lastSavedSDRConfig{};
-static lime::SDRDevice::StreamConfig lastSavedStreamConfig{};
-static std::vector<StreamHandle> streamHandles;
-static StatsDeltas statsDeltas{ 0, 0, 0 };
+struct LMS_APIDevice {
+    lime::SDRDevice* device;
+    lime::SDRDevice::SDRConfig lastSavedSDRConfig;
+    lime::SDRDevice::StreamConfig lastSavedStreamConfig;
+    StatsDeltas statsDeltas;
 
-namespace {
+    LMS_APIDevice() = delete;
+    LMS_APIDevice(lime::SDRDevice* device)
+        : device(device)
+        , lastSavedSDRConfig()
+        , lastSavedStreamConfig()
+        , statsDeltas()
+    {
+    }
+};
 
-inline lime::SDRDevice* CheckDevice(lms_device_t* device)
+inline LMS_APIDevice* CheckDevice(lms_device_t* device)
 {
     if (device == nullptr)
     {
@@ -39,14 +61,18 @@ inline lime::SDRDevice* CheckDevice(lms_device_t* device)
         return nullptr;
     }
 
-    return static_cast<lime::SDRDevice*>(device);
+    return static_cast<LMS_APIDevice*>(device);
 }
 
-inline lime::SDRDevice* CheckDevice(lms_device_t* device, unsigned chan)
+inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return nullptr;
+    }
 
-    const lime::SDRDevice::Descriptor& descriptor = sdrDevice->GetDescriptor();
+    const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
 
     if (chan >= descriptor.rfSOC[0].channelCount)
     {
@@ -54,7 +80,7 @@ inline lime::SDRDevice* CheckDevice(lms_device_t* device, unsigned chan)
         return nullptr;
     }
 
-    return sdrDevice;
+    return apiDevice;
 }
 
 // inline lime::IConnection* CheckConnection(lms_device_t* device)
@@ -77,13 +103,13 @@ inline std::size_t GetStreamHandle()
 {
     for (std::size_t i = 0; i < streamHandles.size(); i++)
     {
-        if (streamHandles.at(i).device == nullptr)
+        if (streamHandles.at(i) == nullptr)
         {
             return i;
         }
     }
 
-    streamHandles.push_back({ nullptr, false, false });
+    streamHandles.push_back(new StreamHandle{ nullptr, false, false });
     return streamHandles.size() - 1;
 }
 
@@ -128,7 +154,9 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
                 return -1;
             }
 
-            *device = dev;
+            auto apiDevice = new LMS_APIDevice{ dev };
+
+            *device = apiDevice;
             return LMS_SUCCESS;
         }
     }
@@ -139,14 +167,13 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
 
 API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    delete sdrDevice;
+    lime::DeviceRegistry::freeDevice(apiDevice->device);
     return LMS_SUCCESS;
 }
 
@@ -158,14 +185,13 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
 
 API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device, chan);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
     if (dir_tx)
     {
@@ -181,14 +207,13 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
 
 API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate, size_t oversample)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
     for (std::size_t i = 0; i < lime::SDRDevice::MAX_CHANNEL_COUNT; ++i)
     {
@@ -234,14 +259,13 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
 
 API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    return sdrDevice->Init();
+    return apiDevice->device->Init();
 }
 
 // API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
@@ -409,28 +433,26 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t* device, bool dir_tx)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    const lime::SDRDevice::Descriptor& descriptor = sdrDevice->GetDescriptor();
+    const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
 
     return descriptor.rfSOC[0].channelCount;
 }
 
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type frequency)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device, chan);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
     if (dir_tx)
     {
@@ -556,14 +578,13 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
 
 API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type gain)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device, chan);
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
     if (dir_tx)
     {
@@ -651,9 +672,8 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 API_EXPORT int CALL_CONV LMS_SetTestSignal(
     lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t sig, int16_t dc_i, int16_t dc_q)
 {
-    auto sdrDevice = static_cast<lime::LMS7002M_SDRDevice*>(CheckDevice(device, chan));
-
-    if (sdrDevice == nullptr)
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
     {
         return -1;
     }
@@ -664,7 +684,7 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(sdrDevice->GetInternalChip(chan / 2));
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
 
     if (lms == nullptr)
     {
@@ -933,9 +953,9 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
 
 API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* stream)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device);
 
-    if (sdrDevice == nullptr)
+    if (apiDevice == nullptr)
     {
         return -1;
     }
@@ -948,7 +968,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
 
     try
     {
-        sdrDevice->Configure(lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -956,7 +976,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         return -1;
     }
 
-    lime::SDRDevice::StreamConfig config = lastSavedStreamConfig;
+    lime::SDRDevice::StreamConfig config = apiDevice->lastSavedStreamConfig;
     config.bufferSize = stream->fifoSize;
 
     auto channel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE); // Clear the align phase bit
@@ -990,37 +1010,37 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
     }
 
-    switch (stream->linkFmt)
-    {
-    case lms_stream_t::LMS_LINK_FMT_I16:
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
-        break;
-    case lms_stream_t::LMS_LINK_FMT_I12:
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
-    case lms_stream_t::LMS_LINK_FMT_DEFAULT: // do nothing
-        break;
-    }
+    // switch (stream->linkFmt)
+    // {
+    // case lms_stream_t::LMS_LINK_FMT_I16:
+    //     config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
+    //     break;
+    // case lms_stream_t::LMS_LINK_FMT_I12:
+    //     config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
+    // case lms_stream_t::LMS_LINK_FMT_DEFAULT: // do nothing
+    //     break;
+    // }
 
     // config.performanceLatency = stream->throughputVsLatency;
 
-    auto returnValue = sdrDevice->StreamSetup(config, 0);
+    auto returnValue = apiDevice->device->StreamSetup(config, 0);
 
     if (returnValue == 0)
     {
-        lastSavedStreamConfig = config;
+        apiDevice->lastSavedStreamConfig = config;
     }
 
     stream->handle = GetStreamHandle();
-    streamHandles.at(stream->handle).device = sdrDevice;
+    streamHandles.at(stream->handle)->parent = apiDevice;
 
     return returnValue;
 }
 
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* stream)
 {
-    lime::SDRDevice* sdrDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device);
 
-    if (sdrDevice == nullptr)
+    if (apiDevice == nullptr)
     {
         return -1;
     }
@@ -1031,7 +1051,12 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* s
         return -1;
     }
 
-    // No-op since destruction of stream happens during stopping now.
+    auto& streamHandle = streamHandles.at(stream->handle);
+    if (streamHandle != nullptr)
+    {
+        delete streamHandle;
+        streamHandle = nullptr;
+    }
 
     return 0;
 }
@@ -1043,26 +1068,26 @@ API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t* stream)
         return -1;
     }
 
-    auto handle = streamHandles.at(stream->handle);
-    if (handle.device == nullptr)
+    auto& handle = streamHandles.at(stream->handle);
+    if (handle->parent == nullptr)
     {
         return -1;
     }
 
-    handle.isStreamStartedFromAPI = true;
+    handle->isStreamStartedFromAPI = true;
 
-    if (!handle.isStreamActuallyStarted)
+    if (!handle->isStreamActuallyStarted)
     {
-        handle.device->StreamStart(0);
+        handle->parent->device->StreamStart(0);
 
         for (auto& streamHandle : streamHandles)
         {
-            if (streamHandle.device != handle.device)
+            if (streamHandle->parent != handle->parent)
             {
                 continue;
             }
 
-            streamHandle.isStreamActuallyStarted = true;
+            streamHandle->isStreamActuallyStarted = true;
         }
     }
 
@@ -1076,26 +1101,26 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
         return -1;
     }
 
-    auto handle = streamHandles.at(stream->handle);
-    if (handle.device == nullptr)
+    auto& handle = streamHandles.at(stream->handle);
+    if (handle->parent == nullptr)
     {
         return -1;
     }
 
-    handle.isStreamStartedFromAPI = false;
+    handle->isStreamStartedFromAPI = false;
 
-    if (handle.isStreamActuallyStarted)
+    if (handle->isStreamActuallyStarted)
     {
-        handle.device->StreamStop(0);
+        handle->parent->device->StreamStop(0);
 
         for (auto& streamHandle : streamHandles)
         {
-            if (streamHandle.device != handle.device)
+            if (streamHandle->parent != handle->parent)
             {
                 continue;
             }
 
-            streamHandle.isStreamActuallyStarted = false;
+            streamHandle->isStreamActuallyStarted = false;
         }
     }
 
@@ -1110,11 +1135,13 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
         return -1;
     }
 
-    auto handle = streamHandles.at(stream->handle);
-    if (handle.device == nullptr)
+    auto& handle = streamHandles.at(stream->handle);
+    if (handle->parent == nullptr)
     {
         return -1;
     }
+
+    // handle.device->
 
     lime::SDRDevice::StreamMeta metadata{ 0, false, false };
     int samplesProduced = 0;
@@ -1125,11 +1152,11 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
     switch (stream->dataFmt)
     {
     case lms_stream_t::LMS_FMT_F32:
-        samplesProduced = handle.device->StreamRx(0, &outputSamples32f, sample_count, &metadata);
+        samplesProduced = handle->parent->device->StreamRx(0, &outputSamples32f, sample_count, &metadata);
         break;
     case lms_stream_t::LMS_FMT_I16:
     case lms_stream_t::LMS_FMT_I12:
-        samplesProduced = handle.device->StreamRx(0, &outputSamples16i, sample_count, &metadata);
+        samplesProduced = handle->parent->device->StreamRx(0, &outputSamples16i, sample_count, &metadata);
     default:
         break;
     }
@@ -1150,8 +1177,8 @@ API_EXPORT int CALL_CONV LMS_SendStream(
         return -1;
     }
 
-    auto handle = streamHandles.at(stream->handle);
-    if (handle.device == nullptr)
+    auto& handle = streamHandles.at(stream->handle);
+    if (handle->parent == nullptr)
     {
         return -1;
     }
@@ -1173,11 +1200,11 @@ API_EXPORT int CALL_CONV LMS_SendStream(
     switch (stream->dataFmt)
     {
     case lms_stream_t::LMS_FMT_F32:
-        samplesSent = handle.device->StreamTx(0, &outputSamples32f, sample_count, &metadata);
+        samplesSent = handle->parent->device->StreamTx(0, &outputSamples32f, sample_count, &metadata);
         break;
     case lms_stream_t::LMS_FMT_I16:
     case lms_stream_t::LMS_FMT_I12:
-        samplesSent = handle.device->StreamTx(0, &outputSamples16i, sample_count, &metadata);
+        samplesSent = handle->parent->device->StreamTx(0, &outputSamples16i, sample_count, &metadata);
     default:
         break;
     }
@@ -1231,8 +1258,8 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_st
         return -1;
     }
 
-    auto handle = streamHandles.at(stream->handle);
-    if (handle.device == nullptr)
+    auto& handle = streamHandles.at(stream->handle);
+    if (handle->parent == nullptr)
     {
         return -1;
     }
@@ -1248,30 +1275,30 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_st
     switch (direction)
     {
     case lime::TRXDir::Rx:
-        handle.device->StreamStatus(0, &stats, nullptr);
+        handle->parent->device->StreamStatus(0, &stats, nullptr);
         break;
     case lime::TRXDir::Tx:
-        handle.device->StreamStatus(0, nullptr, &stats);
+        handle->parent->device->StreamStatus(0, nullptr, &stats);
         break;
     default:
         break;
     }
 
-    status->active = handle.isStreamStartedFromAPI;
+    status->active = handle->isStreamStartedFromAPI;
     status->fifoFilledCount = stats.FIFO.usedCount;
     status->fifoSize = stats.FIFO.totalCount;
 
-    statsDeltas.underrun.set(stats.underrun);
-    status->underrun = statsDeltas.underrun.delta();
-    statsDeltas.underrun.checkpoint();
+    handle->parent->statsDeltas.underrun.set(stats.underrun);
+    status->underrun = handle->parent->statsDeltas.underrun.delta();
+    handle->parent->statsDeltas.underrun.checkpoint();
 
-    statsDeltas.overrun.set(stats.overrun);
-    status->overrun = statsDeltas.overrun.delta();
-    statsDeltas.overrun.checkpoint();
+    handle->parent->statsDeltas.overrun.set(stats.overrun);
+    status->overrun = handle->parent->statsDeltas.overrun.delta();
+    handle->parent->statsDeltas.overrun.checkpoint();
 
-    statsDeltas.droppedPackets.set(stats.loss);
-    status->droppedPackets = statsDeltas.underrun.delta();
-    statsDeltas.droppedPackets.checkpoint();
+    handle->parent->statsDeltas.droppedPackets.set(stats.loss);
+    status->droppedPackets = handle->parent->statsDeltas.underrun.delta();
+    handle->parent->statsDeltas.droppedPackets.checkpoint();
 
     // status->sampleRate;
     status->linkRate = stats.dataRate_Bps;
