@@ -22,9 +22,8 @@ int StreamComposite::StreamSetup(const SDRDevice::StreamConfig& config)
         const SDRDevice::Descriptor& desc = a.device->GetDescriptor();
         int channelCount = a.channels.size();
 
-
         subConfig.rxCount = rxNeed > channelCount ? channelCount : rxNeed;
-        for (int j=0; j<subConfig.rxCount; ++j)
+        for (int j = 0; j < subConfig.rxCount; ++j)
         {
             if (a.channels[j] >= desc.rfSOC[a.streamIndex].channelCount)
                 return -1;
@@ -34,7 +33,7 @@ int StreamComposite::StreamSetup(const SDRDevice::StreamConfig& config)
         rxNeed -= subConfig.rxCount;
 
         subConfig.txCount = txNeed > channelCount ? channelCount : txNeed;
-        for (int j=0; j<subConfig.txCount; ++j)
+        for (int j = 0; j < subConfig.txCount; ++j)
         {
             if (a.channels[j] >= desc.rfSOC[a.streamIndex].channelCount)
                 return -1;
@@ -68,40 +67,41 @@ void StreamComposite::StreamStop()
         a.device->StreamStop(a.streamIndex);
 }
 
-template<class T>
-int StreamComposite::StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta)
+template<class T> int StreamComposite::StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     T** dest = samples;
     for (auto& a : mActiveAggregates)
     {
         int ret = a.device->StreamRx(a.streamIndex, dest, count, meta);
-        if (ret != count)
+        if (ret != static_cast<int>(count))
             return ret;
 
         dest += a.channels.size();
     }
-    return count;
+    return static_cast<int>(count);
 }
 
-template<class T>
-int StreamComposite::StreamTx(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+template<class T> int StreamComposite::StreamTx(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const T* const* src = samples;
     for (auto& a : mActiveAggregates)
     {
         int ret = a.device->StreamTx(a.streamIndex, src, count, meta);
-        if (ret != count)
+        if (ret != static_cast<int>(count))
             return ret;
 
         src += a.channels.size();
     }
-    return count;
+    return static_cast<int>(count);
 }
 
 // force instantiate functions with these types
 template int StreamComposite::StreamRx<lime::complex16_t>(lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamRx<lime::complex32f_t>(lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamTx<lime::complex16_t>(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamTx<lime::complex32f_t>(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+template int StreamComposite::StreamRx<lime::complex32f_t>(
+    lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
+template int StreamComposite::StreamTx<lime::complex16_t>(
+    const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+template int StreamComposite::StreamTx<lime::complex32f_t>(
+    const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
-}
+} // namespace lime
