@@ -599,6 +599,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 stagingBufferIndex &= 0xFFFF;
                 packetsSent += output.packetCount();
                 totalPacketSent += output.packetCount();
+                stats.timestamp = lastTS;
+                stats.bytesTransferred += wrInfo.size;
                 mTxArgs.port->CacheFlush(true, false, stagingBufferIndex % bufferCount);
                 output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], mTxArgs.bufferSize);
             }

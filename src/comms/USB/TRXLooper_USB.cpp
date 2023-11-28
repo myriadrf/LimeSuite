@@ -133,7 +133,9 @@ void TRXLooper_USB::TransmitPacketsLoop()
             {
                 int bytesSent = comms->FinishDataXfer(&buffers[bufferIndex * bufferSize], bufferSize, handles[bufferIndex]);
                 totalBytesSent += bytesSent;
+                mTx.stats.bytesTransferred += bytesSent;
                 handles[bufferIndex] = -1;
+                mTx.stats.packets++;
             }
             else
             {
@@ -204,6 +206,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 bytesUsed = 0;
                 payloadSize = 0;
                 packetsCreated = 0;
+
+                mTx.stats.timestamp = srcPkt->timestamp;
 
                 header = reinterpret_cast<TxHeader*>(&buffers[bufferIndex * bufferSize]);
                 payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
@@ -310,6 +314,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
                 bytesReceived = comms->FinishDataXfer(&buffers[bufferIndex * bufferSize], bufferSize, handles[bufferIndex]);
                 stats.packets++;
                 totalBytesReceived += bytesReceived;
+                stats.bytesTransferred += bytesReceived;
 
                 if (bytesReceived != bufferSize)
                 {
@@ -363,6 +368,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
             expectedTS = pkt->counter + samplesProduced;
             mRx.lastTimestamp.store(expectedTS, std::memory_order_relaxed);
+            stats.timestamp = expectedTS;
 
             NegateQ(outputPkt, TRXDir::Rx);
 
