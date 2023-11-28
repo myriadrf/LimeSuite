@@ -824,8 +824,12 @@ int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, u
 
 int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers.at(moduleIndex))
-        return -1; // already running
+    // Allow multiple setup calls
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
+        delete mStreamers.at(moduleIndex);
+    }
+
     try
     {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(

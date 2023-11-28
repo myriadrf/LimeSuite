@@ -592,9 +592,10 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
 
 int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers[0])
+    // Allow multiple setup calls
+    if (mStreamers.at(0) != nullptr)
     {
-        return -1; // already running
+        delete mStreamers.at(0);
     }
 
     try
@@ -602,8 +603,8 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         auto connection = std::static_pointer_cast<FT601>(mStreamPort);
         connection->ResetStreamBuffers();
 
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_READ_ADDRESS, STREAM_BULK_WRITE_ADDRESS);
-        mStreamers[0]->Setup(config);
+        mStreamers.at(0) = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_READ_ADDRESS, STREAM_BULK_WRITE_ADDRESS);
+        mStreamers.at(0)->Setup(config);
 
         return 0;
     } catch (std::logic_error& e)

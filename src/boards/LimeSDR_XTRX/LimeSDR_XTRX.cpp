@@ -395,13 +395,17 @@ int LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO,
 
 int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers.at(moduleIndex))
-        return -1; // already running
+    // Allow multiple setup calls
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
+        delete mStreamers.at(moduleIndex);
+    }
+
     try
     {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(mStreamPort, mStreamPort, mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
         if (mCallback_logMessage)
-            mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
+            mStreamers.at(moduleIndex)->SetMessageLogCallback(mCallback_logMessage);
         std::shared_ptr<LitePCIe> trxPort{ mStreamPort };
         if (!trxPort->IsOpen())
         {

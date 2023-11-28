@@ -615,12 +615,17 @@ void LimeSDR::ResetUSBFIFO()
 
 int LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers[0])
-        return -1; // already running
+    // Allow multiple setup calls
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
+        delete mStreamers.at(moduleIndex);
+    }
+
     try
     {
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
-        mStreamers[0]->Setup(config);
+        mStreamers.at(moduleIndex) =
+            new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips.at(moduleIndex), STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
+        mStreamers.at(moduleIndex)->Setup(config);
 
         return 0;
     } catch (std::logic_error& e)
