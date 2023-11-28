@@ -18,6 +18,7 @@
 #include "Profiler.h"
 #include "DataPacket.h"
 #include "SamplesPacket.h"
+#include "CommonFunctions.h"
 
 static bool showStats = false;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
@@ -92,27 +93,6 @@ template<typename T> inline static T clamp(T value, T low, T high)
     assert(low <= high);
     return value < low ? low : (value > high ? high : value);
 }
-
-template<class T> class DeltaVariable
-{
-  public:
-    DeltaVariable(T init)
-        : mValue(init)
-        , mLastValue(0){};
-    void set(T val) { mValue = val; }
-    void add(T val) { mValue += val; }
-    T delta()
-    {
-        T d = mValue - mLastValue;
-        return d;
-    } // value change since last reset
-    T value() const { return mValue; }
-    void checkpoint() { mLastValue = mValue; }
-
-  private:
-    T mValue;
-    T mLastValue;
-};
 
 TRXLooper_PCIE::TRXLooper_PCIE(
     std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex)
