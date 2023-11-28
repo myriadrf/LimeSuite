@@ -165,7 +165,7 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
 
     if (dir_tx)
     {
@@ -176,15 +176,7 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
         config.channel[chan].rx.enabled = enabled;
     }
 
-    try
-    {
-        sdrDevice->Configure(config, 0);
-        lastSavedSDRConfig = config;
-        return 0;
-    } catch (...)
-    {
-        return -1;
-    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate, size_t oversample)
@@ -196,7 +188,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
 
     for (std::size_t i = 0; i < lime::SDRDevice::MAX_CHANNEL_COUNT; ++i)
     {
@@ -207,15 +199,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
         config.channel[i].tx.oversample = oversample;
     }
 
-    try
-    {
-        sdrDevice->Configure(config, 0);
-        lastSavedSDRConfig = config;
-        return 0;
-    } catch (...)
-    {
-        return -1;
-    }
+    return 0;
 }
 
 // API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx, float_type rate, size_t oversample)
@@ -446,7 +430,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
 
     if (dir_tx)
     {
@@ -457,15 +441,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
         config.channel[chan].rx.centerFrequency = frequency;
     }
 
-    try
-    {
-        sdrDevice->Configure(config, 0);
-        lastSavedSDRConfig = config;
-        return 0;
-    } catch (...)
-    {
-        return -1;
-    }
+    return 0;
 }
 
 // API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* frequency)
@@ -587,7 +563,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig config = lastSavedSDRConfig;
+    lime::SDRDevice::SDRConfig& config = lastSavedSDRConfig;
 
     if (dir_tx)
     {
@@ -598,15 +574,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
         config.channel[chan].rx.gain = gain;
     }
 
-    try
-    {
-        sdrDevice->Configure(config, 0);
-        lastSavedSDRConfig = config;
-        return 0;
-    } catch (...)
-    {
-        return -1;
-    }
+    return 0;
 }
 
 // API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned gain)
@@ -978,6 +946,16 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         return -1;
     }
 
+    try
+    {
+        sdrDevice->Configure(lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
     lime::SDRDevice::StreamConfig config = lastSavedStreamConfig;
     config.bufferSize = stream->fifoSize;
 
@@ -1052,7 +1030,7 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* s
         lime::error("Stream cannot be NULL.");
         return -1;
     }
-    
+
     // No-op since destruction of stream happens during stopping now.
 
     return 0;
