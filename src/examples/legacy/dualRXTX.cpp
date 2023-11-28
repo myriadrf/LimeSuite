@@ -17,6 +17,7 @@ lms_device_t* device = NULL;
 
 int error()
 {
+    cout << "Error; exiting!" << endl;
     if (device != NULL)
         LMS_Close(device);
     exit(-1);

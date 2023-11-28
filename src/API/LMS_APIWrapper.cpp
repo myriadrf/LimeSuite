@@ -1,3 +1,4 @@
+#include "CommonFunctions.h"
 #include "lime/LimeSuite.h"
 #include "limesuite/DeviceHandle.h"
 #include "limesuite/DeviceRegistry.h"
@@ -17,9 +18,16 @@ struct StreamHandle {
     bool isStreamActuallyStarted;
 };
 
+struct StatsDeltas {
+    lime::DeltaVariable<uint32_t> underrun;
+    lime::DeltaVariable<uint32_t> overrun;
+    lime::DeltaVariable<uint32_t> droppedPackets;
+};
+
 static lime::SDRDevice::SDRConfig lastSavedSDRConfig{};
 static lime::SDRDevice::StreamConfig lastSavedStreamConfig{};
 static std::vector<StreamHandle> streamHandles;
+static StatsDeltas statsDeltas{ 0, 0, 0 };
 
 namespace {
 
@@ -1030,24 +1038,25 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     return returnValue;
 }
 
-// API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* stream)
-// {
-//     if (stream == nullptr)
-//     {
-//         lime::error("Stream cannot be NULL.");
-//         return -1;
-//     }
-//     if (stream->handle == 0)
-//     {
-//         lime::error("Invalid stream handle.");
-//         return -1;
-//     }
+API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* stream)
+{
+    lime::SDRDevice* sdrDevice = CheckDevice(device);
 
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     lms->DestroyStream((lime::StreamChannel*)stream->handle);
-//     stream->handle = 0;
-//     return 0;
-// }
+    if (sdrDevice == nullptr)
+    {
+        return -1;
+    }
+
+    if (stream == nullptr)
+    {
+        lime::error("Stream cannot be NULL.");
+        return -1;
+    }
+    
+    // No-op since destruction of stream happens during stopping now.
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t* stream)
 {
@@ -1082,12 +1091,38 @@ API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t* stream)
     return 0;
 }
 
-// API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
-// {
-//     if (stream == nullptr || stream->handle == 0)
-//         return 0;
-//     return reinterpret_cast<lime::StreamChannel*>(stream->handle)->Stop();
-// }
+API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
+{
+    if (stream == nullptr || stream->handle < 0)
+    {
+        return -1;
+    }
+
+    auto handle = streamHandles.at(stream->handle);
+    if (handle.device == nullptr)
+    {
+        return -1;
+    }
+
+    handle.isStreamStartedFromAPI = false;
+
+    if (handle.isStreamActuallyStarted)
+    {
+        handle.device->StreamStop(0);
+
+        for (auto& streamHandle : streamHandles)
+        {
+            if (streamHandle.device != handle.device)
+            {
+                continue;
+            }
+
+            streamHandle.isStreamActuallyStarted = false;
+        }
+    }
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_RecvStream(
     lms_stream_t* stream, void* samples, size_t sample_count, lms_stream_meta_t* meta, unsigned timeout_ms)
@@ -1247,9 +1282,19 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_st
     status->active = handle.isStreamStartedFromAPI;
     status->fifoFilledCount = stats.FIFO.usedCount;
     status->fifoSize = stats.FIFO.totalCount;
-    status->underrun = stats.underrun;
-    status->overrun = stats.overrun;
-    status->droppedPackets = stats.loss;
+
+    statsDeltas.underrun.set(stats.underrun);
+    status->underrun = statsDeltas.underrun.delta();
+    statsDeltas.underrun.checkpoint();
+
+    statsDeltas.overrun.set(stats.overrun);
+    status->overrun = statsDeltas.overrun.delta();
+    statsDeltas.overrun.checkpoint();
+
+    statsDeltas.droppedPackets.set(stats.loss);
+    status->droppedPackets = statsDeltas.underrun.delta();
+    statsDeltas.droppedPackets.checkpoint();
+
     // status->sampleRate;
     status->linkRate = stats.dataRate_Bps;
     status->timestamp = stats.timestamp;
