@@ -32,6 +32,10 @@ add_executable(legacyBasicRX legacy/basicRX.cpp)
 set_target_properties(legacyBasicRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir}/legacy RUNTIME_OUTPUT_NAME basicRX)
 target_link_libraries(legacyBasicRX PUBLIC ${MAIN_LIBRARY_NAME})
 
+add_executable(legacyBasicTX legacy/basicTX.cpp)
+set_target_properties(legacyBasicTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir}/legacy RUNTIME_OUTPUT_NAME basicTX)
+target_link_libraries(legacyBasicTX PUBLIC ${MAIN_LIBRARY_NAME})
+
 add_executable(legacyDualRXTX legacy/dualRXTX.cpp)
 set_target_properties(legacyDualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir}/legacy RUNTIME_OUTPUT_NAME dualRXTX)
 target_link_libraries(legacyDualRXTX PUBLIC ${MAIN_LIBRARY_NAME})

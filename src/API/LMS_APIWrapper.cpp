@@ -579,11 +579,37 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
 //     return names.size();
 // }
 
-// API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetPath(dir_tx, chan, path) : -1;
-// }
+API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (dir_tx)
+    {
+        config.channel[chan].tx.path = path;
+    }
+    else
+    {
+        config.channel[chan].rx.path = path;
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
 
 // API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_t chan)
 // {
@@ -721,25 +747,46 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 //     return LMS_SUCCESS;
 // }
 
-// API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t chan, double bw, unsigned flags)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
+API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t chan, double bw, unsigned flags)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-// #ifdef LIMERFE
-//     auto rfe = lms->GetLimeRFE();
-//     if (rfe)
-//         rfe->OnCalibrate(chan, false);
-// #endif
-//     int ret = lms->Calibrate(dir_tx, chan, bw, flags);
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
-// #ifdef LIMERFE
-//     if (rfe)
-//         rfe->OnCalibrate(chan, true);
-// #endif
-//     return ret;
-// }
+    if (dir_tx)
+    {
+        config.channel[chan].tx.calibrate = true;
+    }
+    else
+    {
+        config.channel[chan].rx.calibrate = true;
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    if (dir_tx)
+    {
+        config.channel[chan].tx.calibrate = false;
+    }
+    else
+    {
+        config.channel[chan].rx.calibrate = false;
+    }
+
+    return 0;
+}
 
 // API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
 // {
