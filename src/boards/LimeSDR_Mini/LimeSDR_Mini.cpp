@@ -243,7 +243,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         if (txUsed)
         {
-            mLMSChips[0]->SetFrequencySX(TRXDir::Tx, cfg.channel[0].rx.centerFrequency);
+            mLMSChips[0]->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
         }
 
         for (int i = 0; i < 2; ++i)
