@@ -8,6 +8,7 @@
 #include "LMS7002M_SDRDevice.h"
 #include "Logger.h"
 
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -1148,7 +1149,7 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
 namespace {
 
 template<class T>
-inline int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_stream_meta_t* meta, unsigned timeout_ms)
+int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_stream_meta_t* meta, unsigned timeout_ms)
 {
     auto& handle = streamHandles.at(stream->handle);
     if (handle == nullptr || handle->parent == nullptr)
@@ -1157,13 +1158,19 @@ inline int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_coun
     }
 
     const auto direction = stream->isTx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    if (direction == lime::TRXDir::Tx)
+    {
+        lime::error("Invalid direction.");
+        return -1;
+    }
+
     const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
     const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
     const std::size_t sampleSize = sizeof(T);
 
     if (rxChannelCount > 1)
     {
-        for (std::size_t i = 0; handle->parent->streamBuffers.size(); ++i)
+        for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
         {
             auto& buffer = handle->parent->streamBuffers[i];
 
@@ -1172,7 +1179,7 @@ inline int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_coun
                 std::memcpy(samples, buffer.buffer, sample_count * sampleSize);
                 int samplesProduced = buffer.samplesProduced;
 
-                delete reinterpret_cast<T*>(buffer.buffer);
+                delete[] reinterpret_cast<T*>(buffer.buffer);
                 handle->parent->streamBuffers.erase(handle->parent->streamBuffers.begin() + i);
 
                 return samplesProduced;
@@ -1247,6 +1254,99 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
     return samplesProduced;
 }
 
+namespace {
+
+template<class T>
+int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, const lms_stream_meta_t* meta, unsigned timeout_ms)
+{
+    auto& handle = streamHandles.at(stream->handle);
+    if (handle == nullptr || handle->parent == nullptr)
+    {
+        return -1;
+    }
+
+    const auto direction = stream->isTx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    if (direction == lime::TRXDir::Rx)
+    {
+        lime::error("Invalid direction.");
+        return -1;
+    }
+
+    const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
+    const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
+
+    std::vector<bool> found(txChannelCount, false);
+
+    for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+    {
+        auto& buffer = handle->parent->streamBuffers[i];
+
+        if (buffer.direction == direction)
+        {
+            for (uint8_t j = 0; j < txChannelCount; ++j)
+            {
+                if (handle->parent->lastSavedStreamConfig.txChannels[j] == buffer.channel)
+                {
+                    found[j] = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    for (uint8_t i = 0; i < txChannelCount; ++i)
+    {
+        if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
+        {
+            found[i] = true;
+        }
+    }
+
+    if (std::all_of(found.begin(), found.end(), [](bool item) { return item; }))
+    {
+        T const** sampleBuffer = new T const*[txChannelCount];
+
+        for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+        {
+            auto& buffer = handle->parent->streamBuffers[i];
+
+            if (buffer.direction == direction)
+            {
+                for (uint8_t j = 0; j < txChannelCount; ++j)
+                {
+                    if (handle->parent->lastSavedStreamConfig.txChannels[j] == buffer.channel)
+                    {
+                        sampleBuffer[j] = reinterpret_cast<const T*>(buffer.buffer);
+                    }
+                    else if (handle->parent->lastSavedStreamConfig.txChannels[j] == streamChannel)
+                    {
+                        sampleBuffer[j] = reinterpret_cast<T const*>(samples);
+                    }
+                }
+            }
+        }
+
+        lime::SDRDevice::StreamMeta metadata{ 0, false, false };
+
+        if (meta != nullptr)
+        {
+            metadata.flush = meta->flushPartialPacket;
+            metadata.useTimestamp = meta->waitForTimestamp;
+            metadata.timestamp = meta->timestamp;
+        }
+
+        int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer, sample_count, &metadata);
+        return samplesSent;
+    }
+
+    handle->parent->streamBuffers.push_back({ const_cast<void*>(samples), direction, static_cast<uint8_t>(streamChannel), 0 });
+
+    // Can't really know what to return here just yet, so just returning that all of them have passed through.
+    return sample_count;
+}
+
+} // namespace
+
 API_EXPORT int CALL_CONV LMS_SendStream(
     lms_stream_t* stream, const void* samples, size_t sample_count, const lms_stream_meta_t* meta, unsigned timeout_ms)
 {
@@ -1255,34 +1355,16 @@ API_EXPORT int CALL_CONV LMS_SendStream(
         return -1;
     }
 
-    auto& handle = streamHandles.at(stream->handle);
-    if (handle == nullptr || handle->parent == nullptr)
-    {
-        return -1;
-    }
-
-    lime::SDRDevice::StreamMeta metadata{ 0, false, false };
-
-    if (meta != nullptr)
-    {
-        metadata.flush = meta->flushPartialPacket;
-        metadata.useTimestamp = meta->waitForTimestamp;
-        metadata.timestamp = meta->timestamp;
-    }
-
-    auto outputSamples32f = reinterpret_cast<const lime::complex32f_t*>(samples);
-    auto outputSamples16i = reinterpret_cast<const lime::complex16_t*>(samples);
-
     int samplesSent = 0;
 
     switch (stream->dataFmt)
     {
     case lms_stream_t::LMS_FMT_F32:
-        samplesSent = handle->parent->device->StreamTx(0, &outputSamples32f, sample_count, &metadata);
+        samplesSent = SendStream<lime::complex32f_t>(stream, samples, sample_count, meta, timeout_ms);
         break;
     case lms_stream_t::LMS_FMT_I16:
     case lms_stream_t::LMS_FMT_I12:
-        samplesSent = handle->parent->device->StreamTx(0, &outputSamples16i, sample_count, &metadata);
+        samplesSent = SendStream<lime::complex16_t>(stream, samples, sample_count, meta, timeout_ms);
     default:
         break;
     }
