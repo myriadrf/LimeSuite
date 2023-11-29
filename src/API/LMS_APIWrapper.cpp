@@ -161,12 +161,11 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
     }
 
     std::vector<lime::DeviceHandle> handles = lime::DeviceRegistry::enumerate();
-
-    for (std::size_t i = 0; i < handles.size(); i++)
+    for (auto& handle : handles)
     {
-        if (info == nullptr || std::strcmp(handles[i].Serialize().c_str(), info) == 0)
+        if (info == nullptr || std::strcmp(handle.Serialize().c_str(), info) == 0)
         {
-            auto dev = lime::DeviceRegistry::makeDevice(handles[i]);
+            auto dev = lime::DeviceRegistry::makeDevice(handle);
 
             if (dev == nullptr)
             {
@@ -461,9 +460,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t* device, bool dir_tx)
         return -1;
     }
 
-    const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
-
-    return descriptor.rfSOC[0].channelCount;
+    return apiDevice->device->GetDescriptor().rfSOC[0].channelCount;
 }
 
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type frequency)
@@ -976,7 +973,6 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
 API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* stream)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device);
-
     if (apiDevice == nullptr)
     {
         return -1;
@@ -1060,7 +1056,6 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* stream)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device);
-
     if (apiDevice == nullptr)
     {
         return -1;
@@ -1166,22 +1161,22 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         return -1;
     }
 
-    const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
+    const uint32_t streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
     const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
     const std::size_t sampleSize = sizeof(T);
 
     if (rxChannelCount > 1)
     {
-        for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+        for (auto it = handle->parent->streamBuffers.begin(); it != handle->parent->streamBuffers.end(); it++)
         {
-            auto& buffer = handle->parent->streamBuffers[i];
+            auto& buffer = *it;
             if (buffer.direction == direction && buffer.channel == streamChannel)
             {
                 std::memcpy(samples, buffer.buffer, sample_count * sampleSize);
                 int samplesProduced = buffer.samplesProduced;
 
                 delete[] reinterpret_cast<T*>(buffer.buffer);
-                handle->parent->streamBuffers.erase(handle->parent->streamBuffers.begin() + i);
+                handle->parent->streamBuffers.erase(it);
 
                 return samplesProduced;
             }
@@ -1268,7 +1263,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         return -1;
     }
 
-    const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
+    const uint32_t streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
     const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
     const std::size_t sampleSize = sizeof(T);
 
@@ -1337,13 +1332,13 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
 
         int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer.data(), sample_count, &metadata);
 
-        for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+        for (auto it = handle->parent->streamBuffers.begin(); it != handle->parent->streamBuffers.end(); it++)
         {
-            auto& buffer = handle->parent->streamBuffers[i];
+            auto& buffer = *it;
             if (buffer.direction == direction && buffer.channel != streamChannel)
             {
                 delete[] reinterpret_cast<T*>(buffer.buffer);
-                handle->parent->streamBuffers.erase(handle->parent->streamBuffers.begin() + i);
+                handle->parent->streamBuffers.erase(it--);
             }
         }
 
