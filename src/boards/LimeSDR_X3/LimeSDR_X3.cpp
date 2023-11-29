@@ -176,13 +176,10 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
         { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
-    DataStorage* eeprom = new DataStorage();
-    eeprom->name = "EEPROM";
-    eeprom->id = (int)eMemoryDevice::EEPROM;
     DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
-    eeprom->map.push_back(vctcxoValue);
+    DataStorage eeprom{ "EEPROM", static_cast<uint32_t>(eMemoryDevice::EEPROM), { vctcxoValue } };
 
-    desc.memoryDevices = { { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) }, *eeprom };
+    desc.memoryDevices = { { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) }, eeprom };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
