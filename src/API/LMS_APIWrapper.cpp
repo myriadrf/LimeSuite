@@ -49,6 +49,7 @@ struct StreamBuffer {
     void* buffer;
     lime::TRXDir direction;
     uint8_t channel;
+    int samplesProduced;
 
     StreamBuffer() = delete;
 };
@@ -1158,22 +1159,95 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
         return -1;
     }
 
+    const auto direction = stream->isTx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
+
+    std::size_t sampleSize = 0;
+    switch (stream->dataFmt)
+    {
+    case lms_stream_t::LMS_FMT_F32:
+        sampleSize = sizeof(lime::complex32f_t);
+        break;
+    case lms_stream_t::LMS_FMT_I16:
+    case lms_stream_t::LMS_FMT_I12:
+        sampleSize = sizeof(lime::complex16_t);
+    default:
+        break;
+    }
+
+    const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
+
+    if (rxChannelCount > 1)
+    {
+        for (std::size_t i = 0; handle->parent->streamBuffers.size(); ++i)
+        {
+            auto& buffer = handle->parent->streamBuffers[i];
+
+            if (buffer.direction == direction && buffer.channel == streamChannel)
+            {
+                std::memcpy(samples, buffer.buffer, sample_count * sampleSize);
+                int samplesProduced = buffer.samplesProduced;
+
+                delete buffer.buffer;
+                handle->parent->streamBuffers.erase(handle->parent->streamBuffers.begin() + i);
+
+                return samplesProduced;
+            }
+        }
+    }
+
+    // Related cache not found, need to make one up.
+    void* sampleBuffer[rxChannelCount];
+
+    for (uint8_t i = 0; i < rxChannelCount; ++i)
+    {
+        if (handle->parent->lastSavedStreamConfig.rxChannels[i] == streamChannel)
+        {
+            sampleBuffer[i] = samples;
+        }
+        else
+        {
+            switch (stream->dataFmt)
+            {
+            case lms_stream_t::LMS_FMT_F32:
+                sampleBuffer[i] = new lime::complex32f_t[sample_count];
+                break;
+            case lms_stream_t::LMS_FMT_I16:
+            case lms_stream_t::LMS_FMT_I12:
+                sampleBuffer[i] = new lime::complex16_t[sample_count];
+            default:
+                break;
+            }
+
+            handle->parent->streamBuffers.push_back(
+                { sampleBuffer[i], direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
+        }
+    }
+
     lime::SDRDevice::StreamMeta metadata{ 0, false, false };
     int samplesProduced = 0;
 
-    auto outputSamples32f = reinterpret_cast<lime::complex32f_t*>(samples);
-    auto outputSamples16i = reinterpret_cast<lime::complex16_t*>(samples);
+    auto outputSamples32f = reinterpret_cast<lime::complex32f_t**>(sampleBuffer);
+    auto outputSamples16i = reinterpret_cast<lime::complex16_t**>(sampleBuffer);
 
     switch (stream->dataFmt)
     {
     case lms_stream_t::LMS_FMT_F32:
-        samplesProduced = handle->parent->device->StreamRx(0, &outputSamples32f, sample_count, &metadata);
+        samplesProduced = handle->parent->device->StreamRx(0, outputSamples32f, sample_count, &metadata);
         break;
     case lms_stream_t::LMS_FMT_I16:
     case lms_stream_t::LMS_FMT_I12:
-        samplesProduced = handle->parent->device->StreamRx(0, &outputSamples16i, sample_count, &metadata);
+        samplesProduced = handle->parent->device->StreamRx(0, outputSamples16i, sample_count, &metadata);
     default:
         break;
+    }
+
+    for (auto& buffer : handle->parent->streamBuffers)
+    {
+        if (buffer.direction == direction)
+        {
+            buffer.samplesProduced = samplesProduced;
+        }
     }
 
     if (meta != nullptr)
