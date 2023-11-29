@@ -1145,14 +1145,11 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
     return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_RecvStream(
-    lms_stream_t* stream, void* samples, size_t sample_count, lms_stream_meta_t* meta, unsigned timeout_ms)
-{
-    if (stream == nullptr || stream->handle < 0)
-    {
-        return -1;
-    }
+namespace {
 
+template<class T>
+inline int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_stream_meta_t* meta, unsigned timeout_ms)
+{
     auto& handle = streamHandles.at(stream->handle);
     if (handle == nullptr || handle->parent == nullptr)
     {
@@ -1161,21 +1158,8 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
 
     const auto direction = stream->isTx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
-
-    std::size_t sampleSize = 0;
-    switch (stream->dataFmt)
-    {
-    case lms_stream_t::LMS_FMT_F32:
-        sampleSize = sizeof(lime::complex32f_t);
-        break;
-    case lms_stream_t::LMS_FMT_I16:
-    case lms_stream_t::LMS_FMT_I12:
-        sampleSize = sizeof(lime::complex16_t);
-    default:
-        break;
-    }
-
     const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
+    const std::size_t sampleSize = sizeof(T);
 
     if (rxChannelCount > 1)
     {
@@ -1188,7 +1172,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
                 std::memcpy(samples, buffer.buffer, sample_count * sampleSize);
                 int samplesProduced = buffer.samplesProduced;
 
-                delete buffer.buffer;
+                delete reinterpret_cast<T*>(buffer.buffer);
                 handle->parent->streamBuffers.erase(handle->parent->streamBuffers.begin() + i);
 
                 return samplesProduced;
@@ -1197,27 +1181,17 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
     }
 
     // Related cache not found, need to make one up.
-    void* sampleBuffer[rxChannelCount];
+    T** sampleBuffer = new T*[rxChannelCount];
 
     for (uint8_t i = 0; i < rxChannelCount; ++i)
     {
         if (handle->parent->lastSavedStreamConfig.rxChannels[i] == streamChannel)
         {
-            sampleBuffer[i] = samples;
+            sampleBuffer[i] = reinterpret_cast<T*>(samples);
         }
         else
         {
-            switch (stream->dataFmt)
-            {
-            case lms_stream_t::LMS_FMT_F32:
-                sampleBuffer[i] = new lime::complex32f_t[sample_count];
-                break;
-            case lms_stream_t::LMS_FMT_I16:
-            case lms_stream_t::LMS_FMT_I12:
-                sampleBuffer[i] = new lime::complex16_t[sample_count];
-            default:
-                break;
-            }
+            sampleBuffer[i] = new T[sample_count];
 
             handle->parent->streamBuffers.push_back(
                 { sampleBuffer[i], direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
@@ -1225,22 +1199,9 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
     }
 
     lime::SDRDevice::StreamMeta metadata{ 0, false, false };
-    int samplesProduced = 0;
 
-    auto outputSamples32f = reinterpret_cast<lime::complex32f_t**>(sampleBuffer);
-    auto outputSamples16i = reinterpret_cast<lime::complex16_t**>(sampleBuffer);
-
-    switch (stream->dataFmt)
-    {
-    case lms_stream_t::LMS_FMT_F32:
-        samplesProduced = handle->parent->device->StreamRx(0, outputSamples32f, sample_count, &metadata);
-        break;
-    case lms_stream_t::LMS_FMT_I16:
-    case lms_stream_t::LMS_FMT_I12:
-        samplesProduced = handle->parent->device->StreamRx(0, outputSamples16i, sample_count, &metadata);
-    default:
-        break;
-    }
+    auto outputSamples = reinterpret_cast<T**>(sampleBuffer);
+    int samplesProduced = handle->parent->device->StreamRx(0, outputSamples, sample_count, &metadata);
 
     for (auto& buffer : handle->parent->streamBuffers)
     {
@@ -1250,9 +1211,37 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
         }
     }
 
+    delete[] sampleBuffer;
+
     if (meta != nullptr)
     {
         meta->timestamp = metadata.timestamp;
+    }
+
+    return samplesProduced;
+}
+
+} // namespace
+
+API_EXPORT int CALL_CONV LMS_RecvStream(
+    lms_stream_t* stream, void* samples, size_t sample_count, lms_stream_meta_t* meta, unsigned timeout_ms)
+{
+    if (stream == nullptr || stream->handle < 0)
+    {
+        return -1;
+    }
+
+    std::size_t samplesProduced = 0;
+    switch (stream->dataFmt)
+    {
+    case lms_stream_t::LMS_FMT_F32:
+        samplesProduced = ReceiveStream<lime::complex32f_t>(stream, samples, sample_count, meta, timeout_ms);
+        break;
+    case lms_stream_t::LMS_FMT_I16:
+    case lms_stream_t::LMS_FMT_I12:
+        samplesProduced = ReceiveStream<lime::complex16_t>(stream, samples, sample_count, meta, timeout_ms);
+    default:
+        break;
     }
 
     return samplesProduced;
