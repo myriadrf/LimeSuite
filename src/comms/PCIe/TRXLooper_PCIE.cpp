@@ -778,14 +778,6 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     DeltaVariable<int32_t> overrun(0);
     DeltaVariable<int32_t> loss(0);
 
-    // thread ready for work, just wait for stream enable
-    {
-        std::unique_lock<std::mutex> lk(streamMutex);
-        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
-            streamActive.wait_for(lk, milliseconds(100));
-        lk.unlock();
-    }
-
     // Anticipate the overflow 2 interrupts early, just in case of missing an interrupt
     // Avoid situations where CPU and device is at the same buffer index
     // CPU reading while device writing creates coherency issues.
@@ -793,6 +785,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     mRxArgs.cnt = 0;
     mRxArgs.sw = 0;
     mRxArgs.hw = 0;
+
+    // thread ready for work, just wait for stream enable
+    {
+        std::unique_lock<std::mutex> lk(streamMutex);
+        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
+            streamActive.wait_for(lk, milliseconds(100));
+        lk.unlock();
+    }
 
     auto t1 = perfClock::now();
     auto t2 = t1;
