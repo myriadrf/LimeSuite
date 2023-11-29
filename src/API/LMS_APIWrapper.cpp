@@ -195,7 +195,7 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
 
     lime::DeviceRegistry::freeDevice(apiDevice->device);
 
-    delete reinterpret_cast<LMS_APIDevice*>(device);
+    delete apiDevice;
     return LMS_SUCCESS;
 }
 
@@ -1175,7 +1175,6 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
         {
             auto& buffer = handle->parent->streamBuffers[i];
-
             if (buffer.direction == direction && buffer.channel == streamChannel)
             {
                 std::memcpy(samples, buffer.buffer, sample_count * sampleSize);
@@ -1190,8 +1189,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     }
 
     // Related cache not found, need to make one up.
-    T** sampleBuffer = new T*[rxChannelCount];
-
+    std::vector<T*> sampleBuffer(rxChannelCount);
     for (uint8_t i = 0; i < rxChannelCount; ++i)
     {
         if (handle->parent->lastSavedStreamConfig.rxChannels[i] == streamChannel)
@@ -1208,9 +1206,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     }
 
     lime::SDRDevice::StreamMeta metadata{ 0, false, false };
-
-    auto outputSamples = reinterpret_cast<T**>(sampleBuffer);
-    int samplesProduced = handle->parent->device->StreamRx(0, outputSamples, sample_count, &metadata);
+    int samplesProduced = handle->parent->device->StreamRx(0, sampleBuffer.data(), sample_count, &metadata);
 
     for (auto& buffer : handle->parent->streamBuffers)
     {
@@ -1219,8 +1215,6 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
             buffer.samplesProduced = samplesProduced;
         }
     }
-
-    delete[] sampleBuffer;
 
     if (meta != nullptr)
     {
@@ -1276,20 +1270,19 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
 
     const auto streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
     const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
+    const std::size_t sampleSize = sizeof(T);
 
     std::vector<bool> found(txChannelCount, false);
 
-    for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+    for (auto& buffer : handle->parent->streamBuffers)
     {
-        auto& buffer = handle->parent->streamBuffers[i];
-
         if (buffer.direction == direction)
         {
-            for (uint8_t j = 0; j < txChannelCount; ++j)
+            for (uint8_t i = 0; i < txChannelCount; ++i)
             {
-                if (handle->parent->lastSavedStreamConfig.txChannels[j] == buffer.channel)
+                if (handle->parent->lastSavedStreamConfig.txChannels[i] == buffer.channel)
                 {
-                    found[j] = true;
+                    found[i] = true;
                     break;
                 }
             }
@@ -1301,30 +1294,35 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
         {
             found[i] = true;
+            break;
         }
     }
 
     if (std::all_of(found.begin(), found.end(), [](bool item) { return item; }))
     {
-        T const** sampleBuffer = new T const*[txChannelCount];
+        std::vector<const T*> sampleBuffer(txChannelCount);
 
-        for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+        for (auto& buffer : handle->parent->streamBuffers)
         {
-            auto& buffer = handle->parent->streamBuffers[i];
-
             if (buffer.direction == direction)
             {
-                for (uint8_t j = 0; j < txChannelCount; ++j)
+                for (uint8_t i = 0; i < txChannelCount; ++i)
                 {
-                    if (handle->parent->lastSavedStreamConfig.txChannels[j] == buffer.channel)
+                    if (handle->parent->lastSavedStreamConfig.txChannels[i] == buffer.channel)
                     {
-                        sampleBuffer[j] = reinterpret_cast<const T*>(buffer.buffer);
-                    }
-                    else if (handle->parent->lastSavedStreamConfig.txChannels[j] == streamChannel)
-                    {
-                        sampleBuffer[j] = reinterpret_cast<T const*>(samples);
+                        sampleBuffer[i] = reinterpret_cast<const T*>(buffer.buffer);
+                        break;
                     }
                 }
+            }
+        }
+
+        for (uint8_t i = 0; i < txChannelCount; ++i)
+        {
+            if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
+            {
+                sampleBuffer[i] = reinterpret_cast<const T*>(samples);
+                break;
             }
         }
 
@@ -1337,14 +1335,24 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
             metadata.timestamp = meta->timestamp;
         }
 
-        int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer, sample_count, &metadata);
+        int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer.data(), sample_count, &metadata);
 
-        delete[] sampleBuffer;
+        for (std::size_t i = 0; i < handle->parent->streamBuffers.size(); ++i)
+        {
+            auto& buffer = handle->parent->streamBuffers[i];
+            if (buffer.direction == direction && buffer.channel != streamChannel)
+            {
+                delete[] reinterpret_cast<T*>(buffer.buffer);
+                handle->parent->streamBuffers.erase(handle->parent->streamBuffers.begin() + i);
+            }
+        }
 
         return samplesSent;
     }
 
-    handle->parent->streamBuffers.push_back({ const_cast<void*>(samples), direction, static_cast<uint8_t>(streamChannel), 0 });
+    T* buffer = new T[sample_count];
+    std::memcpy(buffer, samples, sample_count * sampleSize);
+    handle->parent->streamBuffers.push_back({ reinterpret_cast<void*>(buffer), direction, static_cast<uint8_t>(streamChannel), 0 });
 
     // Can't really know what to return here just yet, so just returning that all of them have passed through.
     return sample_count;
