@@ -9,6 +9,7 @@
 #include "Logger.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -213,14 +214,35 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
     }
 
     lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    const double defaultFrequency = 1e8;
 
     if (dir_tx)
     {
         config.channel[chan].tx.enabled = enabled;
+
+        if (config.channel[chan].tx.centerFrequency == 0)
+        {
+            config.channel[chan].tx.centerFrequency = defaultFrequency;
+        }
     }
     else
     {
         config.channel[chan].rx.enabled = enabled;
+
+        if (config.channel[chan].rx.centerFrequency == 0)
+        {
+            config.channel[chan].rx.centerFrequency = defaultFrequency;
+        }
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
     }
 
     return 0;
@@ -243,6 +265,16 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
 
         config.channel[i].tx.sampleRate = rate;
         config.channel[i].tx.oversample = oversample;
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
     }
 
     return 0;
@@ -476,10 +508,34 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
     if (dir_tx)
     {
         config.channel[chan].tx.centerFrequency = frequency;
+
+        const bool txMIMO = config.channel[0].tx.enabled && config.channel[1].tx.enabled;
+        if (txMIMO && config.channel[0].tx.centerFrequency != config.channel[1].tx.centerFrequency)
+        {
+            // Don't configure just yet, wait for both frequencies to be set.
+            return 0;
+        }
     }
     else
     {
         config.channel[chan].rx.centerFrequency = frequency;
+
+        const bool rxMIMO = config.channel[0].rx.enabled && config.channel[1].rx.enabled;
+        if (rxMIMO && config.channel[0].rx.centerFrequency != config.channel[1].rx.centerFrequency)
+        {
+            // Don't configure just yet, wait for both frequencies to be set.
+            return 0;
+        }
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
     }
 
     return 0;
@@ -612,6 +668,16 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
     else
     {
         config.channel[chan].rx.gain = gain;
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
     }
 
     return 0;
@@ -984,6 +1050,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         return -1;
     }
 
+    // Configure again in case some skips were made in validation before hand.
     try
     {
         apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
