@@ -194,6 +194,8 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
     }
 
     lime::DeviceRegistry::freeDevice(apiDevice->device);
+
+    delete reinterpret_cast<LMS_APIDevice*>(device);
     return LMS_SUCCESS;
 }
 
@@ -1336,6 +1338,9 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         }
 
         int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer, sample_count, &metadata);
+
+        delete[] sampleBuffer;
+
         return samplesSent;
     }
 
