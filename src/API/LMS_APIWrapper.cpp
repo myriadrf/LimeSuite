@@ -116,6 +116,15 @@ inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
     return streamHandles.size() - 1;
 }
 
+inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
+{
+    for (std::size_t i = 0; i < strings.size(); ++i)
+    {
+        std::strncpy(list[i], strings.at(i).c_str(), sizeof(lms_name_t) - 1);
+        list[i][sizeof(lms_name_t) - 1] = 0;
+    }
+}
+
 } //unnamed namespace
 
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
@@ -179,6 +188,23 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
 
     delete apiDevice;
     return LMS_SUCCESS;
+}
+
+API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        return apiDevice->device->Init();
+    } catch (...)
+    {
+        return -1;
+    }
 }
 
 API_EXPORT int CALL_CONV LMS_Reset(lms_device_t* device)
@@ -351,200 +377,6 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_t
     return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
-{
-    LMS_APIDevice* apiDevice = CheckDevice(device);
-    if (apiDevice == nullptr)
-    {
-        return -1;
-    }
-
-    return apiDevice->device->Init();
-}
-
-// API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
-// {
-//     auto conn = CheckConnection(device);
-//     if (conn == nullptr)
-//         return -1;
-//     std::string str;
-//     int ret = conn->CustomParameterRead(&param_id, val, 1, &str);
-//     if (units)
-//         strncpy(units, str.c_str(), sizeof(lms_name_t) - 1);
-//     return ret;
-// }
-
-// API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
-// {
-//     auto conn = CheckConnection(device);
-//     if (conn == nullptr)
-//         return -1;
-
-//     std::string str = units == nullptr ? "" : units;
-//     return conn->CustomParameterWrite(&param_id, &val, 1, str);
-// }
-
-// API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
-// {
-//     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
-//         return -1;
-
-//     auto conn = CheckConnection(device);
-//     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-//     if (port) //can use LMS64C protocol to write eeprom value
-//     {
-//         lime::DeviceInfo dinfo = port->GetDeviceInfo();
-//         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
-//         {
-//             unsigned char packet[64] = {
-//                 0x8C, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1
-//             }; //packet: Flash write 2 btes, addr 16
-//             packet[32] = val & 0xFF; //values start at offset=32
-//             packet[33] = val >> 8;
-
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//         }
-//         else
-//         {
-//             unsigned char packet[64] = {
-//                 0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3
-//             }; //packet: eeprom write 2 btes, addr 16
-//             packet[32] = val & 0xFF; //values start at offset=32
-//             packet[33] = val >> 8;
-
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//         }
-//     }
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
-// {
-//     auto conn = CheckConnection(device);
-//     if (!conn)
-//         return -1;
-//     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-//     if (port) //can use LMS64C protocol to read eeprom value
-//     {
-//         lime::DeviceInfo dinfo = port->GetDeviceInfo();
-//         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
-//         {
-//             unsigned char packet[64] = {
-//                 0x8D, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1
-//             }; //packet: eeprom read 2 bytes, addr 16
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//             *val = packet[32] | (packet[33] << 8); //values start at offset=32
-//         }
-//         else
-//         {
-//             unsigned char packet[64] = {
-//                 0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3
-//             }; //packet: eeprom read 2 bytes, addr 16
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//             *val = packet[32] | (packet[33] << 8); //values start at offset=32
-//         }
-//     }
-//     else //fall back to reading runtime value
-//     {
-//         uint8_t id = BOARD_PARAM_DAC;
-//         double dval;
-//         if (conn->CustomParameterRead(&id, &dval, 1, nullptr) != LMS_SUCCESS)
-//             return -1;
-//         *val = dval;
-//     }
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, float_type* freq)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     *freq = lms->GetClockFreq(clk_id);
-//     return *freq > 0 ? 0 : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, float_type freq)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->SetClockFreq(clk_id, freq) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     return lms ? lms->Synchronize(toChip) : -1;
-// }
-
-API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t len)
-{
-    LMS_APIDevice* apiDevice = CheckDevice(dev);
-    if (apiDevice == nullptr)
-    {
-        return -1;
-    }
-
-    return apiDevice->device->GPIORead(buffer, len);
-}
-
-API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
-{
-    LMS_APIDevice* apiDevice = CheckDevice(dev);
-    if (apiDevice == nullptr)
-    {
-        return -1;
-    }
-
-    return apiDevice->device->GPIOWrite(buffer, len);
-}
-
-API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
-{
-    LMS_APIDevice* apiDevice = CheckDevice(dev);
-    if (apiDevice == nullptr)
-    {
-        return -1;
-    }
-
-    return apiDevice->device->GPIODirRead(buffer, len);
-}
-
-API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
-{
-    LMS_APIDevice* apiDevice = CheckDevice(dev);
-    if (apiDevice == nullptr)
-    {
-        return -1;
-    }
-
-    return apiDevice->device->GPIODirWrite(buffer, len);
-}
-
-// API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     return lms ? lms->EnableCache(enable) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
-// {
-//     *temp = 0;
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     if (!lms)
-//         return -1;
-//     if (lms->ReadLMSReg(0x2F) == 0x3840)
-//     {
-//         lime::error("Feature is not available on this chip revision.");
-//         return -1;
-//     }
-//     *temp = lms->GetChipTemperature(ind);
-//     return 0;
-// }
-
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t* device, bool dir_tx)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device);
@@ -622,30 +454,20 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, s
     return 0;
 }
 
-// API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     auto retRange = lms->GetFrequencyRange(dir_tx);
-//     range->min = retRange.min;
-//     range->max = retRange.max;
-//     range->step = 0;
-//     return LMS_SUCCESS;
-// }
-
-namespace {
-
-inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
+API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
 {
-    for (std::size_t i = 0; i < strings.size(); ++i)
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
     {
-        std::strncpy(list[i], strings.at(i).c_str(), sizeof(lms_name_t) - 1);
-        list[i][sizeof(lms_name_t) - 1] = 0;
+        return -1;
     }
-}
 
-} // namespace
+    range->min = 100e3;
+    range->max = 3.8e9;
+    range->step = 0;
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, size_t chan, lms_name_t* list)
 {
@@ -719,25 +541,6 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_
     return config.channel[chan].rx.path;
 }
 
-// API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     lime::LMS7_Device::Range ret;
-//     if (dir_tx)
-//         ret = lms->GetTxPathBand(path, chan);
-//     else
-//         ret = lms->GetRxPathBand(path, chan);
-
-//     range->max = ret.max;
-//     range->min = ret.min;
-//     range->step = 0;
-
-//     return LMS_SUCCESS;
-// }
-
 API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type bandwidth)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -769,27 +572,6 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
 
     return 0;
 }
-
-// API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-//     *bandwidth = lms->GetLPFBW(dir_tx, chan);
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetLPF(dir_tx, chan, enabled, -1) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
-// }
 
 API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
 {
@@ -846,16 +628,6 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 
     return 0;
 }
-
-// API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned gain)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-// #ifdef NEW_GAIN_BEHAVIOUR
-//     return lms ? lms->SetGain(dir_tx, chan, dir_tx ? gain : double(gain - 12.0f)) : -1;
-// #else
-//     return lms ? lms->SetGain(dir_tx, chan, int(gain - 12)) : -1;
-// #endif
-// }
 
 namespace {
 
@@ -939,19 +711,6 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t
 
     return 0;
 }
-
-// API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->LoadConfig(filename) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-
-//     return lms ? lms->SaveConfig(filename) : -1;
-// }
 
 API_EXPORT int CALL_CONV LMS_SetTestSignal(
     lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t sig, int16_t dc_i, int16_t dc_q)
@@ -1039,200 +798,6 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
 
     return 0;
 }
-
-// API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t* sig)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     int tmp = lms->GetTestSignal(dir_tx, chan);
-//     if (tmp < 0)
-//         return -1;
-
-//     *sig = (lms_testsig_t)tmp;
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, ch);
-//     if (!lms)
-//         return -1;
-
-//     if (freq != nullptr)
-//     {
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             if (lms->SetNCOFreq(dir_tx, ch, i, freq[i]) != 0)
-//                 return -1;
-//         lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, 0);
-//         lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
-//     }
-//     return lms->GetLMS()->SetNCOPhaseOffsetForMode0(dir_tx, pho);
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     if (freq != nullptr)
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             freq[i] = std::fabs(lms->GetNCOFreq(dir_tx, chan, i));
-
-//     if (pho != nullptr)
-//     {
-//         uint16_t value = lms->ReadLMSReg(dir_tx ? 0x0241 : 0x0441, chan / 2);
-//         *pho = 360.0 * value / 65536.0;
-//     }
-//     return 0;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, const float_type* phase, float_type fcw)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, ch);
-//     if (!lms)
-//         return -1;
-
-//     if (lms->SetNCOFreq(dir_tx, ch, 0, fcw) != 0)
-//         return -1;
-
-//     if (phase != nullptr)
-//     {
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             if (lms->SetNCOPhase(dir_tx, ch, i, phase[i]) != 0)
-//                 return -1;
-//         if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0))
-//             return -1;
-//     }
-//     return 0;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, float_type* phase, float_type* fcw)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, ch);
-//     if (!lms)
-//         return -1;
-
-//     if (phase != nullptr)
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             phase[i] = lms->GetNCOPhase(dir_tx, ch, i);
-
-//     if (fcw != nullptr)
-//         *fcw = lms->GetNCOFreq(dir_tx, ch, 0);
-
-//     return 0;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan, int ind, bool down)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan) != 0) ||
-//         (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan) != 0))
-//         return -1;
-
-//     if (ind < LMS_NCO_VAL_COUNT)
-//     {
-//         if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, ind) != 0) ||
-//             (lms->WriteParam(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down) != 0))
-//             return -1;
-//     }
-//     else
-//     {
-//         lime::error("Invalid NCO index value.");
-//         return -1;
-//     }
-//     return 0;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     if (lms->ReadParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
-//     {
-//         lime::error("NCO is disabled.");
-//         return -1;
-//     }
-//     return lms->ReadParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
-// }
-
-// API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, uint16_t* val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     *val = lms->ReadLMSReg(address);
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address, uint16_t val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->WriteLMSReg(address, val) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address, uint16_t* val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     int value = lms->ReadFPGAReg(address);
-//     if (value < 0)
-//         return value; // operation failed return error code
-//     else if (val)
-//         *val = value;
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address, uint16_t val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->WriteFPGAReg(address, val) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t* device, struct LMS7Parameter param, uint16_t* val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     *val = lms->ReadParam(param);
-//     return LMS_SUCCESS;
-//     ;
-// }
-
-// API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Parameter param, uint16_t val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     return lms->WriteParam(param, val);
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
-//     lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef, size_t count)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetGFIRCoef(dir_tx, chan, filt, coef, count) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->GetGFIRCoef(dir_tx, chan, filt, coef) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetGFIR(dir_tx, chan, filt, enabled) : -1;
-// }
 
 API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* stream)
 {
@@ -1645,45 +1210,6 @@ API_EXPORT int CALL_CONV LMS_SendStream(
     return samplesSent;
 }
 
-// API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** samples, uint8_t chCount, size_t sample_count, int format)
-// {
-//     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
-//     lime::StreamConfig::StreamDataFormat fmt;
-//     switch (format)
-//     {
-//     case 0:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
-//         break;
-//     case 1:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT16;
-//         break;
-//     case 2:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_FLOAT32;
-//         break;
-//     default:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
-//         break;
-//     }
-//     return lms->UploadWFM(samples, chCount, sample_count, fmt);
-// }
-
-// API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
-// {
-//     uint16_t regAddr = 0x000D;
-//     uint16_t regValue = 0;
-//     int status = 0;
-//     status = LMS_WriteFPGAReg(device, 0xFFFF, 1 << (ch / 2));
-//     if (status != 0)
-//         return status;
-//     status = LMS_ReadFPGAReg(device, regAddr, &regValue);
-//     if (status != 0)
-//         return status;
-//     regValue = regValue & ~0x6; //clear WFM_LOAD, WFM_PLAY
-//     regValue |= active << 1;
-//     status = LMS_WriteFPGAReg(device, regAddr, regValue);
-//     return status;
-// }
-
 API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_status_t* status)
 {
     if (stream == nullptr || stream->handle < 0)
@@ -1739,6 +1265,485 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_st
 
     return 0;
 }
+
+API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    return apiDevice->device->GPIORead(buffer, len);
+}
+
+API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    return apiDevice->device->GPIOWrite(buffer, len);
+}
+
+API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    return apiDevice->device->GPIODirRead(buffer, len);
+}
+
+API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    return apiDevice->device->GPIODirWrite(buffer, len);
+}
+
+// API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
+// {
+//     auto conn = CheckConnection(device);
+//     if (conn == nullptr)
+//         return -1;
+//     std::string str;
+//     int ret = conn->CustomParameterRead(&param_id, val, 1, &str);
+//     if (units)
+//         strncpy(units, str.c_str(), sizeof(lms_name_t) - 1);
+//     return ret;
+// }
+
+// API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
+// {
+//     auto conn = CheckConnection(device);
+//     if (conn == nullptr)
+//         return -1;
+
+//     std::string str = units == nullptr ? "" : units;
+//     return conn->CustomParameterWrite(&param_id, &val, 1, str);
+// }
+
+// API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
+// {
+//     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
+//         return -1;
+
+//     auto conn = CheckConnection(device);
+//     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
+//     if (port) //can use LMS64C protocol to write eeprom value
+//     {
+//         lime::DeviceInfo dinfo = port->GetDeviceInfo();
+//         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
+//         {
+//             unsigned char packet[64] = {
+//                 0x8C, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1
+//             }; //packet: Flash write 2 btes, addr 16
+//             packet[32] = val & 0xFF; //values start at offset=32
+//             packet[33] = val >> 8;
+
+//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+//                 return -1;
+//         }
+//         else
+//         {
+//             unsigned char packet[64] = {
+//                 0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3
+//             }; //packet: eeprom write 2 btes, addr 16
+//             packet[32] = val & 0xFF; //values start at offset=32
+//             packet[33] = val >> 8;
+
+//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+//                 return -1;
+//         }
+//     }
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
+// {
+//     auto conn = CheckConnection(device);
+//     if (!conn)
+//         return -1;
+//     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
+//     if (port) //can use LMS64C protocol to read eeprom value
+//     {
+//         lime::DeviceInfo dinfo = port->GetDeviceInfo();
+//         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
+//         {
+//             unsigned char packet[64] = {
+//                 0x8D, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1
+//             }; //packet: eeprom read 2 bytes, addr 16
+//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+//                 return -1;
+//             *val = packet[32] | (packet[33] << 8); //values start at offset=32
+//         }
+//         else
+//         {
+//             unsigned char packet[64] = {
+//                 0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3
+//             }; //packet: eeprom read 2 bytes, addr 16
+//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+//                 return -1;
+//             *val = packet[32] | (packet[33] << 8); //values start at offset=32
+//         }
+//     }
+//     else //fall back to reading runtime value
+//     {
+//         uint8_t id = BOARD_PARAM_DAC;
+//         double dval;
+//         if (conn->CustomParameterRead(&id, &dval, 1, nullptr) != LMS_SUCCESS)
+//             return -1;
+//         *val = dval;
+//     }
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, float_type* freq)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     if (!lms)
+//         return -1;
+//     *freq = lms->GetClockFreq(clk_id);
+//     return *freq > 0 ? 0 : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, float_type freq)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     return lms ? lms->SetClockFreq(clk_id, freq) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(dev);
+//     return lms ? lms->Synchronize(toChip) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(dev);
+//     return lms ? lms->EnableCache(enable) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
+// {
+//     *temp = 0;
+//     lime::LMS7_Device* lms = CheckDevice(dev);
+//     if (!lms)
+//         return -1;
+//     if (lms->ReadLMSReg(0x2F) == 0x3840)
+//     {
+//         lime::error("Feature is not available on this chip revision.");
+//         return -1;
+//     }
+//     *temp = lms->GetChipTemperature(ind);
+//     return 0;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     if (!lms)
+//         return -1;
+
+//     lime::LMS7_Device::Range ret;
+//     if (dir_tx)
+//         ret = lms->GetTxPathBand(path, chan);
+//     else
+//         ret = lms->GetRxPathBand(path, chan);
+
+//     range->max = ret.max;
+//     range->min = ret.min;
+//     range->step = 0;
+
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     if (!lms)
+//         return -1;
+//     *bandwidth = lms->GetLPFBW(dir_tx, chan);
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     return lms ? lms->SetLPF(dir_tx, chan, enabled, -1) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned gain)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+// #ifdef NEW_GAIN_BEHAVIOUR
+//     return lms ? lms->SetGain(dir_tx, chan, dir_tx ? gain : double(gain - 12.0f)) : -1;
+// #else
+//     return lms ? lms->SetGain(dir_tx, chan, int(gain - 12)) : -1;
+// #endif
+// }
+
+// API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     return lms ? lms->LoadConfig(filename) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+
+//     return lms ? lms->SaveConfig(filename) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t* sig)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     if (!lms)
+//         return -1;
+
+//     int tmp = lms->GetTestSignal(dir_tx, chan);
+//     if (tmp < 0)
+//         return -1;
+
+//     *sig = (lms_testsig_t)tmp;
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, ch);
+//     if (!lms)
+//         return -1;
+
+//     if (freq != nullptr)
+//     {
+//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+//             if (lms->SetNCOFreq(dir_tx, ch, i, freq[i]) != 0)
+//                 return -1;
+//         lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, 0);
+//         lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
+//     }
+//     return lms->GetLMS()->SetNCOPhaseOffsetForMode0(dir_tx, pho);
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     if (!lms)
+//         return -1;
+
+//     if (freq != nullptr)
+//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+//             freq[i] = std::fabs(lms->GetNCOFreq(dir_tx, chan, i));
+
+//     if (pho != nullptr)
+//     {
+//         uint16_t value = lms->ReadLMSReg(dir_tx ? 0x0241 : 0x0441, chan / 2);
+//         *pho = 360.0 * value / 65536.0;
+//     }
+//     return 0;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, const float_type* phase, float_type fcw)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, ch);
+//     if (!lms)
+//         return -1;
+
+//     if (lms->SetNCOFreq(dir_tx, ch, 0, fcw) != 0)
+//         return -1;
+
+//     if (phase != nullptr)
+//     {
+//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+//             if (lms->SetNCOPhase(dir_tx, ch, i, phase[i]) != 0)
+//                 return -1;
+//         if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0))
+//             return -1;
+//     }
+//     return 0;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, float_type* phase, float_type* fcw)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, ch);
+//     if (!lms)
+//         return -1;
+
+//     if (phase != nullptr)
+//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+//             phase[i] = lms->GetNCOPhase(dir_tx, ch, i);
+
+//     if (fcw != nullptr)
+//         *fcw = lms->GetNCOFreq(dir_tx, ch, 0);
+
+//     return 0;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan, int ind, bool down)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     if (!lms)
+//         return -1;
+
+//     if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan) != 0) ||
+//         (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan) != 0))
+//         return -1;
+
+//     if (ind < LMS_NCO_VAL_COUNT)
+//     {
+//         if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, ind) != 0) ||
+//             (lms->WriteParam(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down) != 0))
+//             return -1;
+//     }
+//     else
+//     {
+//         lime::error("Invalid NCO index value.");
+//         return -1;
+//     }
+//     return 0;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     if (!lms)
+//         return -1;
+
+//     if (lms->ReadParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
+//     {
+//         lime::error("NCO is disabled.");
+//         return -1;
+//     }
+//     return lms->ReadParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
+// }
+
+// API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, uint16_t* val)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     if (!lms)
+//         return -1;
+//     *val = lms->ReadLMSReg(address);
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address, uint16_t val)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     return lms ? lms->WriteLMSReg(address, val) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address, uint16_t* val)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     if (!lms)
+//         return -1;
+//     int value = lms->ReadFPGAReg(address);
+//     if (value < 0)
+//         return value; // operation failed return error code
+//     else if (val)
+//         *val = value;
+//     return LMS_SUCCESS;
+// }
+
+// API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address, uint16_t val)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     return lms ? lms->WriteFPGAReg(address, val) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t* device, struct LMS7Parameter param, uint16_t* val)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     if (!lms)
+//         return -1;
+//     *val = lms->ReadParam(param);
+//     return LMS_SUCCESS;
+//     ;
+// }
+
+// API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Parameter param, uint16_t val)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device);
+//     if (!lms)
+//         return -1;
+//     return lms->WriteParam(param, val);
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
+//     lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef, size_t count)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     return lms ? lms->SetGFIRCoef(dir_tx, chan, filt, coef, count) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     return lms ? lms->GetGFIRCoef(dir_tx, chan, filt, coef) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
+// {
+//     lime::LMS7_Device* lms = CheckDevice(device, chan);
+//     return lms ? lms->SetGFIR(dir_tx, chan, filt, enabled) : -1;
+// }
+
+// API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** samples, uint8_t chCount, size_t sample_count, int format)
+// {
+//     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+//     lime::StreamConfig::StreamDataFormat fmt;
+//     switch (format)
+//     {
+//     case 0:
+//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
+//         break;
+//     case 1:
+//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT16;
+//         break;
+//     case 2:
+//         fmt = lime::StreamConfig::StreamDataFormat::FMT_FLOAT32;
+//         break;
+//     default:
+//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
+//         break;
+//     }
+//     return lms->UploadWFM(samples, chCount, sample_count, fmt);
+// }
+
+// API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
+// {
+//     uint16_t regAddr = 0x000D;
+//     uint16_t regValue = 0;
+//     int status = 0;
+//     status = LMS_WriteFPGAReg(device, 0xFFFF, 1 << (ch / 2));
+//     if (status != 0)
+//         return status;
+//     status = LMS_ReadFPGAReg(device, regAddr, &regValue);
+//     if (status != 0)
+//         return status;
+//     regValue = regValue & ~0x6; //clear WFM_LOAD, WFM_PLAY
+//     regValue |= active << 1;
+//     status = LMS_WriteFPGAReg(device, regAddr, regValue);
+//     return status;
+// }
 
 // API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
 // {
