@@ -125,6 +125,11 @@ inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_
     }
 }
 
+inline lms_range_t RangeToLMS_Range(const lime::Range& range)
+{
+    return { range.min, range.max, range.step };
+}
+
 } //unnamed namespace
 
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
@@ -370,9 +375,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_t
         return -1;
     }
 
-    range->min = 100e3;
-    range->max = 61.44e6;
-    range->step = 0;
+    *range = RangeToLMS_Range(apiDevice->device->GetRateRange(0));
 
     return 0;
 }
@@ -462,9 +465,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_
         return -1;
     }
 
-    range->min = 100e3;
-    range->max = 3.8e9;
-    range->step = 0;
+    *range = RangeToLMS_Range(apiDevice->device->GetFrequencyRange(0));
 
     return 0;
 }
@@ -541,6 +542,19 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_
     return config.channel[chan].rx.path;
 }
 
+API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    *range = RangeToLMS_Range(apiDevice->device->GetAntennaRange(0, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, path));
+
+    return 0;
+}
+
 API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type bandwidth)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -583,15 +597,11 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lm
 
     if (dir_tx)
     {
-        range->min = 5e6;
-        range->max = 130e6;
-        range->step = 0;
+        *range = RangeToLMS_Range({ 5e6, 130e6, 0 });
     }
     else
     {
-        range->min = 1.4001e6;
-        range->max = 130e6;
-        range->step = 0;
+        *range = RangeToLMS_Range({ 1.4001e6, 130e6, 0 });
     }
 
     return 0;
@@ -1447,25 +1457,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
 //     }
 //     *temp = lms->GetChipTemperature(ind);
 //     return 0;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     lime::LMS7_Device::Range ret;
-//     if (dir_tx)
-//         ret = lms->GetTxPathBand(path, chan);
-//     else
-//         ret = lms->GetRxPathBand(path, chan);
-
-//     range->max = ret.max;
-//     range->min = ret.min;
-//     range->step = 0;
-
-//     return LMS_SUCCESS;
 // }
 
 // API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)

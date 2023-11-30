@@ -73,6 +73,10 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t length) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
+    virtual Range GetRateRange(uint8_t moduleIndex) const override;
+    virtual Range GetFrequencyRange(uint8_t moduleIndex) const override;
+    virtual Range GetAntennaRange(uint8_t moduleIndex, TRXDir direction, unsigned path) const override;
+
   protected:
     enum class eMemoryDevice : uint8_t { FPGA_FLASH, EEPROM, COUNT };
 

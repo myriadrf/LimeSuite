@@ -379,4 +379,19 @@ int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleInd
     return mSubDevices[moduleIndex]->UploadTxWaveform(config, 0, samples, count);
 }
 
+Range LimeSDR_MMX8::GetRateRange(uint8_t moduleIndex) const
+{
+    return mSubDevices[moduleIndex]->GetRateRange(moduleIndex);
+}
+
+Range LimeSDR_MMX8::GetFrequencyRange(uint8_t moduleIndex) const
+{
+    return mSubDevices[moduleIndex]->GetFrequencyRange(moduleIndex);
+}
+
+Range LimeSDR_MMX8::GetAntennaRange(uint8_t moduleIndex, TRXDir direction, unsigned path) const
+{
+    return mSubDevices[moduleIndex]->GetAntennaRange(moduleIndex, direction, path);
+}
+
 } //namespace lime
