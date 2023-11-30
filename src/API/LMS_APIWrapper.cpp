@@ -92,7 +92,6 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
     }
 
     const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
-
     if (chan >= descriptor.rfSOC[0].channelCount)
     {
         lime::error("Invalid channel number.");
@@ -589,14 +588,12 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, s
 
 namespace {
 
-static const uint8_t lms_name_t_MAX_LENGTH = 16;
-
 inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
 {
     for (std::size_t i = 0; i < strings.size(); ++i)
     {
-        std::strncpy(list[i], strings.at(i).c_str(), lms_name_t_MAX_LENGTH - 1);
-        list[i][lms_name_t_MAX_LENGTH - 1] = 0;
+        std::strncpy(list[i], strings.at(i).c_str(), sizeof(lms_name_t) - 1);
+        list[i][sizeof(lms_name_t) - 1] = 0;
     }
 }
 
