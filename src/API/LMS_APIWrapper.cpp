@@ -286,18 +286,29 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
 //     return lms ? lms->SetRate(dir_tx, rate, oversample) : -1;
 // }
 
-// API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, size_t chan, float_type* host_Hz, float_type* rf_Hz)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
+API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, size_t chan, float_type* host_Hz, float_type* rf_Hz)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-//     double rate = lms->GetRate(dir_tx, chan, rf_Hz);
-//     if (host_Hz)
-//         *host_Hz = rate;
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
-//     return LMS_SUCCESS;
-// }
+    if (dir_tx)
+    {
+        *host_Hz = config.channel[chan].tx.sampleRate;
+        *rf_Hz = config.channel[chan].tx.sampleRate * config.channel[chan].tx.oversample;
+    }
+    else
+    {
+        *host_Hz = config.channel[chan].rx.sampleRate;
+        *rf_Hz = config.channel[chan].rx.sampleRate * config.channel[chan].rx.oversample;
+    }
+
+    return 0;
+}
 
 // API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
 // {
@@ -541,15 +552,25 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
     return 0;
 }
 
-// API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* frequency)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
+API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* frequency)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-//     *frequency = lms->GetFrequency(dir_tx, chan);
-//     return LMS_SUCCESS;
-// }
+    if (dir_tx)
+    {
+        *frequency = apiDevice->lastSavedSDRConfig.channel[chan].tx.centerFrequency;
+    }
+    else
+    {
+        *frequency = apiDevice->lastSavedSDRConfig.channel[chan].rx.centerFrequency;
+    }
+
+    return 0;
+}
 
 // API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
 // {
@@ -563,21 +584,42 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
 //     return LMS_SUCCESS;
 // }
 
-// API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, size_t chan, lms_name_t* list)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
+namespace {
 
-//     auto names = lms->GetPathNames(dir_tx, chan);
-//     if (list != nullptr)
-//         for (size_t i = 0; i < names.size(); i++)
-//         {
-//             strncpy(list[i], names[i].c_str(), sizeof(lms_name_t) - 1);
-//             list[i][sizeof(lms_name_t) - 1] = 0;
-//         }
-//     return names.size();
-// }
+static const uint8_t lms_name_t_MAX_LENGTH = 16;
+
+inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
+{
+    for (std::size_t i = 0; i < strings.size(); ++i)
+    {
+        std::strncpy(list[i], strings.at(i).c_str(), lms_name_t_MAX_LENGTH - 1);
+        list[i][lms_name_t_MAX_LENGTH - 1] = 0;
+    }
+}
+
+} // namespace
+
+API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, size_t chan, lms_name_t* list)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    auto rfSOC = apiDevice->device->GetDescriptor().rfSOC[0];
+
+    if (dir_tx)
+    {
+        CopyStringVectorIntoList(rfSOC.txPathNames, list);
+    }
+    else
+    {
+        CopyStringVectorIntoList(rfSOC.rxPathNames, list);
+    }
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
 {
@@ -611,11 +653,23 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
     return 0;
 }
 
-// API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_t chan)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->GetPath(dir_tx, chan) : -1;
-// }
+API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_t chan)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (dir_tx)
+    {
+        return config.channel[chan].tx.path;
+    }
+
+    return config.channel[chan].rx.path;
+}
 
 // API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
 // {
@@ -636,11 +690,37 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
 //     return LMS_SUCCESS;
 // }
 
-// API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type bandwidth)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetLPF(dir_tx, chan, true, bandwidth) : -1;
-// }
+API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type bandwidth)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (dir_tx)
+    {
+        config.channel[chan].tx.lpf = bandwidth;
+    }
+    else
+    {
+        config.channel[chan].rx.lpf = bandwidth;
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
 
 // API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
 // {
@@ -663,19 +743,29 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
 //     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
 // }
 
-// API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
+API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-//     auto ret = lms->GetLPFRange(dir_tx, 0);
-//     range->max = ret.max;
-//     range->min = ret.min;
-//     range->step = 0;
+    if (dir_tx)
+    {
+        range->min = 5e6;
+        range->max = 130e6;
+        range->step = 0;
+    }
+    else
+    {
+        range->min = 1.4001e6;
+        range->max = 130e6;
+        range->step = 0;
+    }
 
-//     return LMS_SUCCESS;
-// }
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type gain)
 {
@@ -719,33 +809,47 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 // #endif
 // }
 
-// API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type* gain)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
+namespace {
 
-//     auto range = lms->GetGainRange(dir_tx, chan, "");
-//     *gain = (lms->GetGain(dir_tx, chan) - range.min) / (range.max - range.min);
+inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
+{
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
-//     return LMS_SUCCESS;
-// }
+    if (dir_tx)
+    {
+        return config.channel[chan].tx.gain;
+    }
 
-// API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-// #ifdef NEW_GAIN_BEHAVIOUR
-//     if (dir_tx)
-//         *gain = lms->GetGain(dir_tx, chan) + 0.5;
-//     else
-//         *gain = lms->GetGain(dir_tx, chan) + 12 + 0.5;
-// #else
-//     *gain = lms->GetGain(dir_tx, chan) + 12 + 0.5;
-// #endif
-//     return LMS_SUCCESS;
-// }
+    return config.channel[chan].rx.gain;
+}
+
+} // namespace
+
+API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type* gain)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
+    *gain = (GetGain(apiDevice, dir_tx, chan) - range.min) / (range.max - range.min);
+
+    return LMS_SUCCESS;
+}
+
+API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    *gain = static_cast<unsigned>(GetGain(apiDevice, dir_tx, chan) + 12 + 0.5);
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t chan, double bw, unsigned flags)
 {
