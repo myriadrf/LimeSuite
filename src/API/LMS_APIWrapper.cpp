@@ -275,11 +275,42 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
     return 0;
 }
 
-// API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx, float_type rate, size_t oversample)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->SetRate(dir_tx, rate, oversample) : -1;
-// }
+API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx, float_type rate, size_t oversample)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    for (std::size_t i = 0; i < lime::SDRDevice::MAX_CHANNEL_COUNT; ++i)
+    {
+        if (dir_tx)
+        {
+            config.channel[i].tx.sampleRate = rate;
+            config.channel[i].tx.oversample = oversample;
+        }
+        else
+        {
+            config.channel[i].rx.sampleRate = rate;
+            config.channel[i].rx.oversample = oversample;
+        }
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, size_t chan, float_type* host_Hz, float_type* rf_Hz)
 {
