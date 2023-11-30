@@ -16,24 +16,6 @@
 
 namespace {
 
-struct LMS_APIDevice;
-
-struct StreamHandle {
-    LMS_APIDevice* parent;
-    bool isStreamStartedFromAPI;
-    bool isStreamActuallyStarted;
-
-    StreamHandle() = delete;
-    StreamHandle(LMS_APIDevice* parent)
-        : parent(parent)
-        , isStreamStartedFromAPI(false)
-        , isStreamActuallyStarted(false)
-    {
-    }
-};
-
-static std::vector<StreamHandle*> streamHandles;
-
 struct StatsDeltas {
     lime::DeltaVariable<uint32_t> underrun;
     lime::DeltaVariable<uint32_t> overrun;
@@ -73,6 +55,22 @@ struct LMS_APIDevice {
     {
     }
 };
+
+struct StreamHandle {
+    LMS_APIDevice* parent;
+    bool isStreamStartedFromAPI;
+    bool isStreamActuallyStarted;
+
+    StreamHandle() = delete;
+    StreamHandle(LMS_APIDevice* parent)
+        : parent(parent)
+        , isStreamStartedFromAPI(false)
+        , isStreamActuallyStarted(false)
+    {
+    }
+};
+
+static std::vector<StreamHandle*> streamHandles;
 
 inline LMS_APIDevice* CheckDevice(lms_device_t* device)
 {
