@@ -104,22 +104,6 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
     return apiDevice;
 }
 
-// inline lime::IConnection* CheckConnection(lms_device_t* device)
-// {
-//     if (device == nullptr)
-//     {
-//         lime::error("Device cannot be NULL.");
-//         return nullptr;
-//     }
-//     lime::IConnection* conn = ((lime::LMS7_Device*)device)->GetConnection();
-//     if (conn == nullptr)
-//     {
-//         lime::error("Device not connected.");
-//         return nullptr;
-//     }
-//     return conn;
-// }
-
 inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
 {
     for (std::size_t i = 0; i < streamHandles.size(); i++)
@@ -450,29 +434,49 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 //     return lms ? lms->Synchronize(toChip) : -1;
 // }
 
-// API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t len)
-// {
-//     auto conn = CheckConnection(dev);
-//     return conn ? conn->GPIORead(buffer, len) : -1;
-// }
+API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-// API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
-// {
-//     auto conn = CheckConnection(dev);
-//     return conn ? conn->GPIOWrite(buffer, len) : -1;
-// }
+    return apiDevice->device->GPIORead(buffer, len);
+}
 
-// API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
-// {
-//     auto conn = CheckConnection(dev);
-//     return conn ? conn->GPIODirRead(buffer, len) : -1;
-// }
+API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-// API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
-// {
-//     auto conn = CheckConnection(dev);
-//     return conn ? conn->GPIODirWrite(buffer, len) : -1;
-// }
+    return apiDevice->device->GPIOWrite(buffer, len);
+}
+
+API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    return apiDevice->device->GPIODirRead(buffer, len);
+}
+
+API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    return apiDevice->device->GPIODirWrite(buffer, len);
+}
 
 // API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
 // {
@@ -921,7 +925,6 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
     }
 
     lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-
     if (lms == nullptr)
     {
         lime::error("Device is not an LMS device.");
