@@ -108,6 +108,7 @@ inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
     {
         if (streamHandles.at(i) == nullptr)
         {
+            streamHandles.at(i) = new StreamHandle{ parent };
             return i;
         }
     }
