@@ -130,6 +130,18 @@ inline lms_range_t RangeToLMS_Range(const lime::Range& range)
     return { range.min, range.max, range.step };
 }
 
+inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
+{
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (dir_tx)
+    {
+        return config.channel[chan].tx.gain;
+    }
+
+    return config.channel[chan].rx.gain;
+}
+
 } //unnamed namespace
 
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
@@ -615,6 +627,18 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
         return -1;
     }
 
+    if (gain > 1.0)
+    {
+        gain = 1.0;
+    }
+    else if (gain < 0)
+    {
+        gain = 0;
+    }
+
+    const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
+    gain = range.min + gain * (range.max - range.min);
+
     lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
     if (dir_tx)
@@ -639,21 +663,37 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
     return 0;
 }
 
-namespace {
-
-inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
+API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned gain)
 {
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
     lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
     if (dir_tx)
     {
-        return config.channel[chan].tx.gain;
+        config.channel[chan].tx.gain = gain;
+    }
+    else
+    {
+        config.channel[chan].rx.gain = gain;
     }
 
-    return config.channel[chan].rx.gain;
-}
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
 
-} // namespace
+        return -1;
+    }
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type* gain)
 {
@@ -1478,16 +1518,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
 // {
 //     lime::LMS7_Device* lms = CheckDevice(device, chan);
 //     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned gain)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-// #ifdef NEW_GAIN_BEHAVIOUR
-//     return lms ? lms->SetGain(dir_tx, chan, dir_tx ? gain : double(gain - 12.0f)) : -1;
-// #else
-//     return lms ? lms->SetGain(dir_tx, chan, int(gain - 12)) : -1;
-// #endif
 // }
 
 // API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
