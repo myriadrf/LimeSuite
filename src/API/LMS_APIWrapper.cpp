@@ -336,16 +336,20 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, si
     return 0;
 }
 
-// API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     auto retRange = lms->GetRateRange(dir_tx);
-//     range->min = retRange.min;
-//     range->max = retRange.max;
-//     return LMS_SUCCESS;
-// }
+API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_tx, lms_range_t* range)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    range->min = 100e3;
+    range->max = 61.44e6;
+    range->step = 0;
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 {
