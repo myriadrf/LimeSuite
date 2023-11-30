@@ -181,11 +181,24 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
     return LMS_SUCCESS;
 }
 
-// API_EXPORT int CALL_CONV LMS_Reset(lms_device_t* device)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->Reset() : -1;
-// }
+API_EXPORT int CALL_CONV LMS_Reset(lms_device_t* device)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->Reset();
+    } catch (...)
+    {
+        return -1;
+    }
+
+    return 0;
+}
 
 API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
 {
