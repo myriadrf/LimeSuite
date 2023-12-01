@@ -45,6 +45,7 @@ struct LMS_APIDevice {
     StatsDeltas statsDeltas;
 
     std::vector<StreamBuffer> streamBuffers;
+    lms_dev_info_t* deviceInfo;
 
     LMS_APIDevice() = delete;
     LMS_APIDevice(lime::SDRDevice* device)
@@ -52,7 +53,18 @@ struct LMS_APIDevice {
         , lastSavedSDRConfig()
         , lastSavedStreamConfig()
         , statsDeltas()
+        , deviceInfo(nullptr)
     {
+    }
+
+    ~LMS_APIDevice()
+    {
+        lime::DeviceRegistry::freeDevice(device);
+
+        if (deviceInfo != nullptr)
+        {
+            delete deviceInfo;
+        }
     }
 };
 
@@ -116,12 +128,17 @@ inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
     return streamHandles.size() - 1;
 }
 
+inline void StringCopy(char* destination, const std::string& source, std::size_t destinationLength)
+{
+    std::strncpy(destination, source.c_str(), destinationLength - 1);
+    destination[destinationLength - 1] = 0;
+}
+
 inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
 {
     for (std::size_t i = 0; i < strings.size(); ++i)
     {
-        std::strncpy(list[i], strings.at(i).c_str(), sizeof(lms_name_t) - 1);
-        list[i][sizeof(lms_name_t) - 1] = 0;
+        StringCopy(list[i], strings.at(i), sizeof(lms_name_t));
     }
 }
 
@@ -153,8 +170,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
         for (std::size_t i = 0; i < handles.size(); ++i)
         {
             std::string str = handles[i].Serialize();
-            std::strncpy(dev_list[i], str.c_str(), sizeof(lms_info_str_t) - 1);
-            dev_list[i][sizeof(lms_info_str_t) - 1] = 0;
+            StringCopy(dev_list[i], str, sizeof(lms_info_str_t));
         }
     }
 
@@ -200,8 +216,6 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
     {
         return -1;
     }
-
-    lime::DeviceRegistry::freeDevice(apiDevice->device);
 
     delete apiDevice;
     return LMS_SUCCESS;
@@ -1374,8 +1388,7 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
     *val = parameter[0].value;
     if (units != nullptr)
     {
-        std::strncpy(units, parameter[0].units.c_str(), sizeof(lms_name_t) - 1);
-        units[sizeof(lms_name_t) - 1] = 0;
+        StringCopy(units, parameter[0].units, sizeof(lms_name_t));
     }
 
     return 0;
@@ -1393,6 +1406,31 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t
     apiDevice->device->CustomParameterWrite(parameter);
 
     return 0;
+}
+
+API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return nullptr;
+    }
+
+    auto descriptor = apiDevice->device->GetDescriptor();
+    apiDevice->deviceInfo = new lms_dev_info_t;
+
+    StringCopy(apiDevice->deviceInfo->deviceName, descriptor.name, sizeof(apiDevice->deviceInfo->deviceName));
+    StringCopy(apiDevice->deviceInfo->expansionName, descriptor.expansionName, sizeof(apiDevice->deviceInfo->expansionName));
+    StringCopy(apiDevice->deviceInfo->firmwareVersion, descriptor.firmwareVersion, sizeof(apiDevice->deviceInfo->firmwareVersion));
+    StringCopy(apiDevice->deviceInfo->hardwareVersion, descriptor.hardwareVersion, sizeof(apiDevice->deviceInfo->hardwareVersion));
+    StringCopy(apiDevice->deviceInfo->protocolVersion, descriptor.protocolVersion, sizeof(apiDevice->deviceInfo->protocolVersion));
+    apiDevice->deviceInfo->boardSerialNumber = descriptor.serialNumber;
+    StringCopy(apiDevice->deviceInfo->gatewareVersion, descriptor.gatewareVersion, sizeof(apiDevice->deviceInfo->gatewareVersion));
+    StringCopy(apiDevice->deviceInfo->gatewareTargetBoard,
+        descriptor.gatewareTargetBoard,
+        sizeof(apiDevice->deviceInfo->gatewareTargetBoard));
+
+    return apiDevice->deviceInfo;
 }
 
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
@@ -1779,12 +1817,6 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t
 //     return status;
 // }
 
-// API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->GetInfo() : nullptr;
-// }
-
 // API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* list)
 // {
 //     lime::LMS7_Device* lms = CheckDevice(device);
@@ -1795,8 +1827,7 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t
 //     if (list != nullptr)
 //         for (size_t i = 0; i < names.size(); i++)
 //         {
-//             strncpy(list[i], names[i].c_str(), sizeof(lms_name_t) - 1);
-//             list[i][sizeof(lms_name_t) - 1] = 0;
+//             StringCopy(list[i], names[i], sizeof(lms_name_t));
 //         }
 //     return names.size();
 // }
