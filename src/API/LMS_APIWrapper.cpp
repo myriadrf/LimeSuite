@@ -1443,6 +1443,39 @@ API_EXPORT const char* LMS_GetLibraryVersion()
     return libraryVersion;
 }
 
+API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, float_type* freq)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    *freq = apiDevice->device->GetClockFreq(clk_id, 0);
+    return *freq > 0 ? 0 : -1;
+}
+
+API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, float_type freq)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->SetClockFreq(clk_id, freq, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
+
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
 //     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
@@ -1516,21 +1549,6 @@ API_EXPORT const char* LMS_GetLibraryVersion()
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, float_type* freq)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     *freq = lms->GetClockFreq(clk_id);
-//     return *freq > 0 ? 0 : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, float_type freq)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->SetClockFreq(clk_id, freq) : -1;
 // }
 
 // API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
