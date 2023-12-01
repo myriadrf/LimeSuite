@@ -1596,6 +1596,63 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t ch
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t* sig)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (dir_tx)
+    {
+        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_TXTSP)) == 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_NONE);
+            return 0;
+        }
+        else if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP)) != 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_DC);
+            return 0;
+        }
+        else
+        {
+            *sig = static_cast<lms_testsig_t>(
+                lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP)) + 2 * lms->Get_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), true));
+            return 0;
+        }
+    }
+    else
+    {
+        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_RXTSP)) == 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_NONE);
+            return 0;
+        }
+        else if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP)) != 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_DC);
+            return 0;
+        }
+        else
+        {
+            *sig = static_cast<lms_testsig_t>(
+                lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP)) + 2 * lms->Get_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), true));
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 {
     if (handler != nullptr)
@@ -1704,20 +1761,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //     lime::LMS7_Device* lms = CheckDevice(device);
 
 //     return lms ? lms->SaveConfig(filename) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t* sig)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     int tmp = lms->GetTestSignal(dir_tx, chan);
-//     if (tmp < 0)
-//         return -1;
-
-//     *sig = (lms_testsig_t)tmp;
-//     return LMS_SUCCESS;
 // }
 
 // API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
