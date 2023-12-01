@@ -1482,6 +1482,33 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
+{
+    *temp = 0;
+
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ind));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (lms->SPI_read(0x2F) == 0x3840)
+    {
+        lime::error("Feature is not available on this chip revision.");
+        return -1;
+    }
+
+    *temp = lms->GetTemperature();
+    return 0;
+}
+
 API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
 {
     LMS_APIDevice* apiDevice = CheckDevice(dev);
@@ -1609,21 +1636,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
-// {
-//     *temp = 0;
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     if (!lms)
-//         return -1;
-//     if (lms->ReadLMSReg(0x2F) == 0x3840)
-//     {
-//         lime::error("Feature is not available on this chip revision.");
-//         return -1;
-//     }
-//     *temp = lms->GetChipTemperature(ind);
-//     return 0;
 // }
 
 // API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
