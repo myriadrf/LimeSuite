@@ -1476,6 +1476,44 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->Synchronize(toChip);
+    } catch (...)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->EnableCache(enable);
+    } catch (...)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
 //     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
@@ -1549,18 +1587,6 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     return lms ? lms->Synchronize(toChip) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     return lms ? lms->EnableCache(enable) : -1;
 // }
 
 // API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
