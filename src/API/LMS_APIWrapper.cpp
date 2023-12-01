@@ -160,6 +160,12 @@ inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
     return config.channel[chan].rx.gain;
 }
 
+static LMS_LogHandler api_msg_handler;
+static void APIMsgHandler(const lime::LogLevel level, const char* message)
+{
+    api_msg_handler(static_cast<int>(level), message);
+}
+
 } //unnamed namespace
 
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
@@ -1514,6 +1520,17 @@ API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
     return 0;
 }
 
+API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
+{
+    if (handler != nullptr)
+    {
+        lime::registerLogHandler(APIMsgHandler);
+        api_msg_handler = handler;
+    }
+
+    lime::registerLogHandler(nullptr);
+}
+
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
 //     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
@@ -1900,23 +1917,6 @@ API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
 // API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 // {
 //     return lime::GetLastErrorMessage();
-// }
-
-// static LMS_LogHandler api_msg_handler;
-// static void APIMsgHandler(const lime::LogLevel level, const char* message)
-// {
-//     api_msg_handler(level, message);
-// }
-
-// API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
-// {
-//     if (handler)
-//     {
-//         lime::registerLogHandler(APIMsgHandler);
-//         api_msg_handler = handler;
-//     }
-//     else
-//         lime::registerLogHandler(nullptr);
 // }
 
 // extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t* dev, int cmd, uint8_t* data, size_t* len)
