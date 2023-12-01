@@ -18,7 +18,7 @@
 #include "Profiler.h"
 #include "DataPacket.h"
 #include "SamplesPacket.h"
-#include "CommonFunctions.h"
+#include "limesuite/commonTypes.h"
 
 static bool showStats = false;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
