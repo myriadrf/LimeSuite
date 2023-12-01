@@ -1168,7 +1168,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
     const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
     const std::size_t sampleSize = sizeof(T);
 
-    std::vector<bool> found(txChannelCount, false);
+    std::vector<const T*> sampleBuffer(txChannelCount, nullptr);
 
     for (auto& buffer : handle->parent->streamBuffers)
     {
@@ -1178,7 +1178,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
             {
                 if (handle->parent->lastSavedStreamConfig.txChannels[i] == buffer.channel)
                 {
-                    found[i] = true;
+                    sampleBuffer[i] = reinterpret_cast<const T*>(buffer.buffer);
                     break;
                 }
             }
@@ -1189,69 +1189,44 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
     {
         if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
         {
-            found[i] = true;
+            sampleBuffer[i] = reinterpret_cast<const T*>(samples);
             break;
         }
     }
 
-    if (std::all_of(found.begin(), found.end(), [](bool item) { return item; }))
+    if (std::any_of(sampleBuffer.begin(), sampleBuffer.end(), [](const T* item) { return item == nullptr; }))
     {
-        std::vector<const T*> sampleBuffer(txChannelCount);
+        T* buffer = new T[sample_count];
+        std::memcpy(buffer, samples, sample_count * sampleSize);
+        handle->parent->streamBuffers.push_back(
+            { reinterpret_cast<void*>(buffer), direction, static_cast<uint8_t>(streamChannel), 0 });
 
-        for (auto& buffer : handle->parent->streamBuffers)
-        {
-            if (buffer.direction == direction)
-            {
-                for (uint8_t i = 0; i < txChannelCount; ++i)
-                {
-                    if (handle->parent->lastSavedStreamConfig.txChannels[i] == buffer.channel)
-                    {
-                        sampleBuffer[i] = reinterpret_cast<const T*>(buffer.buffer);
-                        break;
-                    }
-                }
-            }
-        }
-
-        for (uint8_t i = 0; i < txChannelCount; ++i)
-        {
-            if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
-            {
-                sampleBuffer[i] = reinterpret_cast<const T*>(samples);
-                break;
-            }
-        }
-
-        lime::SDRDevice::StreamMeta metadata{ 0, false, false };
-
-        if (meta != nullptr)
-        {
-            metadata.flush = meta->flushPartialPacket;
-            metadata.useTimestamp = meta->waitForTimestamp;
-            metadata.timestamp = meta->timestamp;
-        }
-
-        int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer.data(), sample_count, &metadata);
-
-        for (auto it = handle->parent->streamBuffers.begin(); it != handle->parent->streamBuffers.end(); it++)
-        {
-            auto& buffer = *it;
-            if (buffer.direction == direction && buffer.channel != streamChannel)
-            {
-                delete[] reinterpret_cast<T*>(buffer.buffer);
-                handle->parent->streamBuffers.erase(it--);
-            }
-        }
-
-        return samplesSent;
+        // Can't really know what to return here just yet, so just returning that all of them have passed through.
+        return sample_count;
     }
 
-    T* buffer = new T[sample_count];
-    std::memcpy(buffer, samples, sample_count * sampleSize);
-    handle->parent->streamBuffers.push_back({ reinterpret_cast<void*>(buffer), direction, static_cast<uint8_t>(streamChannel), 0 });
+    lime::SDRDevice::StreamMeta metadata{ 0, false, false };
 
-    // Can't really know what to return here just yet, so just returning that all of them have passed through.
-    return sample_count;
+    if (meta != nullptr)
+    {
+        metadata.flush = meta->flushPartialPacket;
+        metadata.useTimestamp = meta->waitForTimestamp;
+        metadata.timestamp = meta->timestamp;
+    }
+
+    int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer.data(), sample_count, &metadata);
+
+    for (auto it = handle->parent->streamBuffers.begin(); it != handle->parent->streamBuffers.end(); it++)
+    {
+        auto& buffer = *it;
+        if (buffer.direction == direction && buffer.channel != streamChannel)
+        {
+            delete[] reinterpret_cast<T*>(buffer.buffer);
+            handle->parent->streamBuffers.erase(it--);
+        }
+    }
+
+    return samplesSent;
 }
 
 } // namespace
