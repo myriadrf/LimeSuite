@@ -1531,6 +1531,11 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
     lime::registerLogHandler(nullptr);
 }
 
+API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
+{
+    return lime::GetLastErrorMessage();
+}
+
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
 //     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
@@ -1912,11 +1917,6 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 
 //     std::string prog_mode(mode);
 //     return lms->Program(prog_mode, data, size, callback);
-// }
-
-// API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
-// {
-//     return lime::GetLastErrorMessage();
 // }
 
 // extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t* dev, int cmd, uint8_t* data, size_t* len)
