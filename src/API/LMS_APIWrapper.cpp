@@ -1360,27 +1360,40 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
     return apiDevice->device->GPIODirWrite(buffer, len);
 }
 
-// API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
-// {
-//     auto conn = CheckConnection(device);
-//     if (conn == nullptr)
-//         return -1;
-//     std::string str;
-//     int ret = conn->CustomParameterRead(&param_id, val, 1, &str);
-//     if (units)
-//         strncpy(units, str.c_str(), sizeof(lms_name_t) - 1);
-//     return ret;
-// }
+API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-// API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
-// {
-//     auto conn = CheckConnection(device);
-//     if (conn == nullptr)
-//         return -1;
+    std::vector<lime::CustomParameterIO> parameter{ { param_id, *val, units } };
+    apiDevice->device->CustomParameterRead(parameter);
 
-//     std::string str = units == nullptr ? "" : units;
-//     return conn->CustomParameterWrite(&param_id, &val, 1, str);
-// }
+    *val = parameter[0].value;
+    if (units != nullptr)
+    {
+        std::strncpy(units, parameter[0].units.c_str(), sizeof(lms_name_t) - 1);
+        units[sizeof(lms_name_t) - 1] = 0;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    std::vector<lime::CustomParameterIO> parameter{ { param_id, val, units } };
+    apiDevice->device->CustomParameterWrite(parameter);
+
+    return 0;
+}
 
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
