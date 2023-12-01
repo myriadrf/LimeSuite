@@ -1547,6 +1547,28 @@ API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (dir_tx)
+    {
+        *bandwidth = config.channel[chan].tx.lpf;
+    }
+    else
+    {
+        *bandwidth = config.channel[chan].rx.lpf;
+    }
+
+    return 0;
+}
+
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 {
     if (handler != nullptr)
@@ -1635,15 +1657,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //             return -1;
 //         *val = dval;
 //     }
-//     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-//     *bandwidth = lms->GetLPFBW(dir_tx, chan);
 //     return LMS_SUCCESS;
 // }
 
