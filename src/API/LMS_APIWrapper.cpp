@@ -86,7 +86,7 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device)
 inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device);
-    if (apiDevice == nullptr)
+    if (apiDevice == nullptr || apiDevice->device == nullptr)
     {
         return nullptr;
     }
