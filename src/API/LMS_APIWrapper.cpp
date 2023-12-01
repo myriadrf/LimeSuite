@@ -1653,6 +1653,42 @@ API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, si
     return -1;
 }
 
+API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(0));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    return lms ? lms->LoadConfig(filename) : -1;
+}
+
+API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(0));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    return lms ? lms->SaveConfig(filename) : -1;
+}
+
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 {
     if (handler != nullptr)
@@ -1748,19 +1784,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 // {
 //     lime::LMS7_Device* lms = CheckDevice(device, chan);
 //     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->LoadConfig(filename) : -1;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-
-//     return lms ? lms->SaveConfig(filename) : -1;
 // }
 
 // API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
