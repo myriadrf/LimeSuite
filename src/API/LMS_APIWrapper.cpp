@@ -10,6 +10,7 @@
 #include "VersionInfo.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -43,6 +44,7 @@ struct LMS_APIDevice {
     lime::SDRDevice* device;
     lime::SDRDevice::SDRConfig lastSavedSDRConfig;
     lime::SDRDevice::StreamConfig lastSavedStreamConfig;
+    std::array<std::array<float_type, 2>, lime::SDRDevice::MAX_CHANNEL_COUNT> lastSavedLPFValue;
     StatsDeltas statsDeltas;
 
     std::vector<StreamBuffer> streamBuffers;
@@ -53,7 +55,9 @@ struct LMS_APIDevice {
         : device(device)
         , lastSavedSDRConfig()
         , lastSavedStreamConfig()
+        , lastSavedLPFValue()
         , statsDeltas()
+        , streamBuffers()
         , deviceInfo(nullptr)
     {
     }
@@ -606,6 +610,8 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
     {
         config.channel[chan].rx.lpf = bandwidth;
     }
+
+    apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
 
     try
     {
@@ -1544,6 +1550,52 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t 
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (enabled)
+    {
+        if (dir_tx)
+        {
+            config.channel[chan].tx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
+        }
+        else
+        {
+            config.channel[chan].rx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
+        }
+    }
+    else
+    {
+        if (dir_tx)
+        {
+            config.channel[chan].tx.lpf = 130e6;
+        }
+        else
+        {
+            config.channel[chan].rx.lpf = 130e6;
+        }
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
+
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 {
     if (handler != nullptr)
@@ -1633,12 +1685,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetLPF(dir_tx, chan, enabled, -1) : -1;
 // }
 
 // API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
