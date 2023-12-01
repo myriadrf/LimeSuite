@@ -7,6 +7,7 @@
 #include "limesuite/SDRDevice.h"
 #include "LMS7002M_SDRDevice.h"
 #include "Logger.h"
+#include "VersionInfo.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -1433,6 +1434,15 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* devic
     return apiDevice->deviceInfo;
 }
 
+API_EXPORT const char* LMS_GetLibraryVersion()
+{
+    static constexpr std::size_t LIBRARY_VERSION_SIZE = 32;
+    static char libraryVersion[LIBRARY_VERSION_SIZE];
+
+    StringCopy(libraryVersion, lime::GetLibraryVersion(), sizeof(libraryVersion));
+    return libraryVersion;
+}
+
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
 //     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
@@ -1846,13 +1856,6 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* devic
 // API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 // {
 //     return lime::GetLastErrorMessage();
-// }
-
-// API_EXPORT const char* LMS_GetLibraryVersion()
-// {
-//     static char libraryVersion[32];
-//     sprintf(libraryVersion, "%.31s", lime::GetLibraryVersion().c_str());
-//     return libraryVersion;
 // }
 
 // static LMS_LogHandler api_msg_handler;
