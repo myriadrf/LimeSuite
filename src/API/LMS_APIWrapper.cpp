@@ -877,7 +877,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     lime::SDRDevice::StreamConfig config = apiDevice->lastSavedStreamConfig;
     config.bufferSize = stream->fifoSize;
 
-    auto channel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE); // Clear the align phase bit
+    auto channel = stream->channel & ~LMS_ALIGN_CH_PHASE; // Clear the align phase bit
     if (stream->isTx)
     {
         config.txChannels[config.txCount++] = channel;
@@ -1043,7 +1043,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         return -1;
     }
 
-    const uint32_t streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
+    const uint32_t streamChannel = stream->channel & ~LMS_ALIGN_CH_PHASE;
     const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
     const std::size_t sampleSize = sizeof(T);
 
@@ -1145,7 +1145,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         return -1;
     }
 
-    const uint32_t streamChannel = stream->channel & (0xffffffff - LMS_ALIGN_CH_PHASE);
+    const uint32_t streamChannel = stream->channel & ~LMS_ALIGN_CH_PHASE;
     const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
     const std::size_t sampleSize = sizeof(T);
 
