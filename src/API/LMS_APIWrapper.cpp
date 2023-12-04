@@ -414,7 +414,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_t
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetRateRange(apiDevice->moduleIndex));
+    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex].samplingRateRange);
 
     return 0;
 }
@@ -504,7 +504,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetFrequencyRange(apiDevice->moduleIndex));
+    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex].frequencyRange);
 
     return 0;
 }
@@ -589,8 +589,12 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, siz
         return -1;
     }
 
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    std::string pathName = dir_tx ? apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).txPathNames.at(path)
+                                  : apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).rxPathNames.at(path);
+
     *range = RangeToLMS_Range(
-        apiDevice->device->GetAntennaRange(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, path));
+        apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).antennaRange.at(direction).at(pathName));
 
     return 0;
 }

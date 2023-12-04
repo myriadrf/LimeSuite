@@ -37,6 +37,10 @@ class LIME_API SDRDevice
         uint8_t channelCount;
         std::vector<std::string> rxPathNames;
         std::vector<std::string> txPathNames;
+
+        Range samplingRateRange;
+        Range frequencyRange;
+        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
     };
 
     struct CustomParameter {
@@ -225,10 +229,6 @@ class LIME_API SDRDevice
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
-
-    virtual Range GetRateRange(uint8_t moduleIndex) const { return { 100e3, 61.44e6, 0 }; };
-    virtual Range GetFrequencyRange(uint8_t moduleIndex) const { return { 100e3, 3.8e9, 0 }; };
-    virtual Range GetAntennaRange(uint8_t moduleIndex, TRXDir direction, unsigned path) const;
 
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
     {

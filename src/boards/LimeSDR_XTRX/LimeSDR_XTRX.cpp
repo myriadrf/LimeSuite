@@ -138,7 +138,18 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     soc.channelCount = 2;
     soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
     soc.txPathNames = { "None", "Band1", "Band2" };
+
+    soc.samplingRateRange = { 100e3, 61.44e6, 0 };
+    soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 2.6e9 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
     desc.rfSOC.push_back(soc);
+
     LMS7002M* chip = new LMS7002M(spiRFsoc);
     chip->ModifyRegistersDefaults(lms7002defaultsOverrides);
     chip->SetOnCGENChangeCallback(LMS1_UpdateFPGAInterface, this);

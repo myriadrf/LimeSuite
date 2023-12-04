@@ -196,11 +196,21 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     // TODO: read back cdcm values or mClockGeneratorCDCM->Reset(30.72e6, 25e6);
 
     RFSOCDescriptor soc;
+
     // LMS#1
     soc.name = "LMS 1";
     soc.channelCount = 2;
     soc.rxPathNames = { "None", "LNAH", "LNAL" };
     soc.txPathNames = { "None", "Band1", "Band2" };
+
+    soc.samplingRateRange = { 100e3, 61.44e6, 0 };
+    soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
     desc.rfSOC.push_back(soc);
 
     LMS7002M* lms1 = new LMS7002M(mLMS7002Mcomms[0]);
