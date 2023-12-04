@@ -113,7 +113,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
     const int bytesForFrame = (packed ? 3 : 4) * (mimo ? 2 : 1);
     uint maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
 
-    const uint8_t safeTxEndPt = txEndPt; // To make sure no UB happens when killing the thread
+    const uint8_t safeTxEndPt = txEndPt; // To make sure no undefined behaviour happens when killing the thread
 
     // thread ready for work, just wait for stream enable
     {
@@ -284,7 +284,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     SamplesPacketType* outputPkt = nullptr;
     int64_t expectedTS = 0;
-    const uint8_t safeRxEndPt = rxEndPt; // To make sure no UB happens when killing the thread
+    const uint8_t safeRxEndPt = rxEndPt; // To make sure no undefined behaviour happens when killing the thread
 
     SDRDevice::StreamStats& stats = mRx.stats;
 
