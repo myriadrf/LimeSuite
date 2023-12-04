@@ -274,7 +274,7 @@ static bool OnStreamStatusChange(bool isTx, const SDRDevice::StreamStats* s, voi
     StreamStatus& status = *static_cast<StreamStatus*>(userData);
     SDRDevice::StreamStats& dest = isTx ? status.tx : status.rx;
 
-    dest.FIFO_filled = s->FIFO_filled;
+    dest.FIFO = s->FIFO;
     dest.dataRate_Bps = s->dataRate_Bps;
     dest.overrun = s->overrun;
     dest.underrun = s->underrun;

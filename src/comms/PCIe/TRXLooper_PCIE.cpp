@@ -18,6 +18,7 @@
 #include "Profiler.h"
 #include "DataPacket.h"
 #include "SamplesPacket.h"
+#include "limesuite/commonTypes.h"
 
 static bool showStats = false;
 static const int statsPeriod_ms = 1000; // at 122.88 MHz MIMO, fpga tx pkt counter overflows every 272ms
@@ -92,27 +93,6 @@ template<typename T> inline static T clamp(T value, T low, T high)
     assert(low <= high);
     return value < low ? low : (value > high ? high : value);
 }
-
-template<class T> class DeltaVariable
-{
-  public:
-    DeltaVariable(T init)
-        : mValue(init)
-        , mLastValue(0){};
-    void set(T val) { mValue = val; }
-    void add(T val) { mValue += val; }
-    T delta()
-    {
-        T d = mValue - mLastValue;
-        return d;
-    } // value change since last reset
-    T value() const { return mValue; }
-    void checkpoint() { mLastValue = mValue; }
-
-  private:
-    T mValue;
-    T mLastValue;
-};
 
 TRXLooper_PCIE::TRXLooper_PCIE(
     std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex)
@@ -599,6 +579,8 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 stagingBufferIndex &= 0xFFFF;
                 packetsSent += output.packetCount();
                 totalPacketSent += output.packetCount();
+                stats.timestamp = lastTS;
+                stats.bytesTransferred += wrInfo.size;
                 mTxArgs.port->CacheFlush(true, false, stagingBufferIndex % bufferCount);
                 output.Reset(dmaBuffers[stagingBufferIndex % bufferCount], mTxArgs.bufferSize);
             }
@@ -796,14 +778,6 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     DeltaVariable<int32_t> overrun(0);
     DeltaVariable<int32_t> loss(0);
 
-    // thread ready for work, just wait for stream enable
-    {
-        std::unique_lock<std::mutex> lk(streamMutex);
-        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
-            streamActive.wait_for(lk, milliseconds(100));
-        lk.unlock();
-    }
-
     // Anticipate the overflow 2 interrupts early, just in case of missing an interrupt
     // Avoid situations where CPU and device is at the same buffer index
     // CPU reading while device writing creates coherency issues.
@@ -811,6 +785,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     mRxArgs.cnt = 0;
     mRxArgs.sw = 0;
     mRxArgs.hw = 0;
+
+    // thread ready for work, just wait for stream enable
+    {
+        std::unique_lock<std::mutex> lk(streamMutex);
+        while (!mStreamEnabled && !mRx.terminate.load(std::memory_order_relaxed))
+            streamActive.wait_for(lk, milliseconds(100));
+        lk.unlock();
+    }
 
     auto t1 = perfClock::now();
     auto t2 = t1;

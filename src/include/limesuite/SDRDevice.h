@@ -37,6 +37,10 @@ class LIME_API SDRDevice
         uint8_t channelCount;
         std::vector<std::string> rxPathNames;
         std::vector<std::string> txPathNames;
+
+        Range samplingRateRange;
+        Range frequencyRange;
+        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
     };
 
     struct CustomParameter {
@@ -81,11 +85,18 @@ class LIME_API SDRDevice
     };
 
     struct StreamStats {
+        struct FIFOStats {
+            std::size_t totalCount;
+            std::size_t usedCount;
+
+            float ratio() { return static_cast<float>(usedCount) / totalCount; }
+        };
+
         StreamStats() { memset(this, 0, sizeof(StreamStats)); }
         uint64_t timestamp;
         int64_t bytesTransferred;
         int64_t packets;
-        float FIFO_filled;
+        FIFOStats FIFO;
         float dataRate_Bps;
         uint32_t overrun;
         uint32_t underrun;
@@ -123,7 +134,7 @@ class LIME_API SDRDevice
 
         StreamConfig();
         ~StreamConfig();
-        StreamConfig& operator=(const StreamConfig &srd);
+        StreamConfig& operator=(const StreamConfig& srd);
 
         uint8_t rxCount;
         uint8_t rxChannels[MAX_CHANNEL_COUNT];

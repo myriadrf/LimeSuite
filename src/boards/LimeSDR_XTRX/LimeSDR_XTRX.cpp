@@ -120,15 +120,12 @@ LimeSDR_XTRX::LimeSDR_XTRX(
 
     desc.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
-    DataStorage* eeprom = new DataStorage();
-    eeprom->name = "EEPROM";
-    eeprom->id = static_cast<uint32_t>(eMemoryDevice::EEPROM);
     DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
-    eeprom->map.push_back(vctcxoValue);
+    DataStorage eeprom{ "EEPROM", static_cast<uint32_t>(eMemoryDevice::EEPROM), { vctcxoValue } };
 
     desc.memoryDevices = { //{"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
         { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) },
-        *eeprom
+        eeprom
     };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
@@ -141,7 +138,18 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     soc.channelCount = 2;
     soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
     soc.txPathNames = { "None", "Band1", "Band2" };
+
+    soc.samplingRateRange = { 100e3, 61.44e6, 0 };
+    soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 2.6e9 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
     desc.rfSOC.push_back(soc);
+
     LMS7002M* chip = new LMS7002M(spiRFsoc);
     chip->ModifyRegistersDefaults(lms7002defaultsOverrides);
     chip->SetOnCGENChangeCallback(LMS1_UpdateFPGAInterface, this);
@@ -395,13 +403,17 @@ int LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO,
 
 int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers.at(moduleIndex))
-        return -1; // already running
+    // Allow multiple setup calls
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
+        delete mStreamers.at(moduleIndex);
+    }
+
     try
     {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(mStreamPort, mStreamPort, mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
         if (mCallback_logMessage)
-            mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
+            mStreamers.at(moduleIndex)->SetMessageLogCallback(mCallback_logMessage);
         std::shared_ptr<LitePCIe> trxPort{ mStreamPort };
         if (!trxPort->IsOpen())
         {

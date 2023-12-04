@@ -140,6 +140,15 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.channelCount = 2;
     soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
     soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.samplingRateRange = { 100e3, 61.44e6, 0 };
+    soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 2.6e9 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
     descriptor.rfSOC.push_back(soc);
 
     auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA", mFPGA);
@@ -615,12 +624,17 @@ void LimeSDR::ResetUSBFIFO()
 
 int LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers[0])
-        return -1; // already running
+    // Allow multiple setup calls
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
+        delete mStreamers.at(moduleIndex);
+    }
+
     try
     {
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
-        mStreamers[0]->Setup(config);
+        mStreamers.at(moduleIndex) =
+            new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips.at(moduleIndex), STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
+        mStreamers.at(moduleIndex)->Setup(config);
 
         return 0;
     } catch (std::logic_error& e)
@@ -652,23 +666,6 @@ void LimeSDR::StreamStop(uint8_t moduleIndex)
 
     delete mStreamers[0];
     mStreamers[0] = nullptr;
-}
-
-void LimeSDR::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
-{
-    if (rx)
-    {
-        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Rx);
-        rx->FIFO_filled = stats.FIFO_filled;
-        rx->dataRate_Bps = stats.dataRate_Bps;
-    }
-
-    if (tx)
-    {
-        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Tx);
-        tx->FIFO_filled = stats.FIFO_filled;
-        tx->dataRate_Bps = stats.dataRate_Bps;
-    }
 }
 
 void* LimeSDR::GetInternalChip(uint32_t index)

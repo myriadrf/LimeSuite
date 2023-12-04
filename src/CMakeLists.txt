@@ -59,6 +59,8 @@ set(LIME_SUITE_SOURCES
     mcu_program/common_src/lms7002m_calibrations.c
     mcu_program/common_src/lms7002m_controls.c
     mcu_program/common_src/lms7002m_filters.c
+
+    API/LMS_APIWrapper.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES( 

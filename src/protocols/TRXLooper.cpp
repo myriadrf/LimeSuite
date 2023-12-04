@@ -802,7 +802,20 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
 
 SDRDevice::StreamStats TRXLooper::GetStats(TRXDir dir)
 {
-    return dir == TRXDir::Tx ? mTx.stats : mRx.stats;
+    SDRDevice::StreamStats stats;
+
+    if (dir == TRXDir::Tx)
+    {
+        stats = mTx.stats;
+        stats.FIFO = { mTx.fifo->max_size(), mTx.fifo->size() };
+    }
+    else
+    {
+        stats = mRx.stats;
+        stats.FIFO = { mRx.fifo->max_size(), mRx.fifo->size() };
+    }
+
+    return stats;
 }
 
 } // namespace lime

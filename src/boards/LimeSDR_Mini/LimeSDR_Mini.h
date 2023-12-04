@@ -39,8 +39,6 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
-
     virtual void* GetInternalChip(uint32_t index) override;
 
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;

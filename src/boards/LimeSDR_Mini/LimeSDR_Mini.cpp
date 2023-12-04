@@ -178,7 +178,14 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     soc.name = "LMS";
     soc.channelCount = 1;
     soc.rxPathNames = { "NONE", "LNAH", "LNAL_NC", "LNAW", "Auto" };
-    soc.txPathNames = { "NONE", "BAND1", "BAND2", "Auto" };
+    soc.txPathNames = { "NONE", "Band1", "Band2", "Auto" };
+    soc.samplingRateRange = { 100e3, 30.72e6, 0 };
+    soc.frequencyRange = { 10e6, 3.5e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 30e6, 1.9e9 };
 
     descriptor.rfSOC.push_back(soc);
 
@@ -243,7 +250,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         if (txUsed)
         {
-            mLMSChips[0]->SetFrequencySX(TRXDir::Tx, cfg.channel[0].rx.centerFrequency);
+            mLMSChips[0]->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
         }
 
         for (int i = 0; i < 2; ++i)
@@ -592,9 +599,10 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
 
 int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers[0])
+    // Allow multiple setup calls
+    if (mStreamers.at(0) != nullptr)
     {
-        return -1; // already running
+        delete mStreamers.at(0);
     }
 
     try
@@ -602,8 +610,8 @@ int LimeSDR_Mini::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         auto connection = std::static_pointer_cast<FT601>(mStreamPort);
         connection->ResetStreamBuffers();
 
-        mStreamers[0] = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_READ_ADDRESS, STREAM_BULK_WRITE_ADDRESS);
-        mStreamers[0]->Setup(config);
+        mStreamers.at(0) = new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips[0], STREAM_BULK_READ_ADDRESS, STREAM_BULK_WRITE_ADDRESS);
+        mStreamers.at(0)->Setup(config);
 
         return 0;
     } catch (std::logic_error& e)
@@ -638,23 +646,6 @@ void LimeSDR_Mini::StreamStop(uint8_t moduleIndex)
 
     delete mStreamers[0];
     mStreamers[0] = nullptr;
-}
-
-void LimeSDR_Mini::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx)
-{
-    if (rx)
-    {
-        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Rx);
-        rx->FIFO_filled = stats.FIFO_filled;
-        rx->dataRate_Bps = stats.dataRate_Bps;
-    }
-
-    if (tx)
-    {
-        auto stats = mStreamers[moduleIndex]->GetStats(TRXDir::Tx);
-        tx->FIFO_filled = stats.FIFO_filled;
-        tx->dataRate_Bps = stats.dataRate_Bps;
-    }
 }
 
 void* LimeSDR_Mini::GetInternalChip(uint32_t index)

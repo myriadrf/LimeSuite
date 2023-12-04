@@ -176,13 +176,10 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
         { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
-    DataStorage* eeprom = new DataStorage();
-    eeprom->name = "EEPROM";
-    eeprom->id = (int)eMemoryDevice::EEPROM;
     DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
-    eeprom->map.push_back(vctcxoValue);
+    DataStorage eeprom{ "EEPROM", static_cast<uint32_t>(eMemoryDevice::EEPROM), { vctcxoValue } };
 
-    desc.memoryDevices = { { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) }, *eeprom };
+    desc.memoryDevices = { { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) }, eeprom };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
@@ -199,11 +196,21 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     // TODO: read back cdcm values or mClockGeneratorCDCM->Reset(30.72e6, 25e6);
 
     RFSOCDescriptor soc;
+
     // LMS#1
     soc.name = "LMS 1";
     soc.channelCount = 2;
     soc.rxPathNames = { "None", "LNAH", "LNAL" };
     soc.txPathNames = { "None", "Band1", "Band2" };
+
+    soc.samplingRateRange = { 100e3, 61.44e6, 0 };
+    soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
     desc.rfSOC.push_back(soc);
 
     LMS7002M* lms1 = new LMS7002M(mLMS7002Mcomms[0]);
@@ -824,8 +831,12 @@ int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, u
 
 int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    if (mStreamers.at(moduleIndex))
-        return -1; // already running
+    // Allow multiple setup calls
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
+        delete mStreamers.at(moduleIndex);
+    }
+
     try
     {
         mStreamers.at(moduleIndex) = new TRXLooper_PCIE(

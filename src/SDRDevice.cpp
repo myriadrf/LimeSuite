@@ -19,7 +19,7 @@ SDRDevice::StreamConfig::~StreamConfig()
         delete extraConfig;
 }
 
-SDRDevice::StreamConfig& SDRDevice::StreamConfig::operator=(const SDRDevice::StreamConfig &src)
+SDRDevice::StreamConfig& SDRDevice::StreamConfig::operator=(const SDRDevice::StreamConfig& src)
 {
     if (this == &src)
         return *this;
