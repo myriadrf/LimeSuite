@@ -7,6 +7,7 @@
 #include "limesuite/SDRDevice.h"
 #include "LMS7002M_SDRDevice.h"
 #include "Logger.h"
+#include "MemoryPool.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -31,6 +32,7 @@ struct StatsDeltas {
 
 struct StreamBuffer {
     void* buffer;
+    lime::MemoryPool* ownerMemoryPool;
     lime::TRXDir direction;
     uint8_t channel;
     int samplesProduced;
@@ -61,15 +63,19 @@ struct LMS_APIDevice {
 };
 
 struct StreamHandle {
+    static constexpr std::size_t MAX_ELEMENTS_IN_BUFFER = 4096;
+
     LMS_APIDevice* parent;
     bool isStreamStartedFromAPI;
     bool isStreamActuallyStarted;
+    lime::MemoryPool memoryPool;
 
     StreamHandle() = delete;
     StreamHandle(LMS_APIDevice* parent)
         : parent(parent)
         , isStreamStartedFromAPI(false)
         , isStreamActuallyStarted(false)
+        , memoryPool(1, sizeof(lime::complex32f_t) * MAX_ELEMENTS_IN_BUFFER, 4096, "StreamHandleMemoryPool")
     {
     }
 };
@@ -1070,7 +1076,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
                 std::memcpy(samples, buffer.buffer, sample_count * sampleSize);
                 int samplesProduced = buffer.samplesProduced;
 
-                delete[] reinterpret_cast<T*>(buffer.buffer);
+                buffer.ownerMemoryPool->Free(buffer.buffer);
                 handle->parent->streamBuffers.erase(it);
 
                 return samplesProduced;
@@ -1088,10 +1094,10 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         }
         else
         {
-            sampleBuffer[i] = new T[sample_count];
+            sampleBuffer[i] = reinterpret_cast<T*>(handle->memoryPool.Allocate(sample_count * sampleSize));
 
             handle->parent->streamBuffers.push_back(
-                { sampleBuffer[i], direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
+                { sampleBuffer[i], &handle->memoryPool, direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
         }
     }
 
@@ -1191,10 +1197,10 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
 
     if (std::any_of(sampleBuffer.begin(), sampleBuffer.end(), [](const T* item) { return item == nullptr; }))
     {
-        T* buffer = new T[sample_count];
+        auto buffer = reinterpret_cast<T*>(handle->memoryPool.Allocate(sample_count * sampleSize));
         std::memcpy(buffer, samples, sample_count * sampleSize);
         handle->parent->streamBuffers.push_back(
-            { reinterpret_cast<void*>(buffer), direction, static_cast<uint8_t>(streamChannel), 0 });
+            { reinterpret_cast<void*>(buffer), &handle->memoryPool, direction, static_cast<uint8_t>(streamChannel), 0 });
 
         // Can't really know what to return here just yet, so just returning that all of them have passed through.
         return sample_count;
@@ -1216,7 +1222,8 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         auto& buffer = *it;
         if (buffer.direction == direction && buffer.channel != streamChannel)
         {
-            delete[] reinterpret_cast<T*>(buffer.buffer);
+            buffer.ownerMemoryPool->Free(buffer.buffer);
+
             handle->parent->streamBuffers.erase(it--);
         }
     }
