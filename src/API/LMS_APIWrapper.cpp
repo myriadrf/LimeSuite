@@ -59,6 +59,7 @@ struct LMS_APIDevice {
         , lastSavedStreamConfig()
         , lastSavedLPFValue()
         , statsDeltas()
+        , moduleIndex(0)
         , streamBuffers()
         , deviceInfo(nullptr)
     {
