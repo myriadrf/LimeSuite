@@ -44,6 +44,8 @@ struct LMS_APIDevice {
     lime::SDRDevice::StreamConfig lastSavedStreamConfig;
     StatsDeltas statsDeltas;
 
+    uint8_t moduleIndex;
+
     std::vector<StreamBuffer> streamBuffers;
 
     LMS_APIDevice() = delete;
@@ -92,7 +94,7 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
     }
 
     const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
-    if (chan >= descriptor.rfSOC[0].channelCount)
+    if (chan >= descriptor.rfSOC[apiDevice->moduleIndex].channelCount)
     {
         lime::error("Invalid channel number.");
         return nullptr;
@@ -275,7 +277,7 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -307,7 +309,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -344,7 +346,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx,
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -387,7 +389,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_t
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetRateRange(0));
+    *range = RangeToLMS_Range(apiDevice->device->GetRateRange(apiDevice->moduleIndex));
 
     return 0;
 }
@@ -400,7 +402,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t* device, bool dir_tx)
         return -1;
     }
 
-    return apiDevice->device->GetDescriptor().rfSOC[0].channelCount;
+    return apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex].channelCount;
 }
 
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type frequency)
@@ -438,7 +440,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -477,7 +479,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetFrequencyRange(0));
+    *range = RangeToLMS_Range(apiDevice->device->GetFrequencyRange(apiDevice->moduleIndex));
 
     return 0;
 }
@@ -490,7 +492,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    auto rfSOC = apiDevice->device->GetDescriptor().rfSOC[0];
+    auto rfSOC = apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex];
 
     if (dir_tx)
     {
@@ -525,7 +527,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -562,7 +564,8 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, siz
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetAntennaRange(0, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, path));
+    *range = RangeToLMS_Range(
+        apiDevice->device->GetAntennaRange(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, path));
 
     return 0;
 }
@@ -588,7 +591,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -653,7 +656,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -686,7 +689,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -746,7 +749,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -870,7 +873,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     // Configure again in case some skips were made in validation before hand.
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, 0);
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -927,7 +930,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     // TODO: check functionality
     // config.performanceLatency = stream->throughputVsLatency;
 
-    auto returnValue = apiDevice->device->StreamSetup(config, 0);
+    auto returnValue = apiDevice->device->StreamSetup(config, apiDevice->moduleIndex);
 
     if (returnValue == 0)
     {
@@ -980,7 +983,7 @@ API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t* stream)
 
     if (!handle->isStreamActuallyStarted)
     {
-        handle->parent->device->StreamStart(0);
+        handle->parent->device->StreamStart(handle->parent->moduleIndex);
 
         for (auto& streamHandle : streamHandles)
         {
@@ -1013,7 +1016,7 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t* stream)
 
     if (handle->isStreamActuallyStarted)
     {
-        handle->parent->device->StreamStop(0);
+        handle->parent->device->StreamStop(handle->parent->moduleIndex);
 
         for (auto& streamHandle : streamHandles)
         {
@@ -1087,7 +1090,8 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     }
 
     lime::SDRDevice::StreamMeta metadata{ 0, false, false };
-    int samplesProduced = handle->parent->device->StreamRx(0, sampleBuffer.data(), sample_count, &metadata);
+    int samplesProduced =
+        handle->parent->device->StreamRx(handle->parent->moduleIndex, sampleBuffer.data(), sample_count, &metadata);
 
     for (auto& buffer : handle->parent->streamBuffers)
     {
@@ -1199,7 +1203,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         metadata.timestamp = meta->timestamp;
     }
 
-    int samplesSent = handle->parent->device->StreamTx(0, sampleBuffer.data(), sample_count, &metadata);
+    int samplesSent = handle->parent->device->StreamTx(handle->parent->moduleIndex, sampleBuffer.data(), sample_count, &metadata);
 
     for (auto it = handle->parent->streamBuffers.begin(); it != handle->parent->streamBuffers.end(); it++)
     {
@@ -1265,10 +1269,10 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t* stream, lms_stream_st
     switch (direction)
     {
     case lime::TRXDir::Rx:
-        handle->parent->device->StreamStatus(0, &stats, nullptr);
+        handle->parent->device->StreamStatus(handle->parent->moduleIndex, &stats, nullptr);
         break;
     case lime::TRXDir::Tx:
-        handle->parent->device->StreamStatus(0, nullptr, &stats);
+        handle->parent->device->StreamStatus(handle->parent->moduleIndex, nullptr, &stats);
         break;
     default:
         break;
