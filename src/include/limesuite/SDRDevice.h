@@ -85,7 +85,7 @@ class LIME_API SDRDevice
             std::size_t totalCount;
             std::size_t usedCount;
 
-            float ratio() { return usedCount / totalCount; }
+            float ratio() { return static_cast<float>(usedCount) / totalCount; }
         };
 
         StreamStats() { memset(this, 0, sizeof(StreamStats)); }
