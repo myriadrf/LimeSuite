@@ -140,6 +140,15 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.channelCount = 2;
     soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
     soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.samplingRateRange = { 100e3, 61.44e6, 0 };
+    soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 2.6e9 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
     descriptor.rfSOC.push_back(soc);
 
     auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA", mFPGA);

@@ -178,7 +178,14 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     soc.name = "LMS";
     soc.channelCount = 1;
     soc.rxPathNames = { "NONE", "LNAH", "LNAL_NC", "LNAW", "Auto" };
-    soc.txPathNames = { "NONE", "BAND1", "BAND2", "Auto" };
+    soc.txPathNames = { "NONE", "Band1", "Band2", "Auto" };
+    soc.samplingRateRange = { 100e3, 30.72e6, 0 };
+    soc.frequencyRange = { 10e6, 3.5e9, 0 };
+
+    soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 900e6 };
+    soc.antennaRange[TRXDir::Tx]["Band1"] = { 2e9, 2.6e9 };
+    soc.antennaRange[TRXDir::Tx]["Band2"] = { 30e6, 1.9e9 };
 
     descriptor.rfSOC.push_back(soc);
 
@@ -733,43 +740,3 @@ int LimeSDR_Mini::WriteFPGARegister(uint32_t address, uint32_t value)
 {
     return mFPGA->WriteRegister(address, value);
 }
-
-Range LimeSDR_Mini::GetRateRange(uint8_t moduleIndex) const
-{
-    return { 100e3, 30.72e6, 0 };
-}
-
-Range LimeSDR_Mini::GetFrequencyRange(uint8_t moduleIndex) const
-{
-    return { 10e6, 3.5e9, 0 };
-}
-
-Range LimeSDR_Mini::GetAntennaRange(uint8_t moduleIndex, TRXDir direction, unsigned path) const
-{
-    if (direction == TRXDir::Tx)
-    {
-        switch (path)
-        {
-        case 1:
-            return { 2e9, 2.6e9, 0 };
-        case 2:
-            return { 30e6, 1.9e9, 0 };
-        default:
-            return { 0, 0, 0 };
-        }
-    }
-    else
-    {
-        switch (path)
-        {
-        case 1:
-            return { 2e9, 2.6e9, 0 };
-        case 3:
-            return { 700e6, 900e6, 0 };
-        default:
-            return { 0, 0, 0 };
-        }
-    }
-
-    return { 0, 0, 0 };
-};
