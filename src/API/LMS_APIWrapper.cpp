@@ -54,6 +54,8 @@ struct LMS_APIDevice {
         , lastSavedSDRConfig()
         , lastSavedStreamConfig()
         , statsDeltas()
+        , moduleIndex(0)
+        , streamBuffers()
     {
     }
 };
