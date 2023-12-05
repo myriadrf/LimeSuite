@@ -142,7 +142,7 @@ inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
     return streamHandles.size() - 1;
 }
 
-inline void StringCopy(char* destination, const std::string& source, std::size_t destinationLength)
+inline void CopyString(const std::string& source, char* destination, std::size_t destinationLength)
 {
     std::strncpy(destination, source.c_str(), destinationLength - 1);
     destination[destinationLength - 1] = 0;
@@ -152,7 +152,7 @@ inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_
 {
     for (std::size_t i = 0; i < strings.size(); ++i)
     {
-        StringCopy(list[i], strings.at(i), sizeof(lms_name_t));
+        CopyString(strings.at(i), list[i], sizeof(lms_name_t));
     }
 }
 
@@ -190,7 +190,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
         for (std::size_t i = 0; i < handles.size(); ++i)
         {
             std::string str = handles[i].Serialize();
-            StringCopy(dev_list[i], str, sizeof(lms_info_str_t));
+            CopyString(str, dev_list[i], sizeof(lms_info_str_t));
         }
     }
 
@@ -1398,7 +1398,7 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
     *val = parameter[0].value;
     if (units != nullptr)
     {
-        StringCopy(units, parameter[0].units, sizeof(lms_name_t));
+        CopyString(parameter[0].units, units, sizeof(lms_name_t));
     }
 
     return 0;
@@ -1433,15 +1433,15 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* devic
         apiDevice->deviceInfo = new lms_dev_info_t;
     }
 
-    StringCopy(apiDevice->deviceInfo->deviceName, descriptor.name, sizeof(apiDevice->deviceInfo->deviceName));
-    StringCopy(apiDevice->deviceInfo->expansionName, descriptor.expansionName, sizeof(apiDevice->deviceInfo->expansionName));
-    StringCopy(apiDevice->deviceInfo->firmwareVersion, descriptor.firmwareVersion, sizeof(apiDevice->deviceInfo->firmwareVersion));
-    StringCopy(apiDevice->deviceInfo->hardwareVersion, descriptor.hardwareVersion, sizeof(apiDevice->deviceInfo->hardwareVersion));
-    StringCopy(apiDevice->deviceInfo->protocolVersion, descriptor.protocolVersion, sizeof(apiDevice->deviceInfo->protocolVersion));
+    CopyString(descriptor.name, apiDevice->deviceInfo->deviceName, sizeof(apiDevice->deviceInfo->deviceName));
+    CopyString(descriptor.expansionName, apiDevice->deviceInfo->expansionName, sizeof(apiDevice->deviceInfo->expansionName));
+    CopyString(descriptor.firmwareVersion, apiDevice->deviceInfo->firmwareVersion, sizeof(apiDevice->deviceInfo->firmwareVersion));
+    CopyString(descriptor.hardwareVersion, apiDevice->deviceInfo->hardwareVersion, sizeof(apiDevice->deviceInfo->hardwareVersion));
+    CopyString(descriptor.protocolVersion, apiDevice->deviceInfo->protocolVersion, sizeof(apiDevice->deviceInfo->protocolVersion));
     apiDevice->deviceInfo->boardSerialNumber = descriptor.serialNumber;
-    StringCopy(apiDevice->deviceInfo->gatewareVersion, descriptor.gatewareVersion, sizeof(apiDevice->deviceInfo->gatewareVersion));
-    StringCopy(apiDevice->deviceInfo->gatewareTargetBoard,
-        descriptor.gatewareTargetBoard,
+    CopyString(descriptor.gatewareVersion, apiDevice->deviceInfo->gatewareVersion, sizeof(apiDevice->deviceInfo->gatewareVersion));
+    CopyString(descriptor.gatewareTargetBoard,
+        apiDevice->deviceInfo->gatewareTargetBoard,
         sizeof(apiDevice->deviceInfo->gatewareTargetBoard));
 
     return apiDevice->deviceInfo;
@@ -1452,7 +1452,7 @@ API_EXPORT const char* LMS_GetLibraryVersion()
     static constexpr std::size_t LIBRARY_VERSION_SIZE = 32;
     static char libraryVersion[LIBRARY_VERSION_SIZE];
 
-    StringCopy(libraryVersion, lime::GetLibraryVersion(), sizeof(libraryVersion));
+    CopyString(lime::GetLibraryVersion(), libraryVersion, sizeof(libraryVersion));
     return libraryVersion;
 }
 
@@ -1505,7 +1505,7 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, f
         lime::error("Device is not an LMS device.");
         return -1;
     }
-
+    
     if (lms->SPI_read(0x2F) == 0x3840)
     {
         lime::error("Feature is not available on this chip revision.");
@@ -2062,7 +2062,7 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //     if (list != nullptr)
 //         for (size_t i = 0; i < names.size(); i++)
 //         {
-//             StringCopy(list[i], names[i], sizeof(lms_name_t));
+//             CopyString(names[i], list[i], sizeof(lms_name_t));
 //         }
 //     return names.size();
 // }
