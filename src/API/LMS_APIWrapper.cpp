@@ -1427,7 +1427,11 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* devic
     }
 
     auto descriptor = apiDevice->device->GetDescriptor();
-    apiDevice->deviceInfo = new lms_dev_info_t;
+
+    if (apiDevice->deviceInfo == nullptr)
+    {
+        apiDevice->deviceInfo = new lms_dev_info_t;
+    }
 
     StringCopy(apiDevice->deviceInfo->deviceName, descriptor.name, sizeof(apiDevice->deviceInfo->deviceName));
     StringCopy(apiDevice->deviceInfo->expansionName, descriptor.expansionName, sizeof(apiDevice->deviceInfo->expansionName));
