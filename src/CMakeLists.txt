@@ -121,6 +121,11 @@ if (ENABLE_LIBRARY)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
     endif()
 
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_CODE_COVERAGE)
+        include(CodeCoverage)
+        append_coverage_compiler_flags_to_target(${MAIN_LIBRARY_NAME})
+    endif()
+
     install(TARGETS ${MAIN_LIBRARY_NAME}
         LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
@@ -308,3 +313,10 @@ add_subdirectory(examples)
 # Lime command line tools
 #########################################################################
 add_subdirectory(cli)
+
+#########################################################################
+# GTest tests
+#########################################################################
+if(ENABLE_TESTING)
+    add_subdirectory(tests)
+endif()
