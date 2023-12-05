@@ -1464,7 +1464,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, f
         return -1;
     }
 
-    *freq = apiDevice->device->GetClockFreq(clk_id, 0);
+    *freq = apiDevice->device->GetClockFreq(clk_id, apiDevice->moduleIndex * 2);
     return *freq > 0 ? 0 : -1;
 }
 
@@ -1478,7 +1478,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
 
     try
     {
-        apiDevice->device->SetClockFreq(clk_id, freq, 0);
+        apiDevice->device->SetClockFreq(clk_id, freq, apiDevice->moduleIndex * 2);
     } catch (...)
     {
         lime::error("Device configuration failed.");
