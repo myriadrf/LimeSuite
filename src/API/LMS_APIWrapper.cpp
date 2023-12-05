@@ -1910,6 +1910,163 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Paramet
     return lms->Modify_SPI_Reg_bits(param, val);
 }
 
+API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (freq != nullptr)
+    {
+        if (lms->SetNCOFrequencies(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, freq, LMS_NCO_VAL_COUNT, pho) != 0)
+        {
+            return -1;
+        }
+
+        lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, 0);
+        lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
+    }
+
+    return lms->SetNCOPhaseOffsetForMode0(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, pho);
+}
+
+API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, const float_type* phase, float_type fcw)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (lms->SetNCOFrequency(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, 0, fcw) != 0)
+        return -1;
+
+    if (phase != nullptr)
+    {
+        if (lms->SetNCOPhases(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, phase, LMS_NCO_VAL_COUNT, fcw) != 0)
+        {
+            return -1;
+        }
+
+        if (lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, float_type* phase, float_type* fcw)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (phase != nullptr)
+    {
+        auto phases = lms->GetNCOPhases(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, fcw);
+
+        for (std::size_t i = 0; i < phases.size(); ++i)
+        {
+            phase[i] = phases[i];
+        }
+    }
+
+    if (fcw != nullptr)
+    {
+        *fcw = lms->GetNCOFrequency(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, 0);
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan, int ind, bool down)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if ((lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan) != 0) ||
+        (lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan) != 0))
+    {
+        return -1;
+    }
+
+    if (ind < LMS_NCO_VAL_COUNT)
+    {
+        if ((lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, ind) != 0) ||
+            (lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down) != 0))
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        lime::error("Invalid NCO index value.");
+        return -1;
+    }
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (lms->Get_SPI_Reg_bits(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
+    {
+        lime::error("NCO is disabled.");
+        return -1;
+    }
+
+    return lms->Get_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
+}
+
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
@@ -1988,24 +2145,6 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Paramet
 // }
 
 // TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, ch);
-//     if (!lms)
-//         return -1;
-
-//     if (freq != nullptr)
-//     {
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             if (lms->SetNCOFreq(dir_tx, ch, i, freq[i]) != 0)
-//                 return -1;
-//         lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, 0);
-//         lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
-//     }
-//     return lms->GetLMS()->SetNCOPhaseOffsetForMode0(dir_tx, pho);
-// }
-
-// TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
 // {
 //     lime::LMS7_Device* lms = CheckDevice(device, chan);
@@ -2022,84 +2161,6 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Paramet
 //         *pho = 360.0 * value / 65536.0;
 //     }
 //     return 0;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, const float_type* phase, float_type fcw)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, ch);
-//     if (!lms)
-//         return -1;
-
-//     if (lms->SetNCOFreq(dir_tx, ch, 0, fcw) != 0)
-//         return -1;
-
-//     if (phase != nullptr)
-//     {
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             if (lms->SetNCOPhase(dir_tx, ch, i, phase[i]) != 0)
-//                 return -1;
-//         if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0))
-//             return -1;
-//     }
-//     return 0;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, float_type* phase, float_type* fcw)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, ch);
-//     if (!lms)
-//         return -1;
-
-//     if (phase != nullptr)
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             phase[i] = lms->GetNCOPhase(dir_tx, ch, i);
-
-//     if (fcw != nullptr)
-//         *fcw = lms->GetNCOFreq(dir_tx, ch, 0);
-
-//     return 0;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan, int ind, bool down)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan) != 0) ||
-//         (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan) != 0))
-//         return -1;
-
-//     if (ind < LMS_NCO_VAL_COUNT)
-//     {
-//         if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, ind) != 0) ||
-//             (lms->WriteParam(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down) != 0))
-//             return -1;
-//     }
-//     else
-//     {
-//         lime::error("Invalid NCO index value.");
-//         return -1;
-//     }
-//     return 0;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     if (lms->ReadParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
-//     {
-//         lime::error("NCO is disabled.");
-//         return -1;
-//     }
-//     return lms->ReadParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
 // }
 
 // TODO: Implement with the new API

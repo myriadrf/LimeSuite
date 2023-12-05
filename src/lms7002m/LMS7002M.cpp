@@ -1261,7 +1261,7 @@ float_type LMS7002M::GetReferenceClk_SX(TRXDir dir)
     return _cachedRefClockRate;
 }
 
-int LMS7002M::SetNCOFrequencies(TRXDir dir, float_type* freq_Hz, uint8_t count, float_type phaseOffset)
+int LMS7002M::SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset)
 {
     for (unsigned i = 0; i < 16 && i < count; i++)
     {
@@ -2056,7 +2056,7 @@ int LMS7002M::SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg)
     return 0;
 }
 
-int LMS7002M::SetNCOPhases(TRXDir dir, float_type* angles_deg, uint8_t count, float_type frequencyOffset)
+int LMS7002M::SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset)
 {
     if (SetNCOFrequency(dir, 0, frequencyOffset) != 0)
         return -1;
