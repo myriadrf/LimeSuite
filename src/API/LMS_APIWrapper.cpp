@@ -1731,6 +1731,148 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
     return lime::GetLastErrorMessage();
 }
 
+API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    return lms->SetGFIRFilter(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan & 1, enabled, bandwidth);
+}
+
+API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
+    lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef, size_t count)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    std::vector<int16_t> convertedCoefficients(count);
+
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        convertedCoefficients[i] = static_cast<int16_t>(coef[i]);
+    }
+
+    return lms->SetGFIRCoefficients(
+        dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), convertedCoefficients.data(), count);
+}
+
+API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    const uint8_t count = filt == LMS_GFIR3 ? 120 : 40;
+    std::vector<int16_t> coefficientBuffer(count);
+
+    auto returnValue = lms->GetGFIRCoefficients(
+        dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), coefficientBuffer.data(), count);
+
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        coef[i] = static_cast<float_type>(coefficientBuffer[i]);
+    }
+
+    return returnValue;
+}
+
+API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan % 2) + 1);
+
+    if (dir_tx)
+    {
+        if (filt == LMS_GFIR1)
+        {
+            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), enabled == false) != 0)
+                return -1;
+        }
+        else if (filt == LMS_GFIR2)
+        {
+            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), enabled == false) != 0)
+                return -1;
+        }
+        else if (filt == LMS_GFIR3)
+        {
+            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), enabled == false) != 0)
+                return -1;
+        }
+    }
+    else
+    {
+        if (filt == LMS_GFIR1)
+        {
+            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), enabled == false) != 0)
+                return -1;
+        }
+        else if (filt == LMS_GFIR2)
+        {
+            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), enabled == false) != 0)
+                return -1;
+        }
+        else if (filt == LMS_GFIR3)
+        {
+            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false) != 0)
+                return -1;
+        }
+        bool sisoDDR = lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        if (chan % 2)
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled | sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled ? 3 : 0);
+        }
+        else
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), !(enabled | sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML), enabled ? 3 : 0);
+        }
+    }
+
+    return 0;
+}
+
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
@@ -1806,13 +1948,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
 // }
 
 // TODO: Implement with the new API
@@ -1986,28 +2121,6 @@ API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
 //     if (!lms)
 //         return -1;
 //     return lms->WriteParam(param, val);
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
-//     lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef, size_t count)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetGFIRCoef(dir_tx, chan, filt, coef, count) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->GetGFIRCoef(dir_tx, chan, filt, coef) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetGFIR(dir_tx, chan, filt, enabled) : -1;
 // }
 
 // TODO: Implement with the new API
