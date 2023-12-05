@@ -1505,7 +1505,7 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, f
         lime::error("Device is not an LMS device.");
         return -1;
     }
-    
+
     if (lms->SPI_read(0x2F) == 0x3840)
     {
         lime::error("Feature is not available on this chip revision.");
