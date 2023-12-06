@@ -1912,13 +1912,13 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Paramet
 
 API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
 {
-    LMS_APIDevice* apiDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device, ch);
     if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
     if (lms == nullptr)
     {
         lime::error("Device is not an LMS device.");
@@ -1941,7 +1941,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, 
 
 API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
 {
-    LMS_APIDevice* apiDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
     if (apiDevice == nullptr)
     {
         return -1;
@@ -1973,7 +1973,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, 
 
 API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, const float_type* phase, float_type fcw)
 {
-    LMS_APIDevice* apiDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device, ch);
     if (apiDevice == nullptr)
     {
         return -1;
@@ -2007,7 +2007,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size
 
 API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, float_type* phase, float_type* fcw)
 {
-    LMS_APIDevice* apiDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device, ch);
     if (apiDevice == nullptr)
     {
         return -1;
@@ -2040,7 +2040,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size
 
 API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan, int ind, bool down)
 {
-    LMS_APIDevice* apiDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
     if (apiDevice == nullptr)
     {
         return -1;
@@ -2077,7 +2077,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size
 
 API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size_t chan)
 {
-    LMS_APIDevice* apiDevice = CheckDevice(device);
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
     if (apiDevice == nullptr)
     {
         return -1;
