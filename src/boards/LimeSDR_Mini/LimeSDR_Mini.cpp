@@ -730,13 +730,3 @@ int LimeSDR_Mini::CustomParameterRead(std::vector<CustomParameterIO>& parameters
 {
     return mfpgaPort->CustomParameterRead(parameters);
 }
-
-int LimeSDR_Mini::ReadFPGARegister(uint32_t address)
-{
-    return mFPGA->ReadRegister(address);
-}
-
-int LimeSDR_Mini::WriteFPGARegister(uint32_t address, uint32_t value)
-{
-    return mFPGA->WriteRegister(address, value);
-}

@@ -68,6 +68,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
 
+    virtual int ReadFPGARegister(uint32_t address);
+    virtual int WriteFPGARegister(uint32_t address, uint32_t value);
+
   protected:
     static int UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
     DataCallbackType mCallback_logData;
@@ -78,9 +81,6 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     Descriptor mDeviceDescriptor;
     StreamConfig mStreamConfig;
     FPGA* mFPGA;
-
-  private:
-    friend class DeviceRegistry;
 };
 
 } // namespace lime

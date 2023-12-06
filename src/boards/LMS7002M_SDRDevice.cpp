@@ -213,4 +213,14 @@ int LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, 
     return 0;
 }
 
+int LMS7002M_SDRDevice::ReadFPGARegister(uint32_t address)
+{
+    return mFPGA->ReadRegister(address);
+}
+
+int LMS7002M_SDRDevice::WriteFPGARegister(uint32_t address, uint32_t value)
+{
+    return mFPGA->WriteRegister(address, value);
+}
+
 } // namespace lime

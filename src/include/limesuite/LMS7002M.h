@@ -315,11 +315,11 @@ class LIME_API LMS7002M
     int WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
     int SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwidth);
 
-    int SetNCOFrequencies(TRXDir dir, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
+    int SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     // @param phaseOffset optional will be filled with phase offset value
     std::vector<float_type> GetNCOFrequencies(TRXDir dir, float_type* phaseOffset = nullptr);
-    int SetNCOPhases(TRXDir dir, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
+    int SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
     // @param frequencyOffset optional will be filled with NCO frequency offset value
     std::vector<float_type> GetNCOPhases(TRXDir dir, float_type* frequencyOffset = nullptr);
