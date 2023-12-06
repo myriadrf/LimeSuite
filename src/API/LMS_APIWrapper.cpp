@@ -2369,33 +2369,3 @@ API_EXPORT int CALL_CONV LMS_Program(
 //     }
 //     return LMS_SUCCESS;
 // }
-
-// TODO: Implement with the new API
-// extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t* dev, int cmd, uint8_t* data, size_t* len)
-// {
-//     auto conn = CheckConnection(dev);
-//     if (!conn)
-//         return -1;
-
-//     lime::LMS64CProtocol::GenericPacket pkt;
-
-//     pkt.cmd = lime::eCMD_LMS(cmd);
-//     for (size_t i = 0; i < *len; ++i)
-//         pkt.outBuffer.push_back(data[i]);
-
-//     lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-//     if (port->TransferPacket(pkt) != 0)
-//         return -1;
-
-//     for (size_t i = 0; i < pkt.inBuffer.size(); ++i)
-//         data[i] = pkt.inBuffer[i];
-//     *len = pkt.inBuffer.size();
-
-//     if (pkt.status != lime::STATUS_COMPLETED_CMD)
-//     {
-//         lime::error("%s", lime::status2string(pkt.status));
-//         return -1;
-//     }
-
-//     return LMS_SUCCESS;
-// }
