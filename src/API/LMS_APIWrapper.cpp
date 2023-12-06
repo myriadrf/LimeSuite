@@ -8,8 +8,10 @@
 #include "LMS7002M_SDRDevice.h"
 #include "Logger.h"
 #include "MemoryPool.h"
+#include "VersionInfo.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -44,21 +46,35 @@ struct LMS_APIDevice {
     lime::SDRDevice* device;
     lime::SDRDevice::SDRConfig lastSavedSDRConfig;
     lime::SDRDevice::StreamConfig lastSavedStreamConfig;
+    std::array<std::array<float_type, 2>, lime::SDRDevice::MAX_CHANNEL_COUNT> lastSavedLPFValue;
     StatsDeltas statsDeltas;
 
     uint8_t moduleIndex;
 
     std::vector<StreamBuffer> streamBuffers;
+    lms_dev_info_t* deviceInfo;
 
     LMS_APIDevice() = delete;
     LMS_APIDevice(lime::SDRDevice* device)
         : device(device)
         , lastSavedSDRConfig()
         , lastSavedStreamConfig()
+        , lastSavedLPFValue()
         , statsDeltas()
         , moduleIndex(0)
         , streamBuffers()
+        , deviceInfo(nullptr)
     {
+    }
+
+    ~LMS_APIDevice()
+    {
+        lime::DeviceRegistry::freeDevice(device);
+
+        if (deviceInfo != nullptr)
+        {
+            delete deviceInfo;
+        }
     }
 };
 
@@ -126,12 +142,17 @@ inline std::size_t GetStreamHandle(LMS_APIDevice* parent)
     return streamHandles.size() - 1;
 }
 
+inline void CopyString(const std::string& source, char* destination, std::size_t destinationLength)
+{
+    std::strncpy(destination, source.c_str(), destinationLength - 1);
+    destination[destinationLength - 1] = 0;
+}
+
 inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
 {
     for (std::size_t i = 0; i < strings.size(); ++i)
     {
-        std::strncpy(list[i], strings.at(i).c_str(), sizeof(lms_name_t) - 1);
-        list[i][sizeof(lms_name_t) - 1] = 0;
+        CopyString(strings.at(i), list[i], sizeof(lms_name_t));
     }
 }
 
@@ -152,6 +173,12 @@ inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
     return config.channel[chan].rx.gain;
 }
 
+static LMS_LogHandler api_msg_handler;
+static void APIMsgHandler(const lime::LogLevel level, const char* message)
+{
+    api_msg_handler(static_cast<int>(level), message);
+}
+
 } //unnamed namespace
 
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
@@ -163,8 +190,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
         for (std::size_t i = 0; i < handles.size(); ++i)
         {
             std::string str = handles[i].Serialize();
-            std::strncpy(dev_list[i], str.c_str(), sizeof(lms_info_str_t) - 1);
-            dev_list[i][sizeof(lms_info_str_t) - 1] = 0;
+            CopyString(str, dev_list[i], sizeof(lms_info_str_t));
         }
     }
 
@@ -210,8 +236,6 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t* device)
     {
         return -1;
     }
-
-    lime::DeviceRegistry::freeDevice(apiDevice->device);
 
     delete apiDevice;
     return LMS_SUCCESS;
@@ -600,6 +624,8 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
     {
         config.channel[chan].rx.lpf = bandwidth;
     }
+
+    apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
 
     try
     {
@@ -1358,29 +1384,356 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
     return apiDevice->device->GPIODirWrite(buffer, len);
 }
 
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
-// {
-//     auto conn = CheckConnection(device);
-//     if (conn == nullptr)
-//         return -1;
-//     std::string str;
-//     int ret = conn->CustomParameterRead(&param_id, val, 1, &str);
-//     if (units)
-//         strncpy(units, str.c_str(), sizeof(lms_name_t) - 1);
-//     return ret;
-// }
+API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
-// {
-//     auto conn = CheckConnection(device);
-//     if (conn == nullptr)
-//         return -1;
+    std::vector<lime::CustomParameterIO> parameter{ { param_id, *val, units } };
+    int returnValue = apiDevice->device->CustomParameterRead(parameter);
 
-//     std::string str = units == nullptr ? "" : units;
-//     return conn->CustomParameterWrite(&param_id, &val, 1, str);
-// }
+    if (returnValue < 0)
+    {
+        return -1;
+    }
+
+    *val = parameter[0].value;
+    if (units != nullptr)
+    {
+        CopyString(parameter[0].units, units, sizeof(lms_name_t));
+    }
+
+    return returnValue;
+}
+
+API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    std::vector<lime::CustomParameterIO> parameter{ { param_id, val, units } };
+
+    return apiDevice->device->CustomParameterWrite(parameter);
+}
+
+API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return nullptr;
+    }
+
+    auto descriptor = apiDevice->device->GetDescriptor();
+
+    if (apiDevice->deviceInfo == nullptr)
+    {
+        apiDevice->deviceInfo = new lms_dev_info_t;
+    }
+
+    CopyString(descriptor.name, apiDevice->deviceInfo->deviceName, sizeof(apiDevice->deviceInfo->deviceName));
+    CopyString(descriptor.expansionName, apiDevice->deviceInfo->expansionName, sizeof(apiDevice->deviceInfo->expansionName));
+    CopyString(descriptor.firmwareVersion, apiDevice->deviceInfo->firmwareVersion, sizeof(apiDevice->deviceInfo->firmwareVersion));
+    CopyString(descriptor.hardwareVersion, apiDevice->deviceInfo->hardwareVersion, sizeof(apiDevice->deviceInfo->hardwareVersion));
+    CopyString(descriptor.protocolVersion, apiDevice->deviceInfo->protocolVersion, sizeof(apiDevice->deviceInfo->protocolVersion));
+    apiDevice->deviceInfo->boardSerialNumber = descriptor.serialNumber;
+    CopyString(descriptor.gatewareVersion, apiDevice->deviceInfo->gatewareVersion, sizeof(apiDevice->deviceInfo->gatewareVersion));
+    CopyString(descriptor.gatewareTargetBoard,
+        apiDevice->deviceInfo->gatewareTargetBoard,
+        sizeof(apiDevice->deviceInfo->gatewareTargetBoard));
+
+    return apiDevice->deviceInfo;
+}
+
+API_EXPORT const char* LMS_GetLibraryVersion()
+{
+    static constexpr std::size_t LIBRARY_VERSION_SIZE = 32;
+    static char libraryVersion[LIBRARY_VERSION_SIZE];
+
+    CopyString(lime::GetLibraryVersion(), libraryVersion, sizeof(libraryVersion));
+    return libraryVersion;
+}
+
+API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, float_type* freq)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    *freq = apiDevice->device->GetClockFreq(clk_id, apiDevice->moduleIndex * 2);
+    return *freq > 0 ? 0 : -1;
+}
+
+API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, float_type freq)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->SetClockFreq(clk_id, freq, apiDevice->moduleIndex * 2);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
+{
+    *temp = 0;
+
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ind));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (lms->SPI_read(0x2F) == 0x3840)
+    {
+        lime::error("Feature is not available on this chip revision.");
+        return -1;
+    }
+
+    *temp = lms->GetTemperature();
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->Synchronize(toChip);
+    } catch (...)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(dev);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    try
+    {
+        apiDevice->device->EnableCache(enable);
+    } catch (...)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (dir_tx)
+    {
+        *bandwidth = config.channel[chan].tx.lpf;
+    }
+    else
+    {
+        *bandwidth = config.channel[chan].rx.lpf;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+
+    if (enabled)
+    {
+        if (dir_tx)
+        {
+            config.channel[chan].tx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
+        }
+        else
+        {
+            config.channel[chan].rx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
+        }
+    }
+    else
+    {
+        if (dir_tx)
+        {
+            config.channel[chan].tx.lpf = 130e6;
+        }
+        else
+        {
+            config.channel[chan].rx.lpf = 130e6;
+        }
+    }
+
+    try
+    {
+        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+    } catch (...)
+    {
+        lime::error("Device configuration failed.");
+
+        return -1;
+    }
+
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t* sig)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device, chan);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (dir_tx)
+    {
+        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_TXTSP)) == 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_NONE);
+            return 0;
+        }
+        else if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP)) != 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_DC);
+            return 0;
+        }
+        else
+        {
+            *sig = static_cast<lms_testsig_t>(
+                lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP)) + 2 * lms->Get_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), true));
+            return 0;
+        }
+    }
+    else
+    {
+        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_RXTSP)) == 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_NONE);
+            return 0;
+        }
+        else if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP)) != 0)
+        {
+            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_DC);
+            return 0;
+        }
+        else
+        {
+            *sig = static_cast<lms_testsig_t>(
+                lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP)) + 2 * lms->Get_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), true));
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    return lms ? lms->LoadConfig(filename) : -1;
+}
+
+API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    return lms ? lms->SaveConfig(filename) : -1;
+}
+
+API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
+{
+    if (handler != nullptr)
+    {
+        lime::registerLogHandler(APIMsgHandler);
+        api_msg_handler = handler;
+    }
+
+    lime::registerLogHandler(nullptr);
+}
+
+API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
+{
+    return lime::GetLastErrorMessage();
+}
 
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
@@ -1460,104 +1813,10 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
 // }
 
 // TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, float_type* freq)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     *freq = lms->GetClockFreq(clk_id);
-//     return *freq > 0 ? 0 : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, float_type freq)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->SetClockFreq(clk_id, freq) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t* dev, bool toChip)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     return lms ? lms->Synchronize(toChip) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t* dev, bool enable)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     return lms ? lms->EnableCache(enable) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
-// {
-//     *temp = 0;
-//     lime::LMS7_Device* lms = CheckDevice(dev);
-//     if (!lms)
-//         return -1;
-//     if (lms->ReadLMSReg(0x2F) == 0x3840)
-//     {
-//         lime::error("Feature is not available on this chip revision.");
-//         return -1;
-//     }
-//     *temp = lms->GetChipTemperature(ind);
-//     return 0;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t chan, float_type* bandwidth)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-//     *bandwidth = lms->GetLPFBW(dir_tx, chan);
-//     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     return lms ? lms->SetLPF(dir_tx, chan, enabled, -1) : -1;
-// }
-
-// TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
 // {
 //     lime::LMS7_Device* lms = CheckDevice(device, chan);
 //     return lms ? lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filename)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->LoadConfig(filename) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-
-//     return lms ? lms->SaveConfig(filename) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, size_t chan, lms_testsig_t* sig)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     int tmp = lms->GetTestSignal(dir_tx, chan);
-//     if (tmp < 0)
-//         return -1;
-
-//     *sig = (lms_testsig_t)tmp;
-//     return LMS_SUCCESS;
 // }
 
 // TODO: Implement with the new API
@@ -1797,13 +2056,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
 // }
 
 // TODO: Implement with the new API
-// API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->GetInfo() : nullptr;
-// }
-
-// TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* list)
 // {
 //     lime::LMS7_Device* lms = CheckDevice(device);
@@ -1814,8 +2066,7 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
 //     if (list != nullptr)
 //         for (size_t i = 0; i < names.size(); i++)
 //         {
-//             strncpy(list[i], names[i].c_str(), sizeof(lms_name_t) - 1);
-//             list[i][sizeof(lms_name_t) - 1] = 0;
+//             CopyString(names[i], list[i], sizeof(lms_name_t));
 //         }
 //     return names.size();
 // }
@@ -1830,38 +2081,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
 
 //     std::string prog_mode(mode);
 //     return lms->Program(prog_mode, data, size, callback);
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
-// {
-//     return lime::GetLastErrorMessage();
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT const char* LMS_GetLibraryVersion()
-// {
-//     static char libraryVersion[32];
-//     sprintf(libraryVersion, "%.31s", lime::GetLibraryVersion().c_str());
-//     return libraryVersion;
-// }
-
-// static LMS_LogHandler api_msg_handler;
-// static void APIMsgHandler(const lime::LogLevel level, const char* message)
-// {
-//     api_msg_handler(level, message);
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
-// {
-//     if (handler)
-//     {
-//         lime::registerLogHandler(APIMsgHandler);
-//         api_msg_handler = handler;
-//     }
-//     else
-//         lime::registerLogHandler(nullptr);
 // }
 
 // TODO: Implement with the new API
