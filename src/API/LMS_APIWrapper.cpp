@@ -2240,6 +2240,26 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool
     return status;
 }
 
+API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* list)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    auto memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
+    if (list != nullptr)
+    {
+        for (size_t i = 0; i < memoryDevices.size(); i++)
+        {
+            CopyString(memoryDevices[i].name, list[i], sizeof(lms_name_t));
+        }
+    }
+
+    return memoryDevices.size();
+}
+
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
@@ -2315,22 +2335,6 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* list)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-
-//     auto names = lms->GetProgramModes();
-//     if (list != nullptr)
-//         for (size_t i = 0; i < names.size(); i++)
-//         {
-//             CopyString(names[i], list[i], sizeof(lms_name_t));
-//         }
-//     return names.size();
 // }
 
 // TODO: Implement with the new API
