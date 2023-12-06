@@ -2014,7 +2014,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
     if (lms == nullptr)
     {
         lime::error("Device is not an LMS device.");
@@ -2051,7 +2051,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
     if (lms == nullptr)
     {
         lime::error("Device is not an LMS device.");
