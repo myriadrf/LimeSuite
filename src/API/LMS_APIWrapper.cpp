@@ -1939,6 +1939,38 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, 
     return lms->SetNCOPhaseOffsetForMode0(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, pho);
 }
 
+API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    if (freq != nullptr)
+    {
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+        {
+            freq[i] = std::fabs(lms->GetNCOFrequency(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, i));
+        }
+    }
+
+    if (pho != nullptr)
+    {
+        uint16_t value = lms->SPI_read(dir_tx ? 0x0241 : 0x0441);
+        *pho = 360.0 * value / 65536.0;
+    }
+
+    return 0;
+}
+
 API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size_t ch, const float_type* phase, float_type fcw)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device);
@@ -2227,25 +2259,6 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address,
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device, chan);
-//     if (!lms)
-//         return -1;
-
-//     if (freq != nullptr)
-//         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-//             freq[i] = std::fabs(lms->GetNCOFreq(dir_tx, chan, i));
-
-//     if (pho != nullptr)
-//     {
-//         uint16_t value = lms->ReadLMSReg(dir_tx ? 0x0241 : 0x0441, chan / 2);
-//         *pho = 360.0 * value / 65536.0;
-//     }
-//     return 0;
 // }
 
 // TODO: Implement with the new API
