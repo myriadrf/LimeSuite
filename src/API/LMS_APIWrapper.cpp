@@ -6,6 +6,7 @@
 #include "limesuite/LMS7002M_parameters.h"
 #include "limesuite/SDRDevice.h"
 #include "LMS7002M_SDRDevice.h"
+#include "LMSBoards.h"
 #include "Logger.h"
 #include "MemoryPool.h"
 #include "VersionInfo.h"
@@ -2254,7 +2255,7 @@ API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* l
         return -1;
     }
 
-    auto memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
+    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
     if (list != nullptr)
     {
         for (size_t i = 0; i < memoryDevices.size(); i++)
@@ -2276,9 +2277,9 @@ API_EXPORT int CALL_CONV LMS_Program(
     }
 
     std::string prog_mode{ mode };
-    auto memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
+    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
 
-    auto memoryDeviceIterator = std::find_if(memoryDevices.begin(),
+    const auto memoryDeviceIterator = std::find_if(memoryDevices.begin(),
         memoryDevices.end(),
         [prog_mode](const lime::SDRDevice::DataStorage& item) { return prog_mode == item.name; });
 
@@ -2293,79 +2294,91 @@ API_EXPORT int CALL_CONV LMS_Program(
     return apiDevice->device->UploadMemory(memoryDeviceIterator->id, data, size, ProgrammingCallback);
 }
 
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
-// {
-//     if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
-//         return -1;
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
 
-//     auto conn = CheckConnection(device);
-//     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-//     if (port) //can use LMS64C protocol to write eeprom value
-//     {
-//         lime::DeviceInfo dinfo = port->GetDeviceInfo();
-//         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
-//         {
-//             unsigned char packet[64] = {
-//                 0x8C, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1
-//             }; //packet: Flash write 2 btes, addr 16
-//             packet[32] = val & 0xFF; //values start at offset=32
-//             packet[33] = val >> 8;
+    if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "") < 0)
+    {
+        return -1;
+    }
 
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//         }
-//         else
-//         {
-//             unsigned char packet[64] = {
-//                 0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3
-//             }; //packet: eeprom write 2 btes, addr 16
-//             packet[32] = val & 0xFF; //values start at offset=32
-//             packet[33] = val >> 8;
+    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
+    const auto memoryDeviceIterator = std::find_if(
+        memoryDevices.begin(), memoryDevices.end(), [](const lime::SDRDevice::DataStorage& item) { return "EEPROM" == item.name; });
 
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//         }
-//     }
-//     return LMS_SUCCESS;
-// }
+    if (memoryDeviceIterator == memoryDevices.end())
+    {
+        lime::error("EEPROM not found.");
 
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
-// {
-//     auto conn = CheckConnection(device);
-//     if (!conn)
-//         return -1;
-//     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-//     if (port) //can use LMS64C protocol to read eeprom value
-//     {
-//         lime::DeviceInfo dinfo = port->GetDeviceInfo();
-//         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
-//         {
-//             unsigned char packet[64] = {
-//                 0x8D, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1
-//             }; //packet: eeprom read 2 bytes, addr 16
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//             *val = packet[32] | (packet[33] << 8); //values start at offset=32
-//         }
-//         else
-//         {
-//             unsigned char packet[64] = {
-//                 0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3
-//             }; //packet: eeprom read 2 bytes, addr 16
-//             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-//                 return -1;
-//             *val = packet[32] | (packet[33] << 8); //values start at offset=32
-//         }
-//     }
-//     else //fall back to reading runtime value
-//     {
-//         uint8_t id = BOARD_PARAM_DAC;
-//         double dval;
-//         if (conn->CustomParameterRead(&id, &dval, 1, nullptr) != LMS_SUCCESS)
-//             return -1;
-//         *val = dval;
-//     }
-//     return LMS_SUCCESS;
-// }
+        return -1;
+    }
+
+    const auto memoryRegionIterator = std::find_if(memoryDeviceIterator->map.begin(),
+        memoryDeviceIterator->map.end(),
+        [](const lime::SDRDevice::DataStorage::Region& item) { return "VCTCXO DAC (non-volatile)" == item.name; });
+
+    if (memoryRegionIterator == memoryDeviceIterator->map.end())
+    {
+        lime::error("VCTCXO address not found.");
+
+        return -1;
+    }
+
+    return apiDevice->device->MemoryWrite(
+        memoryDeviceIterator->id, memoryRegionIterator->address, &val, sizeof(uint16_t) / sizeof(uint8_t));
+}
+
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
+    const auto memoryDeviceIterator = std::find_if(
+        memoryDevices.begin(), memoryDevices.end(), [](const lime::SDRDevice::DataStorage& item) { return "EEPROM" == item.name; });
+
+    if (memoryDeviceIterator == memoryDevices.end())
+    {
+        lime::warning("EEPROM not found.");
+
+        std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
+
+        if (apiDevice->device->CustomParameterRead(parameters) != 0)
+        {
+            return -1;
+        }
+
+        *val = parameters.at(0).value;
+        return 0;
+    }
+
+    const auto memoryRegionIterator = std::find_if(memoryDeviceIterator->map.begin(),
+        memoryDeviceIterator->map.end(),
+        [](const lime::SDRDevice::DataStorage::Region& item) { return "VCTCXO DAC (non-volatile)" == item.name; });
+
+    if (memoryRegionIterator == memoryDeviceIterator->map.end())
+    {
+        lime::warning("VCTCXO address not found.");
+
+        std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
+
+        if (apiDevice->device->CustomParameterRead(parameters) != 0)
+        {
+            return -1;
+        }
+
+        *val = parameters.at(0).value;
+        return 0;
+    }
+
+    return apiDevice->device->MemoryRead(
+        memoryDeviceIterator->id, memoryRegionIterator->address, val, sizeof(uint16_t) / sizeof(uint8_t));
+}
