@@ -12,6 +12,7 @@
 
 #include "boards/LimeSDR_XTRX/LimeSDR_XTRX.h"
 #include "limesuite/DeviceNode.h"
+#include "limesuite/MemoryRegions.h"
 
 #include "math.h"
 
@@ -52,12 +53,10 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     desc.spiSlaveIds["FPGA"] = 0;
     desc.memoryDevices.push_back({ "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) });
 
-    DataStorage* eeprom = new DataStorage();
-    eeprom->name = "EEPROM";
-    eeprom->id = (int)eMemoryDevice::EEPROM;
-    DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
-    eeprom->map.push_back(vctcxoValue);
-    desc.memoryDevices.push_back(*eeprom);
+    DataStorage::Region vctcxoValue = { 16, 2 };
+    DataStorage eeprom = { "EEPROM", static_cast<uint32_t>(eMemoryDevice::EEPROM), { { eMemoryRegion::VCTCXO_DAC, vctcxoValue } } };
+
+    desc.memoryDevices.push_back(eeprom);
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i = 0; i < mSubDevices.size(); ++i)
@@ -90,11 +89,6 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
             storage->name = ctemp;
             storage->id = (static_cast<uint32_t>(i) + 1) << 8 | s.id;
             storage->map = s.map;
-            for (auto& region : storage->map)
-            {
-                sprintf(ctemp, "%s@%li", region.name.c_str(), i + 1);
-                region.name = ctemp;
-            }
             desc.memoryDevices.push_back(*storage);
             //desc.memoryDevices.push_back({ ctemp, (static_cast<uint32_t>(i) + 1) << 8 | s.id });
             memorySelectToDevice[(i + 1) << 8 | s.id] = mSubDevices[i];

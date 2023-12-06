@@ -14,6 +14,7 @@
 #include "limesuite/complex.h"
 #include "limesuite/DeviceNode.h"
 #include "limesuite/IComms.h"
+#include "limesuite/MemoryRegions.h"
 
 namespace lime {
 
@@ -53,13 +54,13 @@ class LIME_API SDRDevice
 
     struct DataStorage {
         struct Region {
-            std::string name;
             int32_t address;
             int32_t size;
         };
+
         std::string name;
         uint32_t id;
-        std::vector<Region> map;
+        std::unordered_map<eMemoryRegion, Region> map;
     };
 
     // General information about device internals, static capabilities

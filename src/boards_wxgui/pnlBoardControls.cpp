@@ -14,12 +14,13 @@
 #include "pnlX3.h"
 #include "pnlXTRX.h"
 
-#include <ADCUnits.h>
-#include <assert.h>
+#include "ADCUnits.h"
+#include <cassert>
 #include <wx/spinctrl.h>
 #include <vector>
 #include "lms7suiteEvents.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/MemoryRegions.h"
 
 using namespace std;
 using namespace lime;
@@ -556,12 +557,12 @@ void pnlBoardControls::SetupControls(const std::string& boardID)
             for (const auto& param : mem.map)
             {
                 MemoryParamGUI* gui = new MemoryParamGUI();
-                gui->title = new wxStaticText(pnlEEPROMControls, wxID_ANY, param.name.c_str());
+                gui->title = new wxStaticText(pnlEEPROMControls, wxID_ANY, lime::MEMORY_REGIONS_TEXT.at(param.first));
                 gui->txtValue = new wxTextCtrl(pnlEEPROMControls, wxNewId(), _("0"), wxDefaultPosition, wxDefaultSize);
                 gui->btnRead = new wxButton(pnlEEPROMControls, wxNewId(), _("Read"), wxDefaultPosition, wxDefaultSize);
                 gui->btnWrite = new wxButton(pnlEEPROMControls, wxNewId(), _("Write"), wxDefaultPosition, wxDefaultSize);
                 gui->id = mem.id;
-                gui->mem = param;
+                gui->mem = param.second;
 
                 UserDataContainer* userData = new UserDataContainer(gui); // gets deleted when Event handler is disconnected
                 gui->btnRead->Connect(gui->btnRead->GetId(),

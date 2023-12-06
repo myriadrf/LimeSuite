@@ -6,7 +6,6 @@
 #include "limesuite/LMS7002M_parameters.h"
 #include "limesuite/SDRDevice.h"
 #include "LMS7002M_SDRDevice.h"
-#include "LMSBoards.h"
 #include "Logger.h"
 #include "MemoryPool.h"
 #include "VersionInfo.h"
@@ -2318,19 +2317,20 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
         return -1;
     }
 
-    const auto memoryRegionIterator = std::find_if(memoryDeviceIterator->map.begin(),
-        memoryDeviceIterator->map.end(),
-        [](const lime::SDRDevice::DataStorage::Region& item) { return "VCTCXO DAC (non-volatile)" == item.name; });
+    try
+    {
+        const auto region = memoryDeviceIterator->map.at(lime::eMemoryRegion::VCTCXO_DAC);
 
-    if (memoryRegionIterator == memoryDeviceIterator->map.end())
+        return apiDevice->device->MemoryWrite(memoryDeviceIterator->id, region.address, &val, sizeof(uint16_t) / sizeof(uint8_t));
+    } catch (std::out_of_range& e)
     {
         lime::error("VCTCXO address not found.");
 
         return -1;
+    } catch (...)
+    {
+        return -1;
     }
-
-    return apiDevice->device->MemoryWrite(
-        memoryDeviceIterator->id, memoryRegionIterator->address, &val, sizeof(uint16_t) / sizeof(uint8_t));
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
@@ -2360,13 +2360,14 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
         return 0;
     }
 
-    const auto memoryRegionIterator = std::find_if(memoryDeviceIterator->map.begin(),
-        memoryDeviceIterator->map.end(),
-        [](const lime::SDRDevice::DataStorage::Region& item) { return "VCTCXO DAC (non-volatile)" == item.name; });
-
-    if (memoryRegionIterator == memoryDeviceIterator->map.end())
+    try
     {
-        lime::warning("VCTCXO address not found.");
+        const auto region = memoryDeviceIterator->map.at(lime::eMemoryRegion::VCTCXO_DAC);
+
+        return apiDevice->device->MemoryRead(memoryDeviceIterator->id, region.address, val, sizeof(uint16_t) / sizeof(uint8_t));
+    } catch (std::out_of_range& e)
+    {
+        lime::error("VCTCXO address not found.");
 
         std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
 
@@ -2377,8 +2378,8 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
 
         *val = parameters.at(0).value;
         return 0;
+    } catch (...)
+    {
+        return -1;
     }
-
-    return apiDevice->device->MemoryRead(
-        memoryDeviceIterator->id, memoryRegionIterator->address, val, sizeof(uint16_t) / sizeof(uint8_t));
 }
