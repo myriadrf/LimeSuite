@@ -179,6 +179,12 @@ static void APIMsgHandler(const lime::LogLevel level, const char* message)
     api_msg_handler(static_cast<int>(level), message);
 }
 
+static lms_prog_callback_t programmingCallback;
+static bool ProgrammingCallback(size_t bsent, size_t btotal, const char* statusMessage)
+{
+    return programmingCallback(static_cast<int>(bsent), static_cast<int>(btotal), statusMessage);
+}
+
 } //unnamed namespace
 
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t* dev_list)
@@ -2260,6 +2266,33 @@ API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* l
     return memoryDevices.size();
 }
 
+API_EXPORT int CALL_CONV LMS_Program(
+    lms_device_t* device, const char* data, size_t size, const lms_name_t mode, lms_prog_callback_t callback)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    std::string prog_mode{ mode };
+    auto memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
+
+    auto memoryDeviceIterator = std::find_if(memoryDevices.begin(),
+        memoryDevices.end(),
+        [prog_mode](const lime::SDRDevice::DataStorage& item) { return prog_mode == item.name; });
+
+    if (memoryDeviceIterator == memoryDevices.end())
+    {
+        lime::error("Mode not found.");
+
+        return -1;
+    }
+
+    programmingCallback = callback;
+    return apiDevice->device->UploadMemory(memoryDeviceIterator->id, data, size, ProgrammingCallback);
+}
+
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
@@ -2335,18 +2368,6 @@ API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* l
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_Program(
-//     lms_device_t* device, const char* data, size_t size, const lms_name_t mode, lms_prog_callback_t callback)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-
-//     std::string prog_mode(mode);
-//     return lms->Program(prog_mode, data, size, callback);
 // }
 
 // TODO: Implement with the new API
