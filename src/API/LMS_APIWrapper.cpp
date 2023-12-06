@@ -2184,6 +2184,62 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address,
     return LMS_SUCCESS;
 }
 
+API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** samples, uint8_t chCount, size_t sample_count, int format)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    auto config = apiDevice->lastSavedStreamConfig;
+
+    lime::SDRDevice::StreamConfig::DataFormat dataFormat;
+    switch (format)
+    {
+    case 0:
+        dataFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
+        break;
+    case 1:
+        dataFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
+        break;
+    case 2:
+        dataFormat = lime::SDRDevice::StreamConfig::DataFormat::F32;
+        break;
+    default:
+        dataFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
+        break;
+    }
+
+    config.txCount = chCount;
+    config.format = dataFormat;
+
+    return apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
+}
+
+API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
+{
+    uint16_t regAddr = 0x000D;
+    uint16_t regValue = 0;
+
+    int status = LMS_WriteFPGAReg(device, 0xFFFF, 1 << (ch / 2));
+    if (status != 0)
+    {
+        return status;
+    }
+
+    status = LMS_ReadFPGAReg(device, regAddr, &regValue);
+    if (status != 0)
+    {
+        return status;
+    }
+
+    regValue = regValue & ~0x6; //clear WFM_LOAD, WFM_PLAY
+    regValue |= active << 1;
+    status = LMS_WriteFPGAReg(device, regAddr, regValue);
+    return status;
+}
+
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
@@ -2259,47 +2315,6 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address,
 //         *val = dval;
 //     }
 //     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** samples, uint8_t chCount, size_t sample_count, int format)
-// {
-//     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
-//     lime::StreamConfig::StreamDataFormat fmt;
-//     switch (format)
-//     {
-//     case 0:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
-//         break;
-//     case 1:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT16;
-//         break;
-//     case 2:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_FLOAT32;
-//         break;
-//     default:
-//         fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
-//         break;
-//     }
-//     return lms->UploadWFM(samples, chCount, sample_count, fmt);
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
-// {
-//     uint16_t regAddr = 0x000D;
-//     uint16_t regValue = 0;
-//     int status = 0;
-//     status = LMS_WriteFPGAReg(device, 0xFFFF, 1 << (ch / 2));
-//     if (status != 0)
-//         return status;
-//     status = LMS_ReadFPGAReg(device, regAddr, &regValue);
-//     if (status != 0)
-//         return status;
-//     regValue = regValue & ~0x6; //clear WFM_LOAD, WFM_PLAY
-//     regValue |= active << 1;
-//     status = LMS_WriteFPGAReg(device, regAddr, regValue);
-//     return status;
 // }
 
 // TODO: Implement with the new API
