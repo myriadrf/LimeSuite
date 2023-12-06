@@ -1393,7 +1393,12 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
     }
 
     std::vector<lime::CustomParameterIO> parameter{ { param_id, *val, units } };
-    apiDevice->device->CustomParameterRead(parameter);
+    int returnValue = apiDevice->device->CustomParameterRead(parameter);
+
+    if (returnValue < 0)
+    {
+        return -1;
+    }
 
     *val = parameter[0].value;
     if (units != nullptr)
@@ -1401,7 +1406,7 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
         CopyString(parameter[0].units, units, sizeof(lms_name_t));
     }
 
-    return 0;
+    return returnValue;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
@@ -1413,9 +1418,8 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t
     }
 
     std::vector<lime::CustomParameterIO> parameter{ { param_id, val, units } };
-    apiDevice->device->CustomParameterWrite(parameter);
 
-    return 0;
+    return apiDevice->device->CustomParameterWrite(parameter);
 }
 
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
