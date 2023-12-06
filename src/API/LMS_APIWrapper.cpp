@@ -2067,6 +2067,91 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size
     return lms->Get_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
 }
 
+API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address, uint16_t val)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    return lms->SPI_write(address, val);
+}
+
+API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, uint16_t* val)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        return -1;
+    }
+
+    *val = lms->SPI_read(address);
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address, uint16_t val)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M_SDRDevice* sdrDevice = dynamic_cast<lime::LMS7002M_SDRDevice*>(apiDevice->device);
+    if (sdrDevice == nullptr)
+    {
+        lime::error("Device is not an LMS SDR device.");
+        return -1;
+    }
+
+    return sdrDevice->WriteFPGARegister(address, val);
+}
+
+API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address, uint16_t* val)
+{
+    LMS_APIDevice* apiDevice = CheckDevice(device);
+    if (apiDevice == nullptr)
+    {
+        return -1;
+    }
+
+    lime::LMS7002M_SDRDevice* sdrDevice = dynamic_cast<lime::LMS7002M_SDRDevice*>(apiDevice->device);
+    if (sdrDevice == nullptr)
+    {
+        lime::error("Device is not an LMS SDR device.");
+        return -1;
+    }
+
+    int value = sdrDevice->ReadFPGARegister(address);
+
+    if (value < 0)
+    {
+        return value; // operation failed return error code
+    }
+
+    if (val != nullptr)
+    {
+        *val = value;
+    }
+
+    return LMS_SUCCESS;
+}
+
 // TODO: Implement with the new API
 // API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
 // {
@@ -2161,44 +2246,6 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size
 //         *pho = 360.0 * value / 65536.0;
 //     }
 //     return 0;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, uint16_t* val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     *val = lms->ReadLMSReg(address);
-//     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address, uint16_t val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->WriteLMSReg(address, val) : -1;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address, uint16_t* val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     if (!lms)
-//         return -1;
-//     int value = lms->ReadFPGAReg(address);
-//     if (value < 0)
-//         return value; // operation failed return error code
-//     else if (val)
-//         *val = value;
-//     return LMS_SUCCESS;
-// }
-
-// TODO: Implement with the new API
-// API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address, uint16_t val)
-// {
-//     lime::LMS7_Device* lms = CheckDevice(device);
-//     return lms ? lms->WriteFPGAReg(address, val) : -1;
 // }
 
 // TODO: Implement with the new API

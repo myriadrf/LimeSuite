@@ -49,9 +49,6 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
-    virtual int ReadFPGARegister(uint32_t address);
-    virtual int WriteFPGARegister(uint32_t address, uint32_t value);
-
   protected:
     void SetSampleRate(double f_Hz, uint8_t oversample);
     SDRDevice::Descriptor GetDeviceInfo();
