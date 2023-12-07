@@ -52,8 +52,11 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
 
-    desc.memoryDevices = { { eMemoryDevice::FPGA_FLASH, { {} } },
-        { eMemoryDevice::EEPROM, { { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } } } } };
+    MemoryRegions_t eeprom;
+    eeprom[eMemoryRegion::VCTCXO_DAC] = { 16, 2 };
+
+    desc.memoryDevices[eMemoryDevice::FPGA_FLASH] = { {} };
+    desc.memoryDevices[eMemoryDevice::EEPROM] = { eeprom };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i = 0; i < mSubDevices.size(); ++i)

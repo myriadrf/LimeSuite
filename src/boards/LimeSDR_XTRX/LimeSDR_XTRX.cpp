@@ -120,11 +120,12 @@ LimeSDR_XTRX::LimeSDR_XTRX(
 
     desc.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
-    desc.memoryDevices = {
-        //{ eMemoryDevice::FPGA_RAM, { {} } },
-        { eMemoryDevice::FPGA_FLASH, { {} } },
-        { eMemoryDevice::EEPROM, { { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } } } },
-    };
+    MemoryRegions_t eeprom;
+    eeprom[eMemoryRegion::VCTCXO_DAC] = { 16, 2 };
+
+    // desc.memoryDevices[eMemoryDevice::FPGA_RAM] = { {} };
+    desc.memoryDevices[eMemoryDevice::FPGA_FLASH] = { {} };
+    desc.memoryDevices[eMemoryDevice::EEPROM] = { eeprom };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
 
