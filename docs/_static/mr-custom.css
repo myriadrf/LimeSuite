@@ -35,15 +35,15 @@ div.rst-other-versions dl {
    margin-bottom: 0;
 }
 
-
 /* bold the level1 headings in on-page toctree displays */
-.rst-content  .toctree-l1 > a {
-  font-weight: bold;
+.rst-content .toctree-l1>a {
+   font-weight: bold;
+}
 
 /* add some space before the figure caption */
-p.caption  {
-#    border-top: 1px solid;
-    margin-top: 1em;
+p.caption {
+   border-top: 1px solid;
+   margin-top: 1em;
 }
 
 table.align-center {
