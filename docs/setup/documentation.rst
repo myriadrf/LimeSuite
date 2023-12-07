@@ -22,7 +22,7 @@ To set up the environment for the documentation generation, you will need to set
 To set up the environment, run these commands:
 
 .. note::
-    It is recommended to run them in the `docs` folder.
+    One should run these commands in the `docs` folder.
 
 .. code-block:: bash
 
@@ -50,6 +50,27 @@ For ease of convenience, there is also a `generate_docs.sh` script located in th
 After a successful generation the resulting documentation pages will be located in 
 `docs/_build/html` folder.
 
+Docker
+------
+
+There also exists a Docker file to generate the documentation.
+
+Docker prerequisites
+^^^^^^^^^^^^^^^^^^^^
+
+In order to use the Docker documentation generation file, you will need to have the `Docker Engine`_ installed and set up.
+
+Running the Docker documentation generation file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To generate this documentation using Docker, in the root folder of the repository run:
+
+.. code-block:: bash
+
+    docker build -o <output_location> -f GenerateDocumentation.Dockerfile .
+
+This will run the whole documentation generation script and place the generated HTML in the specified folder.
+
 More information
 ----------------
 
@@ -62,3 +83,4 @@ check out the `MyriadRF Handbook`_.
 .. _`Doxygen`: https://www.doxygen.nl/
 .. _`Python virtual environment (venv)`: https://docs.python.org/3.8/library/venv.html
 .. _`MyriadRF Handbook`: https://handbook.myriadrf.org/
+.. _`Docker Engine`: https://docs.docker.com/engine/
