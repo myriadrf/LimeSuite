@@ -43,7 +43,7 @@ void PrintDeviceDetails(SDRDevice* device)
         cout << "\t\t\t\t  " << nameIds.first.c_str() << endl;
     cout << "\t"
          << "Memory devices\t\t:" << endl;
-    for (const SDRDevice::DataStorage& mem : d.memoryDevices)
+    for (const auto& mem : d.ListMemoryDevices())
         cout << "\t\t\t\t  " << mem.name << endl;
     cout << "\t"
          << "GPS Lock:" << endl;

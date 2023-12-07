@@ -173,6 +173,22 @@ inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
     return config.channel[chan].rx.gain;
 }
 
+inline lime::SDRDevice::MemoryDeviceSelect InputToMemoryDevice(std::string input)
+{
+    auto device = lime::SDRDevice::MemoryDeviceSelect();
+    auto at = input.find_last_of(lime::SDRDevice::Descriptor::SEPARATOR_SYMBOL);
+
+    if (at == std::string::npos)
+    {
+        return { lime::STRING_TO_MEMORY_DEVICES.at(input), 0 };
+    }
+
+    device.memoryDevice = lime::STRING_TO_MEMORY_DEVICES.at(input.substr(0, at));
+    device.subdevice = std::stoi(input.substr(at + 1));
+
+    return device;
+}
+
 static LMS_LogHandler api_msg_handler;
 static void APIMsgHandler(const lime::LogLevel level, const char* message)
 {
@@ -2257,9 +2273,23 @@ API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t* device, lms_name_t* l
     const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
     if (list != nullptr)
     {
-        for (size_t i = 0; i < memoryDevices.size(); i++)
+        std::size_t index = 0;
+
+        for (const auto& memoryDevice : memoryDevices)
         {
-            CopyString(memoryDevices[i].name, list[i], sizeof(lms_name_t));
+            std::string deviceText = lime::MEMORY_DEVICES_TEXT.at(memoryDevice.first);
+
+            for (std::size_t i = 0; i < memoryDevice.second.size(); i++)
+            {
+                std::string postfix = "";
+
+                if (i > 0)
+                {
+                    postfix = lime::SDRDevice::Descriptor::SEPARATOR_SYMBOL + std::to_string(i);
+                }
+
+                CopyString(deviceText + postfix, list[index++], sizeof(lms_name_t));
+            }
         }
     }
 
@@ -2276,21 +2306,20 @@ API_EXPORT int CALL_CONV LMS_Program(
     }
 
     std::string prog_mode{ mode };
-    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
 
-    const auto memoryDeviceIterator = std::find_if(memoryDevices.begin(),
-        memoryDevices.end(),
-        [prog_mode](const lime::SDRDevice::DataStorage& item) { return prog_mode == item.name; });
+    try
+    {
+        programmingCallback = callback;
 
-    if (memoryDeviceIterator == memoryDevices.end())
+        auto memoryDevice = InputToMemoryDevice(prog_mode);
+        return apiDevice->device->UploadMemory(memoryDevice.memoryDevice, memoryDevice.subdevice, data, size, ProgrammingCallback);
+
+    } catch (std::out_of_range& e)
     {
         lime::error("Mode not found.");
 
         return -1;
     }
-
-    programmingCallback = callback;
-    return apiDevice->device->UploadMemory(memoryDeviceIterator->id, data, size, ProgrammingCallback);
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
@@ -2306,25 +2335,25 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
         return -1;
     }
 
-    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
-    const auto memoryDeviceIterator = std::find_if(
-        memoryDevices.begin(), memoryDevices.end(), [](const lime::SDRDevice::DataStorage& item) { return "EEPROM" == item.name; });
-
-    if (memoryDeviceIterator == memoryDevices.end())
-    {
-        lime::error("EEPROM not found.");
-
-        return -1;
-    }
-
+    auto memoryDevice = lime::eMemoryDevice::EEPROM;
     try
     {
-        const auto region = memoryDeviceIterator->map.at(lime::eMemoryRegion::VCTCXO_DAC);
+        const auto& memorySubdevices = apiDevice->device->GetDescriptor().memoryDevices.at(memoryDevice);
+        try
+        {
+            const auto region = memorySubdevices.at(apiDevice->moduleIndex).at(lime::eMemoryRegion::VCTCXO_DAC);
 
-        return apiDevice->device->MemoryWrite(memoryDeviceIterator->id, region.address, &val, sizeof(uint16_t) / sizeof(uint8_t));
+            return apiDevice->device->MemoryWrite(
+                memoryDevice, apiDevice->moduleIndex, region.address, &val, sizeof(uint16_t) / sizeof(uint8_t));
+        } catch (std::out_of_range& e)
+        {
+            lime::error("VCTCXO address not found.");
+
+            return -1;
+        }
     } catch (std::out_of_range& e)
     {
-        lime::error("VCTCXO address not found.");
+        lime::error("EEPROM not found.");
 
         return -1;
     } catch (...)
@@ -2341,33 +2370,34 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
         return -1;
     }
 
-    const auto& memoryDevices = apiDevice->device->GetDescriptor().memoryDevices;
-    const auto memoryDeviceIterator = std::find_if(
-        memoryDevices.begin(), memoryDevices.end(), [](const lime::SDRDevice::DataStorage& item) { return "EEPROM" == item.name; });
-
-    if (memoryDeviceIterator == memoryDevices.end())
-    {
-        lime::warning("EEPROM not found.");
-
-        std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
-
-        if (apiDevice->device->CustomParameterRead(parameters) != 0)
-        {
-            return -1;
-        }
-
-        *val = parameters.at(0).value;
-        return 0;
-    }
-
+    auto memoryDevice = lime::eMemoryDevice::EEPROM;
     try
     {
-        const auto region = memoryDeviceIterator->map.at(lime::eMemoryRegion::VCTCXO_DAC);
+        const auto& memorySubdevices = apiDevice->device->GetDescriptor().memoryDevices.at(memoryDevice);
 
-        return apiDevice->device->MemoryRead(memoryDeviceIterator->id, region.address, val, sizeof(uint16_t) / sizeof(uint8_t));
+        try
+        {
+            const auto& region = memorySubdevices.at(apiDevice->moduleIndex).at(lime::eMemoryRegion::VCTCXO_DAC);
+
+            return apiDevice->device->MemoryRead(
+                memoryDevice, apiDevice->moduleIndex, region.address, val, sizeof(uint16_t) / sizeof(uint8_t));
+        } catch (std::out_of_range& e)
+        {
+            lime::error("VCTCXO address not found.");
+
+            std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
+
+            if (apiDevice->device->CustomParameterRead(parameters) != 0)
+            {
+                return -1;
+            }
+
+            *val = parameters.at(0).value;
+            return 0;
+        }
     } catch (std::out_of_range& e)
     {
-        lime::error("VCTCXO address not found.");
+        lime::warning("EEPROM not found.");
 
         std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
 

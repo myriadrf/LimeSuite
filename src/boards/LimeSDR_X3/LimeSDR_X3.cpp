@@ -176,10 +176,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
         { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
-    DataStorage::Region vctcxoValue = { 16, 2 };
-    DataStorage eeprom{ "EEPROM", static_cast<uint32_t>(eMemoryDevice::EEPROM), { { eMemoryRegion::VCTCXO_DAC, vctcxoValue } } };
-
-    desc.memoryDevices = { { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) }, eeprom };
+    desc.memoryDevices = { { eMemoryDevice::FPGA_FLASH, { {} } },
+        { eMemoryDevice::EEPROM, { { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } } } } };
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
@@ -1210,31 +1208,44 @@ int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
     return mfpgaPort->CustomParameterRead(parameters);
 }
 
-bool LimeSDR_X3::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
+bool LimeSDR_X3::UploadMemory(
+    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
     int progMode;
-    LMS64CProtocol::ProgramWriteTarget target;
-    target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_RAM))
+    LMS64CProtocol::ProgramWriteTarget target = LMS64CProtocol::ProgramWriteTarget::FPGA;
+
+    switch (device)
+    {
+    case eMemoryDevice::FPGA_RAM:
         progMode = 0;
-    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH))
+        break;
+    case eMemoryDevice::FPGA_FLASH:
         progMode = 1;
-    else
+        break;
+    default:
         return false;
+    }
+
     return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_X3::MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len)
+int LimeSDR_X3::MemoryWrite(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, const void* data, size_t len)
 {
-    if (id != (int)eMemoryDevice::EEPROM)
+    if (device != eMemoryDevice::EEPROM)
+    {
         return -1;
+    }
+
     return mfpgaPort->MemoryWrite(address, data, len);
 }
 
-int LimeSDR_X3::MemoryRead(uint32_t id, uint32_t address, void* data, size_t len)
+int LimeSDR_X3::MemoryRead(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, void* data, size_t len)
 {
-    if (id != (int)eMemoryDevice::EEPROM)
+    if (device != eMemoryDevice::EEPROM)
+    {
         return -1;
+    }
+
     return mfpgaPort->MemoryRead(address, data, len);
 }
 

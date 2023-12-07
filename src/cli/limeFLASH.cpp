@@ -16,32 +16,77 @@ void inthandler(int sig)
     terminateProgress = true;
 }
 
-static int32_t FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
+struct MemoryDeviceSelect {
+    lime::eMemoryDevice memoryDevice;
+    uint32_t subdevice;
+};
+
+inline MemoryDeviceSelect InputToMemoryDevice(std::string input)
+{
+    auto device = MemoryDeviceSelect();
+    auto at = input.find_last_of('@');
+
+    if (at == std::string::npos)
+    {
+        return { lime::STRING_TO_MEMORY_DEVICES.at(input), 0 };
+    }
+
+    device.memoryDevice = lime::STRING_TO_MEMORY_DEVICES.at(input.substr(0, at));
+    device.subdevice = std::stoi(input.substr(at + 1));
+
+    return device;
+}
+
+static MemoryDeviceSelect FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
 {
     if (!device)
-        return -1;
-    const auto memoryDevices = device->GetDescriptor().memoryDevices;
+    {
+        return { lime::eMemoryDevice::COUNT, 0 };
+    }
+
+    const auto descriptor = device->GetDescriptor();
+    const auto memoryDevices = descriptor.memoryDevices;
     if (!targetName)
     {
         // if name is not specified, but only single choice is available, use that.
         if (memoryDevices.size() == 1)
-            return memoryDevices.front().id;
+        {
+            auto memoryDevicesEntry = memoryDevices.begin();
+
+            if (memoryDevicesEntry->second.size() <= 1)
+            {
+                return { memoryDevicesEntry->first, 0 };
+            }
+        }
+
         cerr << "specify memory device target, -t, --target :" << endl;
-        for (const SDRDevice::DataStorage& mem : memoryDevices)
-            cerr << "\t" << mem.name << endl;
-        return -1;
+        for (const auto& memoryDevice : descriptor.ListMemoryDevices())
+        {
+            cerr << '\t' << memoryDevice.name << endl;
+        }
+
+        return { lime::eMemoryDevice::COUNT, 0 };
     }
 
-    for (const SDRDevice::DataStorage& mem : memoryDevices)
+    auto memoryDevice = InputToMemoryDevice(targetName);
+
+    try
     {
-        if (mem.name == std::string(targetName))
-            return mem.id;
+        auto regions = memoryDevices.at(memoryDevice.memoryDevice).at(memoryDevice.subdevice);
+
+        return { memoryDevice.memoryDevice, memoryDevice.subdevice };
+    } catch (const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
     }
 
     cerr << "Device does not contain target device (" << targetName << "). Available list:" << endl;
-    for (const SDRDevice::DataStorage& mem : memoryDevices)
-        cerr << "\t" << mem.name << endl;
-    return -1;
+    for (const auto& memoryDevice : descriptor.ListMemoryDevices())
+    {
+        cerr << '\t' << memoryDevice.name << endl;
+    }
+
+    return { lime::eMemoryDevice::COUNT, 0 };
 }
 
 static auto lastProgressUpdate = std::chrono::steady_clock::now();
@@ -169,8 +214,8 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    int32_t memorySelect = FindMemoryDeviceByName(device, targetName);
-    if (memorySelect < 0)
+    auto memorySelect = FindMemoryDeviceByName(device, targetName);
+    if (memorySelect.memoryDevice == eMemoryDevice::COUNT)
     {
         DeviceRegistry::freeDevice(device);
         return EXIT_FAILURE;
@@ -193,8 +238,8 @@ int main(int argc, char** argv)
     inputFile.read(data.data(), cnt);
     inputFile.close();
 
-    cerr << "Memory device id : " << memorySelect << endl;
-    if (device->UploadMemory(memorySelect, data.data(), data.size(), progressCallBack) != 0)
+    cerr << "Memory device id: " << static_cast<int>(memorySelect.memoryDevice) << '.' << memorySelect.subdevice << endl;
+    if (device->UploadMemory(memorySelect.memoryDevice, memorySelect.subdevice, data.data(), data.size(), progressCallBack) != 0)
     {
         DeviceRegistry::freeDevice(device);
         cout << "Device programming failed." << endl;

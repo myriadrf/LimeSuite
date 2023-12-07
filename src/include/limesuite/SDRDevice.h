@@ -14,6 +14,7 @@
 #include "limesuite/complex.h"
 #include "limesuite/DeviceNode.h"
 #include "limesuite/IComms.h"
+#include "limesuite/MemoryDevices.h"
 #include "limesuite/MemoryRegions.h"
 
 namespace lime {
@@ -52,15 +53,21 @@ class LIME_API SDRDevice
         bool readOnly;
     };
 
-    struct DataStorage {
-        struct Region {
-            int32_t address;
-            int32_t size;
-        };
+    struct Region {
+        int32_t address;
+        int32_t size;
+    };
 
+    typedef std::unordered_map<eMemoryRegion, Region> MemoryRegions_t;
+
+    struct MemoryDeviceSelect {
+        eMemoryDevice memoryDevice;
+        uint32_t subdevice;
+    };
+
+    struct MemoryDeviceListEntry {
+        MemoryDeviceSelect information;
         std::string name;
-        uint32_t id;
-        std::unordered_map<eMemoryRegion, Region> map;
     };
 
     // General information about device internals, static capabilities
@@ -81,8 +88,11 @@ class LIME_API SDRDevice
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
-        std::vector<DataStorage> memoryDevices;
+        std::map<eMemoryDevice, std::vector<MemoryRegions_t>> memoryDevices;
         std::shared_ptr<DeviceNode> socTree;
+
+        static const char SEPARATOR_SYMBOL = '@';
+        std::vector<MemoryDeviceListEntry> ListMemoryDevices() const;
     };
 
     struct StreamStats {
@@ -295,10 +305,17 @@ class LIME_API SDRDevice
     virtual void* GetInternalChip(uint32_t index) { return nullptr; };
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
-    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) { return -1; };
+    virtual bool UploadMemory(
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+    {
+        return -1;
+    };
 
-    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) { return -1; };
-    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) { return -1; };
+    virtual int MemoryWrite(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, const void* data, size_t len)
+    {
+        return -1;
+    };
+    virtual int MemoryRead(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, void* data, size_t len) { return -1; };
 };
 
 } // namespace lime

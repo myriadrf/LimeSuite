@@ -71,8 +71,8 @@ class pnlBoardControls : public IModuleFrame
         wxTextCtrl* txtValue;
         wxButton* btnRead;
         wxButton* btnWrite;
-        int32_t id;
-        lime::SDRDevice::DataStorage::Region mem;
+        lime::SDRDevice::MemoryDeviceSelect memoryDevice;
+        lime::SDRDevice::Region memoryRegion;
     };
 
     class Param_GUI

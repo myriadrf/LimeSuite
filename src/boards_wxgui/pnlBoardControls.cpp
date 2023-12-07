@@ -420,8 +420,9 @@ void pnlBoardControls::OnMemoryWrite(wxCommandEvent& event)
     MemoryParamGUI* gui = static_cast<MemoryParamGUI*>(ud->ptr);
     long val = 0;
     gui->txtValue->GetValue().ToLong(&val);
-    assert(size_t(gui->mem.size) <= sizeof(val));
-    int rez = mDevice->MemoryWrite(gui->id, gui->mem.address, &val, gui->mem.size);
+    assert(size_t(gui->memoryRegion.size) <= sizeof(val));
+    int rez = mDevice->MemoryWrite(
+        gui->memoryDevice.memoryDevice, gui->memoryDevice.subdevice, gui->memoryRegion.address, &val, gui->memoryRegion.size);
     if (rez != 0)
         wxMessageBox(_("Memory write failed"), _("Error"));
 }
@@ -429,8 +430,9 @@ void pnlBoardControls::OnMemoryWrite(wxCommandEvent& event)
 int pnlBoardControls::ReadMemory(MemoryParamGUI* gui)
 {
     long val = 0;
-    assert(sizeof(val) >= size_t(gui->mem.size));
-    int rez = mDevice->MemoryRead(gui->id, gui->mem.address, &val, gui->mem.size);
+    assert(sizeof(val) >= size_t(gui->memoryRegion.size));
+    int rez = mDevice->MemoryRead(
+        gui->memoryDevice.memoryDevice, gui->memoryDevice.subdevice, gui->memoryRegion.address, &val, gui->memoryRegion.size);
     if (rez == 0)
         gui->txtValue->SetValue(wxString::Format("%li", val));
     return rez;
@@ -554,36 +556,40 @@ void pnlBoardControls::SetupControls(const std::string& boardID)
         lime::SDRDevice::Descriptor desc = mDevice->GetDescriptor();
         for (const auto& mem : desc.memoryDevices)
         {
-            for (const auto& param : mem.map)
+            for (std::size_t i = 0; i < mem.second.size(); ++i)
             {
-                MemoryParamGUI* gui = new MemoryParamGUI();
-                gui->title = new wxStaticText(pnlEEPROMControls, wxID_ANY, lime::MEMORY_REGIONS_TEXT.at(param.first));
-                gui->txtValue = new wxTextCtrl(pnlEEPROMControls, wxNewId(), _("0"), wxDefaultPosition, wxDefaultSize);
-                gui->btnRead = new wxButton(pnlEEPROMControls, wxNewId(), _("Read"), wxDefaultPosition, wxDefaultSize);
-                gui->btnWrite = new wxButton(pnlEEPROMControls, wxNewId(), _("Write"), wxDefaultPosition, wxDefaultSize);
-                gui->id = mem.id;
-                gui->mem = param.second;
+                const auto& param = mem.second.at(i);
+                for (const auto& region : param)
+                {
+                    MemoryParamGUI* gui = new MemoryParamGUI();
+                    gui->title = new wxStaticText(pnlEEPROMControls, wxID_ANY, lime::MEMORY_REGIONS_TEXT.at(region.first));
+                    gui->txtValue = new wxTextCtrl(pnlEEPROMControls, wxNewId(), _("0"), wxDefaultPosition, wxDefaultSize);
+                    gui->btnRead = new wxButton(pnlEEPROMControls, wxNewId(), _("Read"), wxDefaultPosition, wxDefaultSize);
+                    gui->btnWrite = new wxButton(pnlEEPROMControls, wxNewId(), _("Write"), wxDefaultPosition, wxDefaultSize);
+                    gui->memoryDevice = { mem.first, static_cast<uint32_t>(i) };
+                    gui->memoryRegion = region.second;
 
-                UserDataContainer* userData = new UserDataContainer(gui); // gets deleted when Event handler is disconnected
-                gui->btnRead->Connect(gui->btnRead->GetId(),
-                    wxEVT_COMMAND_BUTTON_CLICKED,
-                    wxCommandEventHandler(pnlBoardControls::OnMemoryRead),
-                    userData,
-                    this);
-                userData = new UserDataContainer(gui); // gets deleted when Event handler is disconnected
-                gui->btnWrite->Connect(gui->btnWrite->GetId(),
-                    wxEVT_COMMAND_BUTTON_CLICKED,
-                    wxCommandEventHandler(pnlBoardControls::OnMemoryWrite),
-                    userData,
-                    this);
-                mMemoryGUI_widgets.push_back(gui);
+                    UserDataContainer* userData = new UserDataContainer(gui); // gets deleted when Event handler is disconnected
+                    gui->btnRead->Connect(gui->btnRead->GetId(),
+                        wxEVT_COMMAND_BUTTON_CLICKED,
+                        wxCommandEventHandler(pnlBoardControls::OnMemoryRead),
+                        userData,
+                        this);
+                    userData = new UserDataContainer(gui); // gets deleted when Event handler is disconnected
+                    gui->btnWrite->Connect(gui->btnWrite->GetId(),
+                        wxEVT_COMMAND_BUTTON_CLICKED,
+                        wxCommandEventHandler(pnlBoardControls::OnMemoryWrite),
+                        userData,
+                        this);
+                    mMemoryGUI_widgets.push_back(gui);
 
-                EEPROMsizer->Add(gui->title, 1, wxALIGN_CENTER_VERTICAL, 5);
-                EEPROMsizer->Add(gui->txtValue, 1, wxALIGN_CENTER_VERTICAL, 5);
-                EEPROMsizer->Add(gui->btnRead, 1, wxALIGN_CENTER_VERTICAL, 5);
-                EEPROMsizer->Add(gui->btnWrite, 1, wxALIGN_CENTER_VERTICAL, 5);
-                EEPROMsizer->Layout();
-                pnlEEPROMControls->Show();
+                    EEPROMsizer->Add(gui->title, 1, wxALIGN_CENTER_VERTICAL, 5);
+                    EEPROMsizer->Add(gui->txtValue, 1, wxALIGN_CENTER_VERTICAL, 5);
+                    EEPROMsizer->Add(gui->btnRead, 1, wxALIGN_CENTER_VERTICAL, 5);
+                    EEPROMsizer->Add(gui->btnWrite, 1, wxALIGN_CENTER_VERTICAL, 5);
+                    EEPROMsizer->Layout();
+                    pnlEEPROMControls->Show();
+                }
             }
         }
     }
