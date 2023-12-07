@@ -7,3 +7,4 @@ mcu_program/*.plg
 mcu_program/*.uvopt
 mcu_program/*.uvproj
 docs/LMS_API_Documentation/*
+.vscode/
