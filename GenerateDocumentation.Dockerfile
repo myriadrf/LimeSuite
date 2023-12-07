@@ -34,7 +34,7 @@ RUN breathe-apidoc --generate class --members --force --output-dir docs/apidoc b
 
 WORKDIR /documentation/docs
 
-RUN make html
+RUN make -j$(nproc) html
 
 FROM scratch AS export-stage
 COPY --from=build-stage /documentation/docs/_build/html /
