@@ -22,11 +22,6 @@ WORKDIR /documentation
 
 RUN apt update && \
     apt-get install -y --no-install-recommends \
-        libwxbase3.2-1 \
-        libwxgtk3.2-1 \
-        libwxgtk3.2-dev \
-        wx-common \
-        wx3.2-headers \
         cmake \
         libusb-1.0-0-dev \
     && \
