@@ -30,6 +30,7 @@ if [[ $1 == "rebuild" ]]; then
     cmake -S .. -B ../build
     make --no-print-directory -C ../build doc
     breathe-apidoc --generate class --members --force --output-dir apidoc ../build/xml/
+    python add_undoc_members.py
 fi
 
 make html
