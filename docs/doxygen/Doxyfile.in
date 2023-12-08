@@ -463,7 +463,7 @@ EXTRACT_ALL            = YES
 # be included in the documentation.
 # The default value is: NO.
 
-EXTRACT_PRIVATE        = YES
+EXTRACT_PRIVATE        = NO
 
 # If the EXTRACT_PRIV_VIRTUAL tag is set to YES, documented private virtual
 # methods of a class will be included in the documentation.
@@ -506,7 +506,7 @@ EXTRACT_LOCAL_METHODS  = NO
 # are hidden.
 # The default value is: NO.
 
-EXTRACT_ANON_NSPACES   = NO
+EXTRACT_ANON_NSPACES   = YES
 
 # If the HIDE_UNDOC_MEMBERS tag is set to YES, doxygen will hide all
 # undocumented members inside documented classes or files. If set to NO these
@@ -579,13 +579,13 @@ SHOW_INCLUDE_FILES     = YES
 # which file to include in order to use the member.
 # The default value is: NO.
 
-SHOW_GROUPED_MEMB_INC  = NO
+SHOW_GROUPED_MEMB_INC  = YES
 
 # If the FORCE_LOCAL_INCLUDES tag is set to YES then doxygen will list include
 # files with double quotes in the documentation rather than with sharp brackets.
 # The default value is: NO.
 
-FORCE_LOCAL_INCLUDES   = NO
+FORCE_LOCAL_INCLUDES   = YES
 
 # If the INLINE_INFO tag is set to YES then a tag [inline] is inserted in the
 # documentation for inline members.
@@ -877,7 +877,13 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       = 
+EXCLUDE_PATTERNS       = */external/*
+EXCLUDE_PATTERNS      += */build/*
+EXCLUDE_PATTERNS      += */venv/*
+EXCLUDE_PATTERNS      += */SoapyLMS7/*
+EXCLUDE_PATTERNS      += */octave/*
+EXCLUDE_PATTERNS      += */QuickTest/*
+EXCLUDE_PATTERNS      += */src/comms/PCIe/software/kernel/litepcie.h
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -894,6 +900,17 @@ EXCLUDE_SYMBOLS       += wx*
 EXCLUDE_SYMBOLS       += *_panelgui
 EXCLUDE_SYMBOLS       += *_view
 EXCLUDE_SYMBOLS       += *_wxgui
+EXCLUDE_SYMBOLS       += ILMS7002MTab
+EXCLUDE_SYMBOLS       += IModuleFrame
+EXCLUDE_SYMBOLS       += ISOCPanel
+EXCLUDE_SYMBOLS       += LMS7SuiteAppFrame
+EXCLUDE_SYMBOLS       += NumericSlider
+EXCLUDE_SYMBOLS       += *frFFTviewer
+EXCLUDE_SYMBOLS       += lime::DeviceConnectionPanel
+EXCLUDE_SYMBOLS       += lms7002_dlgGFIR_Coefficients
+EXCLUDE_SYMBOLS       += lms7002_dlgVCOfrequencies
+EXCLUDE_SYMBOLS       += lms7002_mainPanel
+EXCLUDE_SYMBOLS       += lms7suiteApp
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
@@ -906,14 +923,7 @@ EXAMPLE_PATH           =
 # *.h) to filter out the source-files in the directories. If left blank all
 # files are included.
 
-EXCLUDE_PATTERNS       = */external/*
-EXCLUDE_PATTERNS      += */build/*
-EXCLUDE_PATTERNS      += */venv/*
-EXCLUDE_PATTERNS      += */SoapyLMS7/*
-EXCLUDE_PATTERNS      += */octave/*
-EXCLUDE_PATTERNS      += */QuickTest/*
-EXCLUDE_PATTERNS      += /usr/*
-EXCLUDE_PATTERNS      += */src/comms/PCIe/software/kernel/litepcie.h
+EXAMPLE_PATTERNS       =
 
 # If the EXAMPLE_RECURSIVE tag is set to YES then subdirectories will be
 # searched for input files to be used with the \include or \dontinclude commands
