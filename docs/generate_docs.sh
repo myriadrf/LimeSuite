@@ -9,7 +9,7 @@
 
 set -e
 
-if [[ ! -d "_build" && ! -d "apidoc" ]]; then
+if [[ ! -d "_build" || ! -d "apidoc" ]]; then
     set "rebuild"
 fi
 
@@ -28,9 +28,9 @@ fi
 
 if [[ $1 == "rebuild" ]]; then
     cmake -S .. -B ../build
-    make --no-print-directory -C ../build doc
+    make --no-print-directory -C ../build -j"$(nproc)" doc
     breathe-apidoc --generate class --members --force --output-dir apidoc ../build/xml/
     python add_undoc_members.py
 fi
 
-make html
+make -j"$(nproc)" html

@@ -43,11 +43,8 @@ COPY docs/ docs/
 COPY --from=doxygen-build /usr/local/bin/doxygen /usr/bin/doxygen
 COPY --from=doxygen-build /usr/local/lib64/libstdc++.so /lib/x86_64-linux-gnu/libstdc++.so.6
 
-RUN cmake -B build
-RUN make -C build --no-print-directory -j$(nproc) doc
-RUN breathe-apidoc --generate class --members --force --output-dir docs/apidoc build/xml/
-RUN python docs/add_undoc_members.py
-RUN make -C docs --no-print-directory -j$(nproc) html
+WORKDIR /documentation/docs
+RUN ./generate_docs.sh
 
 FROM scratch AS export-stage
 COPY --from=build-stage /documentation/docs/_build/html /
