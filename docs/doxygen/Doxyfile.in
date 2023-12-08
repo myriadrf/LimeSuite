@@ -912,6 +912,7 @@ EXCLUDE_SYMBOLS       += lms7002_dlgGFIR_Coefficients
 EXCLUDE_SYMBOLS       += lms7002_dlgVCOfrequencies
 EXCLUDE_SYMBOLS       += lms7002_mainPanel
 EXCLUDE_SYMBOLS       += lms7suiteApp
+EXCLUDE_SYMBOLS       += lime::testing::*
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
