@@ -46,10 +46,7 @@ COPY --from=doxygen-build /usr/local/lib64/libstdc++.so /lib/x86_64-linux-gnu/li
 RUN cmake -B build
 RUN make -C build --no-print-directory -j$(nproc) doc
 RUN breathe-apidoc --generate class --members --force --output-dir docs/apidoc build/xml/
-
-WORKDIR /documentation/docs
-
-RUN make -j$(nproc) html
+RUN make -C docs --no-print-directory -j$(nproc) html
 
 FROM scratch AS export-stage
 COPY --from=build-stage /documentation/docs/_build/html /
