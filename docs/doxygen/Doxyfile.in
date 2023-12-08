@@ -884,6 +884,7 @@ EXCLUDE_PATTERNS      += */SoapyLMS7/*
 EXCLUDE_PATTERNS      += */octave/*
 EXCLUDE_PATTERNS      += */QuickTest/*
 EXCLUDE_PATTERNS      += */src/comms/PCIe/software/kernel/litepcie.h
+EXCLUDE_PATTERNS      += */src/limeRFE/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
