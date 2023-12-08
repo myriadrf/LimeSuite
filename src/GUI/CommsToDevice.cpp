@@ -1,5 +1,8 @@
 #include "CommsToDevice.h"
 
+/// @brief Constructs the Serial Peripheral Interface communication layer.
+/// @param sdr The device to communicate with.
+/// @param spiDefaultSlave The default slave ID to use.
 SPIToSDR::SPIToSDR(lime::SDRDevice& sdr, uint32_t spiDefaultSlave)
     : device(sdr)
     , mSPIDefaultSlaveId(spiDefaultSlave)
@@ -16,6 +19,8 @@ void SPIToSDR::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO,
     device.SPI(spiBusAddress, MOSI, MISO, count);
 }
 
+/// @brief Constructs the Inter-Integrated Circuit communication layer.
+/// @param sdr The device to communicate with.
 I2CToSDR::I2CToSDR(lime::SDRDevice& sdr)
     : device(sdr)
 {
