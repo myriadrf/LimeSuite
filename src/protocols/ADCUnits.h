@@ -1,7 +1,7 @@
 /**
-@file	ADCUnits.h
-@author Lime Microsystems
-@brief	enumerations of ADC sensor units
+  @file ADCUnits.h
+  @author Lime Microsystems
+  @brief Enumerations of ADC sensor units
 */
 #pragma once
 
