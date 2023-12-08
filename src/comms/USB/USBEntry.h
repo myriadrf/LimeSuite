@@ -33,6 +33,7 @@ struct VidPid {
     }
 };
 
+/** @brief An abstract class for a USB device entry. */
 class USBEntry : public DeviceRegistryEntry
 {
   public:

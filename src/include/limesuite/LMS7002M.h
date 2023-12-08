@@ -54,6 +54,7 @@ class LIME_API LMS7002M
         CLK_TXTSP = 5 ///< TXTSP reference clock (read-only)
     };
 
+    /** @brief LMS7002M's clock generator details */
     struct CGEN_details {
         float_type frequency;
         float_type frequencyVCO;
@@ -64,6 +65,7 @@ class LIME_API LMS7002M
         uint16_t csw;
         bool success;
     };
+
     struct SX_details {
         float_type frequency;
         float_type frequencyVCO;

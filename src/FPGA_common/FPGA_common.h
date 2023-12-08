@@ -19,6 +19,7 @@
 namespace lime {
 class ISPI;
 
+/** @brief Class for interfacing with a field-programmable gate array */
 class FPGA
 {
   public:
@@ -64,6 +65,7 @@ class FPGA
     int WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
     int ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);
 
+    /** @brief Structure containing the gateware information of the FPGA */
     struct GatewareInfo {
         int boardID;
         int version;

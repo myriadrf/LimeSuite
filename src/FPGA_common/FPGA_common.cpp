@@ -27,6 +27,7 @@ using namespace std;
 
 namespace lime {
 
+/** @brief A class for writing a batch of registers into the FPGA. */
 class WriteRegistersBatch
 {
   public:

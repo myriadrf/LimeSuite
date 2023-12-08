@@ -36,6 +36,7 @@ struct Si5351_Channel {
     bool int_mode;
 };
 
+/** @brief Si5351's phase-locked loop (PLL) information. */
 struct Si5351_PLL {
     Si5351_PLL()
         : inputFreqHz(0)

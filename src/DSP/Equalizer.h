@@ -9,12 +9,14 @@ namespace lime {
 
 class ISPI;
 
+/** @brief Class for interfacing with the equalizer. */
 class Equalizer
 {
   public:
+    /** @brief Structure containing the configuration of the equalizer. */
     struct Config {
-        struct CFR // (Crest Factor Reduction) controls
-        {
+        /** @brief Crest Factor Reduction (CFR) controls. */
+        struct CFR {
             bool bypass;
             bool sleep;
             bool bypassGain;
@@ -23,8 +25,9 @@ class Equalizer
             uint16_t threshold;
             uint16_t thresholdGain;
         } cfr[2];
-        struct FIR // post-CFR FIR
-        {
+
+        /** @brief Post-CFR Finite Impulse Response (FIR) information */
+        struct FIR {
             bool sleep;
             bool bypass;
             int16_t coefficients[32];

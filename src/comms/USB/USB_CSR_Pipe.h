@@ -5,6 +5,7 @@
 
 namespace lime {
 
+/** @brief An abstract class for interfacing with Control/Status registers (CSR) of a USB device. */
 class USB_CSR_Pipe : public ISerialPort
 {
   public:

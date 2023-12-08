@@ -1252,7 +1252,8 @@ typedef struct {
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device);
 
 /**
-* @brief Returns API library version
+* @brief Gets the current API library version.
+* @return A constant C-string containing the API library version.
 */
 API_EXPORT const char* LMS_GetLibraryVersion(void);
 
