@@ -38,7 +38,7 @@ template<class T> class PacketsFIFO
 
     ///---------------------------------------------------------------------------
     /// @brief Constructor. Asserts when the underlying type is not lock free
-    PacketsFIFO(uint32_t fixedSize)
+    PacketsFIFO(size_t fixedSize)
         : RingBufferSize(fixedSize + 1)
     {
         m_ringBuffer.resize(RingBufferSize);
@@ -189,7 +189,7 @@ template<class T> class PacketsFIFO
 
   private:
     // A lock-free queue is basically a ring buffer.
-    uint32_t RingBufferSize;
+    size_t RingBufferSize;
     std::vector<T> m_ringBuffer;
     std::atomic<size_t> m_readPosition = { 0 };
     std::atomic<size_t> m_writePosition = { 0 };

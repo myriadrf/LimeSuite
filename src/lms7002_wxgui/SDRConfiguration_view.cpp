@@ -43,7 +43,6 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
             rxGrid->Add(fields.lpf, ctrlFlags);
 
             fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            ;
             rxGrid->Add(fields.nco, ctrlFlags);
         }
     }
@@ -56,14 +55,12 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
         LOgrid->Add(new wxStaticText(base, wxID_ANY, "TxLO (MHz)"), titleFlags);
 
         gui.rxLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));
-        ;
         LOgrid->Add(gui.rxLO, ctrlFlags);
 
         gui.tdd = new wxCheckBox(base, wxNewId(), wxT("TDD"));
         LOgrid->Add(gui.tdd, ctrlFlags);
 
         gui.txLO = new wxTextCtrl(base, wxNewId(), wxT("1000"));
-        ;
         LOgrid->Add(gui.txLO, ctrlFlags);
         centerGrid->Add(LOgrid);
 
@@ -102,11 +99,9 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
         {
             ChannelConfigGUI& fields = gui.tx[i];
             fields.nco = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            ;
             txGrid->Add(fields.nco, ctrlFlags);
 
             fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));
-            ;
             txGrid->Add(fields.lpf, ctrlFlags);
 
             fields.gain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);

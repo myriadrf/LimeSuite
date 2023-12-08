@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 #include "limesuite/config.h"
 
 namespace lime {
@@ -15,8 +16,9 @@ class LIME_API ISPI
       @param MOSI Main Out Sub In (data output from main).
       @param MISO Main In Sub Out (data output from sub).
       @param count Input/output data length.
+      @returns Whether the operation succeedded or not.
      */
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 
     /**
       @brief Writing/reading registers for specific slave.
@@ -24,8 +26,9 @@ class LIME_API ISPI
       @param MOSI Main Out Sub In (data output from main).
       @param MISO Main In Sub Out (data output from sub).
       @param count Input/output data length.
+      @returns Whether the operation succeedded or not.
      */
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 };
 
 /** @brief An interface for Inter-Integrated Circuit communications */
@@ -53,6 +56,12 @@ class LIME_API II2C
       @return 0 on success.
      */
     virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
+};
+
+struct CustomParameterIO {
+    int32_t id;
+    double value;
+    std::string units;
 };
 
 /// @brief An interface for general device communications
@@ -86,11 +95,8 @@ class IComms : public ISPI
     /// @return Whether the operation succeeded or not.
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    virtual int CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
-    {
-        return -1;
-    };
-    virtual int CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units) { return -1; };
+    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
 
     typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
     virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)
@@ -98,6 +104,8 @@ class IComms : public ISPI
         return -1;
     }
     virtual int ResetDevice(int chipSelect) { return -1; };
+    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return -1; };
+    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return -1; };
 };
 
 } // namespace lime

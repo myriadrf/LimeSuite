@@ -32,7 +32,7 @@ void intHandler(int dummy)
     runForever.store(false);
 }
 
-static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::DEBUG;
+static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::LogLevel::DEBUG;
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
     if (lvl > logVerbosity)
@@ -333,7 +333,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020) / stream.rxCount;
+    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / stream.rxCount;
 
     const float rxBufferTime = 0.005; // max buffer size in time (seconds)
     const uint32_t samplesToBuffer = (int)(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;

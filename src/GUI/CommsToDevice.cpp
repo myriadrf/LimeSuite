@@ -9,14 +9,14 @@ SPIToSDR::SPIToSDR(lime::SDRDevice& sdr, uint32_t spiDefaultSlave)
 {
 }
 
-void SPIToSDR::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int SPIToSDR::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    device.SPI(mSPIDefaultSlaveId, MOSI, MISO, count);
+    return device.SPI(mSPIDefaultSlaveId, MOSI, MISO, count);
 }
 
-void SPIToSDR::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int SPIToSDR::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    device.SPI(spiBusAddress, MOSI, MISO, count);
+    return device.SPI(spiBusAddress, MOSI, MISO, count);
 }
 
 /// @brief Constructs the Inter-Integrated Circuit communication layer.

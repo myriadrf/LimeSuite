@@ -21,6 +21,9 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
+    SDRDevice.cpp
+    StreamComposite.cpp
+    CommonFunctions.cpp
     boards/DeviceRegistry.cpp
     boards/DeviceHandle.cpp
     boards/LMS7002M_SDRDevice.cpp
@@ -56,6 +59,8 @@ set(LIME_SUITE_SOURCES
     mcu_program/common_src/lms7002m_calibrations.c
     mcu_program/common_src/lms7002m_controls.c
     mcu_program/common_src/lms7002m_filters.c
+
+    API/LMS_APIWrapper.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES( 
@@ -114,6 +119,11 @@ if (ENABLE_LIBRARY)
 
     if(BUILD_SHARED_LIBS)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
+    endif()
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_CODE_COVERAGE)
+        include(CodeCoverage)
+        append_coverage_compiler_flags_to_target(${MAIN_LIBRARY_NAME})
     endif()
 
     install(TARGETS ${MAIN_LIBRARY_NAME}
@@ -303,3 +313,10 @@ add_subdirectory(examples)
 # Lime command line tools
 #########################################################################
 add_subdirectory(cli)
+
+#########################################################################
+# GTest tests
+#########################################################################
+if(ENABLE_TESTING)
+    add_subdirectory(tests)
+endif()

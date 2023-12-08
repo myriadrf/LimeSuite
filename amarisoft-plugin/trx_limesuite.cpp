@@ -28,7 +28,7 @@ typedef lime::SDRDevice::LogLevel LogLevel;
 
 std::mutex gainsMutex;
 
-static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::ERROR;
+static lime::SDRDevice::LogLevel logVerbosity = lime::SDRDevice::LogLevel::ERROR;
 static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 
 struct RxGainRow {
@@ -274,7 +274,7 @@ static bool OnStreamStatusChange(bool isTx, const SDRDevice::StreamStats* s, voi
     StreamStatus& status = *static_cast<StreamStatus*>(userData);
     SDRDevice::StreamStats& dest = isTx ? status.tx : status.rx;
 
-    dest.FIFO_filled = s->FIFO_filled;
+    dest.FIFO = s->FIFO;
     dest.dataRate_Bps = s->dataRate_Bps;
     dest.overrun = s->overrun;
     dest.underrun = s->underrun;
@@ -330,7 +330,7 @@ static void trx_lms7002m_dump_info(TRXState* s, trx_printf_cb cb, void* opaque)
            << " rate: " << stats.rx.dataRate_Bps / 1e6 << " MB/s]"
            << "[Tx| Late: " << stats.tx.late << " underrun: " << stats.tx.underrun << " rate: " << stats.tx.dataRate_Bps / 1e6
            << " MB/s]"
-           << " linkFormat: " << (lime->linkFormat[p] == SDRDevice::StreamConfig::I16 ? "I16" : "I12") << std::endl;
+           << " linkFormat: " << (lime->linkFormat[p] == SDRDevice::StreamConfig::DataFormat::I16 ? "I16" : "I12") << std::endl;
         // TODO: read FIFO usage
     }
     const int len = ss.str().length();
@@ -851,7 +851,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
 
     LimeState* s = new LimeState();
     if (trx_get_param_double(hostState, &val, "logLevel") >= 0)
-        logVerbosity = (LogLevel)min((int)val, (int)LogLevel::DEBUG);
+        logVerbosity = std::min(static_cast<LogLevel>(val), LogLevel::DEBUG);
 
     try
     {
@@ -1108,18 +1108,18 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             if (linkFormat)
             {
                 if (strcasecmp(linkFormat, "I16") == 0)
-                    s->linkFormat[p] = lime::SDRDevice::StreamConfig::I16;
+                    s->linkFormat[p] = lime::SDRDevice::StreamConfig::DataFormat::I16;
                 else if (strcasecmp(linkFormat, "I12") == 0)
-                    s->linkFormat[p] = lime::SDRDevice::StreamConfig::I12;
+                    s->linkFormat[p] = lime::SDRDevice::StreamConfig::DataFormat::I12;
                 else
                 {
                     Log(LogLevel::WARNING, "Port[%i} Invalid link format (%s): falling back to I12\n", p, linkFormat);
-                    s->linkFormat[p] = lime::SDRDevice::StreamConfig::I12;
+                    s->linkFormat[p] = lime::SDRDevice::StreamConfig::DataFormat::I12;
                 }
                 free(linkFormat);
             }
             else
-                s->linkFormat[p] = lime::SDRDevice::StreamConfig::I12;
+                s->linkFormat[p] = lime::SDRDevice::StreamConfig::DataFormat::I12;
 
             // absolute gain info
             for (int ch = 0; ch < TRX_MAX_CHANNELS; ++ch)
@@ -1145,7 +1145,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                     // TODO: this is board specific, need general API
                     int32_t paramId = 2 + ch;
                     std::string units = "";
-                    s->device[p]->CustomParameterWrite(&paramId, &dac, 1, units);
+                    s->device[p]->CustomParameterWrite({ { paramId, dac, units } });
                 }
             }
 
@@ -1243,7 +1243,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
         //     free(samplesFormat);
         // }
         // else
-        s->samplesFormat = lime::SDRDevice::StreamConfig::F32;
+        s->samplesFormat = lime::SDRDevice::StreamConfig::DataFormat::F32;
 
     } catch (std::logic_error& e)
     {

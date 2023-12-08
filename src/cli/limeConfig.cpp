@@ -7,20 +7,20 @@
 using namespace std;
 using namespace lime;
 
-static SDRDevice::LogLevel logVerbosity = SDRDevice::ERROR;
+static SDRDevice::LogLevel logVerbosity = SDRDevice::LogLevel::ERROR;
 static SDRDevice::LogLevel strToLogLevel(const char* str)
 {
     if (strstr("debug", str))
-        return SDRDevice::DEBUG;
+        return SDRDevice::LogLevel::DEBUG;
     else if (strstr("verbose", str))
-        return SDRDevice::VERBOSE;
+        return SDRDevice::LogLevel::VERBOSE;
     else if (strstr("error", str))
-        return SDRDevice::ERROR;
+        return SDRDevice::LogLevel::ERROR;
     else if (strstr("warning", str))
-        return SDRDevice::WARNING;
+        return SDRDevice::LogLevel::WARNING;
     else if (strstr("info", str))
-        return SDRDevice::INFO;
-    return SDRDevice::ERROR;
+        return SDRDevice::LogLevel::INFO;
+    return SDRDevice::LogLevel::ERROR;
 }
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {

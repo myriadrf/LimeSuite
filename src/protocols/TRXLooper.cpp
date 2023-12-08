@@ -466,7 +466,8 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         else
             channelEnables |= (1 << cfg.txChannels[i]); // << 8;
     }
-    if ((cfg.linkFormat != SDRDevice::StreamConfig::I12) && (cfg.linkFormat != SDRDevice::StreamConfig::I16))
+    if ((cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I12) &&
+        (cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I16))
         throw std::logic_error("Unsupported stream link format");
     mConfig = cfg;
 
@@ -801,7 +802,20 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
 
 SDRDevice::StreamStats TRXLooper::GetStats(TRXDir dir)
 {
-    return dir == TRXDir::Tx ? mTx.stats : mRx.stats;
+    SDRDevice::StreamStats stats;
+
+    if (dir == TRXDir::Tx)
+    {
+        stats = mTx.stats;
+        stats.FIFO = { mTx.fifo->max_size(), mTx.fifo->size() };
+    }
+    else
+    {
+        stats = mRx.stats;
+        stats.FIFO = { mRx.fifo->max_size(), mRx.fifo->size() };
+    }
+
+    return stats;
 }
 
 } // namespace lime

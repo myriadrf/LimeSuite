@@ -26,7 +26,7 @@ void intHandler(int dummy)
     stopProgram = true;
 }
 
-static SDRDevice::LogLevel logVerbosity = SDRDevice::VERBOSE;
+static SDRDevice::LogLevel logVerbosity = SDRDevice::LogLevel::VERBOSE;
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
     if (lvl > logVerbosity)

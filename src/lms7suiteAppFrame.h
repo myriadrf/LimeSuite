@@ -44,7 +44,7 @@ class LMS_Programing_wxgui;
 class LMS7SuiteAppFrame : public wxFrame
 {
   protected:
-    void AddModule(IModuleFrame* module, const char* title);
+    void AddModule(IModuleFrame* module, const std::string& title);
     void RemoveModule(IModuleFrame* module);
     // Handlers for AppFrame events.
     void OnClose(wxCloseEvent& event);

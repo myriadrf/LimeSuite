@@ -13,7 +13,7 @@
 //---------------------------------------------------------------------------
 namespace lime {
 
-enum eSi_CLOCK_INPUT { Si_CLKIN, Si_XTAL, Si_CMOS };
+enum class eSi_CLOCK_INPUT : uint8_t { Si_CLKIN, Si_XTAL, Si_CMOS };
 
 struct Si5351_Channel {
     Si5351_Channel()
@@ -56,7 +56,7 @@ class II2C;
 class LIME_API Si5351C
 {
   public:
-    enum Status {
+    enum class Status : bool {
         SUCCESS,
         FAILED,
     };

@@ -102,9 +102,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     btnResetChip = new wxButton(this, ID_BTN_RESET_CHIP, wxT("Reset"), wxDefaultPosition, wxDefaultSize, 0);
     fgSizer300->Add(btnResetChip, 0, 0, 5);
 
-    btnLoadDefault = new wxButton(this, ID_BTN_RESET_CHIP, wxT("Default"), wxDefaultPosition, wxDefaultSize, 0);
-    fgSizer300->Add(btnLoadDefault, 0, 0, 5);
-
     wxFlexGridSizer* fgSizer247;
     fgSizer247 = new wxFlexGridSizer(0, 2, 0, 0);
     fgSizer247->SetFlexibleDirection(wxBOTH);
@@ -195,7 +192,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     btnDownloadAll->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_mainPanel::OnDownloadAll), NULL, this);
     btnUploadAll->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_mainPanel::OnUploadAll), NULL, this);
     btnResetChip->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_mainPanel::OnResetChip), NULL, this);
-    btnLoadDefault->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_mainPanel::OnLoadDefault), NULL, this);
     btnReadTemperature->Connect(
         wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_mainPanel::OnReadTemperature), NULL, this);
     tabsNotebook->Bind(wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, &lms7002_mainPanel::Onnotebook_modulesPageChanged, this);
@@ -282,23 +278,6 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent& event)
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
-void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
-{
-    try
-    {
-        soc->ResetChip();
-    } catch (std::runtime_error& e)
-    {
-        wxMessageBox(wxString::Format("Load Default failed: %s", e.what()), _("Warning"));
-        return;
-    }
-    // TODO: LMS_EnableChannel(sdrDevice, LMS_CH_TX, 0, true); //enable TX, LMS_Init() no longer does it
-    wxNotebookEvent evt;
-    chkEnableMIMO->SetValue(false);
-    //((LMS7_Device*)sdrDevice)->SetActiveChip(cmbLmsDevice->GetSelection());
-    Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
-}
-
 void lms7002_mainPanel::UpdateGUI()
 {
     wxLongLong t1, t2;
@@ -321,7 +300,7 @@ void lms7002_mainPanel::OnOpenProject(wxCommandEvent& event)
     }
     try
     {
-        if (chip->LoadConfig(dlg.GetPath().To8BitData()) != 0)
+        if (chip->LoadConfig(dlg.GetPath().ToStdString()) != 0)
             wxMessageBox(_("Failed to load file"), _("Warning"));
     } catch (std::runtime_error& e)
     {
@@ -346,7 +325,7 @@ void lms7002_mainPanel::OnSaveProject(wxCommandEvent& event)
         return;
     }
 
-    if (chip->SaveConfig(dlg.GetPath().To8BitData()) != 0)
+    if (chip->SaveConfig(dlg.GetPath().ToStdString()) != 0)
         wxMessageBox(_("Failed to save file"), _("Warning"));
 }
 

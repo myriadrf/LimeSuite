@@ -21,15 +21,14 @@ LMS64C_LMS7002M_Over_PCIe::LMS64C_LMS7002M_Over_PCIe(std::shared_ptr<LitePCIe> d
 {
 }
 
-void LMS64C_LMS7002M_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_LMS7002M_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    SPI(0, MOSI, MISO, count);
-    return;
+    return SPI(0, MOSI, MISO, count);
 }
-void LMS64C_LMS7002M_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+
+int LMS64C_LMS7002M_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-    return;
+    return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
 }
 
 LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
@@ -37,28 +36,37 @@ LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
 {
 }
 
-void LMS64C_FPGA_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_FPGA_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    SPI(0, MOSI, MISO, count);
+    return SPI(0, MOSI, MISO, count);
 }
 
-void LMS64C_FPGA_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS64C_FPGA_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
-    LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
+    return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count);
 }
 
-int LMS64C_FPGA_Over_PCIe::CustomParameterWrite(
-    const int32_t* ids, const double* values, const size_t count, const std::string& units)
+int LMS64C_FPGA_Over_PCIe::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
-    return LMS64CProtocol::CustomParameterWrite(pipe, ids, values, count, units);
+    return LMS64CProtocol::CustomParameterWrite(pipe, parameters);
 }
 
-int LMS64C_FPGA_Over_PCIe::CustomParameterRead(const int32_t* ids, double* values, const size_t count, std::string* units)
+int LMS64C_FPGA_Over_PCIe::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
-    return LMS64CProtocol::CustomParameterRead(pipe, ids, values, count, units);
+    return LMS64CProtocol::CustomParameterRead(pipe, parameters);
 }
 
 int LMS64C_FPGA_Over_PCIe::ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
 {
     return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
+}
+
+int LMS64C_FPGA_Over_PCIe::MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
+{
+    return LMS64CProtocol::MemoryWrite(pipe, address, data, dataLength);
+}
+
+int LMS64C_FPGA_Over_PCIe::MemoryRead(uint32_t address, void* data, uint32_t dataLength)
+{
+    return LMS64CProtocol::MemoryRead(pipe, address, data, dataLength);
 }

@@ -10,6 +10,7 @@
 
 #include "LMSBoards.h"
 #include "limesuite/SDRDevice.h"
+#include "ISerialPort.h"
 
 namespace lime {
 
@@ -27,13 +28,23 @@ struct LMS64CPacket {
     uint8_t payload[payloadSize];
 };
 
-class ISerialPort
+class LMS64CPacketMemoryWriteView
 {
   public:
-    virtual ~ISerialPort(){};
+    LMS64CPacketMemoryWriteView(LMS64CPacket* pkt);
+    void SetMode(int mode);
+    void SetChunkIndex(int index);
+    void SetChunkSize(int size);
+    void SetAddress(int size);
+    void SetDevice(int device);
+    void SetData(const uint8_t* src, size_t len);
 
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) = 0;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) = 0;
+    void GetData(uint8_t* dest, size_t len) const;
+    static constexpr size_t GetMaxDataSize();
+
+  private:
+    LMS64CPacketMemoryWriteView() = delete;
+    LMS64CPacket* packet;
 };
 
 namespace LMS64CProtocol {
@@ -144,14 +155,8 @@ int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
 int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
 int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
 
-int CustomParameterWrite(ISerialPort& port,
-    const int32_t* ids,
-    const double* values,
-    const size_t count,
-    const std::string& units,
-    uint32_t subDevice = 0);
-int CustomParameterRead(
-    ISerialPort& port, const int32_t* ids, double* values, const size_t count, std::string* units, uint32_t subDevice = 0);
+int CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
+int CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
 
 typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
 int ProgramWrite(ISerialPort& port,
@@ -163,6 +168,8 @@ int ProgramWrite(ISerialPort& port,
     uint32_t subDevice = 0);
 
 int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice = 0);
+int MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size_t dataLen, uint32_t subDevice = 0);
+int MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, uint32_t subDevice = 0);
 
 } // namespace LMS64CProtocol
 

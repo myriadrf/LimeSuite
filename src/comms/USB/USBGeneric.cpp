@@ -1,20 +1,7 @@
 #include "USBGeneric.h"
-#include "USBCommon.h"
 #include "Logger.h"
-#include <thread>
-#include <cassert>
-#include <mutex>
 
-#ifdef __unix__
-    #ifdef __GNUC__
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wpedantic"
-    #endif
-    #include <libusb.h>
-    #ifdef __GNUC__
-        #pragma GCC diagnostic pop
-    #endif
-#endif
+#include <cassert>
 
 namespace lime {
 
@@ -47,6 +34,11 @@ USBGeneric::USBGeneric(void* usbContext)
 #ifdef __unix__
     dev_handle = nullptr;
     ctx = reinterpret_cast<libusb_context*>(usbContext);
+
+    if (ctx == nullptr)
+    {
+        return;
+    }
 
     if (activeUSBconnections == 0)
     {
@@ -168,7 +160,6 @@ inline bool USBGeneric::IsConnected()
 
 void USBGeneric::Disconnect()
 {
-    isConnected = false;
     if (contexts == nullptr)
     {
         return;
@@ -179,7 +170,7 @@ void USBGeneric::Disconnect()
     // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
     const bool isBuggy_libusb_free_transfer = ver->major == 1 && ver->minor == 0 && ver->micro == 25;
 
-    if (isBuggy_libusb_free_transfer && contexts)
+    if (isBuggy_libusb_free_transfer)
     {
         for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
         {

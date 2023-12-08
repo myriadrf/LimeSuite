@@ -217,7 +217,7 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
-        evt.SetInt(lime::LOG_LEVEL_INFO);
+        evt.SetInt(static_cast<int>(lime::LogLevel::INFO));
         evt.SetString(wxString::Format("Disconnected: %s", info.name.c_str()));
         wxPostEvent(this, evt);
         UpdateConnections(nullptr);
@@ -299,7 +299,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
 
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
-        evt.SetInt(lime::LOG_LEVEL_INFO);
+        evt.SetInt(static_cast<int>(lime::LogLevel::INFO));
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
         UpdateConnections(lmsControl);
@@ -345,16 +345,16 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
     evt->SetString(ss.str());
     evt->SetEventObject(obj_ptr);
     evt->SetEventType(LOG_MESSAGE);
-    evt->SetInt(lime::LOG_LEVEL_INFO);
+    evt->SetInt(static_cast<int>(lime::LogLevel::INFO));
     wxQueueEvent(obj_ptr, evt);
 }
 
-void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const char* title)
+void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const std::string& title)
 {
     wxWindowID moduleId = module->GetId();
     printf("Add module %i\n", moduleId);
     wxMenuItem* item;
-    item = new wxMenuItem(mnuModules, moduleId, wxString(title), wxEmptyString, wxITEM_NORMAL);
+    item = new wxMenuItem(mnuModules, moduleId, title, wxEmptyString, wxITEM_NORMAL);
     mnuModules->Append(item);
 
     mModules[moduleId] = module;

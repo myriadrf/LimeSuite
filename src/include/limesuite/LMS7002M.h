@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <functional>
 #include <vector>
+#include <utility>
 
 namespace lime {
 class ISPI;
@@ -44,7 +45,7 @@ class LIME_API LMS7002M
   public:
     static constexpr double CGEN_MAX_FREQ = 640e6;
 
-    enum class ClockID {
+    enum class ClockID : uint8_t {
         CLK_REFERENCE = 0, ///< Reference clock
         CLK_SXR = 1, ///< RX LO clock
         CLK_SXT = 2, ///< TX LO clock
@@ -92,12 +93,12 @@ class LIME_API LMS7002M
      * Enum for configuring the channel selection.
      * @see MAC register
      */
-    enum Channel {
-        ChA = 1, ///< Channel A
-        ChB = 2, ///< Channel B
-        ChAB = 3, ///< Both channels
-        ChSXR = 1, ///< SXR register space
-        ChSXT = 2, ///< SXT register space
+    enum class Channel : uint8_t {
+        ChA = 1U, ///< Channel A
+        ChB = 2U, ///< Channel B
+        ChAB = 3U, ///< Both channels
+        ChSXR = 1U, ///< SXR register space
+        ChSXT = 2U, ///< SXT register space
     };
 
     /*!
@@ -137,8 +138,8 @@ class LIME_API LMS7002M
     int SoftReset();
     int ResetLogicregisters();
 
-    int LoadConfig(const char* filename, bool tuneDynamicValues = true);
-    int SaveConfig(const char* filename);
+    int LoadConfig(const std::string& filename, bool tuneDynamicValues = true);
+    int SaveConfig(const std::string& filename);
 
     uint16_t Get_SPI_Reg_bits(const LMS7Parameter& param, bool fromChip = false);
     uint16_t Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip = false);
@@ -146,7 +147,7 @@ class LIME_API LMS7002M
     int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
     int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
-    int RegistersTest(const char* fileName = "registersTest.txt");
+    int RegistersTest(const std::string& fileName = "registersTest.txt");
     static const LMS7Parameter* GetParam(const std::string& name);
 
     int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
@@ -229,8 +230,8 @@ class LIME_API LMS7002M
     //! Get the actual TX loopback PAD gain in dB
     float_type GetTRFLoopbackPAD_dB(void);
 
-    enum PathRFE {
-        PATH_RFE_NONE = 0,
+    enum class PathRFE : uint8_t {
+        PATH_RFE_NONE,
         PATH_RFE_LNAH,
         PATH_RFE_LNAL,
         PATH_RFE_LNAW,
@@ -267,7 +268,7 @@ class LIME_API LMS7002M
     bool GetSXLocked(TRXDir dir);
 
     ///VCO modules available for tuning
-    enum VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
+    enum class VCO_Module : uint8_t { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
 
@@ -284,10 +285,10 @@ class LIME_API LMS7002M
     int WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
     int SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwidth);
 
-    int SetNCOFrequencies(TRXDir dir, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
+    int SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     std::vector<float_type> GetNCOFrequencies(TRXDir dir, float_type* phaseOffset = nullptr);
-    int SetNCOPhases(TRXDir dir, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
+    int SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
     std::vector<float_type> GetNCOPhases(TRXDir dir, float_type* frequencyOffset = nullptr);
 
@@ -295,11 +296,11 @@ class LIME_API LMS7002M
 
     float_type GetSampleRate(TRXDir dir, Channel ch);
 
-    enum LMLSampleSource {
-        AI = 0,
-        AQ = 1,
-        BI = 2,
-        BQ = 3,
+    enum class LMLSampleSource : uint8_t {
+        AI,
+        AQ,
+        BI,
+        BQ,
     };
 
     /*!
@@ -401,6 +402,7 @@ class LIME_API LMS7002M
         MEMORY_SECTIONS_COUNT
     };
     virtual int SetDefaults(MemorySection module);
+    void ModifyRegistersDefaults(const std::vector<std::pair<uint16_t, uint16_t>>& registerValues);
 
     static float_type gVCO_frequency_table[3][2];
     static float_type gCGEN_VCO_frequencies[2];
@@ -411,8 +413,8 @@ class LIME_API LMS7002M
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
 
-    enum LogType { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
-    void SetLogCallback(std::function<void(const char*, int)> callback);
+    enum class LogType : uint8_t { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
+    void SetLogCallback(std::function<void(const char*, LogType)> callback);
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
 
@@ -490,14 +492,14 @@ class LIME_API LMS7002M
         va_end(argList);
     }
 
-    std::function<void(const char*, int)> log_callback;
+    std::function<void(const char*, LogType)> log_callback;
     void Log(LogType type, const char* format, va_list argList);
 
     std::shared_ptr<ISPI> controlPort;
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];
     double _cachedRefClockRate;
-    int LoadConfigLegacyFile(const char* filename);
+    int LoadConfigLegacyFile(const std::string& filename);
 };
 } // namespace lime
 #endif

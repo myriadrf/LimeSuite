@@ -1,7 +1,7 @@
 ########################################################################
 ## Create lime-suite project
 ########################################################################
-cmake_minimum_required(VERSION 3.1.3)
+cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING INTERNAL FORCE)
 project("LimeSuite2")
 
@@ -61,8 +61,9 @@ file(TO_CMAKE_PATH "${LIME_SUITE_ROOT}" LIME_SUITE_ROOT)
 ## compiler flags
 ########################################################################
 
-#C++11 is a required language feature for this project
-set(CMAKE_CXX_STANDARD 11)
+# GoogleTest requires at least C++14
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #is this processor x86? set variable X86
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686.*|i386.*|x86.*|amd64.*|AMD64.*")
@@ -166,6 +167,27 @@ endif(APPLE)
 
 if (ENABLE_NEW_GAIN_BEHAVIOUR)
     add_definitions(-DNEW_GAIN_BEHAVIOUR)
+endif()
+
+########################################################################
+# GTest
+########################################################################
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_TESTING "Use GoogleTest to test the library" ON "NOT BUILD_SHARED_LIBS" OFF)
+cmake_dependent_option(ENABLE_CODE_COVERAGE "Use gcov/lcov to generate a code coverage report" ON "ENABLE_TESTING" OFF)
+
+if(ENABLE_TESTING)
+    include(CTest)
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG        b10fad38c4026a29ea6561ab15fc4818170d1c10 # latest main at the time of writing this
+    )
+
+    FetchContent_MakeAvailable(googletest)
+
+    enable_testing()
 endif()
 
 ########################################################################
@@ -297,5 +319,3 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
-
-

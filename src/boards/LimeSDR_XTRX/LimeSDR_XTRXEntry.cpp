@@ -2,6 +2,7 @@
     #include <unistd.h>
 #endif
 
+#include "LimeSDR_XTRXEntry.h"
 #include "LitePCIe.h"
 #include "LimeSDR_XTRX.h"
 #include "protocols/LMS64CProtocol.h"
@@ -9,9 +10,7 @@
 
 #include <fstream>
 #include <map>
-#include <unistd.h>
 #include <fcntl.h>
-#include "LMSBoards.h"
 
 using namespace lime;
 
@@ -79,12 +78,12 @@ std::vector<DeviceHandle> LimeSDR_XTRXEntry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
 {
     // Data transmission layer
-    std::shared_ptr<LitePCIe> control{ new LitePCIe() };
-    std::shared_ptr<LitePCIe> stream{ new LitePCIe() };
+    auto control = std::make_shared<LitePCIe>();
+    auto stream = std::make_shared<LitePCIe>();
 
     // protocol layer
-    std::shared_ptr<IComms> route_lms7002m{ new LMS64C_LMS7002M_Over_PCIe(control) };
-    std::shared_ptr<IComms> route_fpga{ new LMS64C_FPGA_Over_PCIe(control) };
+    auto route_lms7002m = std::make_shared<LMS64C_LMS7002M_Over_PCIe>(control);
+    auto route_fpga = std::make_shared<LMS64C_FPGA_Over_PCIe>(control);
 
     try
     {

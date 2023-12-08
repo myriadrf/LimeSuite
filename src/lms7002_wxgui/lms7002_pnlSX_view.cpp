@@ -1447,7 +1447,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick(wxCommandEvent& event)
     {
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
-        evt.SetInt(lime::LOG_LEVEL_INFO);
+        evt.SetInt(static_cast<int>(lime::LogLevel::INFO));
         wxString msg = direction == TRXDir::Rx ? _("SXR") : _("SXT");
         msg += wxString::Format(_(" frequency set to %f MHz"), freqMHz);
         evt.SetString(msg);
@@ -1459,7 +1459,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick(wxCommandEvent& event)
 void lms7002_pnlSX_view::OnbtnTuneClick(wxCommandEvent& event)
 {
     assert(lmsControl != nullptr);
-    int status = lmsControl->TuneVCO(direction == TRXDir::Tx ? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
+    int status = lmsControl->TuneVCO(direction == TRXDir::Tx ? LMS7002M::VCO_Module::VCO_SXT : LMS7002M::VCO_Module::VCO_SXR);
     if (status != 0)
         wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();
