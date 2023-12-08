@@ -691,8 +691,8 @@ int TRXLooper_PCIE::RxSetup()
 
     const uint32_t packetSize = 16 + payloadSize;
 
-    // request fpga to provide Rx packets with desired payloadSize
-    //// Two writes are needed
+    // Request fpga to provide Rx packets with desired payloadSize
+    // Two writes are needed
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     uint32_t requestAddr[] = { 0x0019, 0x000E };
     uint32_t requestData[] = { packetSize, iqSamplesCount };

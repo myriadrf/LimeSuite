@@ -200,12 +200,11 @@ class LIME_API SDRDevice
         bool skipDefaults; // skip default values initialization and write on top of current config
     };
 
-  public:
     virtual ~SDRDevice(){};
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
-    /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
+    /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
     virtual const Descriptor& GetDescriptor() = 0;
 
     virtual int Init() = 0;

@@ -6,7 +6,7 @@ namespace lime {
 class SDRDevice;
 }
 
-/// Interface for adding additional GUI modules of SoC
+/** @brief Interface for adding additional GUI modules of SoC */
 class IModuleFrame : public wxFrame
 {
   public:

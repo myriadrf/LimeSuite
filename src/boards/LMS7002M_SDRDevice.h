@@ -16,7 +16,7 @@ class LMS7002M;
 class TRXLooper;
 class FPGA;
 
-// Base class for device with multiple LMS7002M chips and FPGA
+/** @brief Base class for device with multiple LMS7002M chips and FPGA */
 class LIME_API LMS7002M_SDRDevice : public SDRDevice
 {
   public:
@@ -25,8 +25,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
-    /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
-    virtual const Descriptor& GetDescriptor();
+    virtual const Descriptor& GetDescriptor() override;
 
     virtual int Init() = 0;
     virtual void Reset() override;
