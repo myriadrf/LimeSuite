@@ -21,7 +21,10 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
 {
   public:
     LimeSDR_XTRX() = delete;
-    LimeSDR_XTRX(std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::shared_ptr<LitePCIe> sampleStream, double refClk = XTRX_DEFAULT_REFERENCE_CLOCK);
+    LimeSDR_XTRX(std::shared_ptr<IComms> spiLMS7002M,
+        std::shared_ptr<IComms> spiFPGA,
+        std::shared_ptr<LitePCIe> sampleStream,
+        double refClk = XTRX_DEFAULT_REFERENCE_CLOCK);
     virtual ~LimeSDR_XTRX();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;

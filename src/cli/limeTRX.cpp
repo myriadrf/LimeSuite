@@ -280,16 +280,16 @@ static std::vector<int> ParseIntArray(const std::string& str)
     size_t parsed = 0;
     while (parsed < str.length())
     {
-        try {
+        try
+        {
             int nr = stoi(&str[parsed]);
             numbers.push_back(nr);
             size_t next = str.find_first_of(',', parsed);
             if (next == string::npos)
                 return numbers;
             else
-                parsed = next+1;
-        }
-        catch (...)
+                parsed = next + 1;
+        } catch (...)
         {
             return numbers;
         }
@@ -510,12 +510,12 @@ int main(int argc, char** argv)
         if (useComposite)
         {
             std::vector<StreamAggregate> aggregates(chipIndexes.size());
-            for (size_t i=0; i<chipIndexes.size(); ++i)
+            for (size_t i = 0; i < chipIndexes.size(); ++i)
             {
                 aggregates[i].device = device;
                 aggregates[i].streamIndex = chipIndexes[i];
                 int deviceChannelCount = device->GetDescriptor().rfSOC[chipIndexes[i]].channelCount;
-                for (int j=0; j<deviceChannelCount; ++j)
+                for (int j = 0; j < deviceChannelCount; ++j)
                     aggregates[i].channels.push_back(j);
             }
             composite = new StreamComposite(std::move(aggregates));
@@ -630,11 +630,10 @@ int main(int argc, char** argv)
             if (toSend > 0)
             {
                 const complex16_t* txSamples[16];
-                for (int i=0; i < 16; ++i)
+                for (int i = 0; i < 16; ++i)
                     txSamples[i] = &txData[txSent];
-                int samplesSent = useComposite
-                    ? composite->StreamTx(txSamples, toSend, &txMeta)
-                    : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
+                int samplesSent = useComposite ? composite->StreamTx(txSamples, toSend, &txMeta)
+                                               : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
                 if (samplesSent > 0)
                 {
                     txSent += samplesSent;
@@ -644,11 +643,10 @@ int main(int argc, char** argv)
         }
 
         complex16_t* rxSamples[16];
-        for (int i=0; i<16; ++i)
+        for (int i = 0; i < 16; ++i)
             rxSamples[i] = rxData[i].data();
-        int samplesRead = useComposite
-            ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
-            : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        int samplesRead = useComposite ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
+                                       : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
 
