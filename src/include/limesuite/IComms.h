@@ -44,26 +44,46 @@ class LIME_API II2C
     /*!
       @brief Read from an available Inter-Integrated Circuit slave.
 
-      The data parameter can be used to pass optional write data.
       Some implementations can combine a write + read transaction.
       If the device contains multiple I2C masters,
       the address bits can encode which master.
       @param address The address of the slave.
-      @param [inout] dest Buffer to store read data from the slave.
+      @param [out] dest Buffer to store read data from the slave.
       @param length Number of bytes to read.
       @return 0 on success.
      */
     virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
 };
 
+/// @brief An interface for general device communications
 class IComms : public ISPI
 {
   public:
+    /// @brief Destroys the interfaced object.
     virtual ~IComms(){};
 
+    /// @brief Reads the current state of the general-purpose input/output pin direction registers.
+    /// @param [out] buffer The buffer to write the current state into.
+    /// @param bufLength The length of \p buffer.
+    /// @return Whether the operation succeeded or not.
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
+
+    /// @brief Reads the current state of the general-purpose input/output registers.
+    /// @param [out] buffer The buffer to write the current state into.
+    /// @param bufLength The length of \p buffer.
+    /// @return Whether the operation succeeded or not.
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
+
+    /// @brief Writes the current state of the general-purpose input/output pin direction registers.
+    /// @param buffer The buffer of the state to write.
+    /// @param bufLength The length of \p buffer.
+    /// @return Whether the operation succeeded or not.
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+
+    /// @brief Writes the current state of the general-purpose input/output registers.
+    /// @param buffer The buffer of the state to write.
+    /// @param bufLength The length of \p buffer.
+    /// @return Whether the operation succeeded or not.
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
     virtual int CustomParameterWrite(const int32_t* ids, const double* values, const size_t count, const std::string& units)
