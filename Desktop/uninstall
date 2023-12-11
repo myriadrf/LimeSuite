@@ -1,7 +1,5 @@
 #!/bin/bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 echo -n "Uninstall Lime Suite menu launcher...	"
 if [ -x /usr/bin/xdg-desktop-menu ] ; then
     xdg-desktop-menu uninstall lime-suite.desktop || true

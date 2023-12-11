@@ -5,11 +5,10 @@
 
 target=$1
 
-echo doing re re ln on $target
+printf "doing re re ln on %s" "$target"
 
-src=`ls -l $target | awk '{print $11}'`
-link=`ls -l $target | awk '{print $9}'`
+src=$(readlink "$target")
+link=$target
 
-rm -f $link
-ln -vs --relative $src $link
-
+rm -f "$link"
+ln -vs --relative "$src" "$link"
