@@ -103,10 +103,38 @@ class IComms : public ISPI
      */
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
 
+    /**
+      @brief Writes a given list of custom parameters to the device.
+      @param parameters The list of parameters to write.
+      @return The operation success state.
+     */
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
+
+    /**
+      @brief Reads a given list of custom parameters from the device.
+      @param[inout] parameters The list of parameters to read. The read values will end up in this vector.
+      @return The operation success state.
+     */
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
 
-    typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
+    /**
+      @brief The function to call when writing a program into the device using @ref lime::IComms::ProgramWrite().
+      @param bytesSent The amount of bytes already sent to the device.
+      @param bytesTotal The total amount of bytes to send.
+      @param progressMsg A C-string describing the current status of the data transfer.
+      @return Whether to stop writing the data or not (true - stop, false - continue).
+     */
+    typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg);
+
+    /**
+      @brief Writes the given program into the device.
+      @param data The program to write.
+      @param length The length of the program.
+      @param prog_mode The mode with which to write to the device.
+      @param target The device to write into.
+      @param callback The progress callback to call when writing data.
+      @return The operation success state.
+     */
     virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)
     {
         return -1;
@@ -118,7 +146,23 @@ class IComms : public ISPI
       @return Whether the operation succeeded or not.
      */
     virtual int ResetDevice(int chipSelect) { return -1; };
+
+    /**
+      @brief Writes given values into a given memory address in EEPROM memory.
+      @param address The address in the EEPROM memory to write into.
+      @param data The data to write into the memory.
+      @param dataLength The length of the data to write.
+      @return The operation success state.
+     */
     virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return -1; };
+
+    /**
+      @brief Reads memory from a given memory address in EEPROM memory.
+      @param address The address from which to start reading the memory.
+      @param[out] data The destination buffer.
+      @param dataLength The length of the destination buffer (the amount of bytes to read).
+      @return The operation success state.
+     */
     virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return -1; };
 };
 
