@@ -12,6 +12,7 @@ namespace lime {
 
 class USBGeneric;
 
+/** @brief Class for managing the LimeSDR Mini device. */
 class LimeSDR_Mini : public LMS7002M_SDRDevice
 {
   public:

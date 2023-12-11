@@ -19,7 +19,7 @@
 namespace lime {
 class ISPI;
 
-/** @brief Class for interfacing with a field-programmable gate array */
+/** @brief Class for interfacing with a field-programmable gate array (FPGA). */
 class FPGA
 {
   public:
@@ -30,13 +30,16 @@ class FPGA
     int StopStreaming();
     int ResetTimestamp();
 
+    /** @brief Structure for holding FPGA's Phase-Locked Loop (PLL) clock information. */
     struct FPGA_PLL_clock {
         FPGA_PLL_clock()
+            : outFrequency(0)
+            , phaseShift_deg(0)
+            , index(0)
+            , bypass(false)
+            , findPhase(false)
+            , rd_actualFrequency(0)
         {
-            findPhase = false;
-            bypass = false;
-            phaseShift_deg = 0;
-            index = 0;
         }
         double outFrequency;
         double phaseShift_deg;

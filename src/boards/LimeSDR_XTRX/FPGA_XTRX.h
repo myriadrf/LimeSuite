@@ -7,6 +7,7 @@ namespace lime {
 
 class ISPI;
 
+/** @brief Class for communicating with the Xilinx XC7A50T-2CPG236I FPGA in the LimeSDR XTRX. */
 class FPGA_XTRX : public FPGA
 {
   public:

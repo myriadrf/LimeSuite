@@ -28,6 +28,7 @@ using namespace std::chrono;
 
 namespace lime {
 
+/** @brief A helper class for calculating the Average and the Root Mean Square */
 class AvgRmsCounter
 {
   public:
@@ -212,6 +213,10 @@ int TRXLooper_PCIE::TxSetup()
     return 0;
 }
 
+/** 
+  @brief A class for managing the transmission buffer for the PCIe transfer.
+  @tparam T The samples packet input type.
+ */
 template<class T> class TxBufferManager
 {
   public:

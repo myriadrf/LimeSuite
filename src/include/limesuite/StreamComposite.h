@@ -14,6 +14,7 @@ struct LIME_API StreamAggregate {
     int32_t streamIndex;
 };
 
+/** @brief Class for managing streaming from multiple devices at the same time. */
 class LIME_API StreamComposite
 {
   public:

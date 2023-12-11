@@ -5,6 +5,7 @@
 
 namespace lime {
 
+/** @brief A class for LimeSDR MMX8 device registry entry. */
 class LimeSDR_MMX8Entry : public DeviceRegistryEntry
 {
   public:

@@ -6,7 +6,7 @@
 
 namespace lime {
 
-// Communications helper to divert data to specific device
+/** @brief Communications helper to divert data to specific device. */
 class SlaveSelectShim : public ISPI
 {
   public:

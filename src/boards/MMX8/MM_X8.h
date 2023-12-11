@@ -19,7 +19,8 @@ namespace lime {
 class LitePCIe;
 class LimeSDR_XTRX;
 
-class LimeSDR_MMX8 : public lime::SDRDevice
+/** @brief Class for managing the LimeSDR-MMX8 device and its subdevices. */
+class LimeSDR_MMX8 : public SDRDevice
 {
   public:
     LimeSDR_MMX8() = delete;

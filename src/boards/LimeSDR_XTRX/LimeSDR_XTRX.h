@@ -17,6 +17,7 @@ class LitePCIe;
 
 static const float XTRX_DEFAULT_REFERENCE_CLOCK = 26e6;
 
+/** @brief Class for managing the LimeSDR XTRX device. */
 class LimeSDR_XTRX : public LMS7002M_SDRDevice
 {
   public:

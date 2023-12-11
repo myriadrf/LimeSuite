@@ -62,7 +62,7 @@ class LIME_API SDRDevice
         std::vector<Region> map;
     };
 
-    // General information about device internals, static capabilities
+    /** @brief General information about device internals, static capabilities. */
     struct Descriptor {
         std::string name; /// The displayable name for the device
         /*! The displayable name for the expansion card

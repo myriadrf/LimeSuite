@@ -7,6 +7,7 @@
 
 using namespace lime;
 
+/** @brief An abstract class for interfacing with Control/Status registers (CSR) of a PCIe device. */
 class PCIE_CSR_Pipe : public ISerialPort
 {
   public:
@@ -18,6 +19,7 @@ class PCIE_CSR_Pipe : public ISerialPort
     std::shared_ptr<LitePCIe> port;
 };
 
+/** @brief A class for communicating with a device's LMS7002M chip over a PCIe interface. */
 class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
 {
   public:
@@ -29,6 +31,7 @@ class LMS64C_LMS7002M_Over_PCIe : public lime::IComms
     PCIE_CSR_Pipe pipe;
 };
 
+/** @brief A class for communicating with a device's FPGA over a PCIe interface. */
 class LMS64C_FPGA_Over_PCIe : public lime::IComms
 {
   public:

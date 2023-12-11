@@ -10,6 +10,7 @@
 
 namespace lime {
 
+/** @brief A class for a USB transfer context for devices using the Cypress USB 3.0 CYUSB3014-BZXC USB controller. */
 class USBTransferContext_FX3 : public USBTransferContext
 {
   public:
