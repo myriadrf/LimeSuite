@@ -9,7 +9,7 @@
 
 set -e
 
-if [[ ! -d "_build" || ! -d "apidoc" ]]; then
+if [[ ! -d "_build" || ! -d "apidoc" || ! -d "../build/xml" ]]; then
     set "rebuild"
 fi
 
