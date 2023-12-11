@@ -38,6 +38,8 @@ SDRDevice::StreamConfig& SDRDevice::StreamConfig::operator=(const SDRDevice::Str
     return *this;
 }
 
+const char SDRDevice::Descriptor::SEPARATOR_SYMBOL = '@';
+
 std::vector<SDRDevice::MemoryDeviceListEntry> SDRDevice::Descriptor::ListMemoryDevices() const
 {
     std::vector<MemoryDeviceListEntry> devices;

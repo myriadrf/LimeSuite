@@ -91,7 +91,7 @@ class LIME_API SDRDevice
         std::map<eMemoryDevice, std::vector<MemoryRegions_t>> memoryDevices;
         std::shared_ptr<DeviceNode> socTree;
 
-        static const char SEPARATOR_SYMBOL = '@';
+        static const char SEPARATOR_SYMBOL;
         std::vector<MemoryDeviceListEntry> ListMemoryDevices() const;
     };
 
