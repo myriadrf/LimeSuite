@@ -4,20 +4,18 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
-#include <functional>
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <memory>
 
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
-#include "limesuite/DeviceNode.h"
 #include "limesuite/IComms.h"
 
 namespace lime {
 
-class DeviceNode;
+struct DeviceNode;
 /// SDRDevice can have multiple modules (RF chips), that can operate independently
 
 class LIME_API SDRDevice
