@@ -333,6 +333,11 @@ bool LimeSDR_MMX8::UploadMemory(
 
 int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
+    if (storage == nullptr)
+    {
+        return -1;
+    }
+
     if (storage->ownerDevice == this)
     {
         return mMainFPGAcomms->MemoryWrite(region.address, data, region.size);
@@ -350,6 +355,11 @@ int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region regio
 
 int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
+    if (storage == nullptr)
+    {
+        return -1;
+    }
+
     if (storage->ownerDevice == this)
     {
         return mMainFPGAcomms->MemoryRead(region.address, data, region.size);

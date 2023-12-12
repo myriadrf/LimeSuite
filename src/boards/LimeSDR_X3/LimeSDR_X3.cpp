@@ -1235,7 +1235,7 @@ bool LimeSDR_X3::UploadMemory(
 
 int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
-    if (storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
+    if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
@@ -1245,7 +1245,7 @@ int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region,
 
 int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
-    if (storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
+    if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
