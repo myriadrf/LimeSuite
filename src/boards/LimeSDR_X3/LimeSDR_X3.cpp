@@ -247,14 +247,14 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA);
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", "LMS7002M", lms1));
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", "LMS7002M", lms2));
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", "LMS7002M", lms3));
-    desc.socTree = std::make_shared<DeviceNode>("X3", "SDRDevice", this);
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", eDeviceNodeClass::FPGA_X3, mFPGA);
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", eDeviceNodeClass::LMS7002M, lms1));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", eDeviceNodeClass::LMS7002M, lms2));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", eDeviceNodeClass::LMS7002M, lms3));
+    desc.socTree = std::make_shared<DeviceNode>("X3", eDeviceNodeClass::SDRDevice, this);
     desc.socTree->children.push_back(fpgaNode);
 
-    desc.socTree->children.push_back(std::make_shared<DeviceNode>("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
+    desc.socTree->children.push_back(std::make_shared<DeviceNode>("CDCM6208", eDeviceNodeClass::CDCM6208, mClockGeneratorCDCM));
 }
 
 LimeSDR_X3::~LimeSDR_X3()

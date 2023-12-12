@@ -390,46 +390,42 @@ void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent& event)
     }
 }
 
-ISOCPanel* CreateGUI(wxWindow* parent, const std::string& klass, void* socPtr)
+ISOCPanel* CreateGUI(wxWindow* parent, eDeviceNodeClass deviceNodeClass, void* socPtr)
 {
-    if (klass == "SDRDevice")
+    switch (deviceNodeClass)
     {
-        SDRConfiguration_view* pnl = new SDRConfiguration_view(parent, wxNewId());
-        pnl->Setup(reinterpret_cast<SDRDevice*>(socPtr));
-        pnl->Hide();
-        return pnl;
+    case eDeviceNodeClass::ADF4002: {
+        ADF4002_wxgui* adfPanel = new ADF4002_wxgui(parent, wxNewId());
+        adfPanel->Initialize(reinterpret_cast<lime::ADF4002*>(socPtr));
+        return adfPanel;
     }
-    else if (klass == "LMS7002M")
-    {
-        lms7002_mainPanel* pnl = new lms7002_mainPanel(parent, wxNewId());
-        pnl->Initialize(reinterpret_cast<LMS7002M*>(socPtr));
-        return pnl;
+    case eDeviceNodeClass::CDCM6208: {
+        CDCM6208_panelgui* cdcmPanel = new CDCM6208_panelgui(parent, wxNewId());
+        cdcmPanel->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
+        return cdcmPanel;
     }
-    else if (klass == "CDCM6208")
-    {
-        CDCM6208_panelgui* pnl = new CDCM6208_panelgui(parent, wxNewId());
-        pnl->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
-        return pnl;
+    case eDeviceNodeClass::LMS7002M: {
+        lms7002_mainPanel* lmsPanel = new lms7002_mainPanel(parent, wxNewId());
+        lmsPanel->Initialize(reinterpret_cast<LMS7002M*>(socPtr));
+        return lmsPanel;
     }
-    else if (klass == "ADF4002")
-    {
-        ADF4002_wxgui* pnl = new ADF4002_wxgui(parent, wxNewId());
-        pnl->Initialize(reinterpret_cast<lime::ADF4002*>(socPtr));
-        return pnl;
+    case eDeviceNodeClass::SDRDevice: {
+        SDRConfiguration_view* sdrPanel = new SDRConfiguration_view(parent, wxNewId());
+        sdrPanel->Setup(reinterpret_cast<SDRDevice*>(socPtr));
+        sdrPanel->Hide();
+        return sdrPanel;
     }
-    else
-    {
-        printf("Unrecognized device class(%s)\n", klass.c_str());
+    default:
+        printf("Unrecognized device class(%u)\n", static_cast<uint8_t>(deviceNodeClass));
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 void LMS7SuiteAppFrame::DeviceTreeSelectionChanged(wxTreeEvent& event)
 {
     DeviceTreeItemData* item = reinterpret_cast<DeviceTreeItemData*>(deviceTree->GetItemData(event.GetItem()));
     if (item->gui == nullptr)
-        item->gui = CreateGUI(m_scrolledWindow1, item->soc->klass, item->soc->ptr);
+        item->gui = CreateGUI(m_scrolledWindow1, item->soc->deviceNodeClass, item->soc->ptr);
 
     if (mContent && mContent != item->gui)
     {
