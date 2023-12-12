@@ -46,8 +46,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 
     virtual bool UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
-    virtual int MemoryWrite(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, const void* data, size_t len) override;
-    virtual int MemoryRead(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, void* data, size_t len) override;
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:

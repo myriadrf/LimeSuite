@@ -71,7 +71,7 @@ class pnlBoardControls : public IModuleFrame
         wxTextCtrl* txtValue;
         wxButton* btnRead;
         wxButton* btnWrite;
-        lime::SDRDevice::MemoryDeviceSelect memoryDevice;
+        std::shared_ptr<lime::SDRDevice::DataStorage> dataStorage;
         lime::SDRDevice::Region memoryRegion;
     };
 

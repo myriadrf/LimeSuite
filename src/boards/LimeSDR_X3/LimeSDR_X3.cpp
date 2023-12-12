@@ -176,11 +176,12 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
         { "LMS7002M_1", SPI_LMS7002M_1 }, { "LMS7002M_2", SPI_LMS7002M_2 }, { "LMS7002M_3", SPI_LMS7002M_3 }, { "FPGA", SPI_FPGA }
     };
 
-    MemoryRegions_t eeprom;
-    eeprom[eMemoryRegion::VCTCXO_DAC] = { 16, 2 };
+    const std::unordered_map<eMemoryRegion, Region> eepromMap = { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } };
 
-    desc.memoryDevices[eMemoryDevice::FPGA_FLASH] = { {} };
-    desc.memoryDevices[eMemoryDevice::EEPROM] = { eeprom };
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::FPGA_FLASH)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::FPGA_FLASH);
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::EEPROM)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::EEPROM, eepromMap);
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     desc.customParameters.push_back(cp_temperature);
@@ -1232,24 +1233,24 @@ bool LimeSDR_X3::UploadMemory(
     return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_X3::MemoryWrite(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, const void* data, size_t len)
+int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
-    if (device != eMemoryDevice::EEPROM)
+    if (storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
 
-    return mfpgaPort->MemoryWrite(address, data, len);
+    return mfpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_X3::MemoryRead(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, void* data, size_t len)
+int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
-    if (device != eMemoryDevice::EEPROM)
+    if (storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
 
-    return mfpgaPort->MemoryRead(address, data, len);
+    return mfpgaPort->MemoryRead(region.address, data, region.size);
 }
 
 int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)

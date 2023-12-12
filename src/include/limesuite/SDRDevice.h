@@ -58,16 +58,19 @@ class LIME_API SDRDevice
         int32_t size;
     };
 
-    typedef std::unordered_map<eMemoryRegion, Region> MemoryRegions_t;
+    struct DataStorage {
+        SDRDevice* ownerDevice;
+        eMemoryDevice memoryDeviceType;
+        std::unordered_map<eMemoryRegion, Region> regions;
 
-    struct MemoryDeviceSelect {
-        eMemoryDevice memoryDevice;
-        uint32_t subdevice;
-    };
-
-    struct MemoryDeviceListEntry {
-        MemoryDeviceSelect information;
-        std::string name;
+        DataStorage(SDRDevice* device = nullptr,
+            eMemoryDevice type = eMemoryDevice::COUNT,
+            std::unordered_map<eMemoryRegion, Region> regions = {})
+            : ownerDevice(device)
+            , memoryDeviceType(type)
+            , regions(regions)
+        {
+        }
     };
 
     // General information about device internals, static capabilities
@@ -88,11 +91,11 @@ class LIME_API SDRDevice
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
-        std::map<eMemoryDevice, std::vector<MemoryRegions_t>> memoryDevices;
+        std::map<std::string, std::shared_ptr<DataStorage>> memoryDevices;
         std::shared_ptr<DeviceNode> socTree;
 
-        static const char SEPARATOR_SYMBOL;
-        std::vector<MemoryDeviceListEntry> ListMemoryDevices() const;
+        static const char DEVICE_NUMBER_SEPARATOR_SYMBOL;
+        static const char PATH_SEPARATOR_SYMBOL;
     };
 
     struct StreamStats {
@@ -311,11 +314,8 @@ class LIME_API SDRDevice
         return -1;
     };
 
-    virtual int MemoryWrite(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, const void* data, size_t len)
-    {
-        return -1;
-    };
-    virtual int MemoryRead(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, void* data, size_t len) { return -1; };
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
 };
 
 } // namespace lime

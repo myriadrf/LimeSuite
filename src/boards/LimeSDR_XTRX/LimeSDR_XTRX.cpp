@@ -120,12 +120,14 @@ LimeSDR_XTRX::LimeSDR_XTRX(
 
     desc.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
-    MemoryRegions_t eeprom;
-    eeprom[eMemoryRegion::VCTCXO_DAC] = { 16, 2 };
+    const std::unordered_map<eMemoryRegion, Region> eepromMap = { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } };
 
-    // desc.memoryDevices[eMemoryDevice::FPGA_RAM] = { {} };
-    desc.memoryDevices[eMemoryDevice::FPGA_FLASH] = { {} };
-    desc.memoryDevices[eMemoryDevice::EEPROM] = { eeprom };
+    // desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::FPGA_RAM)] =
+    //     std::make_shared<DataStorage>(this, eMemoryDevice::FPGA_RAM);
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::FPGA_FLASH)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::FPGA_FLASH);
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::EEPROM)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::EEPROM, eepromMap);
 
     desc.customParameters.push_back(cp_vctcxo_dac);
 
@@ -619,24 +621,24 @@ bool LimeSDR_XTRX::UploadMemory(
     return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_XTRX::MemoryWrite(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, const void* data, size_t len)
+int LimeSDR_XTRX::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
-    if (device != eMemoryDevice::EEPROM)
+    if (storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
 
-    return fpgaPort->MemoryWrite(address, data, len);
+    return fpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_XTRX::MemoryRead(eMemoryDevice device, uint8_t moduleIndex, uint32_t address, void* data, size_t len)
+int LimeSDR_XTRX::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
-    if (device != eMemoryDevice::EEPROM)
+    if (storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
 
-    return fpgaPort->MemoryRead(address, data, len);
+    return fpgaPort->MemoryRead(region.address, data, region.size);
 }
 
 } //namespace lime
