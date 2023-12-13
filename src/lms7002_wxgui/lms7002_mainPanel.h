@@ -29,7 +29,6 @@ class lms7002_mainPanel : public ISOCPanel
     void OnRegistersTest(wxCommandEvent& event);
     void Onnotebook_modulesPageChanged(wxNotebookEvent& event);
     void OnResetChip(wxCommandEvent& event);
-    void OnLoadDefault(wxCommandEvent& event);
     void OnReadTemperature(wxCommandEvent& event);
     void OnEnableMIMOchecked(wxCommandEvent& event);
 
@@ -92,7 +91,6 @@ class lms7002_mainPanel : public ISOCPanel
     wxButton* btnDownloadAll;
     wxButton* btnUploadAll;
     wxButton* btnResetChip;
-    wxButton* btnLoadDefault;
     wxStaticText* txtTemperature;
     wxButton* btnReadTemperature;
     wxNotebook* tabsNotebook;

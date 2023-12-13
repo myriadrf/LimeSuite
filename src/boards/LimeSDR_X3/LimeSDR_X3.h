@@ -3,31 +3,27 @@
 
 #include "CDCM6208/CDCM6208_Dev.h"
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
-
 #include "protocols/LMS64CProtocol.h"
+#include "dataTypes.h"
 
 #include <vector>
 #include <array>
 #include <memory>
 
-#include "dataTypes.h"
-
 namespace lime {
 
-class LMS7002M;
 class LitePCIe;
-class FPGA;
 class Equalizer;
-class TRXLooper_PCIE;
 class SlaveSelectShim;
 
 class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
   public:
     LimeSDR_X3() = delete;
-    LimeSDR_X3(
-        std::shared_ptr<IComms> spiLMS7002M, std::shared_ptr<IComms> spiFPGA, std::vector<std::shared_ptr<LitePCIe>> trxStreams);
+    LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
+        std::shared_ptr<IComms> spiFPGA,
+        std::vector<std::shared_ptr<LitePCIe>> trxStreams,
+        std::shared_ptr<ISerialPort> control);
     virtual ~LimeSDR_X3();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -40,7 +36,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
@@ -49,6 +45,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) override;
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:
@@ -68,12 +66,12 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
 
-    enum class ePathLMS1_Rx { NONE = 0, LNAH = 1, LNAL = 2 };
-    enum class ePathLMS1_Tx { NONE = 0, BAND1 = 1, BAND2 = 2 };
-    enum class ePathLMS2_Rx { NONE = 0, TDD = 1, FDD = 2, CALIBRATION = 3 };
-    enum class ePathLMS2_Tx { NONE = 0, TDD = 1, FDD = 2 };
+    enum class ePathLMS1_Rx : uint8_t { NONE, LNAH, LNAL };
+    enum class ePathLMS1_Tx : uint8_t { NONE, BAND1, BAND2 };
+    enum class ePathLMS2_Rx : uint8_t { NONE, TDD, FDD, CALIBRATION };
+    enum class ePathLMS2_Tx : uint8_t { NONE, TDD, FDD };
 
-    enum class eMemoryDevice { FPGA_RAM = 0, FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_RAM = 0, FPGA_FLASH, EEPROM, COUNT };
 
   private:
     void ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex);
@@ -84,18 +82,10 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
 
     std::array<std::shared_ptr<SlaveSelectShim>, 3> mLMS7002Mcomms;
-    std::shared_ptr<IComms> fpgaPort;
+    std::shared_ptr<IComms> mfpgaPort;
+    std::shared_ptr<ISerialPort> mSerialPort;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
-};
-
-class LimeSDR_X3Entry : public DeviceRegistryEntry
-{
-  public:
-    LimeSDR_X3Entry();
-    virtual ~LimeSDR_X3Entry();
-    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-    SDRDevice* make(const DeviceHandle& handle) override;
 };
 
 } // namespace lime

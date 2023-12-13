@@ -1,20 +1,7 @@
 #include "USBGeneric.h"
-#include "USBCommon.h"
 #include "Logger.h"
-#include <thread>
-#include <cassert>
-#include <mutex>
 
-#ifdef __unix__
-    #ifdef __GNUC__
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wpedantic"
-    #endif
-    #include <libusb.h>
-    #ifdef __GNUC__
-        #pragma GCC diagnostic pop
-    #endif
-#endif
+#include <cassert>
 
 namespace lime {
 
@@ -47,6 +34,11 @@ USBGeneric::USBGeneric(void* usbContext)
 #ifdef __unix__
     dev_handle = nullptr;
     ctx = reinterpret_cast<libusb_context*>(usbContext);
+
+    if (ctx == nullptr)
+    {
+        return;
+    }
 
     if (activeUSBconnections == 0)
     {
@@ -168,7 +160,6 @@ inline bool USBGeneric::IsConnected()
 
 void USBGeneric::Disconnect()
 {
-    isConnected = false;
     if (contexts == nullptr)
     {
         return;

@@ -3,10 +3,8 @@
 
 #include "CDCM6208/CDCM6208_Dev.h"
 #include "LMS7002M_SDRDevice.h"
-#include "limesuite/DeviceRegistry.h"
 #include "limesuite/IComms.h"
 #include "ADF4002/ADF4002.h"
-
 #include "protocols/LMS64CProtocol.h"
 
 #include <vector>
@@ -18,11 +16,7 @@
 
 namespace lime {
 
-class LMS7002M;
 class LitePCIe;
-class FPGA;
-class Equalizer;
-class TRXLooper_PCIE;
 class LimeSDR_XTRX;
 
 class LimeSDR_MMX8 : public lime::SDRDevice
@@ -62,7 +56,7 @@ class LimeSDR_MMX8 : public lime::SDRDevice
         uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
-    virtual void SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
     virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) override;
 
@@ -75,29 +69,22 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     virtual void* GetInternalChip(uint32_t index) override;
 
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t length) override;
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t length) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:
-    enum class eMemoryDevice { FPGA_FLASH, COUNT };
+    enum class eMemoryDevice : uint8_t { FPGA_FLASH, EEPROM, COUNT };
 
   private:
     std::shared_ptr<IComms> mMainFPGAcomms;
     Descriptor mDeviceDescriptor;
     std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
-    std::vector<lime::LimeSDR_XTRX*> mSubDevices;
-    std::map<uint32_t, lime::LimeSDR_XTRX*> chipSelectToDevice;
-    std::map<uint32_t, lime::LimeSDR_XTRX*> memorySelectToDevice;
-    std::map<uint32_t, lime::LimeSDR_XTRX*> customParameterToDevice;
+    std::vector<LimeSDR_XTRX*> mSubDevices;
+    std::map<uint32_t, LimeSDR_XTRX*> chipSelectToDevice;
+    std::map<uint32_t, LimeSDR_XTRX*> memorySelectToDevice;
+    std::map<uint32_t, LimeSDR_XTRX*> customParameterToDevice;
     lime::ADF4002* mADF;
-};
-
-class LimeSDR_MMX8Entry : public DeviceRegistryEntry
-{
-  public:
-    LimeSDR_MMX8Entry();
-    virtual ~LimeSDR_MMX8Entry();
-    std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
-    SDRDevice* make(const DeviceHandle& handle) override;
 };
 
 } // namespace lime

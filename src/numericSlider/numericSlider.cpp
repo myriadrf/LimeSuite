@@ -63,7 +63,6 @@ void NumericSlider::OnSpinnerChangeEnter(wxSpinEvent& event)
 {
     wxCommandEvent evt(wxEVT_COMMAND_SPINCTRL_UPDATED);
     evt.SetId(this->GetId());
-    std::string test = event.GetString().ToStdString();
     long value = 0;
     event.GetString().ToLong(&value);
     evt.SetInt(value);

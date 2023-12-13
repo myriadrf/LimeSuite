@@ -701,6 +701,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
         Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
 
         EndBatch();
+    }
 #endif // BATCH_TX_SETUP
     //BIAS
     /*{

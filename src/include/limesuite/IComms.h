@@ -10,10 +10,10 @@ class LIME_API ISPI
 {
   public:
     // Default path for writing/reading registers
-    virtual void SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 
     // Writing/reading registers for specific slave
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 };
 
 class LIME_API II2C
@@ -67,6 +67,8 @@ class IComms : public ISPI
         return -1;
     }
     virtual int ResetDevice(int chipSelect) { return -1; };
+    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return -1; };
+    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return -1; };
 };
 
 } // namespace lime

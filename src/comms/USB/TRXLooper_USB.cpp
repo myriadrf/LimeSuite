@@ -113,6 +113,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
     const int bytesForFrame = (packed ? 3 : 4) * (mimo ? 2 : 1);
     uint maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
 
+    const uint8_t safeTxEndPt = txEndPt; // To make sure no undefined behaviour happens when killing the thread
+
     // thread ready for work, just wait for stream enable
     {
         std::unique_lock<std::mutex> lock(streamMutex);
@@ -133,7 +135,9 @@ void TRXLooper_USB::TransmitPacketsLoop()
             {
                 int bytesSent = comms->FinishDataXfer(&buffers[bufferIndex * bufferSize], bufferSize, handles[bufferIndex]);
                 totalBytesSent += bytesSent;
+                mTx.stats.bytesTransferred += bytesSent;
                 handles[bufferIndex] = -1;
+                mTx.stats.packets++;
             }
             else
             {
@@ -205,6 +209,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 payloadSize = 0;
                 packetsCreated = 0;
 
+                mTx.stats.timestamp = srcPkt->timestamp;
+
                 header = reinterpret_cast<TxHeader*>(&buffers[bufferIndex * bufferSize]);
                 payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
 
@@ -227,7 +233,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
         }
     }
 
-    comms->AbortEndpointXfers(txEndPt);
+    comms->AbortEndpointXfers(safeTxEndPt);
     mTx.stats.dataRate_Bps = 0;
 }
 
@@ -272,11 +278,13 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     const int samplesInPkt =
         (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;
-    const int outputSampleSize = mConfig.format == SDRDevice::StreamConfig::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
+    const int outputSampleSize =
+        mConfig.format == SDRDevice::StreamConfig::DataFormat::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
     const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * outputSampleSize;
 
     SamplesPacketType* outputPkt = nullptr;
     int64_t expectedTS = 0;
+    const uint8_t safeRxEndPt = rxEndPt; // To make sure no undefined behaviour happens when killing the thread
 
     SDRDevice::StreamStats& stats = mRx.stats;
 
@@ -294,7 +302,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     for (int i = 0; i < batchCount; ++i)
     {
-        handles[i] = comms->BeginDataXfer(&buffers[i * bufferSize], bufferSize, rxEndPt);
+        handles[i] = comms->BeginDataXfer(&buffers[i * bufferSize], bufferSize, safeRxEndPt);
     }
 
     while (!mRx.terminate.load(std::memory_order_relaxed))
@@ -309,6 +317,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
                 bytesReceived = comms->FinishDataXfer(&buffers[bufferIndex * bufferSize], bufferSize, handles[bufferIndex]);
                 stats.packets++;
                 totalBytesReceived += bytesReceived;
+                stats.bytesTransferred += bytesReceived;
 
                 if (bytesReceived != bufferSize)
                 {
@@ -362,6 +371,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
             expectedTS = pkt->counter + samplesProduced;
             mRx.lastTimestamp.store(expectedTS, std::memory_order_relaxed);
+            stats.timestamp = expectedTS;
 
             NegateQ(outputPkt, TRXDir::Rx);
 
@@ -398,7 +408,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
         }
     }
 
-    comms->AbortEndpointXfers(rxEndPt);
+    comms->AbortEndpointXfers(safeRxEndPt);
     mRx.stats.dataRate_Bps = 0;
 }
 

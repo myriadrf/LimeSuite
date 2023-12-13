@@ -26,20 +26,9 @@ class LIME_API SDRDevice
     static constexpr uint8_t MAX_CHANNEL_COUNT = 16;
     static constexpr uint8_t MAX_RFSOC_COUNT = 16;
 
-    enum LogLevel { CRITICAL = 0, ERROR, WARNING, INFO, VERBOSE, DEBUG };
+    enum class LogLevel : uint8_t { CRITICAL, ERROR, WARNING, INFO, VERBOSE, DEBUG };
     typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
     typedef void (*LogCallbackType)(LogLevel, const char*);
-
-    enum ClockID {
-        CLK_REFERENCE = 0,
-        CLK_SXR = 1, ///RX LO clock
-        CLK_SXT = 2, ///TX LO clock
-        CLK_CGEN = 3,
-        ///RXTSP reference clock (read-only)
-        CLK_RXTSP = 4,
-        ///TXTSP reference clock (read-only)
-        CLK_TXTSP = 5
-    };
 
     typedef std::map<std::string, uint32_t> SlaveNameIds_t;
 
@@ -48,6 +37,10 @@ class LIME_API SDRDevice
         uint8_t channelCount;
         std::vector<std::string> rxPathNames;
         std::vector<std::string> txPathNames;
+
+        Range samplingRateRange;
+        Range frequencyRange;
+        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
     };
 
     struct CustomParameter {
@@ -59,8 +52,14 @@ class LIME_API SDRDevice
     };
 
     struct DataStorage {
+        struct Region {
+            std::string name;
+            int32_t address;
+            int32_t size;
+        };
         std::string name;
         uint32_t id;
+        std::vector<Region> map;
     };
 
     // General information about device internals, static capabilities
@@ -86,11 +85,18 @@ class LIME_API SDRDevice
     };
 
     struct StreamStats {
+        struct FIFOStats {
+            std::size_t totalCount;
+            std::size_t usedCount;
+
+            float ratio() { return static_cast<float>(usedCount) / totalCount; }
+        };
+
         StreamStats() { memset(this, 0, sizeof(StreamStats)); }
         uint64_t timestamp;
         int64_t bytesTransferred;
         int64_t packets;
-        float FIFO_filled;
+        FIFOStats FIFO;
         float dataRate_Bps;
         uint32_t overrun;
         uint32_t underrun;
@@ -99,7 +105,7 @@ class LIME_API SDRDevice
     };
 
     struct GPS_Lock {
-        enum LockStatus { Undefined = 0, NotAvailable = 1, Has2D = 2, Has3D = 3 };
+        enum class LockStatus : uint8_t { Undefined, NotAvailable, Has2D, Has3D };
 
         LockStatus galileo;
         LockStatus beidou;
@@ -110,11 +116,7 @@ class LIME_API SDRDevice
     // channels order and data transmission formats setup
     struct StreamConfig {
         struct Extras {
-            Extras()
-            {
-                memset(this, 0, sizeof(Extras));
-                usePoll = true;
-            };
+            Extras();
             bool usePoll;
             uint16_t rxSamplesInPacket;
             uint32_t rxPacketsInBatch;
@@ -124,13 +126,15 @@ class LIME_API SDRDevice
             bool waitPPS; // start sampling from next following PPS
         };
         typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
-        enum DataFormat {
+        enum class DataFormat : uint8_t {
             I16,
             I12,
             F32,
         };
 
-        StreamConfig() { memset(this, 0, sizeof(StreamConfig)); }
+        StreamConfig();
+        ~StreamConfig();
+        StreamConfig& operator=(const StreamConfig& srd);
 
         uint8_t rxCount;
         uint8_t rxChannels[MAX_CHANNEL_COUNT];
@@ -231,7 +235,7 @@ class LIME_API SDRDevice
         return -1;
     }
 
-    virtual void SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
     virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
 
@@ -291,6 +295,9 @@ class LIME_API SDRDevice
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
     virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) { return -1; };
+
+    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) { return -1; };
+    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) { return -1; };
 };
 
 } // namespace lime

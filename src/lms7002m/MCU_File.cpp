@@ -458,7 +458,7 @@ bool MCU_File::BitString(const unsigned long address, const unsigned char bits, 
 {
     bool ok = false;
     long i;
-    unsigned char chr;
+    unsigned char chr = 0;
     unsigned long data = 0;
     unsigned long tmp;
 

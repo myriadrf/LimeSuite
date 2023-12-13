@@ -261,12 +261,12 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
     const uint8_t chipIndex = this->lmsIndex;
     device->StreamStatus(chipIndex, &rxStats, &txStats);
 
-    float RxFilled = 100.0 * rxStats.FIFO_filled;
-    gaugeRxBuffer->SetValue((int)RxFilled);
+    float RxFilled = 100.0 * rxStats.FIFO.ratio();
+    gaugeRxBuffer->SetValue(static_cast<int>(RxFilled));
     lblRxDataRate->SetLabel(printDataRate(rxStats.dataRate_Bps));
 
-    float TxFilled = 100.0 * (float)txStats.FIFO_filled;
-    gaugeTxBuffer->SetValue((int)TxFilled);
+    float TxFilled = 100.0 * txStats.FIFO.ratio();
+    gaugeTxBuffer->SetValue(static_cast<int>(TxFilled));
     lblTxDataRate->SetLabel(printDataRate(txStats.dataRate_Bps));
 }
 
@@ -406,13 +406,14 @@ void fftviewer_frFFTviewer::StreamingLoop(
             samplesCaptured = 0;
         }
 
-    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::I16 : SDRDevice::StreamConfig::I12;
+    auto fmt =
+        pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::DataFormat::I16 : SDRDevice::StreamConfig::DataFormat::I12;
 
     SDRDevice::StreamConfig config;
     config.rxCount = channelsCount;
     if (runTx)
         config.txCount = channelsCount;
-    config.format = SDRDevice::StreamConfig::F32;
+    config.format = SDRDevice::StreamConfig::DataFormat::F32;
     config.linkFormat = fmt;
     for (int i = 0; i < channelsCount; ++i)
     {

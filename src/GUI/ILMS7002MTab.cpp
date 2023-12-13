@@ -56,13 +56,13 @@ void ILMS7002MTab::SetChannel(uint8_t channel)
 
 void ILMS7002MTab::WriteParam(const LMS7Parameter& param, uint16_t val)
 {
-    lmsControl->SetActiveChannel(mChannel == 0 ? LMS7002M::ChA : LMS7002M::ChB);
+    lmsControl->SetActiveChannel(mChannel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
     lmsControl->Modify_SPI_Reg_bits(param, val);
 }
 
 int ILMS7002MTab::ReadParam(const LMS7Parameter& param)
 {
-    lmsControl->SetActiveChannel(mChannel == 0 ? LMS7002M::ChA : LMS7002M::ChB);
+    lmsControl->SetActiveChannel(mChannel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
     return lmsControl->Get_SPI_Reg_bits(param);
 }
 

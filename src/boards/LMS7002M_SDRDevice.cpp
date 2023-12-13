@@ -23,7 +23,7 @@ LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
     }
 }
 
-void LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+int LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     throw(OperationNotSupported("TransactSPI not implemented"));
 }
@@ -151,24 +151,22 @@ void LMS7002M_SDRDevice::StreamStop(uint8_t moduleIndex)
     mStreamers[moduleIndex] = nullptr;
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, lime::complex32f_t** dest, uint32_t count, StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex32f_t** dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, lime::complex16_t** dest, uint32_t count, StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t** dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(
-    uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(
-    uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
@@ -213,6 +211,16 @@ int LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, 
         return -1;
     soc.ResetLogicregisters();
     return 0;
+}
+
+int LMS7002M_SDRDevice::ReadFPGARegister(uint32_t address)
+{
+    return mFPGA->ReadRegister(address);
+}
+
+int LMS7002M_SDRDevice::WriteFPGARegister(uint32_t address, uint32_t value)
+{
+    return mFPGA->WriteRegister(address, value);
 }
 
 } // namespace lime

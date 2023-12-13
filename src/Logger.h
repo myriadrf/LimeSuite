@@ -15,12 +15,12 @@
 
 namespace lime {
 
-enum LogLevel {
-    LOG_LEVEL_CRITICAL = 0, //!< A critical error. The application might not be able to continue running successfully.
-    LOG_LEVEL_ERROR = 1, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
-    LOG_LEVEL_WARNING = 2, //!< A warning. An operation completed with an unexpected result.
-    LOG_LEVEL_INFO = 3, //!< An informational message, usually denoting the successful completion of an operation.
-    LOG_LEVEL_DEBUG = 4, //!< A debugging message, only shown in Debug configuration.
+enum class LogLevel : uint8_t {
+    CRITICAL, //!< A critical error. The application might not be able to continue running successfully.
+    ERROR, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
+    WARNING, //!< A warning. An operation completed with an unexpected result.
+    INFO, //!< An informational message, usually denoting the successful completion of an operation.
+    DEBUG, //!< A debugging message, only shown in Debug configuration.
 };
 
 //! Log a critical error message with formatting
@@ -77,7 +77,7 @@ static inline void lime::critical(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    lime::log(lime::LOG_LEVEL_CRITICAL, format, args);
+    lime::log(lime::LogLevel::CRITICAL, format, args);
     va_end(args);
 }
 
@@ -85,7 +85,7 @@ static inline int lime::error(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    lime::log(lime::LOG_LEVEL_ERROR, format, args);
+    lime::log(lime::LogLevel::ERROR, format, args);
     va_end(args);
     return -1;
 }
@@ -94,7 +94,7 @@ static inline void lime::warning(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    lime::log(lime::LOG_LEVEL_WARNING, format, args);
+    lime::log(lime::LogLevel::WARNING, format, args);
     va_end(args);
 }
 
@@ -102,7 +102,7 @@ static inline void lime::info(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    lime::log(lime::LOG_LEVEL_INFO, format, args);
+    lime::log(lime::LogLevel::INFO, format, args);
     va_end(args);
 }
 
@@ -110,7 +110,7 @@ static inline void lime::debug(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    lime::log(lime::LOG_LEVEL_DEBUG, format, args);
+    lime::log(lime::LogLevel::DEBUG, format, args);
     va_end(args);
 }
 

@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <functional>
 #include <vector>
+#include <utility>
 
 namespace lime {
 class ISPI;
@@ -44,15 +45,15 @@ class LIME_API LMS7002M
   public:
     static constexpr double CGEN_MAX_FREQ = 640e6;
 
-    enum class ClockID {
-        CLK_REFERENCE = 0,
-        CLK_SXR = 1, ///RX LO clock
-        CLK_SXT = 2, ///TX LO clock
-        CLK_CGEN = 3,
+    enum class ClockID : uint8_t {
+        CLK_REFERENCE,
+        CLK_SXR, ///RX LO clock
+        CLK_SXT, ///TX LO clock
+        CLK_CGEN,
         ///RXTSP reference clock (read-only)
-        CLK_RXTSP = 4,
+        CLK_RXTSP,
         ///TXTSP reference clock (read-only)
-        CLK_TXTSP = 5
+        CLK_TXTSP
     };
 
     struct CGEN_details {
@@ -96,12 +97,12 @@ class LIME_API LMS7002M
      * Enum for configuring the channel selection.
      * @see MAC register
      */
-    enum Channel {
-        ChA = 1,
-        ChB = 2,
-        ChAB = 3,
-        ChSXR = 1, //SXR register space
-        ChSXT = 2, //SXT register space
+    enum class Channel : uint8_t {
+        ChA = 1U,
+        ChB = 2U,
+        ChAB = 3U,
+        ChSXR = 1U, //SXR register space
+        ChSXT = 2U, //SXT register space
     };
 
     /*!
@@ -255,8 +256,8 @@ class LIME_API LMS7002M
     ///@}
 
     ///@name RF selection
-    enum PathRFE {
-        PATH_RFE_NONE = 0,
+    enum class PathRFE : uint8_t {
+        PATH_RFE_NONE,
         PATH_RFE_LNAH,
         PATH_RFE_LNAL,
         PATH_RFE_LNAW,
@@ -295,7 +296,7 @@ class LIME_API LMS7002M
     int SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
     bool GetSXLocked(TRXDir dir);
     ///VCO modules available for tuning
-    enum VCO_Module { VCO_CGEN, VCO_SXR, VCO_SXT };
+    enum class VCO_Module : uint8_t { VCO_CGEN, VCO_SXR, VCO_SXT };
     int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
     ///@}
@@ -314,11 +315,11 @@ class LIME_API LMS7002M
     int WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
     int SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwidth);
 
-    int SetNCOFrequencies(TRXDir dir, float_type* freq_Hz, uint8_t count, float_type phaseOffset);
+    int SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     // @param phaseOffset optional will be filled with phase offset value
     std::vector<float_type> GetNCOFrequencies(TRXDir dir, float_type* phaseOffset = nullptr);
-    int SetNCOPhases(TRXDir dir, float_type* angles_deg, uint8_t count, float_type frequencyOffset);
+    int SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
     // @param frequencyOffset optional will be filled with NCO frequency offset value
     std::vector<float_type> GetNCOPhases(TRXDir dir, float_type* frequencyOffset = nullptr);
@@ -330,11 +331,11 @@ class LIME_API LMS7002M
     float_type GetSampleRate(TRXDir dir, Channel ch);
 
     ///@name LML
-    enum LMLSampleSource {
-        AI = 0,
-        AQ = 1,
-        BI = 2,
-        BQ = 3,
+    enum class LMLSampleSource : uint8_t {
+        AI,
+        AQ,
+        BI,
+        BQ,
     };
 
     /*!
@@ -440,6 +441,7 @@ class LIME_API LMS7002M
         MEMORY_SECTIONS_COUNT
     };
     virtual int SetDefaults(MemorySection module);
+    void ModifyRegistersDefaults(const std::vector<std::pair<uint16_t, uint16_t>>& registerValues);
 
     static float_type gVCO_frequency_table[3][2];
     static float_type gCGEN_VCO_frequencies[2];
@@ -450,8 +452,8 @@ class LIME_API LMS7002M
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
 
-    enum LogType { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
-    void SetLogCallback(std::function<void(const char*, int)> callback);
+    enum class LogType : uint8_t { LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DATA };
+    void SetLogCallback(std::function<void(const char*, LogType)> callback);
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
 
@@ -531,7 +533,7 @@ class LIME_API LMS7002M
         va_end(argList);
     }
 
-    std::function<void(const char*, int)> log_callback;
+    std::function<void(const char*, LogType)> log_callback;
     void Log(LogType type, const char* format, va_list argList);
 
     ///port used for communicating with LMS7002M

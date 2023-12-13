@@ -20,8 +20,8 @@ class LitePCIe
     bool IsOpen();
 
     // Write/Read for communicating to control end points (SPI, I2C...)
-    int WriteControl(const uint8_t* buffer, int length, int timeout_ms = 100);
-    int ReadControl(uint8_t* buffer, int length, int timeout_ms = 100);
+    virtual int WriteControl(const uint8_t* buffer, int length, int timeout_ms = 100);
+    virtual int ReadControl(uint8_t* buffer, int length, int timeout_ms = 100);
 
     // Write/Read for samples streaming
     int WriteRaw(const uint8_t* buffer, int length, int timeout_ms = 100);

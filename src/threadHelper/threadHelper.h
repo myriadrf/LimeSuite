@@ -5,9 +5,9 @@
 
 namespace lime {
 
-enum ThreadPriority { LOWEST, LOW, BELOW_NORMAL, NORMAL, ABOVE_NORMAL, HIGH, HIGHEST };
+enum class ThreadPriority : uint8_t { LOWEST, LOW, BELOW_NORMAL, NORMAL, ABOVE_NORMAL, HIGH, HIGHEST };
 
-enum ThreadPolicy {
+enum class ThreadPolicy : uint8_t {
     DEFAULT,
     REALTIME,
     PREEMPTIVE, // FIFO
