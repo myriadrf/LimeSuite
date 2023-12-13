@@ -20,12 +20,46 @@ In the root folder of the repository run these commands:
 
 .. code-block:: bash
 
-    cd build
-    cmake ..
-    make
+    cd build # Change working directory to the build folder
+    cmake .. # Generate make file
+    make # Compile the program
 
 After a successful compilation the resulting binaries are placed in the `build/bin/` folder
 located in the root directory of the repository.
+
+Testing
+-------
+
+This project contains unit tests to test functionality of some parts of the system.
+
+Running the tests
+^^^^^^^^^^^^^^^^^
+
+To run these tests, in the root folder of the repository run these commands:
+
+.. code-block:: bash
+
+    cd build # Change working directory to the build folder
+    cmake .. -DBUILD_SHARED_LIBS=OFF # Generate make file with static libraries
+    make LimeSuite2Test # Build the tests binary
+    bin/LimeSuite2Test # Run the tests binary
+
+After the tests are ran, you should see the information about which tests were ran,
+and whether they were successful or not.
+
+Code coverage
+^^^^^^^^^^^^^
+
+To generate a web-based testing code coverage report, in the root folder of the repository run these commands:
+
+.. code-block:: bash
+
+    cd build # Change working directory to the build folder
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF # Generate make file with static libraries and without optimizations
+    make LimeSuite2Test_coverage # Generate the coverage report with lcov
+
+After generating the report it can be found in the `build/LimeSuite2Test_coverage`
+directory and opening the `index.html` file with a browser. 
 
 .. _`GCC`: https://gcc.gnu.org/
 .. _`CMake`: https://cmake.org/
