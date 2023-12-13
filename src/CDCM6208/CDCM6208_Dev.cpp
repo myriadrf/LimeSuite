@@ -28,12 +28,12 @@ int CDCM_Dev::Init(double primaryFreq, double secondaryFreq)
     VCO.prim_freq = primaryFreq;
     VCO.sec_freq = secondaryFreq;
 
-    outputs.Y0Y1.requested_freq = 30.72e6;
-    outputs.Y2Y3.requested_freq = 30.72e6;
-    outputs.Y4.requested_freq = 30.72e6;
-    outputs.Y5.requested_freq = 30.72e6;
-    outputs.Y6.requested_freq = 30.72e6;
-    outputs.Y7.requested_freq = 30.72e6;
+    Outputs.Y0Y1.requested_freq = 30.72e6;
+    Outputs.Y2Y3.requested_freq = 30.72e6;
+    Outputs.Y4.requested_freq = 30.72e6;
+    Outputs.Y5.requested_freq = 30.72e6;
+    Outputs.Y6.requested_freq = 30.72e6;
+    Outputs.Y7.requested_freq = 30.72e6;
 
     return DownloadConfiguration();
 }
@@ -49,12 +49,12 @@ int CDCM_Dev::Reset(double primaryFreq, double secondaryFreq)
     VCO.prim_freq = primaryFreq;
     VCO.sec_freq = secondaryFreq;
 
-    outputs.Y0Y1.requested_freq = 30.72e6;
-    outputs.Y2Y3.requested_freq = 30.72e6;
-    outputs.Y4.requested_freq = 30.72e6;
-    outputs.Y5.requested_freq = 30.72e6;
-    outputs.Y6.requested_freq = 30.72e6;
-    outputs.Y7.requested_freq = 30.72e6;
+    Outputs.Y0Y1.requested_freq = 30.72e6;
+    Outputs.Y2Y3.requested_freq = 30.72e6;
+    Outputs.Y4.requested_freq = 30.72e6;
+    Outputs.Y5.requested_freq = 30.72e6;
+    Outputs.Y6.requested_freq = 30.72e6;
+    Outputs.Y7.requested_freq = 30.72e6;
 
     struct regVal {
         uint16_t addr;
@@ -173,7 +173,7 @@ int CDCM_Dev::GetVCOInput()
 */
 void CDCM_Dev::SetOutputs(CDCM_Outputs Outputs)
 {
-    this->outputs = Outputs;
+    this->Outputs = Outputs;
 }
 
 /**
@@ -189,28 +189,28 @@ int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
     switch (output)
     {
     case CDCM_Y0Y1:
-        outputs.Y0Y1.requested_freq = frequency;
-        outputs.Y0Y1.used = true;
+        Outputs.Y0Y1.requested_freq = frequency;
+        Outputs.Y0Y1.used = true;
         break;
     case CDCM_Y2Y3:
-        outputs.Y2Y3.requested_freq = frequency;
-        outputs.Y2Y3.used = true;
+        Outputs.Y2Y3.requested_freq = frequency;
+        Outputs.Y2Y3.used = true;
         break;
     case CDCM_Y4:
-        outputs.Y4.requested_freq = frequency;
-        outputs.Y4.used = true;
+        Outputs.Y4.requested_freq = frequency;
+        Outputs.Y4.used = true;
         break;
     case CDCM_Y5:
-        outputs.Y5.requested_freq = frequency;
-        outputs.Y5.used = true;
+        Outputs.Y5.requested_freq = frequency;
+        Outputs.Y5.used = true;
         break;
     case CDCM_Y6:
-        outputs.Y6.requested_freq = frequency;
-        outputs.Y6.used = true;
+        Outputs.Y6.requested_freq = frequency;
+        Outputs.Y6.used = true;
         break;
     case CDCM_Y7:
-        outputs.Y7.requested_freq = frequency;
-        outputs.Y7.used = true;
+        Outputs.Y7.requested_freq = frequency;
+        Outputs.Y7.used = true;
         break;
     default:
         break;
@@ -232,43 +232,43 @@ int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
         return_val = 0;
     }
 
-    if (outputs.Y0Y1.used)
-        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.requested_freq);
+    if (Outputs.Y0Y1.used)
+        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
     else
-        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.output_freq);
+        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
 
-    if (outputs.Y2Y3.used)
-        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.requested_freq);
+    if (Outputs.Y2Y3.used)
+        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
     else
-        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.output_freq);
+        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
 
-    if (outputs.Y4.used)
-        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.requested_freq;
+    if (Outputs.Y4.used)
+        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.requested_freq;
     else
-        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.output_freq;
+        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.output_freq;
 
-    SolveFracDiv(outputs.Y4.divider_val, &outputs.Y4);
+    SolveFracDiv(Outputs.Y4.divider_val, &Outputs.Y4);
 
-    if (outputs.Y5.used)
-        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.requested_freq;
+    if (Outputs.Y5.used)
+        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.requested_freq;
     else
-        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.output_freq;
+        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.output_freq;
 
-    SolveFracDiv(outputs.Y5.divider_val, &outputs.Y5);
+    SolveFracDiv(Outputs.Y5.divider_val, &Outputs.Y5);
 
-    if (outputs.Y6.used)
-        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.requested_freq;
+    if (Outputs.Y6.used)
+        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.requested_freq;
     else
-        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.output_freq;
+        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.output_freq;
 
-    SolveFracDiv(outputs.Y6.divider_val, &outputs.Y6);
+    SolveFracDiv(Outputs.Y6.divider_val, &Outputs.Y6);
 
-    if (outputs.Y7.used)
-        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.requested_freq;
+    if (Outputs.Y7.used)
+        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.requested_freq;
     else
-        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.output_freq;
+        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.output_freq;
 
-    SolveFracDiv(outputs.Y7.divider_val, &outputs.Y7);
+    SolveFracDiv(Outputs.Y7.divider_val, &Outputs.Y7);
 
     UpdateOutputFrequencies();
 
@@ -302,43 +302,43 @@ int CDCM_Dev::RecalculateFrequencies()
         return_val = 0;
     }
 
-    if (outputs.Y0Y1.used)
-        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.requested_freq);
+    if (Outputs.Y0Y1.used)
+        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
     else
-        outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.output_freq);
+        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
 
-    if (outputs.Y2Y3.used)
-        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.requested_freq);
+    if (Outputs.Y2Y3.used)
+        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
     else
-        outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / outputs.Y2Y3.output_freq);
+        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
 
-    if (outputs.Y4.used)
-        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.requested_freq;
+    if (Outputs.Y4.used)
+        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.requested_freq;
     else
-        outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.output_freq;
+        Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.output_freq;
 
-    SolveFracDiv(outputs.Y4.divider_val, &outputs.Y4);
+    SolveFracDiv(Outputs.Y4.divider_val, &Outputs.Y4);
 
-    if (outputs.Y5.used)
-        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.requested_freq;
+    if (Outputs.Y5.used)
+        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.requested_freq;
     else
-        outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.output_freq;
+        Outputs.Y5.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.output_freq;
 
-    SolveFracDiv(outputs.Y5.divider_val, &outputs.Y5);
+    SolveFracDiv(Outputs.Y5.divider_val, &Outputs.Y5);
 
-    if (outputs.Y6.used)
-        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.requested_freq;
+    if (Outputs.Y6.used)
+        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.requested_freq;
     else
-        outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y6.output_freq;
+        Outputs.Y6.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y6.output_freq;
 
-    SolveFracDiv(outputs.Y6.divider_val, &outputs.Y6);
+    SolveFracDiv(Outputs.Y6.divider_val, &Outputs.Y6);
 
-    if (outputs.Y7.used)
-        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.requested_freq;
+    if (Outputs.Y7.used)
+        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.requested_freq;
     else
-        outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / outputs.Y7.output_freq;
+        Outputs.Y7.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y7.output_freq;
 
-    SolveFracDiv(outputs.Y7.divider_val, &outputs.Y7);
+    SolveFracDiv(Outputs.Y7.divider_val, &Outputs.Y7);
 
     UpdateOutputFrequencies();
 
@@ -355,17 +355,17 @@ double CDCM_Dev::GetFrequency(cdcm_output_t output)
     switch (output)
     {
     case CDCM_Y0Y1:
-        return outputs.Y0Y1.output_freq;
+        return Outputs.Y0Y1.output_freq;
     case CDCM_Y2Y3:
-        return outputs.Y2Y3.output_freq;
+        return Outputs.Y2Y3.output_freq;
     case CDCM_Y4:
-        return outputs.Y4.output_freq;
+        return Outputs.Y4.output_freq;
     case CDCM_Y5:
-        return outputs.Y5.output_freq;
+        return Outputs.Y5.output_freq;
     case CDCM_Y6:
-        return outputs.Y6.output_freq;
+        return Outputs.Y6.output_freq;
     case CDCM_Y7:
-        return outputs.Y7.output_freq;
+        return Outputs.Y7.output_freq;
     default:
         return -1;
     }
@@ -497,45 +497,45 @@ int CDCM_Dev::UploadConfiguration()
     CDCM_Regs[4].val |= ((VCO.R_div - 1) & 0xF) << 8;
     CDCM_Regs[4].val |= ((VCO.input_mux - 1) & 1) << 12;
 
-    CDCM_Regs[6].val = 0 | ((uint16_t)(outputs.Y0Y1.divider_val - 1) & 0xFF);
+    CDCM_Regs[6].val = 0 | ((uint16_t)(Outputs.Y0Y1.divider_val - 1) & 0xFF);
 
-    CDCM_Regs[8].val = 0 | ((uint16_t)(outputs.Y2Y3.divider_val - 1) & 0xFF);
+    CDCM_Regs[8].val = 0 | ((uint16_t)(Outputs.Y2Y3.divider_val - 1) & 0xFF);
 
     CDCM_Regs[9].val &= ~0x1E00;
-    CDCM_Regs[9].val |= (((int)outputs.Y4.isFrac) << 9);
-    CDCM_Regs[9].val |= ((outputs.Y4.prescaler - 2) & 7) << 10;
+    CDCM_Regs[9].val |= (((int)Outputs.Y4.isFrac) << 9);
+    CDCM_Regs[9].val |= ((Outputs.Y4.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[10].val = 0 | (((outputs.Y4.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[10].val |= (outputs.Y4.fractional_part >> 16) & 0xF;
+    CDCM_Regs[10].val = 0 | (((Outputs.Y4.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[10].val |= (Outputs.Y4.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[11].val = outputs.Y4.fractional_part & 0xFFFF;
+    CDCM_Regs[11].val = Outputs.Y4.fractional_part & 0xFFFF;
 
     CDCM_Regs[12].val &= ~0x1E00;
-    CDCM_Regs[12].val |= (((int)outputs.Y5.isFrac) << 9);
-    CDCM_Regs[12].val |= ((outputs.Y5.prescaler - 2) & 7) << 10;
+    CDCM_Regs[12].val |= (((int)Outputs.Y5.isFrac) << 9);
+    CDCM_Regs[12].val |= ((Outputs.Y5.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[13].val = 0 | (((outputs.Y5.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[13].val |= (outputs.Y5.fractional_part >> 16) & 0xF;
+    CDCM_Regs[13].val = 0 | (((Outputs.Y5.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[13].val |= (Outputs.Y5.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[14].val = outputs.Y5.fractional_part & 0xFFFF;
+    CDCM_Regs[14].val = Outputs.Y5.fractional_part & 0xFFFF;
 
     CDCM_Regs[15].val &= ~0x1E00;
-    CDCM_Regs[15].val |= (((int)outputs.Y6.isFrac) << 9);
-    CDCM_Regs[15].val |= ((outputs.Y6.prescaler - 2) & 7) << 10;
+    CDCM_Regs[15].val |= (((int)Outputs.Y6.isFrac) << 9);
+    CDCM_Regs[15].val |= ((Outputs.Y6.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[16].val = 0 | (((outputs.Y6.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[16].val |= (outputs.Y6.fractional_part >> 16) & 0xF;
+    CDCM_Regs[16].val = 0 | (((Outputs.Y6.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[16].val |= (Outputs.Y6.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[17].val = outputs.Y6.fractional_part & 0xFFFF;
+    CDCM_Regs[17].val = Outputs.Y6.fractional_part & 0xFFFF;
 
     CDCM_Regs[18].val &= ~0x1E00;
-    CDCM_Regs[18].val |= (((int)outputs.Y7.isFrac) << 9);
-    CDCM_Regs[18].val |= ((outputs.Y7.prescaler - 2) & 7) << 10;
+    CDCM_Regs[18].val |= (((int)Outputs.Y7.isFrac) << 9);
+    CDCM_Regs[18].val |= ((Outputs.Y7.prescaler - 2) & 7) << 10;
 
-    CDCM_Regs[19].val = 0 | (((outputs.Y7.integer_part - 1) & 0xFF) << 4);
-    CDCM_Regs[19].val |= (outputs.Y7.fractional_part >> 16) & 0xF;
+    CDCM_Regs[19].val = 0 | (((Outputs.Y7.integer_part - 1) & 0xFF) << 4);
+    CDCM_Regs[19].val |= (Outputs.Y7.fractional_part >> 16) & 0xF;
 
-    CDCM_Regs[20].val = outputs.Y7.fractional_part & 0xFFFF;
+    CDCM_Regs[20].val = Outputs.Y7.fractional_part & 0xFFFF;
 
     for (auto reg : CDCM_Regs)
         if (WriteRegister(reg.second.addr, reg.second.val) != 0)
@@ -617,36 +617,36 @@ int CDCM_Dev::DownloadConfiguration()
 
     VCO.input_mux = ((CDCM_Regs[4].val >> 12) & 1) + 1;
 
-    outputs.Y0Y1.divider_val = (CDCM_Regs[6].val & 0xFF) + 1;
-    outputs.Y2Y3.divider_val = (CDCM_Regs[8].val & 0xFF) + 1;
+    Outputs.Y0Y1.divider_val = (CDCM_Regs[6].val & 0xFF) + 1;
+    Outputs.Y2Y3.divider_val = (CDCM_Regs[8].val & 0xFF) + 1;
 
-    outputs.Y4.isFrac = (bool)((CDCM_Regs[9].val >> 9) & 1);
-    outputs.Y4.prescaler = ((CDCM_Regs[9].val >> 10) & 7) + 2;
-    outputs.Y4.integer_part = ((CDCM_Regs[10].val >> 4) & 0xFF) + 1;
-    outputs.Y4.fractional_part = 0 | ((CDCM_Regs[10].val & 0xF) << 16);
-    outputs.Y4.fractional_part |= CDCM_Regs[11].val;
-    CalculateFracDiv(&outputs.Y4);
+    Outputs.Y4.isFrac = (bool)((CDCM_Regs[9].val >> 9) & 1);
+    Outputs.Y4.prescaler = ((CDCM_Regs[9].val >> 10) & 7) + 2;
+    Outputs.Y4.integer_part = ((CDCM_Regs[10].val >> 4) & 0xFF) + 1;
+    Outputs.Y4.fractional_part = 0 | ((CDCM_Regs[10].val & 0xF) << 16);
+    Outputs.Y4.fractional_part |= CDCM_Regs[11].val;
+    CalculateFracDiv(&Outputs.Y4);
 
-    outputs.Y5.isFrac = (bool)((CDCM_Regs[12].val >> 9) & 1);
-    outputs.Y5.prescaler = ((CDCM_Regs[12].val >> 10) & 7) + 2;
-    outputs.Y5.integer_part = ((CDCM_Regs[13].val >> 4) & 0xFF) + 1;
-    outputs.Y5.fractional_part = 0 | ((CDCM_Regs[13].val & 0xF) << 16);
-    outputs.Y5.fractional_part |= CDCM_Regs[14].val;
-    CalculateFracDiv(&outputs.Y5);
+    Outputs.Y5.isFrac = (bool)((CDCM_Regs[12].val >> 9) & 1);
+    Outputs.Y5.prescaler = ((CDCM_Regs[12].val >> 10) & 7) + 2;
+    Outputs.Y5.integer_part = ((CDCM_Regs[13].val >> 4) & 0xFF) + 1;
+    Outputs.Y5.fractional_part = 0 | ((CDCM_Regs[13].val & 0xF) << 16);
+    Outputs.Y5.fractional_part |= CDCM_Regs[14].val;
+    CalculateFracDiv(&Outputs.Y5);
 
-    outputs.Y6.isFrac = (bool)((CDCM_Regs[15].val >> 9) & 1);
-    outputs.Y6.prescaler = ((CDCM_Regs[15].val >> 10) & 7) + 2;
-    outputs.Y6.integer_part = ((CDCM_Regs[16].val >> 4) & 0xFF) + 1;
-    outputs.Y6.fractional_part = 0 | ((CDCM_Regs[16].val & 0xF) << 16);
-    outputs.Y6.fractional_part |= CDCM_Regs[17].val;
-    CalculateFracDiv(&outputs.Y6);
+    Outputs.Y6.isFrac = (bool)((CDCM_Regs[15].val >> 9) & 1);
+    Outputs.Y6.prescaler = ((CDCM_Regs[15].val >> 10) & 7) + 2;
+    Outputs.Y6.integer_part = ((CDCM_Regs[16].val >> 4) & 0xFF) + 1;
+    Outputs.Y6.fractional_part = 0 | ((CDCM_Regs[16].val & 0xF) << 16);
+    Outputs.Y6.fractional_part |= CDCM_Regs[17].val;
+    CalculateFracDiv(&Outputs.Y6);
 
-    outputs.Y7.isFrac = (bool)((CDCM_Regs[18].val >> 9) & 1);
-    outputs.Y7.prescaler = ((CDCM_Regs[18].val >> 10) & 7) + 2;
-    outputs.Y7.integer_part = ((CDCM_Regs[19].val >> 4) & 0xFF) + 1;
-    outputs.Y7.fractional_part = 0 | ((CDCM_Regs[19].val & 0xF) << 16);
-    outputs.Y7.fractional_part |= CDCM_Regs[20].val;
-    CalculateFracDiv(&outputs.Y7);
+    Outputs.Y7.isFrac = (bool)((CDCM_Regs[18].val >> 9) & 1);
+    Outputs.Y7.prescaler = ((CDCM_Regs[18].val >> 10) & 7) + 2;
+    Outputs.Y7.integer_part = ((CDCM_Regs[19].val >> 4) & 0xFF) + 1;
+    Outputs.Y7.fractional_part = 0 | ((CDCM_Regs[19].val & 0xF) << 16);
+    Outputs.Y7.fractional_part |= CDCM_Regs[20].val;
+    CalculateFracDiv(&Outputs.Y7);
 
     SetVersion((CDCM_Regs[23].val >> 3) & 7);
 
@@ -779,13 +779,13 @@ void CDCM_Dev::UpdateOutputFrequencies()
     VCO.output_freq *= VCO.prescaler_A;
     VCO.output_freq *= VCO.N_mul_full;
 
-    outputs.Y0Y1.output_freq = (VCO.output_freq / VCO.prescaler_A) / outputs.Y0Y1.divider_val;
-    outputs.Y4.output_freq = (VCO.output_freq / VCO.prescaler_A) / outputs.Y4.divider_val;
-    outputs.Y5.output_freq = (VCO.output_freq / VCO.prescaler_A) / outputs.Y5.divider_val;
+    Outputs.Y0Y1.output_freq = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.divider_val;
+    Outputs.Y4.output_freq = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.divider_val;
+    Outputs.Y5.output_freq = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y5.divider_val;
 
-    outputs.Y2Y3.output_freq = (VCO.output_freq / VCO.prescaler_B) / outputs.Y2Y3.divider_val;
-    outputs.Y6.output_freq = (VCO.output_freq / VCO.prescaler_B) / outputs.Y6.divider_val;
-    outputs.Y7.output_freq = (VCO.output_freq / VCO.prescaler_B) / outputs.Y7.divider_val;
+    Outputs.Y2Y3.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y2Y3.divider_val;
+    Outputs.Y6.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y6.divider_val;
+    Outputs.Y7.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y7.divider_val;
 }
 
 /** 
@@ -1003,8 +1003,8 @@ int CDCM_Dev::FindBestVCOConfigIndex(std::vector<CDCM_VCO>& input, int num_error
 */
 CDCM_VCO CDCM_Dev::FindVCOConfig()
 {
-    double l_Y0Y1 = outputs.Y0Y1.requested_freq;
-    double l_Y2Y3 = outputs.Y2Y3.requested_freq;
+    double l_Y0Y1 = Outputs.Y0Y1.requested_freq;
+    double l_Y2Y3 = Outputs.Y2Y3.requested_freq;
     double input_shift = 1;
     // Eliminate fractional parts by shifting left (if any)
     while (!(IsInteger(l_Y0Y1) && IsInteger(l_Y2Y3)))
@@ -1018,11 +1018,11 @@ CDCM_VCO CDCM_Dev::FindVCOConfig()
     double int_lcm;
     bool do_vco_calc = true;
 
-    if (outputs.Y0Y1.used && outputs.Y2Y3.used)
+    if (Outputs.Y0Y1.used && Outputs.Y2Y3.used)
         int_lcm = (l_Y0Y1 * l_Y2Y3) / FindGCD((uint64_t)l_Y0Y1, (uint64_t)l_Y2Y3);
-    else if (outputs.Y0Y1.used)
+    else if (Outputs.Y0Y1.used)
         int_lcm = l_Y0Y1;
-    else if (outputs.Y2Y3.used)
+    else if (Outputs.Y2Y3.used)
         int_lcm = l_Y2Y3;
     else
         do_vco_calc = false;

@@ -102,7 +102,7 @@ class LIME_API CDCM_Dev
       @brief Get the outputs object.
       @return The available outputs of the clock generator.
      */
-    CDCM_Outputs GetOutputs() { return outputs; };
+    CDCM_Outputs GetOutputs() { return Outputs; };
 
     int UploadConfiguration();
     int DownloadConfiguration();
@@ -150,7 +150,7 @@ class LIME_API CDCM_Dev
 
     std::shared_ptr<lime::ISPI> comms; ///< The communication with the device endpoint
     CDCM_VCO VCO; ///< The voltage-controlled oscillator information
-    CDCM_Outputs outputs; ///< The outputs the device can handle
+    CDCM_Outputs Outputs; ///< The outputs the device can handle
     uint16_t SPI_BASE_ADDR; ///< The base address of the stored information on the device
     bool is_locked; ///< Indicates whether the voltage-controlled oscillator phase lock loop is locked
 };
