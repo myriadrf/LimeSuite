@@ -13,7 +13,8 @@ Components needed to compile LimeSuiteGUI2:
 - `wxWidgets`_
 - `libusb`_
 
-If you are on Ubuntu 22.04, there also exists a script `install_dependencies.sh` to install all the needed dependencies.
+.. note::
+    If you are on Ubuntu 22.04, there also exists a script `install_dependencies.sh` to install all the needed dependencies.
 
 Compilation
 -----------

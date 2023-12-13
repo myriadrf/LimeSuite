@@ -21,22 +21,19 @@ To set up the environment for the documentation generation, you will need to set
 
 To set up the environment, run these commands:
 
-.. note::
-    One should run these commands in the `docs` folder.
-
 .. code-block:: bash
 
     python3.8 -m venv venv # Create the virtual environment folder
     source venv/bin/activate # Activate the virtual environment
     pip install -r requirements.txt # Install all the required dependencies for the generation
 
+.. note::
+    One should run these commands in the `docs` folder.
+
 Generation
 ----------
 
 In the `docs` folder, located in the root folder of the repository, while in the venv, run these commands:
-
-.. important:: 
-    These commands or the script must be run in the venv, otherwise it will fail.
 
 .. code-block:: bash
 
@@ -44,6 +41,9 @@ In the `docs` folder, located in the root folder of the repository, while in the
     make --no-print-directory -C ../build doc # Build Doxygen documentation
     breathe-apidoc --generate class --members --force --output-dir apidoc ../build/xml/ # Generate the class API pages
     make html # Generate the documentation itself
+
+.. important:: 
+    These commands or the script must be run in the venv, otherwise it will fail.
 
 For ease of convenience, there is also a `generate_docs.sh` script located in the `docs` folder.
 
