@@ -139,7 +139,7 @@ extern "C" {
 #   else
 #       define API_EXPORT __declspec(dllexport)
 #   endif
-#elif __DOXYGEN__
+#elif defined _DOXYGEN_ONLY_
 	/** Marks an API routine to be made visible to the dynamic loader.
 	*  This is OS and/or compiler-specific. */
 #   define API_EXPORT
