@@ -4,6 +4,7 @@
 #include <set>
 #include <stack>
 #include <mutex>
+#include <string>
 
 namespace lime {
 

@@ -1,5 +1,6 @@
 #include "MemoryPool.h"
 #include <cstring>
+#include <stdexcept>
 
 namespace lime {
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)

@@ -7,7 +7,8 @@
 #ifndef SI5351C_MODULE
 #define SI5351C_MODULE
 
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 #include "limesuite/config.h"
 //---------------------------------------------------------------------------
