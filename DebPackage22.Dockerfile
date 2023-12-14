@@ -5,8 +5,6 @@ WORKDIR /LimeSuite2/source
 
 COPY install_dependencies.sh install_dependencies.sh
 
-# RUN cat /etc/os-release
-
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
     apt-get install -y --no-install-recommends \
