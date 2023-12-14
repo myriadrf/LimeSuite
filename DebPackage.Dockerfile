@@ -26,8 +26,5 @@ COPY src/ src/
 
 RUN dpkg-buildpackage --build=binary --no-sign -d
 
-WORKDIR /LimeSuite2
-RUN ls
-
 FROM scratch AS export-stage
 COPY --from=build-stage /LimeSuite2/*.* /
