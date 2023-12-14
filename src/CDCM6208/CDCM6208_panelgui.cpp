@@ -747,7 +747,7 @@ void CDCM6208_panelgui::OnChange(wxCommandEvent& event)
     double d_val;
     int i_val;
     CDCM_VCO VCO = CDCM->GetVCO();
-    CDCM_Outputs Outputs = CDCM->getOutputs();
+    CDCM_Outputs Outputs = CDCM->GetOutputs();
 
     try
     {
@@ -913,7 +913,7 @@ void CDCM6208_panelgui::OnFreqEntry(wxCommandEvent& event)
     {
         int return_val = -1;
 
-        CDCM_Outputs Outputs = CDCM->getOutputs();
+        CDCM_Outputs Outputs = CDCM->GetOutputs();
         if ((bool)m_Y0Y1_chk->GetValue())
             Outputs.Y0Y1.requested_freq = std::stod((std::string)m_Y0Y1_FREQ_req->GetValue()) * 1e6;
         if ((bool)m_Y2Y3_chk->GetValue())
@@ -951,7 +951,7 @@ void CDCM6208_panelgui::OnFreqEntry(wxCommandEvent& event)
 
 void CDCM6208_panelgui::onFP_chk(wxCommandEvent& event)
 {
-    CDCM_Outputs Outputs = CDCM->getOutputs();
+    CDCM_Outputs Outputs = CDCM->GetOutputs();
 
     Outputs.Y0Y1.used = (bool)m_Y0Y1_chk->GetValue();
     Outputs.Y2Y3.used = (bool)m_Y2Y3_chk->GetValue();
@@ -982,7 +982,7 @@ void CDCM6208_panelgui::OnButton(wxCommandEvent& event)
 void CDCM6208_panelgui::UpdateGUI()
 {
     CDCM_VCO VCO = CDCM->GetVCO();
-    CDCM_Outputs Outputs = CDCM->getOutputs();
+    CDCM_Outputs Outputs = CDCM->GetOutputs();
     //Primary input
     auto str = wxString::Format(_("%.3f"), VCO.prim_freq / 1e6);
     m_PrimaryFreq->SetValue(str);

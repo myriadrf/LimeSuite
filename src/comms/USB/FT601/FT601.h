@@ -9,6 +9,7 @@
 
 namespace lime {
 
+/** @brief A class for communicating with devices using the FTDI FT601 USB controller. */
 class FT601 : public USBGeneric
 {
   public:

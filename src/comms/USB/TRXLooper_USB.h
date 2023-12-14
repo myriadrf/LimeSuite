@@ -1,22 +1,21 @@
 #ifndef TRXLooper_USB_H
 #define TRXLooper_USB_H
 
-#include "dataTypes.h"
-#include <vector>
-
+#include "limesuite/SDRDevice.h"
 #include "TRXLooper.h"
 
 namespace lime {
 
 class USBGeneric;
 
-class TRXLooper_USB : public lime::TRXLooper
+/** @brief Class responsible for receiving and transmitting continuous sample data from a USB device */
+class TRXLooper_USB : public TRXLooper
 {
   public:
     TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt);
     virtual ~TRXLooper_USB();
 
-    virtual void Setup(const lime::SDRDevice::StreamConfig& config) override;
+    virtual void Setup(const SDRDevice::StreamConfig& config) override;
 
   protected:
     virtual int RxSetup() override;

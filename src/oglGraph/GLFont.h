@@ -41,6 +41,7 @@ struct GLGlyph {
     short advance_x;
 };
 
+/** @brief A class for storing OpenGL font information */
 class GLFont
 {
   public:
@@ -57,15 +58,19 @@ class GLFont
     unsigned int string_width(const char* str) const;
     void getTextSize(const char* str, int& width, int& height, float fontSize);
 
+    /**
+      @brief Gets the texture ID of the font.
+      @return The ID of the texture.
+     */
     unsigned int getTextureID() { return m_texID; };
 
-    int m_texwidth;
-    int m_texheight;
-    GLuint m_texID;
-    GLuint m_vboID;
-    GLGlyph* m_glyphs;
-    const unsigned short m_glyphCount;
-    unsigned char m_fontSize;
+    int m_texwidth; ///< The width of one texel
+    int m_texheight; ///< The height of one texel
+    GLuint m_texID; ///< The ID of the texel
+    GLuint m_vboID; ///< The ID of the vertex buffer object
+    GLGlyph* m_glyphs; ///< The pointer to the font glyphs
+    const unsigned short m_glyphCount; ///< The count of glyphs in the font
+    unsigned char m_fontSize; ///< The font size
 };
 
 #endif

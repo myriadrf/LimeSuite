@@ -19,7 +19,8 @@ namespace lime {
 class LitePCIe;
 class LimeSDR_XTRX;
 
-class LimeSDR_MMX8 : public lime::SDRDevice
+/** @brief Class for managing the LimeSDR-MMX8 device and its subdevices. */
+class LimeSDR_MMX8 : public SDRDevice
 {
   public:
     LimeSDR_MMX8() = delete;
@@ -68,13 +69,11 @@ class LimeSDR_MMX8 : public lime::SDRDevice
 
     virtual void* GetInternalChip(uint32_t index) override;
 
-    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) override;
-    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t length) override;
-    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t length) override;
+    virtual bool UploadMemory(
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
-
-  protected:
-    enum class eMemoryDevice : uint8_t { FPGA_FLASH, EEPROM, COUNT };
 
   private:
     std::shared_ptr<IComms> mMainFPGAcomms;
@@ -82,7 +81,6 @@ class LimeSDR_MMX8 : public lime::SDRDevice
     std::vector<std::shared_ptr<LitePCIe>> mTRXStreamPorts;
     std::vector<LimeSDR_XTRX*> mSubDevices;
     std::map<uint32_t, LimeSDR_XTRX*> chipSelectToDevice;
-    std::map<uint32_t, LimeSDR_XTRX*> memorySelectToDevice;
     std::map<uint32_t, LimeSDR_XTRX*> customParameterToDevice;
     lime::ADF4002* mADF;
 };

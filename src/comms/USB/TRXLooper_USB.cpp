@@ -123,8 +123,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
         lock.unlock();
     }
 
-    TxHeader* header = reinterpret_cast<TxHeader*>(&buffers[bufferIndex * bufferSize]);
-    uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
+    StreamHeader* header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize]);
+    uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
 
     while (!mTx.terminate.load(std::memory_order_relaxed))
     {
@@ -156,10 +156,10 @@ void TRXLooper_USB::TransmitPacketsLoop()
         while (!srcPkt->empty())
         {
             if ((payloadSize >= maxPayloadSize || payloadSize == samplesInPkt * bytesForFrame) &&
-                bytesUsed + sizeof(TxHeader) <= bufferSize)
+                bytesUsed + sizeof(StreamHeader) <= bufferSize)
             {
-                header = reinterpret_cast<TxHeader*>(&buffers[bufferIndex * bufferSize + bytesUsed]);
-                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
+                header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize + bytesUsed]);
+                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
                 payloadSize = 0;
             }
 
@@ -168,7 +168,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 header->Clear();
                 ++packetsCreated;
                 header->counter = srcPkt->timestamp;
-                bytesUsed += sizeof(TxHeader);
+                bytesUsed += sizeof(StreamHeader);
             }
 
             header->ignoreTimestamp(!srcPkt->useTimestamp);
@@ -211,8 +211,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
                 mTx.stats.timestamp = srcPkt->timestamp;
 
-                header = reinterpret_cast<TxHeader*>(&buffers[bufferIndex * bufferSize]);
-                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(TxHeader);
+                header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize]);
+                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
 
                 break;
             }

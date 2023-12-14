@@ -6,6 +6,7 @@
 
 namespace lime {
 
+/** @brief Class for interfacing with Control/Status registers (CSR) of LimeSDR-Mini. */
 class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 {
   public:

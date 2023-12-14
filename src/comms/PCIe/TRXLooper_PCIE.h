@@ -12,7 +12,8 @@ namespace lime {
 
 class LitePCIe;
 
-class TRXLooper_PCIE : public lime::TRXLooper
+/** @brief Class responsible for receiving and transmitting continuous sample data from a PCIe device */
+class TRXLooper_PCIE : public TRXLooper
 {
   public:
     TRXLooper_PCIE(
@@ -30,6 +31,7 @@ class TRXLooper_PCIE : public lime::TRXLooper
 
     typedef SamplesPacket<2> SamplesPacketType;
 
+    /** @brief The transfer arguments for the PCIe transfer. */
     struct TransferArgs {
         std::shared_ptr<LitePCIe> port;
         std::vector<uint8_t*> buffers;

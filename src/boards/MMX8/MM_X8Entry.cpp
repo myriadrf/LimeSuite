@@ -75,6 +75,7 @@ std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle& hint)
     return handles;
 }
 
+/** @brief A class for communicating with MMX8's subdevice's LMS7002M chips. */
 class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
 {
   public:
@@ -95,6 +96,7 @@ class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
     uint32_t subdeviceIndex;
 };
 
+/** @brief A class for communicating with MMX8's subdevice's FPGA chips. */
 class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
 {
   public:
@@ -143,6 +145,7 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
     uint32_t subdeviceIndex;
 };
 
+/** @brief A class for communicating with MMX8's subdevice's ADF4002 chips. */
 class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
 {
   public:

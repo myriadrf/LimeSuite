@@ -63,8 +63,9 @@ struct TxDataPacket {
     uint8_t data[4080];
 };
 
-struct TxHeader {
-    TxHeader() { Clear(); }
+/** @brief Data structure used for interacting with the header of sample stream packets. */
+struct StreamHeader {
+    StreamHeader() { Clear(); }
 
     inline void ignoreTimestamp(bool enabled)
     {
@@ -77,7 +78,11 @@ struct TxHeader {
         constexpr uint8_t mask = 1 << 4;
         return header0 & mask; //ignore timestamp
     }
-    inline void Clear() { memset(this, 0, 16); }
+    inline void Clear()
+    {
+        assert(sizeof(StreamHeader) == 16);
+        memset(this, 0, sizeof(StreamHeader));
+    }
 
     inline void SetPayloadSize(uint16_t size)
     {

@@ -28,6 +28,7 @@ struct LMS64CPacket {
     uint8_t payload[payloadSize];
 };
 
+/** @brief Class for interacting with the EEPROM management packets */
 class LMS64CPacketMemoryWriteView
 {
   public:

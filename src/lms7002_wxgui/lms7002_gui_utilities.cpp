@@ -1,5 +1,5 @@
 /**
-@file 	gui_utilities.cpp
+@file 	lms7002_gui_utilities.cpp
 @author Lime Microsystems (www.limemicro.com)
 @brief 	Implementation of common functions used by all panels
 */
@@ -121,7 +121,7 @@ int LMS7002_WXGUI::value2index(int value, const indexValueMap& pairs)
 }
 
 /** @brief Changes given wxWidget controls tooltips to parameter descriptions
-    @param wndId2Param wxWidgets controls and LMS parameters pairs
+    @param wndId2param wxWidgets controls and LMS parameters pairs
     @param replace Replace all tooltips with new ones, or keep old ones and just add missing ones
 */
 void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter>& wndId2param, bool replace)

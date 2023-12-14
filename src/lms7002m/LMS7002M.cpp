@@ -37,10 +37,10 @@ using namespace lime;
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, { 6306e6, 7714e6 } };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = { 1930e6, 2940e6 };
 
-///define for parameter enumeration if prefix might be needed
+/// Define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
 
-//module addresses needs to be sorted in ascending order
+// Module addresses needs to be sorted in ascending order
 const uint16_t LMS7002M::readOnlyRegisters[] = {
     0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F
 };
@@ -48,11 +48,16 @@ const uint16_t LMS7002M::readOnlyRegistersMasks[] = {
     0x0000, 0x0FFF, 0x007F, 0x0000, 0x0000, 0x0000, 0x0000, 0x003F, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 };
 
-// Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope
+/** @brief Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope */
 class ChannelScope
 {
   public:
-    // convenient constructor when using explicit MAC value
+    /**
+      @brief Convenient constructor when using explicit MAC value.
+      @param chip The chip to use.
+      @param mac The channel to use.
+      @param useCache Whether to use caching or not.
+     */
     ChannelScope(LMS7002M* chip, LMS7002M::Channel mac, bool useCache = false)
         : mChip(chip)
         , mNeedsRestore(false)
@@ -65,7 +70,12 @@ class ChannelScope
         mNeedsRestore = true;
     }
 
-    // convenient constructor when using channel index starting from 0
+    /**
+      @brief Convenient constructor when using channel index starting from 0.
+      @param chip The chip to use.
+      @param index The channel index.
+      @param useCache Whether to use caching or not.
+     */
     ChannelScope(LMS7002M* chip, uint8_t index, bool useCache = false)
         : mChip(chip)
         , mNeedsRestore(false)
@@ -80,6 +90,7 @@ class ChannelScope
         mNeedsRestore = true;
     }
 
+    /** @brief Destroy the Channel Scope object and reset the active channel. */
     ~ChannelScope()
     {
         if (mNeedsRestore)
@@ -87,9 +98,9 @@ class ChannelScope
     }
 
   private:
-    LMS7002M* mChip;
-    LMS7002M::Channel mStoredValue;
-    bool mNeedsRestore;
+    LMS7002M* mChip; ///< The chip to modify
+    LMS7002M::Channel mStoredValue; ///< The channel to restore to
+    bool mNeedsRestore; ///< Whether the channel needs restoring or not
 };
 
 /** @brief Simple logging function to print status messages
@@ -642,7 +653,8 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
 
 /** @brief Reads configuration file and uploads registers to chip
     @param filename Configuration source file
-    @return 0-success, other-failure
+    @param tuneDynamicValues Whether to tune the dynamic values or not
+    @return 0 - success, other - failure
 */
 int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
 {
@@ -1254,7 +1266,7 @@ int LMS7002M::SetReferenceClk_SX(TRXDir dir, float_type freq_Hz)
 }
 
 /**	@brief Returns reference clock in Hz used for SXT or SXR
-	@param Tx transmitter or receiver selection
+	@param dir transmitter or receiver selection
 */
 float_type LMS7002M::GetReferenceClk_SX(TRXDir dir)
 {
@@ -1670,6 +1682,8 @@ int LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t val
 
 /** @brief Change given parameter value
     @param address register address
+    @param msb Most significant byte
+    @param lsb Least significant byte
     @param value new bits value, the value is shifted left by lsb bits
     @param fromChip read initial value directly from chip
 */
@@ -1721,7 +1735,7 @@ const LMS7Parameter* LMS7002M::GetParam(const std::string& name)
 }
 
 /** @brief Sets SX frequency
-    @param Tx Rx/Tx module selection
+    @param dir Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
     @param output if not null outputs intermediate calculation values
     @return 0-success, other-cannot deliver requested frequency
@@ -1895,8 +1909,9 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
 }
 
 /** @brief Sets SX frequency with Reference clock spur cancelation
-    @param Tx Rx/Tx module selection
+    @param dir Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
+    @param BW BW
     @return 0-success, other-cannot deliver requested frequency
 */
 int LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW)
@@ -2224,6 +2239,7 @@ int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, int16_t* coef,
 /** @brief Write given data value to whole register
     @param address SPI address
     @param data new register value
+    @param toChip whether we're writing to the chip or not
     @return 0-succes, other-failure
 */
 int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool toChip)
@@ -2576,6 +2592,7 @@ int LMS7002M::RegistersTest(const std::string& fileName)
     @param startAddr first register address
     @param endAddr last reigster address
     @param pattern data to be written into registers
+    @param ss stringstream to use
     @return 0-register test passed, other-failure
 */
 int LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, stringstream& ss)

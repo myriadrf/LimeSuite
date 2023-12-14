@@ -27,8 +27,8 @@ LIME_API std::string getHomeDirectory(void);
 
 /*!
  * Get the full path to the application data directory.
- * On a unix system this is typically $HOME/.local/share.
- * On a windows system this is typically %USERPROFILE%\AppData\Roaming.
+ * On a unix system this is typically `$HOME/.local/share`.
+ * On a windows system this is typically `%USERPROFILE%\AppData\Roaming`.
  * Also supports the APPDATA environment variable to override the default value.
  */
 LIME_API std::string getAppDataDirectory(void);

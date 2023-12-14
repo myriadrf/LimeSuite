@@ -37,3 +37,6 @@ SDRDevice::StreamConfig& SDRDevice::StreamConfig::operator=(const SDRDevice::Str
     }
     return *this;
 }
+
+const char SDRDevice::Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL = '@';
+const char SDRDevice::Descriptor::PATH_SEPARATOR_SYMBOL = '/';

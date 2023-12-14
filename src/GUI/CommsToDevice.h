@@ -3,8 +3,10 @@
 #include "limesuite/IComms.h"
 #include "limesuite/SDRDevice.h"
 
-// Helper class to initialize communications for modules/UI of a specific SOC
-// that is not aware of the whole SDRDevice
+/**
+  @brief Helper class to initialize communications for UI modules that use I2C communication
+    of a specific system-on-chip that is not aware of the whole SDRDevice.  
+ */
 class SPIToSDR : public lime::ISPI
 {
   public:
@@ -17,14 +19,17 @@ class SPIToSDR : public lime::ISPI
     uint32_t mSPIDefaultSlaveId;
 };
 
+/**
+  @brief Helper class to initialize communications for UI modules that use I2C communication
+    of a specific system-on-chip that is not aware of the whole SDRDevice.
+ */
 class I2CToSDR : public lime::II2C
 {
   public:
     I2CToSDR(lime::SDRDevice& sdr);
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length);
-    virtual int I2CRead(int addres, uint8_t* dest, uint32_t length);
+    virtual int I2CRead(int address, uint8_t* dest, uint32_t length);
 
   private:
     lime::SDRDevice& device;
-    uint32_t mSPIDefaultSlaveId;
 };

@@ -18,6 +18,7 @@
 
 namespace lime {
 
+/** @brief Base class for a USB transfer context. */
 class USBTransferContext
 {
   public:

@@ -18,7 +18,7 @@
 using namespace lime;
 using namespace std;
 
-std::mutex globalGnuPlotMutex; // seems multiple plot pipes can't be used concurently
+std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurently
 
 bool stopProgram(false);
 void intHandler(int dummy)
@@ -42,6 +42,7 @@ static SDRDevice::LogLevel strToLogLevel(const char* str)
         return SDRDevice::LogLevel::INFO;
     return SDRDevice::LogLevel::ERROR;
 }
+
 static void LogCallback(SDRDevice::LogLevel lvl, const char* msg)
 {
     if (lvl > logVerbosity)
@@ -98,9 +99,16 @@ enum Args {
 };
 
 #ifdef USE_GNU_PLOT
+/** @brief The fast Fourier transform diagram plotter */
 class FFTPlotter
 {
   public:
+    /**
+    @brief Construct a new FFTPlotter object.
+    @param sampleRate The sample rate of the transform.
+    @param fftSize The amount of samples per transform.
+    @param persistent Whether the plot is persistent or not.
+   */
     FFTPlotter(float sampleRate, int fftSize, bool persistent)
         : plot(persistent)
         , sampleRate(sampleRate)
@@ -110,14 +118,18 @@ class FFTPlotter
         plot.writef("set xrange[%f:%f]\n set yrange[%i:%i]\n", -sampleRate / 2, sampleRate / 2, -120, 0);
         plot.flush();
     }
+
+    /** @brief Stop the plotter and destroy the FFTPlotter object. */
     ~FFTPlotter() { Stop(); }
 
+    /** @brief Start the plotter. */
     void Start()
     {
         doWork = true;
         plotThread = std::thread(&FFTPlotter::PlotLoop, this);
     }
 
+    /** @brief Stop the plotter. */
     void Stop()
     {
         doWork = false;
@@ -128,6 +140,10 @@ class FFTPlotter
         }
     }
 
+    /**
+      @brief Set the plot data.
+      @param data The new data to plot.
+     */
     void SubmitData(const vector<float>& data)
     {
         {
@@ -138,6 +154,7 @@ class FFTPlotter
     }
 
   private:
+    /** @brief The plot drawing loop. */
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
@@ -163,18 +180,24 @@ class FFTPlotter
         }
     }
 
-    GNUPlotPipe plot;
-    std::vector<float> bins;
-    std::condition_variable plotDataReady;
-    std::mutex plotLock;
-    std::thread plotThread;
-    float sampleRate;
-    bool doWork;
+    GNUPlotPipe plot; ///< The GNU Plot object
+    std::vector<float> bins; ///< The data storage
+    std::condition_variable plotDataReady; ///< Whether the plot data is ready or not
+    std::mutex plotLock; ///< The plot lock
+    std::thread plotThread; ///< The plotter thread
+    float sampleRate; ///< The sample rate of the data
+    bool doWork; ///< Whether to continue plotting or not
 };
 
+/** @brief The constellation diagram plotter */
 class ConstellationPlotter
 {
   public:
+    /**
+    @brief Construct a new Constellation Plotter object.
+    @param range The half sidelength of the square to render.
+    @param persistent Whether the plot is persistent or not.
+   */
     ConstellationPlotter(int range, bool persistent)
         : plot(persistent)
         , doWork(false)
@@ -182,14 +205,18 @@ class ConstellationPlotter
         plot.writef("set size square\n set xrange[%i:%i]\n set yrange[%i:%i]\n", -range, range, -range, range);
         plot.flush();
     }
+
+    /** @brief Stop the thread and destroy the Constellation Plotter object. */
     ~ConstellationPlotter() { Stop(); }
 
+    /** @brief Start the plotter loop. */
     void Start()
     {
         doWork = true;
         plotThread = std::thread(&ConstellationPlotter::PlotLoop, this);
     }
 
+    /** @brief Stop the plotter loop. */
     void Stop()
     {
         doWork = false;
@@ -200,6 +227,10 @@ class ConstellationPlotter
         }
     }
 
+    /**
+      @brief Submit data to the plotter.
+      @param data The data to submit to the plotter.
+     */
     void SubmitData(const vector<complex16_t>& data)
     {
         {
@@ -210,6 +241,7 @@ class ConstellationPlotter
     }
 
   private:
+    /** @brief The plot drawing loop. */
     void PlotLoop()
     {
         std::unique_lock<std::mutex> lk(plotLock);
@@ -233,12 +265,12 @@ class ConstellationPlotter
         }
     }
 
-    GNUPlotPipe plot;
-    std::vector<complex16_t> samples;
-    std::condition_variable plotDataReady;
-    std::mutex plotLock;
-    std::thread plotThread;
-    bool doWork;
+    GNUPlotPipe plot; ///< The GNU Plot object
+    std::vector<complex16_t> samples; ///< The stored samples
+    std::condition_variable plotDataReady; ///< Whether the plot data is ready or not
+    std::mutex plotLock; ///< The plot lock
+    std::thread plotThread; ///< The plotter thread
+    bool doWork; ///< Whether to continue plotting or not
 };
 #endif
 
@@ -248,16 +280,16 @@ static std::vector<int> ParseIntArray(const std::string& str)
     size_t parsed = 0;
     while (parsed < str.length())
     {
-        try {
+        try
+        {
             int nr = stoi(&str[parsed]);
             numbers.push_back(nr);
             size_t next = str.find_first_of(',', parsed);
             if (next == string::npos)
                 return numbers;
             else
-                parsed = next+1;
-        }
-        catch (...)
+                parsed = next + 1;
+        } catch (...)
         {
             return numbers;
         }
@@ -478,12 +510,12 @@ int main(int argc, char** argv)
         if (useComposite)
         {
             std::vector<StreamAggregate> aggregates(chipIndexes.size());
-            for (size_t i=0; i<chipIndexes.size(); ++i)
+            for (size_t i = 0; i < chipIndexes.size(); ++i)
             {
                 aggregates[i].device = device;
                 aggregates[i].streamIndex = chipIndexes[i];
                 int deviceChannelCount = device->GetDescriptor().rfSOC[chipIndexes[i]].channelCount;
-                for (int j=0; j<deviceChannelCount; ++j)
+                for (int j = 0; j < deviceChannelCount; ++j)
                     aggregates[i].channels.push_back(j);
             }
             composite = new StreamComposite(std::move(aggregates));
@@ -598,11 +630,10 @@ int main(int argc, char** argv)
             if (toSend > 0)
             {
                 const complex16_t* txSamples[16];
-                for (int i=0; i < 16; ++i)
+                for (int i = 0; i < 16; ++i)
                     txSamples[i] = &txData[txSent];
-                int samplesSent = useComposite
-                    ? composite->StreamTx(txSamples, toSend, &txMeta)
-                    : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
+                int samplesSent = useComposite ? composite->StreamTx(txSamples, toSend, &txMeta)
+                                               : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
                 if (samplesSent > 0)
                 {
                     txSent += samplesSent;
@@ -612,11 +643,10 @@ int main(int argc, char** argv)
         }
 
         complex16_t* rxSamples[16];
-        for (int i=0; i<16; ++i)
+        for (int i = 0; i < 16; ++i)
             rxSamples[i] = rxData[i].data();
-        int samplesRead = useComposite
-            ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
-            : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        int samplesRead = useComposite ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
+                                       : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
         if (samplesRead <= 0)
             continue;
 

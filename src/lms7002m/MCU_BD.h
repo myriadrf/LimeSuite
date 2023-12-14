@@ -46,6 +46,7 @@ class MCU_BD
         TIMEOUT,
     };
 
+    /** @brief Structure containing the information about the current progress. */
     struct ProgressInfo {
         unsigned short stepsDone;
         unsigned short stepsTotal;

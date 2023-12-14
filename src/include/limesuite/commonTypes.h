@@ -14,6 +14,10 @@ struct Range {
     double step;
 };
 
+/**
+  @brief Class for counting the difference since last time the value was set.
+  @tparam T The type of the value to hold.
+ */
 template<class T> class DeltaVariable
 {
   public:

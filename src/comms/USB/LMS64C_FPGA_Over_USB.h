@@ -7,6 +7,7 @@
 
 namespace lime {
 
+/** @brief A class for communicating with a device's FPGA over a USB interface. */
 class LMS64C_FPGA_Over_USB : public IComms
 {
   public:

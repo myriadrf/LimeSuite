@@ -18,6 +18,7 @@
 
 namespace lime {
 
+/** @brief A generic class to communicate with a USB device. */
 class USBGeneric
 {
   public:

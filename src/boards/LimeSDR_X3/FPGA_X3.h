@@ -7,6 +7,7 @@ namespace lime {
 
 class ISPI;
 
+/** @brief Class for communicating with the Xilinx Artix-7 XC7A200T FPGA in the LimeSDR X3. */
 class FPGA_X3 : public FPGA
 {
   public:

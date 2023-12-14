@@ -6,43 +6,46 @@
 #include <vector>
 using namespace std;
 
+/** @brief Construct a new GLFont::GLFont object */
 GLFont::GLFont()
     : m_texID(0)
     , m_vboID(0)
     , m_glyphCount(256)
+    , m_fontSize(10)
 {
-    m_fontSize = 10;
     m_glyphs = new GLGlyph[m_glyphCount];
 }
 
+/** @brief Destroy the GLFont::GLFont object */
 GLFont::~GLFont()
 {
     delete[] m_glyphs;
 }
 
 /**
-    @brief loads opengl font file
-    @param file font file to load
+    @brief Loads OpenGL font file
+    @param file Font file to load
+    @return Whether the load was successful or not
 
     Expected file structure:
     12 bytes - "OpenGL Font" literal file header
-    1 byte - file version
-    16 bytes - reserved
-    1 byte - font size ( max line height in pixels )
-    2 byte - glyph count
-    glyphCount * 16 bytes - glyph definitions
-        - 2 bytes (ushort)- glyph id
-        - 2 bytes (ushort)- width
-        - 2 bytes (ushort)- height
-        - 2 bytes (ushort)- glyph x position in texture
-        - 2 bytes (ushort)- glyph y position in texture
-        - 2 bytes (short)- glyph x offset
-        - 2 bytes (short)- glyph y offset (height above line)
-        - 2 bytes (short)- glyph x advance (gap before glyph)
-    2 bytes - texture width in pixels
-    2 bytes - texture height in pixels
-    1 byte - texture bits per pixel (currently hardcoded 8 bits per pixel)
-    width*height*bpp - texture data
+    1 byte - File version
+    16 bytes - Reserved
+    1 byte - Font size ( max line height in pixels )
+    2 byte - Glyph count
+    glyphCount * 16 bytes - Glyph definitions
+        - 2 bytes (ushort) - Glyph ID
+        - 2 bytes (ushort) - Width
+        - 2 bytes (ushort) - Height
+        - 2 bytes (ushort) - Glyph X position in texture
+        - 2 bytes (ushort) - Glyph Y position in texture
+        - 2 bytes (short) - Glyph X offset
+        - 2 bytes (short) - Glyph Y offset (height above line)
+        - 2 bytes (short) - Glyph X advance (gap before glyph)
+    2 bytes - Texture width in pixels
+    2 bytes - Texture height in pixels
+    1 byte - Texture bits per pixel (currently hardcoded 8 bits per pixel)
+    width*height*bpp - Texture data
 */
 bool GLFont::load(const char* file)
 {
@@ -126,6 +129,14 @@ bool GLFont::load(const char* file)
     return true;
 }
 
+/**
+    @brief Loads OpenGL font file from memory.
+    @param array Font file data array to load.
+    @param size The size of the array to load.
+    @return Whether the load was successful or not.
+
+    For more details refer to @ref GLFont::load.
+*/
 bool GLFont::loadFromArray(const char* array, unsigned int size)
 {
     glewInit();
@@ -208,6 +219,14 @@ bool GLFont::loadFromArray(const char* array, unsigned int size)
     return true;
 }
 
+/**
+  @brief Renders the given text in the given position in world space.
+  @param text The string of characters to render.
+  @param x The X position of the space to render the text at.
+  @param y The Y position of the space to render the text at.
+  @param fontSize The size of the font with which to render.
+  @param rgba The color of the text to render.
+ */
 void GLFont::render_textWorldSpace(const char* text, float x, float y, float fontSize, unsigned int rgba)
 {
     glEnable(GL_TEXTURE_2D);
@@ -218,7 +237,7 @@ void GLFont::render_textWorldSpace(const char* text, float x, float y, float fon
 
     glColor3ub((rgba >> 24) & 0xff, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF);
 
-    float vbodata[16]; //interleaved x,y,u,v
+    float vbodata[16]; // Interleaved x,y,u,v
 
     float scale = fontSize / m_fontSize;
     float startx = x;
@@ -291,6 +310,14 @@ void GLFont::render_textWorldSpace(const char* text, float x, float y, float fon
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
+/**
+  @brief Renders the given text in the given position in screen space.
+  @param text The string of characters to render.
+  @param x The X position of the space to render the text at.
+  @param y The Y position of the space to render the text at.
+  @param fontSize The size of the font with which to render.
+  @param rgba The color of the text to render.
+ */
 void GLFont::render_textScreenSpace(const char* text, float x, float y, float fontSize, unsigned int rgba)
 {
     glEnable(GL_TEXTURE_2D);
@@ -301,7 +328,7 @@ void GLFont::render_textScreenSpace(const char* text, float x, float y, float fo
 
     glColor3ub((rgba >> 24) & 0xff, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF);
 
-    float vbodata[16]; //interleaved x,y,u,v
+    float vbodata[16]; // Interleaved x,y,u,v
 
     float scale = fontSize / m_fontSize;
     float startx = x;
@@ -377,16 +404,30 @@ void GLFont::render_textScreenSpace(const char* text, float x, float y, float fo
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
+/**
+  @brief Gets the height of the line.
+  @return The height of the line.
+ */
 unsigned int GLFont::lineHeight() const
 {
     return m_fontSize;
 }
 
+/**
+  @brief Gets the width of a given character.  
+  @param c The character to get the width of.
+  @return The width of @p c .
+ */
 unsigned int GLFont::char_width(const char c) const
 {
     return m_glyphs[(unsigned char)c].advance_x;
 }
 
+/**
+  @brief Gets the width of a given string.  
+  @param str The string to get the width of.
+  @return The width of @p str .
+ */
 unsigned int GLFont::string_width(const char* str) const
 {
     unsigned int width = 0;
@@ -395,6 +436,13 @@ unsigned int GLFont::string_width(const char* str) const
     return width;
 }
 
+/**
+  @brief Gets the size of the string.
+  @param str The string to get the size of.
+  @param[out] width The resulting width of the string.
+  @param[out] height The resulting height of the string.
+  @param fontSize The size of the font.
+ */
 void GLFont::getTextSize(const char* str, int& width, int& height, float fontSize)
 {
     float scale = fontSize / m_fontSize;

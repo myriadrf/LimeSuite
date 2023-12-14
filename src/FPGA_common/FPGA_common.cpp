@@ -27,6 +27,7 @@ using namespace std;
 
 namespace lime {
 
+/** @brief A class for writing a batch of registers into the FPGA. */
 class WriteRegistersBatch
 {
   public:
@@ -438,10 +439,11 @@ int FPGA::SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSe
 }
 
 /** @brief Configures board FPGA clocks
-@param pllIndex index of FPGA pll
-@param clocks list of clocks to configure
-@param clocksCount number of clocks to configure
-@return 0-success, other-failure
+    @param pllIndex index of FPGA pll
+    @param inputFreq input frequency
+    @param clocks list of clocks to configure
+    @param clockCount number of clocks to configure
+    @return 0-success, other-failure
 */
 int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
 {
