@@ -6,7 +6,7 @@ echo -n "Install Lime Suite icon resources...	"
 if [ -x /usr/bin/xdg-icon-resource ] ; then
     for theme in hicolor gnome; do
         for size in 16 22 32 48 64 128; do
-            xdg-icon-resource install --noupdate --context apps --theme ${theme} --size ${size} ${DIR}/lime-suite-${size}.png lime-suite || true
+            xdg-icon-resource install --noupdate --context apps --theme ${theme} --size ${size} "${DIR}/lime-suite-${size}.png" lime-suite || true
         done
     done
     xdg-icon-resource forceupdate || true
@@ -17,7 +17,7 @@ fi
 
 echo -n "Install Lime Suite menu launcher...	"
 if [ -x /usr/bin/xdg-desktop-menu ] ; then
-    xdg-desktop-menu install ${DIR}/lime-suite.desktop || true
+    xdg-desktop-menu install "${DIR}/lime-suite.desktop" || true
     echo "OK"
 else
     echo "FAIL (missing xdg-desktop-menu)"

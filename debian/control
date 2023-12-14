@@ -3,20 +3,16 @@ Section: comm
 Priority: optional
 Maintainer: Lime Microsystems <info@limemicro.com>
 Build-Depends:
-    debhelper (>= 9.0.0),
-    cmake (>= 3.1.3),
+    debhelper-compat (= 13),
+    cmake (>= 3.14),
     libusb-1.0-0-dev,
     libwxgtk3.0-dev | libwxgtk3.0-gtk3-dev,
-    libsoapysdr-dev,
-    freeglut3-dev,
-    libfltk1.3-dev,
-    fluid,
 Standards-Version: 4.1.1
 Homepage: https://myriadrf.org/projects/lime-suite/
 Vcs-Git: https://github.com/myriadrf/LimeSuite.git
 Vcs-Browser: https://github.com/myriadrf/LimeSuite.git
 
-Package: liblimesuite20.10-1
+Package: liblimesuite24.0-1
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -30,7 +26,7 @@ Package: liblimesuite-dev
 Section: libdevel
 Architecture: any
 Depends:
-    liblimesuite20.10-1 (= ${binary:Version}),
+    liblimesuite24.0-1 (= ${binary:Version}),
     ${misc:Depends}
 Description: Lime Suite - development files
  Lime Suite application software.
@@ -39,30 +35,11 @@ Package: limesuite
 Section: comm
 Architecture: any
 Depends:
-    liblimesuite20.10-1 (= ${binary:Version}),
+    liblimesuite24.0-1 (= ${binary:Version}),
     ${shlibs:Depends},
     ${misc:Depends},
     xdg-utils
 Description: Lime Suite - Library applications
- Lime Suite application software.
-
-Package: soapysdr-module-lms7
-Section: libs
-Architecture: all
-Pre-Depends: ${misc:Pre-Depends}
-Depends: soapysdr0.7-module-lms7, ${misc:Depends}
-Description: Lime Suite - SoapySDR bindings metapackage
- Lime Suite application software.
-
-Package: soapysdr0.7-module-lms7
-Section: comm
-Architecture: any
-Multi-Arch: same
-Depends:
-    liblimesuite20.10-1 (= ${binary:Version}),
-    ${shlibs:Depends},
-    ${misc:Depends}
-Description: Lime Suite - SoapySDR bindings
  Lime Suite application software.
 
 Package: limesuite-udev
@@ -73,7 +50,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, udev
 Description: Lime Suite - USB rules for udev
  Lime Suite application software.
 
-Package: limesuite-images20.10
+Package: limesuite-images24.0
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -87,10 +64,9 @@ Package: limesuite-images
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: ${shlibs:Depends}, ${misc:Depends}, limesuite-images20.10
+Depends: ${shlibs:Depends}, ${misc:Depends}, limesuite-images24.0
 Description: Lime Suite - Install firmware and gateware images
  Lime Suite application software.
  .
  This is an empty dependency package that pulls in the images
  for the default version of Lime Suite.
-
