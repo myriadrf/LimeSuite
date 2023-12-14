@@ -12,7 +12,7 @@ RUN apt update && \
         build-essential \
         debhelper \
     && \
-    ./install_dependencies.sh && \
+    echo "Y" | ./install_dependencies.sh && \
     rm -rf /var/lib/apt/lists/*
 
 COPY amarisoft-plugin/ amarisoft-plugin/
