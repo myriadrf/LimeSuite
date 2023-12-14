@@ -128,7 +128,7 @@ static const bool LMS_CH_TX = true; ///<Convenience constants for TX selection
 static const bool LMS_CH_RX = false; ///<Convenience constants for RX selection
 
 /** Convenience type for fixed length name string*/
-typedef char lms_name_t[16];
+typedef char lms_name_t[64];
 
 /**Structure used to represent the allowed value range of various parameters*/
 typedef struct {

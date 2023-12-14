@@ -14,12 +14,13 @@
 #include "pnlX3.h"
 #include "pnlXTRX.h"
 
-#include <ADCUnits.h>
-#include <assert.h>
+#include "ADCUnits.h"
+#include <cassert>
 #include <wx/spinctrl.h>
 #include <vector>
 #include "lms7suiteEvents.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/MemoryRegions.h"
 
 using namespace std;
 using namespace lime;
@@ -419,8 +420,8 @@ void pnlBoardControls::OnMemoryWrite(wxCommandEvent& event)
     MemoryParamGUI* gui = static_cast<MemoryParamGUI*>(ud->ptr);
     long val = 0;
     gui->txtValue->GetValue().ToLong(&val);
-    assert(size_t(gui->mem.size) <= sizeof(val));
-    int rez = mDevice->MemoryWrite(gui->id, gui->mem.address, &val, gui->mem.size);
+    assert(size_t(gui->memoryRegion.size) <= sizeof(val));
+    int rez = mDevice->MemoryWrite(gui->dataStorage, gui->memoryRegion, &val);
     if (rez != 0)
         wxMessageBox(_("Memory write failed"), _("Error"));
 }
@@ -428,8 +429,8 @@ void pnlBoardControls::OnMemoryWrite(wxCommandEvent& event)
 int pnlBoardControls::ReadMemory(MemoryParamGUI* gui)
 {
     long val = 0;
-    assert(sizeof(val) >= size_t(gui->mem.size));
-    int rez = mDevice->MemoryRead(gui->id, gui->mem.address, &val, gui->mem.size);
+    assert(sizeof(val) >= size_t(gui->memoryRegion.size));
+    int rez = mDevice->MemoryRead(gui->dataStorage, gui->memoryRegion, &val);
     if (rez == 0)
         gui->txtValue->SetValue(wxString::Format("%li", val));
     return rez;
@@ -553,15 +554,16 @@ void pnlBoardControls::SetupControls(const std::string& boardID)
         lime::SDRDevice::Descriptor desc = mDevice->GetDescriptor();
         for (const auto& mem : desc.memoryDevices)
         {
-            for (const auto& param : mem.map)
+            const auto& regions = mem.second->regions;
+            for (const auto& region : regions)
             {
                 MemoryParamGUI* gui = new MemoryParamGUI();
-                gui->title = new wxStaticText(pnlEEPROMControls, wxID_ANY, param.name.c_str());
+                gui->title = new wxStaticText(pnlEEPROMControls, wxID_ANY, lime::MEMORY_REGIONS_TEXT.at(region.first));
                 gui->txtValue = new wxTextCtrl(pnlEEPROMControls, wxNewId(), _("0"), wxDefaultPosition, wxDefaultSize);
                 gui->btnRead = new wxButton(pnlEEPROMControls, wxNewId(), _("Read"), wxDefaultPosition, wxDefaultSize);
                 gui->btnWrite = new wxButton(pnlEEPROMControls, wxNewId(), _("Write"), wxDefaultPosition, wxDefaultSize);
-                gui->id = mem.id;
-                gui->mem = param;
+                gui->dataStorage = mem.second;
+                gui->memoryRegion = region.second;
 
                 UserDataContainer* userData = new UserDataContainer(gui); // gets deleted when Event handler is disconnected
                 gui->btnRead->Connect(gui->btnRead->GetId(),

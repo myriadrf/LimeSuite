@@ -50,6 +50,7 @@ class LMS_Programing_wxgui : public IModuleFrame
     static bool OnProgrammingCallback(size_t bsent, size_t btotal, const char* progressMsg);
     std::vector<char> mProgramData;
     lime::SDRDevice* lmsControl;
+    std::vector<std::shared_ptr<lime::SDRDevice::DataStorage>> dataStorageEntries;
     std::atomic<bool> mProgrammingInProgress;
     std::atomic<bool> mAbortProgramming;
     std::thread mWorkerThread;

@@ -12,6 +12,7 @@
 
 #include "boards/LimeSDR_XTRX/LimeSDR_XTRX.h"
 #include "limesuite/DeviceNode.h"
+#include "limesuite/MemoryRegions.h"
 
 #include "math.h"
 
@@ -50,22 +51,21 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
-    desc.memoryDevices.push_back({ "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) });
 
-    DataStorage* eeprom = new DataStorage();
-    eeprom->name = "EEPROM";
-    eeprom->id = (int)eMemoryDevice::EEPROM;
-    DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
-    eeprom->map.push_back(vctcxoValue);
-    desc.memoryDevices.push_back(*eeprom);
+    const std::unordered_map<eMemoryRegion, Region> eepromMap = { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } };
+
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::FPGA_FLASH)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::FPGA_FLASH);
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::EEPROM)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::EEPROM, eepromMap);
 
     desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i = 0; i < mSubDevices.size(); ++i)
     {
         mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i], X8ReferenceClock);
-        const SDRDevice::Descriptor& d = mSubDevices[i]->GetDescriptor();
+        const SDRDevice::Descriptor& subdeviceDescriptor = mSubDevices[i]->GetDescriptor();
 
-        for (const auto& soc : d.rfSOC)
+        for (const auto& soc : subdeviceDescriptor.rfSOC)
         {
             RFSOCDescriptor temp = soc;
             char ctemp[512];
@@ -74,47 +74,37 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
             desc.rfSOC.push_back(temp);
         }
 
-        for (const auto& s : d.spiSlaveIds)
+        for (const auto& slaveId : subdeviceDescriptor.spiSlaveIds)
         {
             char ctemp[512];
-            sprintf(ctemp, "%s@%li", s.first.c_str(), i + 1);
-            desc.spiSlaveIds[ctemp] = (i + 1) << 8 | s.second;
+            sprintf(ctemp, "%s@%li", slaveId.first.c_str(), i + 1);
+            desc.spiSlaveIds[ctemp] = (i + 1) << 8 | slaveId.second;
             chipSelectToDevice[desc.spiSlaveIds[ctemp]] = mSubDevices[i];
         }
 
-        for (const auto& s : d.memoryDevices)
+        for (const auto& memoryDevice : subdeviceDescriptor.memoryDevices)
         {
-            char ctemp[512];
-            sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
-            lime::SDRDevice::DataStorage* storage = new lime::SDRDevice::DataStorage();
-            storage->name = ctemp;
-            storage->id = (static_cast<uint32_t>(i) + 1) << 8 | s.id;
-            storage->map = s.map;
-            for (auto& region : storage->map)
-            {
-                sprintf(ctemp, "%s@%li", region.name.c_str(), i + 1);
-                region.name = ctemp;
-            }
-            desc.memoryDevices.push_back(*storage);
-            //desc.memoryDevices.push_back({ ctemp, (static_cast<uint32_t>(i) + 1) << 8 | s.id });
-            memorySelectToDevice[(i + 1) << 8 | s.id] = mSubDevices[i];
+            std::string indexName = subdeviceDescriptor.name + Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL + std::to_string(i) +
+                                    Descriptor::PATH_SEPARATOR_SYMBOL + memoryDevice.first;
+
+            desc.memoryDevices[indexName] = memoryDevice.second;
         }
 
-        for (const auto& s : d.customParameters)
+        for (const auto& customParameter : subdeviceDescriptor.customParameters)
         {
-            SDRDevice::CustomParameter p = s;
-            p.id |= (i + 1) << 8;
+            SDRDevice::CustomParameter parameter = customParameter;
+            parameter.id |= (i + 1) << 8;
             char ctemp[512];
-            sprintf(ctemp, "%s@%li", s.name.c_str(), i + 1);
-            p.name = ctemp;
-            desc.customParameters.push_back(p);
-            customParameterToDevice[p.id] = mSubDevices[i];
+            sprintf(ctemp, "%s@%li", customParameter.name.c_str(), i + 1);
+            parameter.name = ctemp;
+            desc.customParameters.push_back(parameter);
+            customParameterToDevice[parameter.id] = mSubDevices[i];
         }
 
         char ctemp[256];
-        sprintf(ctemp, "%s#%li", d.socTree->name.c_str(), i + 1);
-        d.socTree->name = std::string(ctemp);
-        desc.socTree->children.push_back(d.socTree);
+        sprintf(ctemp, "%s#%li", subdeviceDescriptor.socTree->name.c_str(), i + 1);
+        subdeviceDescriptor.socTree->name = std::string(ctemp);
+        desc.socTree->children.push_back(subdeviceDescriptor.socTree);
     }
 }
 
@@ -320,58 +310,69 @@ int LimeSDR_MMX8::CustomParameterRead(std::vector<CustomParameterIO>& parameters
     return ret;
 }
 
-bool LimeSDR_MMX8::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
+bool LimeSDR_MMX8::UploadMemory(
+    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
-    if (id == 0)
+    if (device == eMemoryDevice::FPGA_FLASH && moduleIndex == 0)
     {
-        int progMode;
+        int progMode = 1;
         LMS64CProtocol::ProgramWriteTarget target;
         target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-        progMode = 1;
         return mMainFPGAcomms->ProgramWrite(data, length, progMode, target, callback);
     }
 
-    SDRDevice* dev = memorySelectToDevice.at(id);
+    SDRDevice* dev = mSubDevices.at(moduleIndex);
     if (!dev)
     {
-        throw std::logic_error("invalid id select");
+        throw std::logic_error("Invalid id select");
         return false;
     }
 
-    uint32_t subSelect = id & 0xFF;
-    return dev->UploadMemory(subSelect, data, length, callback);
+    return dev->UploadMemory(device, 0, data, length, callback);
 }
 
-int LimeSDR_MMX8::MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t length)
+int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
-    if ((id & ~0xFF) == 0)
-        return mMainFPGAcomms->MemoryWrite(address, data, length);
-
-    SDRDevice* dev = memorySelectToDevice.at(id);
-    if (!dev)
+    if (storage == nullptr)
     {
-        throw std::logic_error("invalid id select");
-        return false;
+        return -1;
     }
 
-    uint32_t subSelect = id & 0xFF;
-    return dev->MemoryWrite(subSelect, address, data, length);
+    if (storage->ownerDevice == this)
+    {
+        return mMainFPGAcomms->MemoryWrite(region.address, data, region.size);
+    }
+
+    SDRDevice* dev = storage->ownerDevice;
+    if (dev == nullptr)
+    {
+        throw std::logic_error("Device is null");
+        return -1;
+    }
+
+    return dev->MemoryWrite(storage, region, data);
 }
 
-int LimeSDR_MMX8::MemoryRead(uint32_t id, uint32_t address, void* data, size_t length)
+int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
-    if ((id & ~0xFF) == 0)
-        return mMainFPGAcomms->MemoryRead(address, data, length);
-
-    SDRDevice* dev = memorySelectToDevice.at(id);
-    if (!dev)
+    if (storage == nullptr)
     {
-        throw std::logic_error("invalid id select");
-        return false;
+        return -1;
     }
 
-    uint32_t subSelect = id & 0xFF;
-    return dev->MemoryRead(subSelect, address, data, length);
+    if (storage->ownerDevice == this)
+    {
+        return mMainFPGAcomms->MemoryRead(region.address, data, region.size);
+    }
+
+    SDRDevice* dev = storage->ownerDevice;
+    if (dev == nullptr)
+    {
+        throw std::logic_error("Device is null");
+        return -1;
+    }
+
+    return dev->MemoryRead(storage, region, data);
 }
 
 int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)

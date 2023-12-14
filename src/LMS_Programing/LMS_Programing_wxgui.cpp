@@ -109,8 +109,13 @@ bool LMS_Programing_wxgui::Initialize(lime::SDRDevice* device)
     {
         cmbDevice->Clear();
         const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
-        for (const SDRDevice::DataStorage& mem : desc.memoryDevices)
-            cmbDevice->Append(wxString(mem.name));
+
+        for (const auto& memoryDevice : desc.memoryDevices)
+        {
+            cmbDevice->Append(wxString(memoryDevice.first));
+            dataStorageEntries.push_back(memoryDevice.second);
+        }
+
         cmbDevice->SetSelection(0);
         wxCommandEvent evt;
         OncmbDeviceSelect(evt);
@@ -268,14 +273,13 @@ void LMS_Programing_wxgui::DoProgramming()
 
     mProgrammingInProgress.store(true);
     obj_ptr = this;
-    int device = cmbDevice->GetSelection();
+    auto memoryDevice = dataStorageEntries.at(cmbDevice->GetSelection());
 
-    const SDRDevice::Descriptor& desc = mDevice->GetDescriptor();
     int status;
     try
     {
-        status =
-            mDevice->UploadMemory(desc.memoryDevices[device].id, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
+        status = memoryDevice->ownerDevice->UploadMemory(
+            memoryDevice->memoryDeviceType, 0, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
     } catch (...)
     {
         status = -1;
