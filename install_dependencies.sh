@@ -9,7 +9,6 @@ fi
 
 apt-get install -y \
   libusb-1.0-0-dev \
-  "linux-headers-$(uname -r)" \
   build-essential \
   libwxbase3.0-dev \
   libwxgtk3.0-gtk3-dev \
