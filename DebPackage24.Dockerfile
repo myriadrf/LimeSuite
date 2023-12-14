@@ -3,15 +3,16 @@ FROM debian:bookworm AS build-stage
 
 WORKDIR /LimeSuite2/source
 
-COPY install_dependencies24.sh install_dependencies24.sh
+COPY install_dependencies.sh install_dependencies.sh
 
+# RUN cat /etc/os-release
 RUN apt update && \
     apt-get install -y --no-install-recommends \
         dpkg-dev \
         build-essential \
         debhelper \
     && \
-    ./install_dependencies24.sh && \
+    ./install_dependencies.sh && \
     rm -rf /var/lib/apt/lists/*
 
 COPY amarisoft-plugin/ amarisoft-plugin/

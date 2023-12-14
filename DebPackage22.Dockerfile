@@ -3,7 +3,9 @@ FROM ubuntu:20.04 AS build-stage
 
 WORKDIR /LimeSuite2/source
 
-COPY install_dependencies22.sh install_dependencies22.sh
+COPY install_dependencies.sh install_dependencies.sh
+
+# RUN cat /etc/os-release
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
@@ -12,7 +14,7 @@ RUN apt update && \
         build-essential \
         debhelper \
     && \
-    ./install_dependencies22.sh && \
+    ./install_dependencies.sh && \
     rm -rf /var/lib/apt/lists/*
 
 COPY amarisoft-plugin/ amarisoft-plugin/
