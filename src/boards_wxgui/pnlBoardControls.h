@@ -1,10 +1,6 @@
 #ifndef __pnlAnalog_view__
 #define __pnlAnalog_view__
 
-/**	@brief GUI for writing and reading analog controls
-	@author Lime Microsystems (www.limemicro.com)
-*/
-
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/string.h>
@@ -75,9 +71,7 @@ class pnlBoardControls : public IModuleFrame
         lime::SDRDevice::Region memoryRegion;
     };
 
-    class Param_GUI
-    {
-      public:
+    struct Param_GUI {
         Param_GUI()
             : title(nullptr)
             , units(nullptr)

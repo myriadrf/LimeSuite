@@ -28,6 +28,7 @@ using namespace std::chrono;
 
 namespace lime {
 
+/** @brief A helper class for calculating the Average and the Root Mean Square */
 class AvgRmsCounter
 {
   public:
@@ -164,7 +165,7 @@ int TRXLooper_PCIE::TxSetup()
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
 
     int samplesInPkt = 256; //(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
-    const int packetSize = sizeof(TxHeader) + samplesInPkt * sampleSize * chCount;
+    const int packetSize = sizeof(StreamHeader) + samplesInPkt * sampleSize * chCount;
 
     if (mConfig.extraConfig && mConfig.extraConfig->txSamplesInPacket != 0)
     {
@@ -212,6 +213,10 @@ int TRXLooper_PCIE::TxSetup()
     return 0;
 }
 
+/** 
+  @brief A class for managing the transmission buffer for the PCIe transfer.
+  @tparam T The samples packet input type.
+ */
 template<class T> class TxBufferManager
 {
   public:
@@ -244,16 +249,16 @@ template<class T> class TxBufferManager
         mData = memPtr;
         mCapacity = capacity;
         memset(mData, 0, capacity);
-        header = reinterpret_cast<TxHeader*>(mData);
+        header = reinterpret_cast<StreamHeader*>(mData);
         header->Clear();
         payloadSize = 0;
-        payloadPtr = (uint8_t*)header + sizeof(TxHeader);
+        payloadPtr = (uint8_t*)header + sizeof(StreamHeader);
     }
 
     inline bool hasSpace() const
     {
         const bool packetNotFull = payloadSize < maxPayloadSize;
-        const bool spaceAvailable = mCapacity - bytesUsed > sizeof(TxHeader);
+        const bool spaceAvailable = mCapacity - bytesUsed > sizeof(StreamHeader);
         return packetNotFull && spaceAvailable;
     }
 
@@ -264,9 +269,9 @@ template<class T> class TxBufferManager
         {
             if (payloadSize >= maxPayloadSize || payloadSize == maxSamplesInPkt * bytesForFrame)
             {
-                header = reinterpret_cast<TxHeader*>(mData + bytesUsed);
+                header = reinterpret_cast<StreamHeader*>(mData + bytesUsed);
                 header->Clear();
-                payloadPtr = (uint8_t*)header + sizeof(TxHeader);
+                payloadPtr = (uint8_t*)header + sizeof(StreamHeader);
                 payloadSize = 0;
             }
 
@@ -275,7 +280,7 @@ template<class T> class TxBufferManager
             {
                 ++packetsCreated;
                 header->counter = src->timestamp;
-                bytesUsed += sizeof(TxHeader);
+                bytesUsed += sizeof(StreamHeader);
             }
             const int freeSpace = std::min(maxPayloadSize - payloadSize, mCapacity - bytesUsed - 16);
             uint32_t transferCount = std::min(freeSpace / bytesForFrame, src->size());
@@ -296,7 +301,7 @@ template<class T> class TxBufferManager
             if (packetsCreated >= maxPacketsInBatch && !hasSpace())
                 sendBuffer = true;
 
-            if (bytesUsed >= mCapacity - sizeof(TxHeader))
+            if (bytesUsed >= mCapacity - sizeof(StreamHeader))
                 sendBuffer = true; // not enough space for more packets, need to flush
             if ((uint64_t)payloadPtr & 0xF)
                 sendBuffer = true; // next packets payload memory is not suitably aligned for vectorized filling
@@ -330,7 +335,7 @@ template<class T> class TxBufferManager
 
   private:
     DataConversion conversion;
-    TxHeader* header;
+    StreamHeader* header;
     uint8_t* payloadPtr;
     uint8_t* mData;
     uint32_t bytesUsed;
@@ -531,7 +536,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             state.bufferSize = wrInfo.size;
             state.genIRQ = (wrInfo.id % irqPeriod) == 0;
 
-            TxHeader* pkt = reinterpret_cast<TxHeader*>(output.data());
+            StreamHeader* pkt = reinterpret_cast<StreamHeader*>(output.data());
             lastTS = pkt->counter;
             if (mConfig.rxCount > 0) // Rx is needed for current timestamp
             {
@@ -691,8 +696,8 @@ int TRXLooper_PCIE::RxSetup()
 
     const uint32_t packetSize = 16 + payloadSize;
 
-    // request fpga to provide Rx packets with desired payloadSize
-    //// Two writes are needed
+    // Request fpga to provide Rx packets with desired payloadSize
+    // Two writes are needed
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     uint32_t requestAddr[] = { 0x0019, 0x000E };
     uint32_t requestData[] = { packetSize, iqSamplesCount };

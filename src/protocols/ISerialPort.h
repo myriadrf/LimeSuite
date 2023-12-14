@@ -6,6 +6,7 @@
 
 namespace lime {
 
+/** @brief Interface for directly reading or writing data to/from the device. */
 class ISerialPort
 {
   public:

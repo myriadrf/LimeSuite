@@ -5,6 +5,7 @@
 
 namespace lime {
 
+/** @brief A class for a LimeSDR-USB device entry. */
 class LimeSDREntry : public USBEntry
 {
   public:

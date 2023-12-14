@@ -56,7 +56,12 @@ template<class T> struct sRect {
     }
 };
 
+/** @brief Structure for storing color information as 4 floats */
 struct GLG_color {
+    /**
+      @brief Construct a new GLG_color object using a specified color.
+      @param rgba An integer representing the RGBA color values. First 8 bits are the red value, next 8 are green, then blue, then the alpha.
+     */
     GLG_color(unsigned int rgba)
     {
         red = (rgba >> 24) / 255.0;
@@ -64,6 +69,8 @@ struct GLG_color {
         blue = ((rgba >> 8) & 0xFF) / 255.0;
         alpha = (rgba & 0xFF) / 255.0;
     }
+
+    /** @brief Construct a new GLG_color object using a default color of #797979FF. */
     GLG_color()
         : red(0.5)
         , green(0.5)
@@ -72,6 +79,10 @@ struct GLG_color {
     {
     }
 
+    /**
+      @brief Get the stored color as a packed integer value.
+      @return The packed integer value.
+     */
     unsigned int getColor4b()
     {
         unsigned int color = 0;
@@ -82,27 +93,32 @@ struct GLG_color {
         return color;
     }
 
-    float red;
-    float green;
-    float blue;
-    float alpha;
+    float red; ///< The red component of the color
+    float green; ///< The green component of the color
+    float blue; ///< The blue component of the color
+    float alpha; ///< The alpha component of the color
 };
 
+/// @brief Color data series
 class cDataSerie
 {
   public:
+    /// @brief Constructor for the class.
+    /// Initializes it with the color #000000FF and an initial allocation size of 10.
     cDataSerie()
         : size(0)
         , allocatedSize(0)
         , vboIndex(0)
+        , color(0x000000FF)
         , visible(true)
         , modified(true)
         , values(nullptr)
     {
-        color = 0x000000FF;
         Initialize(10);
     };
 
+    /// @brief Destructor for the class.
+    /// Frees up @ref values upon being called.
     ~cDataSerie()
     {
         if (values != nullptr)
@@ -112,6 +128,10 @@ class cDataSerie
         }
     };
 
+    /// @brief Assigns the given values into the series.
+    /// @param xserie The x values to assign.
+    /// @param yserie The y values to assign.
+    /// @param count The amount of values to assign.
     void AssignValues(float* xserie, float* yserie, unsigned int count)
     {
         if (2 * count > allocatedSize && count > 0)
@@ -130,6 +150,10 @@ class cDataSerie
         modified = true;
         size = count;
     }
+
+    /// @brief Assigns the given values into the series.
+    /// @param valuesXY The x and y value pairs to assign.
+    /// @param length The length of the memory array to assign.
     void AssignValues(float* valuesXY, unsigned int length)
     {
         if (length > allocatedSize && length > 0)
@@ -140,6 +164,7 @@ class cDataSerie
         size = length / 2;
     }
 
+    /// @brief Clears the series.
     void Clear()
     {
         if (values != nullptr)
@@ -151,6 +176,9 @@ class cDataSerie
         allocatedSize = 0;
         modified = true;
     }
+
+    /// @brief Sets up the series, capable of holding @p count elements.
+    /// @param count The amount of elements to allocate memory for.
     void Initialize(unsigned int count)
     {
         Clear();
@@ -159,6 +187,10 @@ class cDataSerie
         memset(values, 0, sizeof(float) * 2 * count);
         allocatedSize = count;
     }
+
+    /// @brief Adds a single X and Y value into the series.
+    /// @param x The X value to add.
+    /// @param y The Y value to add.
     void AddXY(float x, float y)
     {
         if (size < allocatedSize)
@@ -181,14 +213,14 @@ class cDataSerie
         modified = true;
     }
 
-    unsigned int size;
-    unsigned int allocatedSize;
-    unsigned int vboIndex;
-    GLG_color color;
-    bool visible;
-    bool modified;
+    unsigned int size; ///< The currently used size.
+    unsigned int allocatedSize; ///< The currently allocated size.
+    unsigned int vboIndex; ///< The vertex buffer object index.
+    GLG_color color; ///< The color to be used.
+    bool visible; ///< Whether the series is visible or not.
+    bool modified; ///< Whether the series has been modified since it was last checked.
 
-    float* values;
+    float* values; ///< The value array.
 };
 
 struct GLG_settings {

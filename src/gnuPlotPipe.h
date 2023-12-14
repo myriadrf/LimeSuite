@@ -1,13 +1,15 @@
 #ifndef GNUPLOT_PIPE_H
 #define GNUPLOT_PIPE_H
 
-#include <stdio.h>
 #include <cstdio>
-#include <stdarg.h>
+#include <cstdarg>
 
+/// @brief A class to pipe data into GNUPlot
 class GNUPlotPipe
 {
   public:
+    /// @brief Creates the GNUPlot pipe.
+    /// @param persistent Whether the pipe is persistent or not.
     GNUPlotPipe(bool persistent = true)
     {
 #ifdef __unix__
@@ -22,6 +24,8 @@ class GNUPlotPipe
             pipeHandle = _popen("gnuplot", "w");
 #endif
     }
+
+    /// @brief Closes the GNUPlot pipe.
     ~GNUPlotPipe()
     {
         write("exit\n");
@@ -32,12 +36,17 @@ class GNUPlotPipe
 #endif
     }
 
+    /// @brief Writes data into the pipe.
+    /// @param str The C-string of data to write.
     void write(const char* str)
     {
         fprintf(pipeHandle, "%s", str);
         //fflush(pipeHandle);
     }
 
+    /// @brief Writes formatted data into the pipe.
+    /// @param format The format string.
+    /// @param ... The format arguments parameters.
     void writef(const char* format, ...)
     {
         static char temp[512];
@@ -48,6 +57,7 @@ class GNUPlotPipe
         va_end(argList);
     }
 
+    /// @brief Flushes the pipe.
     void flush() { fflush(pipeHandle); }
 
   protected:

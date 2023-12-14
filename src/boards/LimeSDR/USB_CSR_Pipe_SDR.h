@@ -8,6 +8,7 @@
 
 namespace lime {
 
+/** @brief Class for interfacing with Control/Status registers (CSR) of LimeSDR-USB. */
 class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
 {
   public:

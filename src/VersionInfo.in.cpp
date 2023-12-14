@@ -1,5 +1,5 @@
 /**
-@file VersionInfo.cpp
+@file VersionInfo.in.cpp
 @author Lime Microsystems
 @brief API for querying version and build information.
 */

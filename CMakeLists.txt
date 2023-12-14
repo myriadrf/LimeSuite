@@ -239,16 +239,16 @@ endif()
 ########################################################################
 ## Doxygen
 ########################################################################
-find_package(Doxygen QUIET)
+find_package(Doxygen OPTIONAL_COMPONENTS dot mscgen dia)
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_API_DOXYGEN "Enable LMS API Doxygen documentation" OFF "DOXYGEN_FOUND" OFF)
+cmake_dependent_option(ENABLE_API_DOXYGEN "Enable LMS API Doxygen documentation" ON "DOXYGEN_FOUND" OFF)
 add_feature_info(LimeSuiteDocAPI ENABLE_API_DOXYGEN "LMS API Doxygen documentation")
 if (ENABLE_API_DOXYGEN)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/DoxyfileAPI.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
   add_custom_target(docAPI ALL
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Generating LMS API documentation with Doxygen" VERBATIM
     )
 endif()
@@ -257,7 +257,7 @@ if(DOXYGEN_FOUND)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
   add_custom_target(doc
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Generating documentation with Doxygen" VERBATIM
     )
 endif()

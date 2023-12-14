@@ -15,6 +15,7 @@ namespace lime {
 
 enum class eSi_CLOCK_INPUT : uint8_t { Si_CLKIN, Si_XTAL, Si_CMOS };
 
+/** @brief Si5351's channel information. */
 struct Si5351_Channel {
     Si5351_Channel()
         : outputDivider(1)
@@ -35,6 +36,7 @@ struct Si5351_Channel {
     bool int_mode;
 };
 
+/** @brief Si5351's phase-locked loop (PLL) information. */
 struct Si5351_PLL {
     Si5351_PLL()
         : inputFreqHz(0)
@@ -53,6 +55,7 @@ struct Si5351_PLL {
 
 class II2C;
 
+/** @brief Class for controlling the Si5351C I2C-programmable any-frequency CMOS clock generator + VCXO */
 class LIME_API Si5351C
 {
   public:
@@ -61,6 +64,7 @@ class LIME_API Si5351C
         FAILED,
     };
 
+    /** @brief Status bits of the chip */
     struct StatusBits {
         StatusBits()
             : sys_init(0)

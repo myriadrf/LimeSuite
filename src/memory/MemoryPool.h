@@ -7,6 +7,10 @@
 
 namespace lime {
 
+/**
+  @brief Class for having a preallocated memory pool for many allocations 
+  and deallocations without actually having to allocate and deallocate memory every time.
+ */
 class MemoryPool
 {
   public:

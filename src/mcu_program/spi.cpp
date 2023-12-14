@@ -63,13 +63,6 @@ void SPI_write_batch(const uint16_t* addr, const uint16_t* values, uint8_t cnt)
     serPort->SPI_write_batch(addr, values, cnt);
 }
 
-/** @brief Modifies given registers with values applied using masks
-    @param addr array of register addresses
-    @param masks array of applied masks
-    @param values array of values to be written
-    @param start starting index of given arrays
-    @param stop end index of given arrays
-*/
 void Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* values, const uint16_t* masks, uint8_t cnt)
 {
     uint8_t i;

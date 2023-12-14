@@ -11,6 +11,7 @@
 
 namespace lime {
 
+/** @brief A class for communicating with devices using the Cypress USB 3.0 CYUSB3014-BZXC USB controller. */
 class FX3 : public USBGeneric
 {
   public:

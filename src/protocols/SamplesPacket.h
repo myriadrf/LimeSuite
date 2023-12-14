@@ -5,6 +5,10 @@
 
 namespace lime {
 
+/**
+  @brief Class for holding a buffer of samples for @p chCount channels.
+  @tparam chCount The number of channels the packet holds.
+ */
 template<uint8_t chCount> class SamplesPacket
 {
   public:

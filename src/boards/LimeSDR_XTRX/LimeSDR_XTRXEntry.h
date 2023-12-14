@@ -5,6 +5,7 @@
 
 namespace lime {
 
+/** @brief A class for LimeSDR XTRX device registry entry. */
 class LimeSDR_XTRXEntry : public DeviceRegistryEntry
 {
   public:

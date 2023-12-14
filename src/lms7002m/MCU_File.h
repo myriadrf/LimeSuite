@@ -8,9 +8,8 @@
 #include <vector>
 #include <string>
 
-class MemBlock
-{
-  public:
+/** @brief Structure describing a memory block. */
+struct MemBlock {
     size_t m_startAddress;
     std::vector<unsigned char> m_bytes;
 };

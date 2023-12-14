@@ -1,5 +1,5 @@
 /**
-    @file   dualRxTx.cpp
+    @file   dualRXTX.cpp
     @author Lime Microsystems (www.limemicro.com)
     @brief  minimal RX loopback to Tx example
  */

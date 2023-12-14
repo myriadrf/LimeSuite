@@ -8,6 +8,7 @@
 
 namespace lime {
 
+/** @brief Class for communicating with a PCIe device. */
 class LitePCIe
 {
   public:
@@ -35,6 +36,7 @@ class LitePCIe
     void RxDMAEnable(bool enabled, uint32_t bufferSize, uint8_t irqPeriod);
     void TxDMAEnable(bool enabled);
 
+    /** @brief Structure for holding the Direct Memory Access (DMA) information. */
     struct DMAInfo {
         DMAInfo()
             : rxMemory(nullptr)
@@ -50,6 +52,7 @@ class LitePCIe
     };
     DMAInfo GetDMAInfo() { return mDMA; };
 
+    /** @brief Structure for holding the current state of the Direct Memory Access (DMA). */
     struct DMAState {
         uint32_t hwIndex;
         uint32_t swIndex;

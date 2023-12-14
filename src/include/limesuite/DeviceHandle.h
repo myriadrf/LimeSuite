@@ -6,27 +6,30 @@
 #include "limesuite/config.h"
 
 namespace lime {
-/*!
- * A DeviceHandle identifies a particular device.
- * Handles are used by the device registry to return
- * enumeration results and to instantiate connections.
- *
- * When using DeviceHandle to specify an enumeration hint,
- * simply fill in only the fields that the user is interested in.
- * Each default field (empty string, -1 index) will be ignored
- * by the connection registry entry discovery implementation.
+/**
+  @brief A DeviceHandle identifies a particular device.
+  Handles are used by the device registry to return
+  enumeration results and to instantiate connections.
+
+  When using DeviceHandle to specify an enumeration hint,
+  simply fill in only the fields that the user is interested in.
+  Each default field (empty string, -1 index) will be ignored
+  by the connection registry entry discovery implementation.
  */
 class LIME_API DeviceHandle
 {
   public:
     DeviceHandle(void);
 
-    //! Create from serialized string with key=value pairs
+    /**
+      @brief Create from serialized string with key=value pairs.
+      @param args A serialized string with key=value pairs.
+     */
     DeviceHandle(const std::string& args);
 
     /*!
-     * The connection media type.
-     * Example: SPI, COM, USB, PCIe...
+      @brief The connection media type.
+      Example: SPI, COM, USB, PCIe...
      */
     std::string media;
 

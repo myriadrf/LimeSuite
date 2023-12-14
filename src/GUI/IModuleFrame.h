@@ -1,13 +1,12 @@
 #pragma once
 
-/// Interface for adding additional GUI modules of SoC
-
 #include <wx/frame.h>
 
 namespace lime {
 class SDRDevice;
 }
 
+/** @brief Interface for adding additional GUI modules of SoC */
 class IModuleFrame : public wxFrame
 {
   public:
