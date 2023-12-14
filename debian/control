@@ -6,7 +6,7 @@ Build-Depends:
     debhelper-compat (= 13),
     cmake (>= 3.14),
     libusb-1.0-0-dev,
-    libwxgtk3.0-dev | libwxgtk3.0-gtk3-dev,
+    libwxgtk3.0-dev | libwxgtk3.0-gtk3-dev | libwxgtk3.2-dev,
 Standards-Version: 4.1.1
 Homepage: https://myriadrf.org/projects/lime-suite/
 Vcs-Git: https://github.com/myriadrf/LimeSuite.git
