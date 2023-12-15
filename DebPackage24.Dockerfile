@@ -8,7 +8,6 @@ COPY install_dependencies.sh install_dependencies.sh
 RUN apt update && \
     apt-get install -y --no-install-recommends \
         dpkg-dev \
-        build-essential \
         debhelper \
     && \
     echo "Y" | ./install_dependencies.sh && \
@@ -25,7 +24,7 @@ COPY CMakeLists.txt CMakeLists.txt
 COPY README.md README.md
 COPY src/ src/
 
-RUN dpkg-buildpackage --build=binary --no-sign -d
+RUN dpkg-buildpackage --build=binary --no-sign
 
 FROM scratch AS export-stage
 COPY --from=build-stage /LimeSuite2/*.* /

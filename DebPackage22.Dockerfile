@@ -9,7 +9,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
     apt-get install -y --no-install-recommends \
         dpkg-dev \
-        build-essential \
         debhelper \
     && \
     echo "Y" | ./install_dependencies.sh && \
