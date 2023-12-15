@@ -38,7 +38,7 @@ if [[ ($TYPE == "ubuntu" && ${VERSION_ID:0:2} -le 22) || ($TYPE == "debian" && $
 fi
 
 yes=""
-if [[ $1 == "-y" ]]; then
+if [[ ${1-} == "-y" ]]; then
   yes="-y"
 fi
 
