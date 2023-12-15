@@ -37,7 +37,12 @@ if [[ ($TYPE == "ubuntu" && ${VERSION_ID:0:2} -le 22) || ($TYPE == "debian" && $
   libwx="libwxbase3.0-dev libwxgtk3.0-gtk3-dev"
 fi
 
-apt-get install --no-install-recommends \
+yes=""
+if [[ $1 == "-y" ]]; then
+  yes="-y"
+fi
+
+apt-get install $yes --no-install-recommends \
   libusb-1.0-0-dev \
   build-essential \
   $libwx \

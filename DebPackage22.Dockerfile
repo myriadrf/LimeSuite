@@ -11,7 +11,7 @@ RUN apt update && \
         dpkg-dev \
         debhelper \
     && \
-    echo "Y" | ./install_dependencies.sh && \
+    ./install_dependencies.sh -y && \
     rm -rf /var/lib/apt/lists/*
 
 COPY amarisoft-plugin/ amarisoft-plugin/
