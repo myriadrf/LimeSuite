@@ -4,5 +4,5 @@
 ## .deb package file generation
 
 ```bash
-docker build -o <output_folder> -f DebPackage.Dockerfile .
+docker build -o <output_folder> -f DebPackage<version>.Dockerfile .
 ```
