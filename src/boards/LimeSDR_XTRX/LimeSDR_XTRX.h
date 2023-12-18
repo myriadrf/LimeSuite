@@ -9,8 +9,6 @@
 #include <array>
 #include <memory>
 
-#include "dataTypes.h"
-
 namespace lime {
 
 class LitePCIe;

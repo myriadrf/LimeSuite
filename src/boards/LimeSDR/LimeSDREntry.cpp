@@ -6,6 +6,7 @@
 #include "LMS64C_FPGA_Over_USB.h"
 
 #include <memory>
+#include <stdexcept>
 
 #ifndef __unix__
     #include "windows.h"

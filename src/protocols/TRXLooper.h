@@ -4,7 +4,6 @@
 #include <vector>
 #include <atomic>
 #include <thread>
-#include "dataTypes.h"
 #include "limesuite/SDRDevice.h"
 #include "limesuite/complex.h"
 #include "PacketsFIFO.h"

@@ -6,6 +6,8 @@
 #include "FPGA_common.h"
 #include "limesuite/LMS7002M.h"
 
+#include <cmath>
+
 namespace lime {
 
 LMS7002M_SDRDevice::LMS7002M_SDRDevice()

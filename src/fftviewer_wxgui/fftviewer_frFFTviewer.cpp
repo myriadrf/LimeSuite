@@ -4,7 +4,6 @@
 #include "OpenGLGraph.h"
 #include <LMSBoards.h>
 #include "kissFFT/kiss_fft.h"
-#include "dataTypes.h"
 #include "limesuite/LMS7002M.h"
 #include "windowFunction.h"
 #include <fstream>

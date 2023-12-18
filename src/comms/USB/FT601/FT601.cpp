@@ -1,5 +1,5 @@
 #include "FT601.h"
-#include "dataTypes.h"
+#include "DataPacket.h"
 #include "DeviceExceptions.h"
 #include "USBTransferContext_FT601.h"
 

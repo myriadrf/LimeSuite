@@ -1,7 +1,6 @@
 #ifndef LIME_DATAPACKET_H
 #define LIME_DATAPACKET_H
 
-#include "dataTypes.h"
 #include "BufferInterleaving.h"
 
 namespace lime {
@@ -30,9 +29,10 @@ struct RxDataPacket {
     uint8_t data[4096];
 };
 
-struct TxDataPacket {
-    TxDataPacket() { memset(this, 0, sizeof(TxDataPacket)); }
+struct FPGA_DataPacket {
+    FPGA_DataPacket() { memset(this, 0, sizeof(FPGA_DataPacket)); }
 
+    inline bool txWasDropped() const { return header0 & (1 << 3); }
     inline void ignoreTimestamp(bool enabled)
     {
         constexpr uint8_t mask = 1 << 4;
@@ -45,7 +45,7 @@ struct TxDataPacket {
         return header0 & mask; //ignore timestamp
     }
     inline void ClearHeader() { memset(this, 0, 16); }
-
+    inline float RxFIFOFill() { return (header0 & 0x7) * 0.125; }
     inline void SetPayloadSize(uint16_t size)
     {
         payloadSizeLSB = size & 0xFF;

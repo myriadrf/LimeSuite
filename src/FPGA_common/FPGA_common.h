@@ -7,7 +7,6 @@
 #ifndef FPGA_COMMON_H
 #define FPGA_COMMON_H
 #include <stdint.h>
-#include "dataTypes.h"
 #include <map>
 #include <memory>
 
