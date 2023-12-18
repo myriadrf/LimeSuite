@@ -68,15 +68,6 @@ Docker
 ^^^^^^
 
 There also exists a Docker file to generate the web-based testing code coverage report.
-
-Docker prerequisites
-""""""""""""""""""""
-
-In order to use the Docker code coverage report generation file, you will need to have the `Docker Engine`_ installed and set up.
-
-Running the Docker code coverage report generation file
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
 To generate the testing code coverage report using Docker, in the root folder of the repository run:
 
 .. code-block:: bash
