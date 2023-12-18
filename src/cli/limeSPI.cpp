@@ -6,12 +6,12 @@
 using namespace std;
 using namespace lime;
 
-static int32_t FindChipSelectByName(SDRDevice* device, const char* chipName)
+static int32_t FindChipSelectByName(SDRDevice* device, const std::string& chipName)
 {
     if (!device)
         return -1;
     const auto chipMap = device->GetDescriptor().spiSlaveIds;
-    if (!chipName)
+    if (chipName.size() == 0)
     {
         cerr << "specify SPI chip select, -c, --chip :" << endl;
         for (const auto& nameIds : chipMap)

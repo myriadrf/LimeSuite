@@ -877,9 +877,7 @@ int MCU_BD::RunProductionTest_MCU()
         { // detected error code
             if ((retval & 0x0F) > 0)
             {
-                char ctemp[64];
-                sprintf(ctemp, "Test %i failed", (retval & 0x0F));
-                temps = ctemp;
+                temps = "Test " + std::to_string(retval & 0x0F) + " failed";
                 return -1;
             }
             else

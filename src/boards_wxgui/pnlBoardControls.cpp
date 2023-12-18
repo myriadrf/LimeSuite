@@ -628,8 +628,8 @@ void pnlBoardControls::SetupControls(const std::string& boardID)
         wxFlexGridSizer* submodulesSizer = new wxFlexGridSizer(4, 0, 0, 0);
         for (int i = 0; i < 8; ++i)
         {
-            char spiSlaveName[128];
-            sprintf(spiSlaveName, "FPGA@%i", i + 1);
+            std::string spiSlaveName = "FPGA@" + std::to_string(i + 1);
+
             pnlXTRX* pnl = new pnlXTRX(owner, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, spiSlaveName);
             submodulesSizer->Add(pnl);
             pnl->Initialize(mDevice, spiSlaveName);

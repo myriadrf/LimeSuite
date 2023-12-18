@@ -41,8 +41,7 @@ void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
 
 int TRXLooper_USB::TxSetup()
 {
-    char name[64];
-    sprintf(name, "Tx%i_memPool", chipId);
+    const std::string name = "MemPool_Tx" + std::to_string(chipId);
 
     const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
     const int upperAllocationLimit =
@@ -239,8 +238,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
 int TRXLooper_USB::RxSetup()
 {
-    char name[64];
-    sprintf(name, "Rx%i_memPool", chipId);
+    const std::string name = "MemPool_Rx" + std::to_string(chipId);
 
     const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / channelCount;

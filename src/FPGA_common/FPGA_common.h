@@ -79,7 +79,7 @@ class FPGA
     static void GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc);
 
   protected:
-    int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title = nullptr);
+    int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title = nullptr);
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
     std::shared_ptr<ISPI> fpgaPort;

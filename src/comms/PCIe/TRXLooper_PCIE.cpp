@@ -205,8 +205,7 @@ int TRXLooper_PCIE::TxSetup()
         mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
     }
 
-    char name[64];
-    sprintf(name, "Tx%i_memPool", chipId);
+    const std::string name = "MemPool_Tx" + std::to_string(chipId);
     const int upperAllocationLimit =
         65536; //sizeof(complex32f_t) * mTx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
@@ -747,8 +746,7 @@ int TRXLooper_PCIE::RxSetup()
     mRxArgs.packetsToBatch = mRx.packetsToBatch;
     mRxArgs.samplesInPacket = samplesInPkt;
 
-    char name[64];
-    sprintf(name, "Rx%i_memPool", chipId);
+    const std::string name = "MemPool_Rx" + std::to_string(chipId);
     const int upperAllocationLimit =
         sizeof(complex32f_t) * mRx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mRx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);

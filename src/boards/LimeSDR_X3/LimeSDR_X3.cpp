@@ -857,9 +857,8 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
                 dirFlag = O_WRONLY;
             if (trxPort->Open(trxPort->GetPathName().c_str(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
             {
-                char ctemp[128];
-                sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
-                throw std::runtime_error(ctemp);
+                const std::string reason = "Failed to open device in stream start: " + trxPort->GetPathName();
+                throw std::runtime_error(reason);
             }
         }
         mStreamers[moduleIndex]->Setup(config);

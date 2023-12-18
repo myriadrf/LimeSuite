@@ -88,8 +88,7 @@ SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
     );
     if (!usbComms->Connect(vid, pid, handle.serial))
     {
-        char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
+        const std::string reason = "Unable to connect to device using handle (" + handle.Serialize() + ")";
         throw std::runtime_error(reason);
     }
 

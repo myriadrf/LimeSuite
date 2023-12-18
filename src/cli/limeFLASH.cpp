@@ -24,7 +24,7 @@ static void PrintMemoryDevices(SDRDevice::Descriptor descriptor)
     }
 }
 
-static const std::shared_ptr<SDRDevice::DataStorage> FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
+static const std::shared_ptr<SDRDevice::DataStorage> FindMemoryDeviceByName(SDRDevice* device, const std::string& targetName)
 {
     if (!device)
     {
@@ -33,9 +33,9 @@ static const std::shared_ptr<SDRDevice::DataStorage> FindMemoryDeviceByName(SDRD
 
     const auto descriptor = device->GetDescriptor();
     const auto memoryDevices = descriptor.memoryDevices;
-    if (!targetName)
+    if (targetName.size() == 0)
     {
-        // if name is not specified, but only single choice is available, use that.
+        // If name is not specified, but only single choice is available, use that.
         if (memoryDevices.size() == 1)
         {
             return memoryDevices.begin()->second;

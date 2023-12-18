@@ -349,15 +349,15 @@ int FPGA::ResetTimestamp()
     return WriteRegisters(addrs, values, 3);
 }
 
-int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const char* title)
+int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title)
 {
     const auto timeout = chrono::seconds(3);
     auto t1 = chrono::high_resolution_clock::now();
     bool done = false;
     uint16_t error = 0;
-    if (title)
+    if (!title.empty())
     {
-        verbose_printf("%s\n", title);
+        verbose_printf("%s\n", title.c_str());
     }
     do
     {
@@ -366,7 +366,7 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
         error = state & errorMask;
         if (error != 0)
         {
-            lime::warning("%s error, reg:0x%04X=0x%04X, errorBits:0x%04X", title, pollAddr, state, error);
+            lime::warning("%s error, reg:0x%04X=0x%04X, errorBits:0x%04X", title.c_str(), pollAddr, state, error);
             return EBUSY;
         }
 
@@ -374,16 +374,16 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
         {
             if ((chrono::high_resolution_clock::now() - t1) > timeout)
             {
-                lime::warning("%s timeout", title);
+                lime::warning("%s timeout", title.c_str());
                 return ETIME;
             }
             else
                 std::this_thread::sleep_for(busyPollPeriod);
         }
     } while (!done);
-    if (title)
+    if (!title.empty())
     {
-        verbose_printf("%s done\n", title);
+        verbose_printf("%s done\n", title.c_str());
     }
     return 0;
 }
@@ -424,8 +424,7 @@ int FPGA::SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSe
 
     if (waitLock)
     {
-        char title[64];
-        sprintf(title, "PLL Clock[%i] PHCFG_START", clockIndex);
+        const std::string title = "PLL Clock[" + std::to_string(clockIndex) + "] PHCFG_START";
         int status = WaitTillDone(busyAddr, doneMask, errorMask, title);
         if (status != 0)
             return status;
@@ -496,8 +495,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         WriteRegister(0x0023, reg23val | PLLRST_START);
         if (waitForDone)
         {
-            char title[64];
-            sprintf(title, "FPGA PLL[%i] PLLRST_START", pllIndex);
+            const std::string title = "FPGA PLL[" + std::to_string(pllIndex) + "] PLLRST_START";
+
             int status = WaitTillDone(busyAddr, 0x0001, 0xFF << 7, title);
             if (status != 0)
                 return status;
@@ -602,8 +601,8 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         WriteRegister(0x0023, reg23val | PLLCFG_START);
     if (waitForDone) //wait for config to activate
     {
-        char title[64];
-        sprintf(title, "FPGA PLL[%i] PLLCFG_START", pllIndex);
+        const std::string title = "FPGA PLL[" + std::to_string(pllIndex) + "] PLLCFG_START";
+
         int status = WaitTillDone(busyAddr, 0x0001, 0xFF << 7, title);
         if (status != 0)
             return status;
