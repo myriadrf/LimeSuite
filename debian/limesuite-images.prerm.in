@@ -3,7 +3,7 @@ set -e
 
 DEST_DIR="/usr/share/LimeSuite/images/@RELEASE_NUM@"
 
-if [ "$1" = "remove" -o "$1" = "purge" ]; then
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
 	echo "Removing directory ${DEST_DIR}"
 	rm --force --recursive "${DEST_DIR}"
 fi

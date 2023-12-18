@@ -1,10 +1,6 @@
 #ifndef __pnlAnalog_view__
 #define __pnlAnalog_view__
 
-/**	@brief GUI for writing and reading analog controls
-	@author Lime Microsystems (www.limemicro.com)
-*/
-
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/string.h>
@@ -71,13 +67,11 @@ class pnlBoardControls : public IModuleFrame
         wxTextCtrl* txtValue;
         wxButton* btnRead;
         wxButton* btnWrite;
-        int32_t id;
-        lime::SDRDevice::DataStorage::Region mem;
+        std::shared_ptr<lime::SDRDevice::DataStorage> dataStorage;
+        lime::SDRDevice::Region memoryRegion;
     };
 
-    class Param_GUI
-    {
-      public:
+    struct Param_GUI {
         Param_GUI()
             : title(nullptr)
             , units(nullptr)

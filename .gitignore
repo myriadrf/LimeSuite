@@ -7,3 +7,15 @@ mcu_program/*.plg
 mcu_program/*.uvopt
 mcu_program/*.uvproj
 docs/LMS_API_Documentation/*
+.vscode/
+.debhelper/
+/debian/files
+/debian/*.substvars
+/debian/tmp
+/debian/*/usr/*
+/debian/*/lib/*
+/debian/*/DEBIAN
+/debian/*.log
+/debian/limesuite-images20.10.*
+!/debian/limesuite-images20.10.*.in
+/debian/debhelper-build-stamp

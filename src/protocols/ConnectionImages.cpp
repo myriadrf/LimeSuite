@@ -1,5 +1,5 @@
 /**
-    @file ConnectionSTREAMImages.cpp
+    @file ConnectionImages.cpp
     @author Lime Microsystems
     @brief Image updating and version checking
 */
@@ -13,19 +13,17 @@
 
 using namespace lime;
 
-/*!
- * The entry structure that describes a board revision and its fw/gw images
- */
+/** @brief The entry structure that describes a board revision and its firmware and gateware images */
 struct ConnectionImageEntry {
-    eLMS_DEV dev;
-    int hw_rev;
+    eLMS_DEV dev; ///< The identifier of the device
+    int hw_rev; ///< The hardware revision of the device
 
-    int fw_ver;
-    const char* fw_img;
+    int fw_ver; ///< The firmware version of the device
+    const char* fw_img; ///< The firmware image of the device
 
-    int gw_ver;
-    int gw_rev;
-    const char* gw_img;
+    int gw_ver; ///< The gateware version of the device
+    int gw_rev; ///< The gateware revision of the device
+    const char* gw_img; ///< The gateware image of the device
 };
 
 /*!
@@ -55,45 +53,6 @@ static const ConnectionImageEntry& lookupImageEntry(const LMS64CProtocol::LMSinf
     }
 
     return imageEntries.front(); //the -1 unknown entry
-}
-
-void LMS64CProtocol::VersionCheck(void)
-{
-    const auto info = this->GetInfo();
-    const auto& entry = lookupImageEntry(info);
-
-    //an entry match was not found
-    if (entry.dev == LMS_DEV_UNKNOWN)
-    {
-        return;
-    }
-
-    //check and warn about firmware mismatch problems
-    if (info.firmware != entry.fw_ver && entry.fw_img != nullptr)
-        lime::warning("Firmware version mismatch!\n"
-                      "  Expected firmware version %d, but found version %d\n"
-                      "  Follow the FW and FPGA upgrade instructions:\n"
-                      "  http://wiki.myriadrf.org/Lime_Suite#Flashing_images\n"
-                      "  Or run update on the command line: LimeUtil --update\n",
-            entry.fw_ver,
-            info.firmware);
-
-    //check and warn about gateware mismatch problems
-    if (entry.gw_img != nullptr)
-    {
-        const auto fpgaInfo = this->GetFPGAInfo();
-        if (fpgaInfo.gatewareVersion != entry.gw_ver || fpgaInfo.gatewareRevision != entry.gw_rev)
-            lime::warning("Gateware version mismatch!\n"
-                          "  Expected gateware version %d, revision %d\n"
-                          "  But found version %d, revision %d\n"
-                          "  Follow the FW and FPGA upgrade instructions:\n"
-                          "  http://wiki.myriadrf.org/Lime_Suite#Flashing_images\n"
-                          "  Or run update on the command line: LimeUtil --update\n",
-                entry.gw_ver,
-                entry.gw_rev,
-                fpgaInfo.gatewareVersion,
-                fpgaInfo.gatewareRevision);
-    }
 }
 
 static bool programmingCallbackStream(

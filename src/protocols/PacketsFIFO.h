@@ -1,17 +1,17 @@
-/*
- * File:   SpScLockFreeQueue.h
- * Author: Sander Jobing
- *
- * Created on July 29, 2017, 5:17 PM
- *
- * This class implements a Single Producer - Single Consumer lock-free and
- * wait-free queue. Only 1 thread can fill the queue, another thread can read
- * from the queue, but no more threads are allowed. This lock-free queue
- * is a fifo queue, the first element inserted is the first element which
- * comes out.
- *
- * Thanks to Timur Doumler, Juce
- * https://www.youtube.com/watch?v=qdrp6k4rcP4
+/**
+  @file:   PacketsFIFO.h
+  @author: Sander Jobing
+ 
+  Created on July 29, 2017, 5:17 PM
+ 
+  This class implements a Single Producer - Single Consumer lock-free and
+  wait-free queue. Only 1 thread can fill the queue, another thread can read
+  from the queue, but no more threads are allowed. This lock-free queue
+  is a fifo queue, the first element inserted is the first element which
+  comes out.
+ 
+  Thanks to Timur Doumler, Juce
+  https://www.youtube.com/watch?v=qdrp6k4rcP4
  */
 
 #ifndef SPSCLOCKFREEQUEUE_H
@@ -28,6 +28,10 @@
 
 namespace lime {
 
+/**
+  @brief Single Producer - Single Consumer lock-free and wait-free queue.
+  @tparam T The type of the objects in the queue.
+ */
 template<class T> class PacketsFIFO
 {
   public:
@@ -72,6 +76,8 @@ template<class T> class PacketsFIFO
     ///---------------------------------------------------------------------------
     /// @brief  Pushes an element to the queue
     /// @param  element  The element to add
+    /// @param wait Whether to wait or now
+    /// @param timeout The timeout (in ms) to wait for
     /// @return True when the element was added, false when the queue is full
     bool push(const T element, bool wait = false, int timeout = 250)
     {
@@ -107,6 +113,8 @@ template<class T> class PacketsFIFO
     ///---------------------------------------------------------------------------
     /// @brief  Pops an element from the queue
     /// @param  element The returned element
+    /// @param wait Whether to wait or now
+    /// @param timeout The timeout (in ms) to wait for
     /// @return True when succeeded, false when the queue is empty
     bool pop(T* element, bool wait = false, int timeout = 250)
     {

@@ -1,5 +1,5 @@
 /**
-@file	ComboBoxMap.h
+@file	numericSlider.h
 @brief	Class for integer input using slider or text field
 @author Lime Microsystems (www.limemicro.com)
 */

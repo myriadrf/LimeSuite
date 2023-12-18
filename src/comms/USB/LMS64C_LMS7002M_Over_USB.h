@@ -7,6 +7,7 @@
 
 namespace lime {
 
+/** @brief A class for communicating with a device's LMS7002M chip over a USB interface. */
 class LMS64C_LMS7002M_Over_USB : public IComms
 {
   public:

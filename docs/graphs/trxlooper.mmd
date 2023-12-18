@@ -1,0 +1,39 @@
+flowchart LR
+    subgraph End devices
+        subgraph USB devices
+            SDRMini["LimeSDR-Mini"]
+            SDR["LimeSDR-USB"]
+        end
+        subgraph PCIe devices
+            X3["LimeSDR X3"]
+            XTRX["LimeSDR XTRX"]
+            MMX8["LimeSDR MMX8"]
+        end
+    end
+
+    subgraph Communication libraries
+        subgraph USB
+            subgraph Linux
+                libusb["libusb library"]
+            end
+            subgraph Windows
+                Cypress["Cypress FX3 library"]
+                FTD3XX["FTD3XX Library"]
+            end
+        end
+        subgraph PCIe
+            litepcie["litepcie library"]
+        end
+    end
+
+    TRXLooper-->TRXLooper_USB & TRXLooper_PCIE
+
+    TRXLooper_PCIE-->LitePCIe-->litepcie-->X3 & XTRX & MMX8
+    TRXLooper_USB-->USBGeneric-.->FX3 & FT601
+
+    FX3-->|On Windows|Cypress-->SDR
+    FT601-->|On Windows|FTD3XX-->SDRMini
+    FX3 & FT601-->|On Linux|libusb
+
+    libusb-->|Using FT601|SDRMini 
+    libusb-->|Using FX3|SDR

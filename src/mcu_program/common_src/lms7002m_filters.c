@@ -365,6 +365,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     return MCU_NO_ERROR;
 }
 
+/** @brief Received signal strength indication parameters */
 typedef struct {
     uint16_t addr;
     uint8_t msblsb;

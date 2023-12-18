@@ -120,13 +120,14 @@ LimeSDR_XTRX::LimeSDR_XTRX(
 
     desc.spiSlaveIds = { { "LMS7002M", SPI_LMS7002M }, { "FPGA", SPI_FPGA } };
 
-    DataStorage::Region vctcxoValue = { "VCTCXO DAC (non-volatile)", 16, 2 };
-    DataStorage eeprom{ "EEPROM", static_cast<uint32_t>(eMemoryDevice::EEPROM), { vctcxoValue } };
+    const std::unordered_map<eMemoryRegion, Region> eepromMap = { { eMemoryRegion::VCTCXO_DAC, { 16, 2 } } };
 
-    desc.memoryDevices = { //{"FPGA RAM", (uint32_t)eMemoryDevice::FPGA_RAM},
-        { "FPGA FLASH", static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH) },
-        eeprom
-    };
+    // desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::FPGA_RAM)] =
+    //     std::make_shared<DataStorage>(this, eMemoryDevice::FPGA_RAM);
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::FPGA_FLASH)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::FPGA_FLASH);
+    desc.memoryDevices[MEMORY_DEVICES_TEXT.at(eMemoryDevice::EEPROM)] =
+        std::make_shared<DataStorage>(this, eMemoryDevice::EEPROM, eepromMap);
 
     desc.customParameters.push_back(cp_vctcxo_dac);
 
@@ -599,32 +600,45 @@ int LimeSDR_XTRX::CustomParameterRead(std::vector<CustomParameterIO>& parameters
     return fpgaPort->CustomParameterRead(parameters);
 }
 
-bool LimeSDR_XTRX::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
+bool LimeSDR_XTRX::UploadMemory(
+    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
     int progMode;
-    LMS64CProtocol::ProgramWriteTarget target;
-    target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_RAM))
+    LMS64CProtocol::ProgramWriteTarget target = LMS64CProtocol::ProgramWriteTarget::FPGA;
+
+    switch (device)
+    {
+    case eMemoryDevice::FPGA_RAM:
         progMode = 0;
-    if (id == static_cast<uint32_t>(eMemoryDevice::FPGA_FLASH))
+        break;
+    case eMemoryDevice::FPGA_FLASH:
         progMode = 1;
-    else
+        break;
+    default:
         return false;
+    }
+
     return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_XTRX::MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len)
+int LimeSDR_XTRX::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
-    if (id != (int)eMemoryDevice::EEPROM)
+    if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
+    {
         return -1;
-    return fpgaPort->MemoryWrite(address, data, len);
+    }
+
+    return fpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_XTRX::MemoryRead(uint32_t id, uint32_t address, void* data, size_t len)
+int LimeSDR_XTRX::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
-    if (id != (int)eMemoryDevice::EEPROM)
+    if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
+    {
         return -1;
-    return fpgaPort->MemoryRead(address, data, len);
+    }
+
+    return fpgaPort->MemoryRead(region.address, data, region.size);
 }
 
 } //namespace lime

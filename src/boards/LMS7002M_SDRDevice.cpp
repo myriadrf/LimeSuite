@@ -185,7 +185,8 @@ void LMS7002M_SDRDevice::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStat
     }
 }
 
-bool LMS7002M_SDRDevice::UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback)
+bool LMS7002M_SDRDevice::UploadMemory(
+    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
     throw(OperationNotSupported("UploadMemory not implemented"));
 }

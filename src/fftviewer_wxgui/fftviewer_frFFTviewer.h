@@ -60,15 +60,22 @@ class fftviewer_frFFTviewer : public frFFTviewer
     void OnbtnCaptureClick(wxCommandEvent& event);
 
   protected:
-    static const int cMaxChCount = 2;
-    struct DataToGUI {
-        std::vector<float> samplesI[cMaxChCount];
-        std::vector<float> samplesQ[cMaxChCount];
-        std::vector<float> fftBins[cMaxChCount];
-        float nyquist_Hz;
-        float rxDataRate_Bps;
-        float txDataRate_Bps;
+    static constexpr int cMaxChCount = 2;
 
+    /** @brief Structure for storing the fast Fourier transform information for the display into the GUI */
+    struct DataToGUI {
+        std::vector<float> samplesI[cMaxChCount]; ///< The in-phase component samples
+        std::vector<float> samplesQ[cMaxChCount]; ///< The quadrature component samples
+        std::vector<float> fftBins[cMaxChCount]; ///< The fast Fourier transform bins
+        float nyquist_Hz; ///< The Nyquist frequency
+        float rxDataRate_Bps; ///< The input data speed, in bytes per second
+        float txDataRate_Bps; ///< The output data speed, in bytes per second
+
+        /**
+          @brief The copy operator of the class.
+          @param src The instance to copy the data from.
+          @return The new instance of this class.
+         */
         DataToGUI& operator=(DataToGUI& src)
         {
             for (int ch = 0; ch < cMaxChCount; ++ch)

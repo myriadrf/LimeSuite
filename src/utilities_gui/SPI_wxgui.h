@@ -5,6 +5,7 @@
 #include "IModuleFrame.h"
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
 
 namespace lime {
 class SDRDevice;

@@ -7,9 +7,11 @@
 struct LMS7Parameter;
 namespace lime {
 
+/** @brief Class describing the registers of the LMS7002M chip. */
 class LMS7002M_RegistersMap
 {
   public:
+    /** @brief Structure describing the register. */
     struct Register {
         uint16_t value;
         uint16_t defaultValue;

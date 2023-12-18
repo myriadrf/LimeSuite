@@ -10,6 +10,7 @@
 
 namespace lime {
 
+/** @brief A class for a USB transfer context for devices using the FTDI FT601 USB controller. */
 class USBTransferContext_FT601 : public USBTransferContext
 {
   public:

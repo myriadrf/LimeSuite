@@ -15,6 +15,7 @@ namespace lime {
 class FPGA;
 class LMS7002M;
 
+/** @brief Class responsible for receiving and transmitting continuous sample data */
 class TRXLooper
 {
   public:

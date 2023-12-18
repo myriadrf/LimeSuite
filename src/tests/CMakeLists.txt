@@ -31,6 +31,8 @@ target_link_libraries(
     GTest::gmock_main
 )
 
+set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+
 include(GoogleTest)
 gtest_discover_tests(${LIME_TEST_SUITE_NAME})
 

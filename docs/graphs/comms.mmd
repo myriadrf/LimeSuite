@@ -1,0 +1,74 @@
+flowchart LR
+    subgraph End devices
+        subgraph USB devices
+            subgraph SDR["LimeSDR components"]
+                LMS7002M_SDR[LMS7002M]
+                FPGA_SDR[FPGA]
+            end
+            subgraph SDRMini["LimeSDR-Mini components"]
+                LMS7002M_Mini[LMS7002M]
+                FPGA_Mini[FPGA]
+            end
+        end
+        subgraph PCIe devices
+            subgraph X3[LimeSDR X3 components]
+                FPGA_X3[FPGA]
+                LMS7002M_X3["LMS7002M"]
+            end
+            subgraph XTRX[LimeSDR XTRX components]
+                FPGA_XTRX["FPGA"]
+                LMS7002M_XTRX["LMS7002M"]
+            end
+            subgraph MMX8[LimeSDR MMX8 components]
+                ADF4002_MMX8["ADF4002"]
+                FPGA_MMX8["FPGA"]
+                LMS7002M_MMX8["LMS7002M"]
+            end
+        end
+    end
+
+    subgraph Communication libraries
+        subgraph USB
+            subgraph Linux
+                libusb["libusb library"]
+            end
+            subgraph Windows
+                Cypress["Cypress FX3 library"]
+                FTD3XX["FTD3XX Library"]
+            end
+        end
+        subgraph PCIe
+            litepcie["litepcie library"]
+        end
+    end
+
+    %% PCIe
+    ISPI-.->LMS64C_ADF_Over_PCIe_MMX8 & IComms & SlaveSelectShim
+    IComms-.->LMS64C_LMS7002M_Over_PCIe & LMS64C_FPGA_Over_PCIe & LMS64C_LMS7002M_Over_PCIe_MMX8 & LMS64C_FPGA_Over_PCIe_MMX8
+
+    SlaveSelectShim-->|X3 only|IComms
+
+    LMS64C_LMS7002M_Over_PCIe & LMS64C_FPGA_Over_PCIe-->|X3 & XTRX|PCIE_CSR_Pipe
+    LMS64C_LMS7002M_Over_PCIe_MMX8 & LMS64C_ADF_Over_PCIe_MMX8 & LMS64C_FPGA_Over_PCIe_MMX8-->|MMX8|PCIE_CSR_Pipe
+
+    ISerialPort-.->PCIE_CSR_Pipe
+    PCIE_CSR_Pipe-->LitePCIe-->litepcie
+
+    litepcie-->|XTRX|XTRX
+    litepcie-->|X3|X3
+    litepcie-->|MMX8|MMX8
+
+    %% USB
+    IComms-.->LMS64C_FPGA_Over_USB & LMS64C_LMS7002M_Over_USB-->USB_CSR_Pipe
+    ISerialPort-.->USB_CSR_Pipe
+
+    USB_CSR_Pipe-.->USB_CSR_Pipe_Mini & USB_CSR_Pipe_SDR
+    USB_CSR_Pipe_SDR-->FX3
+    USB_CSR_Pipe_Mini-->FT601
+
+    FX3-->|On Windows|Cypress-->SDR
+    FT601-->|On Windows|FTD3XX-->SDRMini
+    FX3 & FT601-->|On Linux|libusb
+
+    libusb-->|Using FT601|SDRMini 
+    libusb-->|Using FX3|SDR

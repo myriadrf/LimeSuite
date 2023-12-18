@@ -1,0 +1,756 @@
+classDiagram
+    direction TB
+
+    %%namespace DeviceEntry {
+        class DeviceHandle {
+            +string media
+            +string name
+            +string addr
+            +string serial
+
+            +Serialize() string
+            +ToString() string
+        }
+
+        class DeviceRegistryEntry {
+            <<abstract>>
+            +enumerate(DeviceHandle hint) DeviceHandle[] *
+            +make(DeviceHandle handle) SDRDevice *
+        }
+
+        class DeviceRegistry {
+            +enumerate(DeviceHandle hint) DeviceHandle[] $
+            +makeDevice(DeviceHandle handle) SDRDevice$
+            +freeDevice(SDRDevice conn)$
+            +moduleNames() string[]$
+        }
+
+        class LimeSDREntry {
+            +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice
+        }
+
+        class LimeSDR_MiniEntry {
+            +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice
+        }
+
+        class LimeSDR_MMX8Entry {
+            +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice
+        }
+
+        class LimeSDR_X3Entry {
+            +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice
+        }
+
+        class LimeSDR_XTRXEntry {
+            +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice
+        }
+
+        class USBEntry {
+            <<abstract>>
+            +enumerate(DeviceHandle hint) DeviceHandle[]
+            +make(DeviceHandle handle) SDRDevice *
+        }
+    %%}
+
+    %%namespace USBCommunications {
+        class LMS64C_LMS7002M_Over_USB {
+            SPI(...)
+            ResetDevice(...) int
+        }
+
+        class LMS64C_FPGA_Over_USB {
+            SPI(...)
+
+            GPIODirRead(...) int *
+            GPIORead(...) int *
+            GPIODirWrite(...) int *
+            GPIOWrite(...) int *
+
+            CustomParameterWrite(...) int *
+            CustomParameterRead(...) int *
+
+            ProgramWrite(...) int *
+        }
+
+        class USB_CSR_Pipe_Mini {
+            Write(...) int
+            Read(...) int
+            #FT601 port
+        }
+
+        class USB_CSR_Pipe_SDR {
+            Write(...) int
+            Read(...) int
+            #FX3 port
+        }
+
+        class USBTransferContext_FT601 {
+            Reset() bool
+        }
+
+        class USBTransferContext_FX3 {
+            Reset() bool
+        }
+
+        class FT601 {
+            +Connect(...) bool
+            +Disconnect()
+
+            +BulkTransfer(...) int32_t
+            +ControlTransfer(...) int32_t
+
+            +BeginDataXfer(...) int
+            +WaitForXfer(...) bool
+            +FinishDataXfer(...) int
+            +AbortEndpointXfers(...)
+            +ResetStreamBuffers() int
+        }
+
+        class FX3 {
+            +Connect(...) bool
+            +Disconnect()
+
+            +BeginDataXfer(...) int
+            +WaitForXfer(...) bool
+            +FinishDataXfer(...) int
+            +AbortEndpointXfers(...)
+        }
+
+        class USB_CSR_Pipe {
+            <<abstract>>
+            Write(...) int *
+            Read(...) int *
+        }
+
+        class USBGeneric {
+            +Connect(...) bool
+            +IsConnected() bool
+            +Disconnect()
+
+            +BulkTransfer(...) int32_t
+            +ControlTransfer(...) int32_t
+
+            +BeginDataXfer(...) int
+            +WaitForXfer(...) bool
+            +FinishDataXfer(...) int
+            +AbortEndpointXfers(...)
+        }
+
+        class USBTransferContext {
+            bool used
+            Reset() bool
+        }
+    %%}
+
+    %%namespace Devices {
+        class LimeSDR {
+            +Configure(...)
+
+            +Init(...)int
+            +Reset(...)
+
+            +GetClockFreq(...)double
+            +SetClockFreq(...)
+
+            +Synchronize(...)
+            +EnableCache(...)
+
+            +SPI(...)
+
+            +StreamSetup(...)int
+
+            +StreamStart(...)
+            +StreamStop(...)
+
+            +StreamStatus(...)
+
+            +GetInternalChip(...)*
+
+            +GPIODirRead(...)int
+            +GPIORead(...)int
+            +GPIODirWrite(...)int
+            +GPIOWrite(...)int
+
+            +CustomParameterWrite(...)int
+            +CustomParameterRead(...)int
+
+            +ReadFPGARegister(...)int
+            +WriteFPGARegister(...)int
+
+            #EnableChannel(...) int
+            #ResetUSBFIFO()
+            #SetSampleRate(...)
+            #UpdateFPGAInterface(...)int $
+
+            -USBGeneric mStreamPort
+            -ISerialPort mSerialPort
+            -IComms mlms7002mPort
+            -IComms mfpgaPort
+        }
+
+        class LimeSDR_Mini {
+            +Configure(...)
+
+            +Init(...)int
+            +Reset(...)
+
+            +GetClockFreq(...)double
+            +SetClockFreq(...)
+
+            +Synchronize(...)
+            +EnableCache(...)
+
+            +SPI(...)
+
+            +StreamSetup(...)int
+            +StreamStart(...)
+            +StreamStop(...)
+            +StreamStatus(...)
+
+            +GetInternalChip(...)
+
+            +GPIODirRead(...)int
+            +GPIORead(...)int
+            +GPIODirWrite(...)int
+            +GPIOWrite(...)int
+
+            +CustomParameterWrite(...)int
+            +CustomParameterRead(...)int
+
+            +ReadFPGARegister(...)int
+            +WriteFPGARegister(...)int
+
+            #SetSampleRate(...)
+            #UpdateFPGAInterface(...)int $
+
+            -USBGeneric mStreamPort
+            -ISerialPort mSerialPort
+            -IComms mlms7002mPort
+            -IComms mfpgaPort
+        }
+
+        class LimeSDR_X3 {
+            +Configure(...)
+
+            +Init(...)int
+            +Reset(...)
+
+            +GetSampleRate(...)double
+
+            +GetClockFreq(...)double
+            +SetClockFreq(...)
+
+            +SPI(...)
+
+            +StreamSetup(...)int
+            +StreamStop(...)
+
+            +CustomParameterWrite(...)int
+            +CustomParameterRead(...)int
+
+            +UploadMemory(...)bool
+            +UploadTxWaveform(...)int
+
+            -CDCM_Dev mClockGeneratorCDCM
+            -Equalizer mEqualizer
+            -LitePCIe mTRXStreamPorts[]
+            -SlaveSelectShim mLMS7002Mcomms[3]
+            -IComms fpgaPort
+            -mutex mCommsMutex
+            -bool mConfigInProgress
+        }
+
+        class LimeSDR_XTRX {
+            +Configure(...)
+
+            +Init(...)int
+
+            +GetClockFreq(...)double
+            +SetClockFreq(...)
+
+            +SPI(...)
+
+            +StreamSetup(...)int
+            +StreamStop(...)
+
+            +CustomParameterWrite(...)int
+            +CustomParameterRead(...)int
+
+            +UploadMemory(...)bool
+
+            -IComms lms7002mPort
+            -IComms fpgaPort
+            -LitePCIe mStreamPort
+            -mutex mCommsMutex
+            -bool mConfigInProgress
+        }
+
+        class LimeSDR_MMX8 {
+            +Configure(...)
+
+            +Init(...)int
+            +Reset(...)
+            +GetGPSLock(...)
+
+            +GetSampleRate(...)double
+
+            +GetClockFreq(...)double
+            +SetClockFreq(...)
+
+            +Synchronize(...)
+            +EnableCache(...)
+
+            +StreamSetup(...)int
+            +StreamStart(...)
+            +StreamStop(...)
+
+            +StreamRx(...)int
+            +StreamTx(...)int
+            +StreamStatus(...)
+
+            +SPI(...)
+            +I2CWrite(...)int
+            +I2CRead(...)int
+
+            +CustomParameterWrite(...)int
+            +CustomParameterRead(...)int
+
+            +SetDataLogCallback(...)
+            +SetMessageLogCallback(...)
+
+            +GetInternalChip(...)
+
+            +UploadMemory(...)bool
+            +UploadTxWaveform(...)int
+
+            -IComms mMainFPGAcomms
+            -LitePCIe mTRXStreamPorts[]
+            -LimeSDR_XTRX mSubDevices[]
+            -ADF4002 mADF
+        }
+    %%}
+
+    %%namespace Interfaces {
+        class ISPI {
+            <<interface>>
+            SPI(...) *
+        }
+
+        class IComms {
+            <<interface>>
+            GPIODirRead(...) int *
+            GPIORead(...) int *
+            GPIODirWrite(...) int *
+            GPIOWrite(...) int *
+
+            CustomParameterWrite(...) int *
+            CustomParameterRead(...) int *
+
+            ProgramWrite(...) int *
+
+            ResetDevice(...) int *
+        }
+
+        class ISerialPort {
+            <<interface>>
+            Write(...) int *
+            Read(...) int *
+        }
+    %%}
+
+    %%namespace PCIeCommunications {
+        class LitePCIe {
+            +Device communication functions()
+        }
+
+        class LMS64C_LMS7002M_Over_PCIe {
+            SPI(...)
+            ResetDevice(...) int
+
+            -LitePCIe port
+        }
+
+        class LMS64C_FPGA_Over_PCIe {
+            SPI(...)
+            CustomParameterWrite(...) int
+            CustomParameterRead(...) int
+            ProgramWrite(...) int
+
+            -LitePCIe port
+        }
+
+        class LMS64C_LMS7002M_Over_PCIe_MMX8 {
+            SPI(...)
+            ResetDevice(...) int
+
+            -LitePCIe port
+        }
+
+        class LMS64C_FPGA_Over_PCIe_MMX8 {
+            SPI(...)
+            CustomParameterWrite(...) int
+            CustomParameterRead(...) int
+            ProgramWrite(...) int
+
+            -LitePCIe port
+        }
+
+        class LMS64C_ADF_Over_PCIe_MMX8 {
+            SPI(...)
+            -LitePCIe port
+        }
+
+        class PCIE_CSR_Pipe {
+            Write(...) int
+            Read(...) int
+
+            #LitePCIe port
+        }
+    %%}
+
+    %%namespace Components {
+        class LMS7002M {
+            -ISPI controlPort
+            +Device control functions()
+        }
+
+        class ADF4002 {
+            -ISPI controlPort
+            +Device control functions()
+        }
+
+        class CDCM_Dev {
+            -ISPI controlPort
+            +Device control functions()
+        }
+
+        class Equalizer {
+            -ISPI controlPort
+            +Device control functions()
+        }
+
+        class FPGA {
+            -ISPI fpgaPort
+            -ISPI lms7002mPort
+
+            +Device control functions()
+        }
+
+        class FPGA_Mini {
+            +Device control functions()
+        }
+
+        class FPGA_X3 {
+            +Device control functions()
+        }          
+
+        class FPGA_XTRX {
+            +Device control functions()
+        }
+    %%}
+
+    class SDRDevice {
+        <<abstract>>
+        +Configure(...)*
+
+        +Init() int*
+        +Reset()*
+
+        +GetDescriptor() Descriptor *
+        +GetGPSLock(...)*
+        +GetSampleRate(...) double*
+
+        +GetClockFreq(...) double*
+        +SetClockFreq(...) *
+
+        +Synchronize(...) *
+        +EnableCache(...) *
+
+        +StreamSetup(...) int*
+        +StreamStart(...) *
+        +StreamStop(...) *
+
+        +StreamRx(...) int*
+        +StreamTx(...) int*
+        +StreamStatus(...) *
+
+        +UploadTxWaveform(...) int*
+
+        +SPI(...) *
+        +I2CWrite(...) int*
+        +I2CRead(...) int*
+
+        +GPIOWrite(...) int*
+        +GPIORead(...) int*
+        +GPIODirWrite(...) int*
+        +GPIODirRead(...) int*
+
+        +CustomParameterWrite(...) int*
+        +CustomParameterRead(...) int*
+
+        +SetDataLogCallback(...) *
+        +SetMessageLogCallback(...) *
+
+        +GetInternalChip(...) *
+
+        +UploadMemory(...) bool*
+    }
+
+    class LMS7002M_SDRDevice {
+        <<abstract>>
+        +Configure(...)*
+
+        +Init(...)int*
+        +Reset(...)
+        +GetGPSLock(...)
+
+        +GetSampleRate(...)double
+
+        +GetClockFreq(...)double*
+        +SetClockFreq(...)*
+
+        +Synchronize(...)
+        +EnableCache(...)
+
+        +StreamSetup(...)int*
+        +StreamStart(...)
+        +StreamStop(...)
+
+        +StreamRx(...)int
+        +StreamTx(...)int
+        +StreamStatus(...)
+
+        +SPI(...)
+
+        +I2CWrite(...)int
+        +I2CRead(...)int
+        +GPIOWrite(...)int
+        +GPIORead(...)int
+        +GPIODirWrite(...)int
+        +GPIODirRead(...)int
+        +CustomParameterWrite(...)int
+        +CustomParameterRead(...)int
+
+        +SetDataLogCallback(...)
+        +SetMessageLogCallback(...)
+
+        +GetInternalChip(...)*;
+
+        +UploadMemory(...)bool
+
+        #UpdateFPGAInterfaceFrequency(...) int $
+        #LMS7002M mLMSChips[]
+        #TRXLooper mStreamers[]
+        #FPGA mFPGA
+    }
+
+    class SlaveSelectShim {
+        -IComms port
+        +SPI(...)
+        +ResetDevice(...)
+    }
+
+    class TRXLooper {
+        <<abstract>>
+        +GetHardwareTimestamp() uint64_t
+        +SetHardwareTimestamp(uint64_t now)
+        +Setup(...)
+        +Start()
+        +Stop()
+
+        +StreamRx(...)int
+        +StreamTx(...)int
+
+        #RxSetup()int*
+        #ReceivePacketsLoop()*
+        #RxTeardown()*
+
+        #TxSetup()int*
+        #TransmitPacketsLoop()*
+        #TxTeardown()*
+
+        #FPGA fpga
+        #LMS7002M lms
+    }
+
+    class TRXLooper_USB {
+        +Setup(...)
+
+        #RxSetup()int
+        #ReceivePacketsLoop()
+
+        #TxSetup()int
+        #TransmitPacketsLoop()
+        #USBGeneric comms
+    }
+
+    class TRXLooper_PCIE {
+        +Setup(...)
+        +Start()
+
+        UploadTxWaveform(...) int$
+
+        #RxSetup()int
+        #ReceivePacketsLoop()
+        #RxTeardown()
+
+        #TxSetup()int
+        #TransmitPacketsLoop()
+        #TxTeardown()
+        #LitePCIe port
+    }
+
+    %% Device entry tree
+    DeviceRegistry <.. DeviceConnectionPanel
+    DeviceHandle <.. DeviceConnectionPanel
+
+    DeviceRegistryEntry <|-- USBEntry
+    LimeSDREntry --|> USBEntry
+    LimeSDR_MiniEntry --|> USBEntry
+
+    DeviceRegistryEntry <|-- LimeSDR_MMX8Entry
+    DeviceRegistryEntry <|-- LimeSDR_X3Entry
+    DeviceRegistryEntry <|-- LimeSDR_XTRXEntry
+
+    SDRDevice <.. DeviceRegistry
+    DeviceRegistry ..> DeviceHandle 
+    DeviceHandle <.. DeviceRegistryEntry
+    DeviceRegistry ..> DeviceRegistryEntry
+
+    %% Interface implementations
+    IComms ..|> ISPI
+
+    USB_CSR_Pipe ..|> ISerialPort
+    LMS64C_LMS7002M_Over_USB ..|> IComms
+    LMS64C_FPGA_Over_USB ..|> IComms
+
+    SlaveSelectShim ..|> ISPI
+    PCIE_CSR_Pipe ..|> ISerialPort
+
+    LMS64C_FPGA_Over_PCIe ..|> IComms
+    LMS64C_LMS7002M_Over_PCIe ..|> IComms
+
+    LMS64C_ADF_Over_PCIe_MMX8 ..|> ISPI
+    LMS64C_FPGA_Over_PCIe_MMX8 ..|> IComms
+    LMS64C_LMS7002M_Over_PCIe_MMX8 ..|> IComms
+
+    %% SDRDevice implementations
+    SDRDevice <|-- LMS7002M_SDRDevice
+    SDRDevice <|-- LimeSDR_MMX8
+    LMS7002M_SDRDevice <|-- LimeSDR
+    LMS7002M_SDRDevice <|-- LimeSDR_Mini
+    LMS7002M_SDRDevice <|-- LimeSDR_X3
+    LMS7002M_SDRDevice <|-- LimeSDR_XTRX
+
+    %% USB entry connections
+    LimeSDREntry ..> FX3
+    LimeSDREntry ..> USB_CSR_Pipe_SDR
+    LimeSDREntry ..> LMS64C_LMS7002M_Over_USB
+    LimeSDREntry ..> LMS64C_FPGA_Over_USB
+
+    LimeSDR_MiniEntry ..> FT601
+    LimeSDR_MiniEntry ..> USB_CSR_Pipe_Mini
+    LimeSDR_MiniEntry ..> LMS64C_LMS7002M_Over_USB
+    LimeSDR_MiniEntry ..> LMS64C_FPGA_Over_USB
+
+    %% USB connections
+    LMS64C_LMS7002M_Over_USB --* USB_CSR_Pipe
+    LMS64C_FPGA_Over_USB --* USB_CSR_Pipe
+
+    USB_CSR_Pipe_Mini --* FT601
+    USB_CSR_Pipe_SDR --* FX3
+
+    USB_CSR_Pipe_Mini --|> USB_CSR_Pipe
+    USB_CSR_Pipe_SDR --|> USB_CSR_Pipe
+
+    FT601 --|> USBGeneric
+    FX3 --|> USBGeneric
+
+    USBTransferContext_FT601 --|> USBTransferContext
+    USBTransferContext_FX3 --|> USBTransferContext
+
+    USBTransferContext_FT601 *-- FT601
+    USBTransferContext_FX3 *-- FX3
+
+    %% USB devices
+    LimeSDR ..> USBGeneric
+    LimeSDR ..> ISerialPort
+    LimeSDR ..> IComms
+
+    LimeSDR_Mini ..> USBGeneric
+    LimeSDR_Mini ..> ISerialPort
+    LimeSDR_Mini ..> IComms
+    LimeSDR_Mini ..> FPGA_Mini
+
+    %% PCIe connections
+    PCIE_CSR_Pipe ..> LitePCIe
+    SlaveSelectShim ..> IComms
+
+    LMS64C_FPGA_Over_PCIe ..> PCIE_CSR_Pipe
+    LMS64C_LMS7002M_Over_PCIe ..> PCIE_CSR_Pipe
+
+    LMS64C_ADF_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
+    LMS64C_FPGA_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
+    LMS64C_LMS7002M_Over_PCIe_MMX8 ..> PCIE_CSR_Pipe
+
+    %% PCIe entry connections
+    LimeSDR_X3Entry ..> LitePCIe
+    LimeSDR_X3Entry ..> LMS64C_LMS7002M_Over_PCIe
+    LimeSDR_X3Entry ..> LMS64C_FPGA_Over_PCIe
+
+    LimeSDR_XTRXEntry ..> LitePCIe
+    LimeSDR_XTRXEntry ..> LMS64C_LMS7002M_Over_PCIe
+    LimeSDR_XTRXEntry ..> LMS64C_FPGA_Over_PCIe
+
+    LimeSDR_MMX8Entry ..> LitePCIe
+    LimeSDR_MMX8Entry ..> LMS64C_LMS7002M_Over_PCIe_MMX8
+    LimeSDR_MMX8Entry ..> LMS64C_FPGA_Over_PCIe_MMX8
+    LimeSDR_MMX8Entry ..> LMS64C_ADF_Over_PCIe_MMX8
+
+    %% PCIe devices
+    LimeSDR_X3 ..> CDCM_Dev
+    LimeSDR_X3 ..> Equalizer
+    LimeSDR_X3 ..> LitePCIe
+    LimeSDR_X3 ..> SlaveSelectShim
+    LimeSDR_X3 ..> IComms
+    FPGA_X3 <.. LimeSDR_X3 
+
+    LimeSDR_XTRX ..> IComms
+    LimeSDR_XTRX ..> LitePCIe
+    LimeSDR_XTRX ..> FPGA_XTRX
+
+    LimeSDR_MMX8 ..> IComms
+    LimeSDR_MMX8 ..> LitePCIe
+    LimeSDR_MMX8 ..> LimeSDR_XTRX
+    LimeSDR_MMX8 ..> ADF4002
+
+    %% Component dependencies
+    LMS7002M ..> ISPI
+
+    LMS7002M_SDRDevice ..> LMS7002M
+    LMS7002M_SDRDevice ..> TRXLooper
+    LMS7002M_SDRDevice ..> FPGA
+
+    FPGA_Mini --|> FPGA
+    FPGA <|-- FPGA_X3
+    FPGA_XTRX --|> FPGA
+
+    TRXLooper ..> FPGA
+    TRXLooper ..> LMS7002M
+
+    TRXLooper_USB --|> TRXLooper
+    TRXLooper_PCIE --|> TRXLooper
+
+    TRXLooper_USB ..> USBGeneric
+
+    TRXLooper_PCIE ..> LitePCIe
+
+    ADF4002 ..> ISPI
+    CDCM_Dev ..> ISPI
+    Equalizer ..> ISPI
+    FPGA ..> ISPI

@@ -12,6 +12,8 @@
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
 #include "limesuite/IComms.h"
+#include "limesuite/MemoryDevices.h"
+#include "limesuite/MemoryRegions.h"
 
 namespace lime {
 
@@ -49,18 +51,27 @@ class LIME_API SDRDevice
         bool readOnly;
     };
 
-    struct DataStorage {
-        struct Region {
-            std::string name;
-            int32_t address;
-            int32_t size;
-        };
-        std::string name;
-        uint32_t id;
-        std::vector<Region> map;
+    struct Region {
+        int32_t address;
+        int32_t size;
     };
 
-    // General information about device internals, static capabilities
+    struct DataStorage {
+        SDRDevice* ownerDevice;
+        eMemoryDevice memoryDeviceType;
+        std::unordered_map<eMemoryRegion, Region> regions;
+
+        DataStorage(SDRDevice* device = nullptr,
+            eMemoryDevice type = eMemoryDevice::COUNT,
+            std::unordered_map<eMemoryRegion, Region> regions = {})
+            : ownerDevice(device)
+            , memoryDeviceType(type)
+            , regions(regions)
+        {
+        }
+    };
+
+    /** @brief General information about device internals, static capabilities. */
     struct Descriptor {
         std::string name; /// The displayable name for the device
         /*! The displayable name for the expansion card
@@ -78,8 +89,11 @@ class LIME_API SDRDevice
         SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
         std::vector<RFSOCDescriptor> rfSOC;
         std::vector<CustomParameter> customParameters;
-        std::vector<DataStorage> memoryDevices;
+        std::map<std::string, std::shared_ptr<DataStorage>> memoryDevices;
         std::shared_ptr<DeviceNode> socTree;
+
+        static const char DEVICE_NUMBER_SEPARATOR_SYMBOL;
+        static const char PATH_SEPARATOR_SYMBOL;
     };
 
     struct StreamStats {
@@ -198,12 +212,11 @@ class LIME_API SDRDevice
         bool skipDefaults; // skip default values initialization and write on top of current config
     };
 
-  public:
     virtual ~SDRDevice(){};
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
-    /// Returns SPI slave names and chip select IDs for use with SDRDevice::SPI()
+    /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
     virtual const Descriptor& GetDescriptor() = 0;
 
     virtual int Init() = 0;
@@ -241,32 +254,16 @@ class LIME_API SDRDevice
      * GPIO API
      **********************************************************************/
 
-    /**    @brief Writes GPIO values to device
-    @param buffer for source of GPIO values LSB first, each bit sets GPIO state
-    @param bufLength buffer length
-    @return the operation success state
-    */
+    /** \copydoc IComms::GPIOWrite() */
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /**    @brief Reads GPIO values from device
-    @param buffer destination for GPIO values LSB first, each bit represent GPIO state
-    @param bufLength buffer length to read
-    @return the operation success state
-    */
+    /** \copydoc IComms::GPIORead() */
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /**    @brief Write GPIO direction control values to device.
-    @param buffer with GPIO direction configuration (0 input, 1 output)
-    @param bufLength buffer length
-    @return the operation success state
-    */
+    /** \copydoc IComms::GPIODirWrite() */
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /**    @brief Read GPIO direction configuration from device
-    @param buffer to put GPIO direction configuration (0 input, 1 output)
-    @param bufLength buffer length to read
-    @return the operation success state
-    */
+    /** \copydoc IComms::GPIODirRead() */
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
 
     /***********************************************************************
@@ -285,17 +282,21 @@ class LIME_API SDRDevice
     */
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
 
-    /// @brief Sets callback function which gets called each time data is sent or received
+    /** @brief Sets callback function which gets called each time data is sent or received */
     virtual void SetDataLogCallback(DataCallbackType callback){};
     virtual void SetMessageLogCallback(LogCallbackType callback){};
 
     virtual void* GetInternalChip(uint32_t index) { return nullptr; };
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
-    virtual bool UploadMemory(uint32_t id, const char* data, size_t length, UploadMemoryCallback callback) { return -1; };
+    virtual bool UploadMemory(
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+    {
+        return -1;
+    };
 
-    virtual int MemoryWrite(uint32_t id, uint32_t address, const void* data, size_t len) { return -1; };
-    virtual int MemoryRead(uint32_t id, uint32_t address, void* data, size_t len) { return -1; };
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
 };
 
 } // namespace lime

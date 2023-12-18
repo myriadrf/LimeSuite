@@ -7,6 +7,7 @@ namespace lime {
 
 class ISPI;
 
+/** @brief Class for communicating with the Altera MAX 10 FPGA in the LimeSDR Mini. */
 class FPGA_Mini : public FPGA
 {
   public:
