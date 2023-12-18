@@ -468,10 +468,10 @@ void LitePCIe::CacheFlush(bool isTx, bool toDevice, uint16_t index)
     sub.toDevice = toDevice;
     sub.bufferIndex = index;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_CACHE_FLUSH, &sub);
-    // if (ret < 0)
-    // {
-    //     std::string msg = "DMA reader failed update";
-    // }
+    if (ret < 0)
+    {
+        std::string msg = "DMA reader failed update";
+    }
 }
 
 /*
