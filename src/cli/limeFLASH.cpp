@@ -16,27 +16,6 @@ void inthandler(int sig)
     terminateProgress = true;
 }
 
-struct MemoryDeviceSelect {
-    lime::eMemoryDevice memoryDevice;
-    uint32_t subdevice;
-};
-
-inline MemoryDeviceSelect InputToMemoryDevice(std::string input)
-{
-    auto device = MemoryDeviceSelect();
-    auto at = input.find_last_of('@');
-
-    if (at == std::string::npos)
-    {
-        return { lime::STRING_TO_MEMORY_DEVICES.at(input), 0 };
-    }
-
-    device.memoryDevice = lime::STRING_TO_MEMORY_DEVICES.at(input.substr(0, at));
-    device.subdevice = std::stoi(input.substr(at + 1));
-
-    return device;
-}
-
 static void PrintMemoryDevices(SDRDevice::Descriptor descriptor)
 {
     for (const auto& memoryDevice : descriptor.memoryDevices)
