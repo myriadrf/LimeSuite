@@ -62,7 +62,28 @@ To generate a web-based testing code coverage report, in the root folder of the 
     make LimeSuite2Test_coverage # Generate the coverage report with lcov
 
 After generating the report it can be found in the `build/LimeSuite2Test_coverage`
-directory and opening the `index.html` file with a browser. 
+directory and opening the `index.html` file with a browser.
+
+Docker
+^^^^^^
+
+There also exists a Docker file to generate the web-based testing code coverage report.
+
+Docker prerequisites
+""""""""""""""""""""
+
+In order to use the Docker code coverage report generation file, you will need to have the `Docker Engine`_ installed and set up.
+
+Running the Docker code coverage report generation file
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+To generate the testing code coverage report using Docker, in the root folder of the repository run:
+
+.. code-block:: bash
+
+    docker build -o <output_location> -f TestCoverage.Dockerfile .
+
+This will run the whole code coverage report generation script and place the generated HTML in the specified folder.
 
 .. _`GCC`: https://gcc.gnu.org/
 .. _`CMake`: https://cmake.org/
