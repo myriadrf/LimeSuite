@@ -6,7 +6,6 @@
 #include <complex>
 #include "LMSBoards.h"
 #include "threadHelper.h"
-#include "Profiler.h"
 
 #include "TRXLooper.h"
 

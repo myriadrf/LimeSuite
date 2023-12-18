@@ -6,7 +6,6 @@
 #include <chrono>
 #include <math.h>
 #include <assert.h>
-#include "Profiler.h"
 #include <thread>
 #include <signal.h>
 #include <atomic>

@@ -15,7 +15,6 @@
 #include "TRXLooper_PCIE.h"
 #include "limesuite/SDRDevice.h"
 #include "LitePCIe.h"
-#include "Profiler.h"
 #include "DataPacket.h"
 #include "SamplesPacket.h"
 #include "limesuite/commonTypes.h"
