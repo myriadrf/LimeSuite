@@ -197,6 +197,15 @@ To test whether the devices themselves function properly with the built packages
 requires passing through the devices into the VM. The exact way of doing that differs
 for each virtualisation platform.
 
+## Docker
+
+There exists a Docker file in this repository to generate the `.deb` packages.
+To run the Docker script, use this command:
+
+```bash
+docker build -o <output_folder> -f DebPackage<version>.Dockerfile .
+```
+
 ## More reading
 
 Helpful sources for starting out:
