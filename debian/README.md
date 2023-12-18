@@ -139,7 +139,7 @@ in the locations that they would end up in, relative to the root directory.
 
 The build generates a .ddeb file for each of the packages in the source containing binary files.
 The files are named `${package_name}-dbgsym_${version}_{architecture}.ddeb`.
-The sturcture of these files is the same as normal .deb files, except that the `data.tar` file
+The structure of these files is the same as normal .deb files, except that the `data.tar` file
 contains only the debug symbols for the binaries in the non-debug symbol package.
 
 ### `.buildinfo` file
@@ -187,10 +187,11 @@ apt install ./limesuite_24.0.0-1_amd64.deb ./liblimesuite24.0-1_24.0.0-1_amd64.d
 ## Testing packages installation
 
 One of the recommended ways to test if the packages are made correctly
-would be to test them in a Virtual Machine. This allows for incorrectly made packages
+would be to test them in a Virtual Machine (VM). This allows for incorrectly made packages
 to not break the main system and to easily restore the system state
 back to a known good working configuration. This also allows to mass test different
-OS versions without needing to reinstall the OS every time you'd want to test a different one.
+OS versions without needing to reinstall the OS or use an entirely separate physical computer
+and/or storage device every time you'd want to test a different one.
 
 To test whether the devices themselves function properly with the built packages in a VM
 requires passing through the devices into the VM. The exact way of doing that differs
