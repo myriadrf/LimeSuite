@@ -87,6 +87,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
     wxMenuItem* menuFileQuit = new wxMenuItem(
         fileMenu, idMenuQuit, wxString(wxT("&Quit")) + wxT('\t') + wxT("Alt+F4"), wxT("Quit the application"), wxITEM_NORMAL);
     fileMenu->Append(menuFileQuit);
+    Connect(menuFileQuit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnQuit));
     mbar->Append(fileMenu, wxT("&File"));
 
     mnuModules = new wxMenu();
