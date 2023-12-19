@@ -612,7 +612,7 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
     spinNCnt->SetValue(nCounter);
     spinRCnt->SetValue(rCount);
 
-    lblFcomp->SetLabel(std::to_string( m_pModule->lblFcomp));
+    lblFcomp->SetLabel(std::to_string(m_pModule->lblFcomp));
     lblFvco->SetLabel(std::to_string(m_pModule->lblFvco));
 
     m_pModule->UploadConfig();
