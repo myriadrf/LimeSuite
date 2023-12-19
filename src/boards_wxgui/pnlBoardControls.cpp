@@ -275,6 +275,12 @@ pnlBoardControls::~pnlBoardControls()
         delete widget;
         widget = nullptr;
     }
+
+    for (auto& widget : mMemoryGUI_widgets)
+    {
+        delete widget;
+        widget = nullptr;
+    }
 }
 
 void pnlBoardControls::OnReadAll(wxCommandEvent& event)
