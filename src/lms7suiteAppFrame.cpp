@@ -102,9 +102,9 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
     Connect(menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
 
     mbar->Append(helpMenu, wxT("&Help"));
-    this->SetMenuBar(mbar);
+    SetMenuBar(mbar);
 
-    statusBar = this->CreateStatusBar(3, wxSTB_DEFAULT_STYLE, wxNewId());
+    statusBar = CreateStatusBar(3, wxSTB_DEFAULT_STYLE, wxNewId());
     const int mainCollumns = 1;
     mainSizer = new wxFlexGridSizer(mainCollumns, 0, 0);
     mainSizer->AddGrowableCol(0);
@@ -362,7 +362,7 @@ void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const std::string& title
 
     mModules[moduleId] = module;
     module->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose), NULL, this);
-    this->Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
+    Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
 }
 
 void LMS7SuiteAppFrame::RemoveModule(IModuleFrame* module)
