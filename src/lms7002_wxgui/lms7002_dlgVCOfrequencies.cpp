@@ -329,7 +329,7 @@ void lms7002_dlgVCOfrequencies::OnLoadFile(wxCommandEvent& event)
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
     fstream fin;
-    fin.open(dlg.GetPath().ToStdString().c_str(), ios::in);
+    fin.open(dlg.GetPath().ToStdString(), ios::in);
 
     char cline[128];
     int lineLen = 128;

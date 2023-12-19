@@ -186,7 +186,7 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
     try
     {
         std::string controlFile(handle.addr + "_control");
-        control->Open(controlFile.c_str(), O_RDWR);
+        control->Open(controlFile, O_RDWR);
 
         std::string streamFile("");
         for (size_t i = 0; i < trxStreams.size(); ++i)

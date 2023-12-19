@@ -15,7 +15,7 @@ static int32_t FindChipSelectByName(SDRDevice* device, const std::string& chipNa
     {
         cerr << "specify SPI chip select, -c, --chip :" << endl;
         for (const auto& nameIds : chipMap)
-            cerr << "\t" << nameIds.first.c_str() << endl;
+            cerr << "\t" << nameIds.first << endl;
         return -1;
     }
 
@@ -24,7 +24,7 @@ static int32_t FindChipSelectByName(SDRDevice* device, const std::string& chipNa
     {
         cerr << "Device does not contain target chip (" << chipName << "). Available list:" << endl;
         for (const auto& nameIds : chipMap)
-            cerr << "\t" << nameIds.first.c_str() << endl;
+            cerr << "\t" << nameIds.first << endl;
         return -1;
     }
     return iter->second;

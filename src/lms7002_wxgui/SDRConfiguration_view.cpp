@@ -23,7 +23,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
     {
         const vector<string> titles = { "Enable", "RxAntenna", "RxGain", "RxLPF (MHz)", "RxNCO (MHz)" };
         for (const auto& name : titles)
-            rxGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
+            rxGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
         for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
@@ -93,7 +93,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
     {
         const vector<string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain", "TxAntenna", "Enable" };
         for (auto name : titles)
-            txGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
+            txGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
         for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
@@ -137,18 +137,18 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
 
     const SDRDevice::RFSOCDescriptor& descriptor = device->GetDescriptor().rfSOC.at(index);
     socIndex = index;
-    gui.titledBox->SetLabel(descriptor.name.c_str());
+    gui.titledBox->SetLabel(descriptor.name);
 
     wxArrayString rxPathNames;
     for (const auto& name : descriptor.rxPathNames)
     {
-        rxPathNames.Add(name.c_str());
+        rxPathNames.Add(name);
     }
 
     wxArrayString txPathNames;
     for (const auto& name : descriptor.txPathNames)
     {
-        txPathNames.Add(name.c_str());
+        txPathNames.Add(name);
     }
 
     for (int i = 0; i < descriptor.channelCount; ++i)

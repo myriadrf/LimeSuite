@@ -690,7 +690,7 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
         return;
     }
 
-    txtCustomUnitsRd->SetLabel(param[0].units.c_str());
+    txtCustomUnitsRd->SetLabel(param[0].units);
     txtCustomValueRd->SetLabel(wxString::Format(_("%1.1f"), param[0].value));
 }
 
