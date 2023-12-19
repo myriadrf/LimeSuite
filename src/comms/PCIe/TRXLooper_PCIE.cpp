@@ -884,14 +884,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
         mRxArgs.port->CacheFlush(false, false, dma.swIndex % bufferCount);
         uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
-        const RxDataPacket* pkt = reinterpret_cast<const RxDataPacket*>(buffer);
+        const PCIE_DataPacket* pkt = reinterpret_cast<const PCIE_DataPacket*>(buffer);
         if (outputPkt)
             outputPkt->timestamp = pkt->counter;
 
         const int srcPktCount = mRxArgs.packetsToBatch;
         for (int i = 0; i < srcPktCount; ++i)
         {
-            pkt = reinterpret_cast<const RxDataPacket*>(&buffer[packetSize * i]);
+            pkt = reinterpret_cast<const PCIE_DataPacket*>(&buffer[packetSize * i]);
             if (pkt->counter - expectedTS != 0)
             {
                 //printf("Loss: pkt:%i exp: %li, got: %li, diff: %li\n", stats.packets+i, expectedTS, pkt->counter, pkt->counter-expectedTS);

@@ -5,12 +5,16 @@
 
 namespace lime {
 
-struct RxDataPacket {
-    RxDataPacket() { memset(this, 0, sizeof(RxDataPacket)); }
+struct PCIE_DataPacket {
+    PCIE_DataPacket() { memset(this, 0, sizeof(PCIE_DataPacket)); }
 
     inline bool txWasDropped() const { return header0 & (1 << 3); }
 
-    inline void ClearHeader() { memset(this, 0, 16); }
+    inline void ClearHeader()
+    {
+        assert(sizeof(PCIE_DataPacket) - sizeof(data) == 16);
+        memset(this, 0, 16);
+    }
     inline float RxFIFOFill() { return (header0 & 0x7) * 0.125; }
     inline void SetPayloadSize(uint16_t size)
     {
@@ -44,7 +48,11 @@ struct FPGA_DataPacket {
         constexpr uint8_t mask = 1 << 4;
         return header0 & mask; //ignore timestamp
     }
-    inline void ClearHeader() { memset(this, 0, 16); }
+    inline void ClearHeader()
+    {
+        assert(sizeof(FPGA_DataPacket) - sizeof(data) == 16);
+        memset(this, 0, 16);
+    }
     inline float RxFIFOFill() { return (header0 & 0x7) * 0.125; }
     inline void SetPayloadSize(uint16_t size)
     {
