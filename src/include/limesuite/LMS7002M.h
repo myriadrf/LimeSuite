@@ -40,7 +40,10 @@ struct RSSI_measurements {
 
 typedef double float_type;
 
-/** @brief Class for communicating with the LMS7002M chip. */
+/** @brief Class for communicating with the LMS7002M chip.
+ * 
+ * More information: https://limemicro.com/technology/lms7002m/
+*/
 class LIME_API LMS7002M
 {
   public:

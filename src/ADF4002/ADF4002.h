@@ -13,6 +13,10 @@
 
 namespace lime {
 
+/** @brief The class for controlling the ADF4002 frequency synthesizer.
+ * 
+ * More information: https://www.analog.com/en/products/adf4002.html
+ */
 class LIME_API ADF4002
 {
   public:

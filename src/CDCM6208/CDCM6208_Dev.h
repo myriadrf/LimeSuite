@@ -72,7 +72,10 @@ struct CDCM_Outputs {
     CDCM_Output Y7{ false, false, 0, 0, 0, 0, 30.72e6, 0 }; ///< The value of the Y7 output
 };
 
-/** @brief Class for controlling the CDCM6208 2:8 Clock Generator, Jitter Cleaner With Fractional Dividers */
+/** @brief Class for controlling the CDCM6208 2:8 Clock Generator, Jitter Cleaner With Fractional Dividers.
+ * 
+ * More information: https://www.ti.com/product/CDCM6208
+ */
 class LIME_API CDCM_Dev
 {
   public:

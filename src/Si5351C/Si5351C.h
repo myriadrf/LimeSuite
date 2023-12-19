@@ -56,7 +56,10 @@ struct Si5351_PLL {
 
 class II2C;
 
-/** @brief Class for controlling the Si5351C I2C-programmable any-frequency CMOS clock generator + VCXO */
+/** @brief Class for controlling the Si5351C I2C-programmable any-frequency CMOS clock generator + VCXO
+ * 
+ * More information: https://www.skyworksinc.com/en/Products/Timing/CMOS-Clock-Generators/Si5351C-GM1
+ */
 class LIME_API Si5351C
 {
   public:

@@ -20,8 +20,8 @@
 namespace lime {
 
 class DeviceNode;
-/// SDRDevice can have multiple modules (RF chips), that can operate independently
 
+/** @brief SDRDevice can have multiple modules (RF chips), that can operate independently. */
 class LIME_API SDRDevice
 {
   public:
@@ -34,6 +34,7 @@ class LIME_API SDRDevice
 
     typedef std::map<std::string, uint32_t> SlaveNameIds_t;
 
+    /** @brief General information about the Radio-Frequency System-on-Chip (RFSoC). */
     struct RFSOCDescriptor {
         std::string name;
         uint8_t channelCount;
@@ -45,6 +46,7 @@ class LIME_API SDRDevice
         std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
     };
 
+    /** @brief Structure for the information of a custom parameter. */
     struct CustomParameter {
         std::string name;
         int32_t id;
@@ -53,11 +55,13 @@ class LIME_API SDRDevice
         bool readOnly;
     };
 
+    /** @brief Structure for storing the information of a memory region. */
     struct Region {
         int32_t address;
         int32_t size;
     };
 
+    /** @brief Describes a data storage of a certain type a device holds. */
     struct DataStorage {
         SDRDevice* ownerDevice;
         eMemoryDevice memoryDeviceType;
@@ -98,7 +102,9 @@ class LIME_API SDRDevice
         static const char PATH_SEPARATOR_SYMBOL;
     };
 
+    /** @brief Structure for holding the statistics of a stream */
     struct StreamStats {
+        /** @brief Structure for storing the first in first out queue statistics */
         struct FIFOStats {
             std::size_t totalCount;
             std::size_t usedCount;
@@ -118,6 +124,7 @@ class LIME_API SDRDevice
         uint32_t late;
     };
 
+    /** @brief Describes the status of the GPS. */
     struct GPS_Lock {
         enum class LockStatus : uint8_t { Undefined, NotAvailable, Has2D, Has3D };
 
@@ -127,8 +134,9 @@ class LIME_API SDRDevice
         LockStatus gps;
     };
 
-    // channels order and data transmission formats setup
+    /** @brief Configuration settings for a stream. */
     struct StreamConfig {
+        /** @brief Extra configuration settings for a stream. */
         struct Extras {
             Extras();
             bool usePoll;
@@ -174,19 +182,24 @@ class LIME_API SDRDevice
         Extras* extraConfig;
     };
 
+    /** @brief The metadata of a stream packet. */
     struct StreamMeta {
         int64_t timestamp;
         bool useTimestamp;
         bool flush; // submit data to hardware without waiting for full buffer
     };
 
+    /** @brief Configuration of a general finite impulse response (FIR) filter. */
     struct GFIRFilter {
         double bandwidth;
         bool enabled;
     };
 
+    /** @brief Configuration of a single channel. */
     struct ChannelConfig {
         ChannelConfig() { memset(this, 0, sizeof(ChannelConfig)); }
+
+        /** @brief Configuration for a direction in a channel. */
         struct Direction {
             double centerFrequency;
             double NCOoffset;
@@ -204,6 +217,7 @@ class LIME_API SDRDevice
         Direction tx;
     };
 
+    /** @brief Configuration of an SDR device. */
     struct SDRConfig {
         SDRConfig()
             : referenceClockFreq(0)
