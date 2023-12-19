@@ -4,9 +4,11 @@
 set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/comms/PCIe)
 
 set(COMMS_LITE_PCIE_SOURCES
+    ${THIS_SOURCE_DIR}/LMS64C_FPGA_Over_PCIe.cpp
+    ${THIS_SOURCE_DIR}/LMS64C_LMS7002M_Over_PCIe.cpp
     ${THIS_SOURCE_DIR}/LitePCIe.cpp
+    ${THIS_SOURCE_DIR}/PCIE_CSR_Pipe.cpp
     ${THIS_SOURCE_DIR}/TRXLooper_PCIE.cpp
-    ${THIS_SOURCE_DIR}/PCIeCommon.cpp
 )
 
 ########################################################################

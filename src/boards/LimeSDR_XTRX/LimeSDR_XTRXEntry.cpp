@@ -6,7 +6,9 @@
 #include "LitePCIe.h"
 #include "LimeSDR_XTRX.h"
 #include "protocols/LMS64CProtocol.h"
-#include "PCIeCommon.h"
+#include "PCIE_CSR_Pipe.h"
+#include "LMS64C_FPGA_Over_PCIe.h"
+#include "LMS64C_LMS7002M_Over_PCIe.h"
 
 #include <fstream>
 #include <map>

@@ -5,7 +5,10 @@
 #include "MM_X8Entry.h"
 #include "LitePCIe.h"
 #include "MM_X8.h"
-#include "PCIeCommon.h"
+#include "PCIE_CSR_Pipe.h"
+#include "LMS64C_ADF_Over_PCIe_MMX8.h"
+#include "LMS64C_FPGA_Over_PCIe_MMX8.h"
+#include "LMS64C_LMS7002M_Over_PCIe_MMX8.h"
 
 #include <fstream>
 #include <map>
@@ -74,100 +77,6 @@ std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle& hint)
     }
     return handles;
 }
-
-/** @brief A class for communicating with MMX8's subdevice's LMS7002M chips. */
-class LMS64C_LMS7002M_Over_PCIe_MMX8 : public lime::IComms
-{
-  public:
-    LMS64C_LMS7002M_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex)
-        : pipe(dataPort)
-        , subdeviceIndex(subdeviceIndex)
-    {
-    }
-    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override { return SPI(0, MOSI, MISO, count); }
-    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
-    }
-    virtual int ResetDevice(int chipSelect) override { return LMS64CProtocol::DeviceReset(pipe, chipSelect, subdeviceIndex); };
-
-  private:
-    PCIE_CSR_Pipe pipe;
-    uint32_t subdeviceIndex;
-};
-
-/** @brief A class for communicating with MMX8's subdevice's FPGA chips. */
-class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
-{
-  public:
-    LMS64C_FPGA_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex)
-        : pipe(dataPort)
-        , subdeviceIndex(subdeviceIndex)
-    {
-    }
-    int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
-    }
-
-    int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        return LMS64CProtocol::FPGA_SPI(pipe, MOSI, MISO, count, subdeviceIndex);
-    }
-
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override
-    {
-        return LMS64CProtocol::CustomParameterWrite(pipe, parameters, subdeviceIndex);
-    };
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override
-    {
-        return LMS64CProtocol::CustomParameterRead(pipe, parameters, subdeviceIndex);
-    }
-    virtual int ProgramWrite(
-        const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
-    {
-        return LMS64CProtocol::ProgramWrite(
-            pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback, subdeviceIndex);
-    }
-
-    int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
-    {
-        return LMS64CProtocol::MemoryWrite(pipe, address, data, dataLength, subdeviceIndex);
-    }
-
-    int MemoryRead(uint32_t address, void* data, uint32_t dataLength)
-    {
-        return LMS64CProtocol::MemoryRead(pipe, address, data, dataLength, subdeviceIndex);
-    }
-
-  private:
-    PCIE_CSR_Pipe pipe;
-    uint32_t subdeviceIndex;
-};
-
-/** @brief A class for communicating with MMX8's subdevice's ADF4002 chips. */
-class LMS64C_ADF_Over_PCIe_MMX8 : public lime::ISPI
-{
-  public:
-    LMS64C_ADF_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex)
-        : pipe(dataPort)
-        , subdeviceIndex(subdeviceIndex)
-    {
-    }
-
-    int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        return LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
-    }
-    int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override
-    {
-        return LMS64CProtocol::ADF4002_SPI(pipe, MOSI, count, subdeviceIndex);
-    }
-
-  private:
-    PCIE_CSR_Pipe pipe;
-    uint32_t subdeviceIndex;
-};
 
 SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
 {
