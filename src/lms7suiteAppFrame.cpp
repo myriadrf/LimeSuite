@@ -42,7 +42,7 @@
 using namespace std;
 using namespace lime;
 
-static constexpr int controlCollumn = 1;
+static constexpr int controlColumn = 1;
 
 LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr = nullptr;
 
@@ -106,8 +106,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
     SetMenuBar(mbar);
 
     statusBar = CreateStatusBar(3, wxSTB_DEFAULT_STYLE, wxNewId());
-    const int mainCollumns = 1;
-    mainSizer = new wxFlexGridSizer(mainCollumns, 0, 0);
+    const int mainColumns = 1;
+    mainSizer = new wxFlexGridSizer(mainColumns, 0, 0);
     mainSizer->AddGrowableCol(0);
     mainSizer->AddGrowableRow(1);
     mainSizer->SetFlexibleDirection(wxBOTH);
@@ -218,7 +218,7 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
     if (lmsControl)
     {
         const SDRDevice::Descriptor& info = lmsControl->GetDescriptor();
-        statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
+        statusBar->SetStatusText(_("Control port: Not Connected"), controlColumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(static_cast<int>(lime::LogLevel::INFO));
@@ -295,7 +295,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
             info.gatewareVersion,
             info.gatewareRevision,
             refClk / 1e6));
-        statusBar->SetStatusText(controlDev, controlCollumn);
+        statusBar->SetStatusText(controlDev, controlColumn);
 
         FillDeviceTree(deviceTree, lmsControl, m_scrolledWindow1);
         wxTreeEvent eee(wxEVT_TREE_SEL_CHANGED, deviceTree, deviceTree->GetFocusedItem());
