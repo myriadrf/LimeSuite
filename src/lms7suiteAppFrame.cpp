@@ -183,6 +183,8 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
         iter.second->Destroy();
 
     OnDeviceDisconnect();
+    
+    Disconnect(idMenuQuit, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnQuit));
     Disconnect(idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
     Disconnect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 }
