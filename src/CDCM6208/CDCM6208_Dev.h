@@ -79,6 +79,12 @@ struct CDCM_Outputs {
 class LIME_API CDCM_Dev
 {
   public:
+  /**
+    @brief Constructs a new CDCM_Dev object.
+    
+    @param comms The communications path to use.
+    @param SPI_BASE_ADDR The base address for the API interface.
+   */
     CDCM_Dev(std::shared_ptr<lime::ISPI> comms, uint16_t SPI_BASE_ADDR);
 
     int Init(double primaryFreq, double secondaryFreq);
