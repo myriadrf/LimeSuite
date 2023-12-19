@@ -125,7 +125,7 @@ lms7002_pnlBIAS_view::lms7002_pnlBIAS_view(wxWindow* parent, wxWindowID id, cons
     temp.clear();
     for (int i = 0; i < 32; ++i)
     {
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     }
     cmbRP_CALIB_BIAS->Set(temp);
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);

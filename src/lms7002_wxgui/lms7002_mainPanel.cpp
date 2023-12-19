@@ -270,7 +270,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent& event)
         soc->ResetChip();
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Reset failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Reset failed: " + std::string(e.what()), _("Warning"));
         return;
     }
     wxNotebookEvent evt;
@@ -304,7 +304,7 @@ void lms7002_mainPanel::OnOpenProject(wxCommandEvent& event)
             wxMessageBox(_("Failed to load file"), _("Warning"));
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Failed to load file: %s", e.what()), _("Warning"));
+        wxMessageBox("Failed to load file: " + std::string(e.what()), _("Warning"));
         return;
     }
     wxCommandEvent tevt;
@@ -391,7 +391,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
         soc->DownloadAll();
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Download all registers failed: " + std::string(e.what()), _("Warning"));
         return;
     }
     UpdateVisiblePanel();
@@ -404,7 +404,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
         soc->UploadAll();
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Download all registers failed: " + std::string(e.what()), _("Warning"));
         return;
     }
     UpdateVisiblePanel();

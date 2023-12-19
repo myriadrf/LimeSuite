@@ -224,7 +224,7 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(static_cast<int>(lime::LogLevel::INFO));
-        evt.SetString(wxString::Format("Disconnected: %s", info.name.c_str()));
+        evt.SetString("Disconnected: " + info.name);
         wxPostEvent(this, evt);
         UpdateConnections(nullptr);
         lime::DeviceRegistry::freeDevice(lmsControl);
@@ -279,7 +279,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
 
         if (!lmsControl)
         {
-            wxMessageBox(wxString::Format("Failed to connect to: %s", event.GetString()), wxT("Connection error"), wxICON_ERROR);
+            wxMessageBox("Failed to connect to: " + event.GetString(), wxT("Connection error"), wxICON_ERROR);
             return;
         }
 

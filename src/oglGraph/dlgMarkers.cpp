@@ -73,7 +73,7 @@ void dlgMarkers::AddMarker(int id)
     wxPanel* pnl = new wxPanel(this, markerId);
     wxFlexGridSizer* FlexGridSizer3;
     FlexGridSizer3 = new wxFlexGridSizer(0, 6, 0, 0);
-    wxCheckBox* chk = new wxCheckBox(pnl, markerId, wxString::Format("M%i", id));
+    wxCheckBox* chk = new wxCheckBox(pnl, markerId, "M" + std::to_string(id));
     FlexGridSizer3->Add(chk, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     enables.push_back(chk);
     chk = new wxCheckBox(pnl, markerId, "display");
@@ -110,7 +110,7 @@ void dlgMarkers::AddDeltas()
     wxArrayString selections;
     for (unsigned i = 0; i < parent_graph->markers.size(); ++i)
     {
-        selections.push_back(wxString::Format("M%u", i));
+        selections.push_back("M" + i);
     }
     for (int i = 0; i < 5; ++i)
     {
@@ -118,7 +118,7 @@ void dlgMarkers::AddDeltas()
         wxFlexGridSizer* FlexGridSizer3;
         FlexGridSizer3 = new wxFlexGridSizer(0, 4, 0, 0);
         wxStaticText* StaticText1 = new wxStaticText(
-            pnl, wxNewId(), wxString::Format("Delta%i", i), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
+            pnl, wxNewId(), "Delta" + std::to_string(i), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
         FlexGridSizer3->Add(StaticText1, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
         wxChoice* dsrc0 =
             new wxChoice(pnl, wxNewId(), wxDefaultPosition, wxSize(64, -1), 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE1"));

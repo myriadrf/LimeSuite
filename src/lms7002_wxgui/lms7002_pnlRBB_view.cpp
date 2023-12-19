@@ -373,14 +373,14 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view(wxWindow* parent, wxWindowID id, const 
     temp.clear();
     for (int i = 0; i < 32; ++i)
     {
-        temp.push_back(wxString::Format(_("%i dB"), -12 + i));
+        temp.push_back(std::to_string(-12 + i) + " dB");
     }
     cmbG_PGA_RBB->Set(temp);
 
     temp.clear();
     for (int i = 0; i < 32; ++i)
     {
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     }
     cmbICT_LPF_IN_RBB->Set(temp);
     cmbICT_LPF_OUT_RBB->Set(temp);
@@ -400,7 +400,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view(wxWindow* parent, wxWindowID id, const 
     temp.clear();
     for (int i = 0; i < 8; ++i)
     {
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     }
     cmbRCC_CTL_LPFH_RBB->Set(temp);
 

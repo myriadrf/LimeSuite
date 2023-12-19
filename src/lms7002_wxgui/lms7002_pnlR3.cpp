@@ -353,7 +353,7 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
 
             for (int i = 0; i < 6; ++i)
             {
-                rssiCMPCFG[i] = new wxCheckBox(panel, wxNewId(), wxString::Format("%s", params[i].name));
+                rssiCMPCFG[i] = new wxCheckBox(panel, wxNewId(), params[i].name);
                 sizerCMP->Add(rssiCMPCFG[i]);
                 wndId2Enum[rssiCMPCFG[i]] = params[i];
                 rssiCMPCFG[i]->Connect(
@@ -721,7 +721,7 @@ void lms7002_pnlR3_view::UpdateGUISlow()
         value = lmsControl->SPI_read(0x040B);
         rez.push_back(value);
     }
-    rssidc_cmpstatus->SetLabel(wxString::Format("%i", (rez[0] >> 15)));
+    rssidc_cmpstatus->SetLabel(std::to_string((rez[0] >> 15)));
     cmbRSEL->SetSelection((rez[0] >> 4) & 0x1F);
     cmbRSSIDC_HYSCMP->SetValue((rez[0] >> 1) & 0x7);
     chkRSSI_PD->SetValue(rez[0] & 0x1);

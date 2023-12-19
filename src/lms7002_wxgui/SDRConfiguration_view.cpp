@@ -76,7 +76,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
         wxArrayString oversampleNames;
         oversampleNames.Add(wxT("max"));
         for (int i = 0; i < 5; ++i)
-            oversampleNames.Add(wxString::Format("%i", 1 << i));
+            oversampleNames.Add(std::to_string(1 << i));
         gui.decimation = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, oversampleNames);
         gui.decimation->SetSelection(2);
         oversamplingGrid->Add(gui.decimation, ctrlFlags);
@@ -240,11 +240,11 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent& event)
         sdrDevice->Configure(config, socIndex);
     } catch (std::logic_error& e) // settings problem
     {
-        wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Configure failed: " + std::string(e.what()), _("Warning"));
         return;
     } catch (std::runtime_error& e) // communications problem
     {
-        wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Configure failed: " + std::string(e.what()), _("Warning"));
         return;
     }
 }

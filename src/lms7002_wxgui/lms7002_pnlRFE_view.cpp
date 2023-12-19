@@ -401,7 +401,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     wxArrayString temp;
     temp.clear();
     for (int i = 0; i < 32; ++i)
-        temp.push_back(wxString::Format(_("%i fF"), (i + 1) * 80));
+        temp.push_back(std::to_string((i + 1) * 80) + " fF");
     cmbCAP_RXMXO_RFE->Set(temp);
 
     for (int i = 0; i < 15; ++i)
@@ -471,14 +471,14 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
 
     temp.clear();
     for (int i = 0; i < 32; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbRFB_TIA_RFE->Set(temp);
     cmbICT_LNACMO_RFE->Set(temp);
     cmbCGSIN_LNA_RFE->Set(temp);
 
     temp.clear();
     for (int i = 0; i < 16; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbRCOMP_TIA_RFE->Set(temp);
     cmbCDC_I_RFE->Set(temp);
     cmbCDC_Q_RFE->Set(temp);
