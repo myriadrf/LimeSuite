@@ -2356,9 +2356,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
         const auto& dataStorage = apiDevice->device->GetDescriptor().memoryDevices.at(lime::MEMORY_DEVICES_TEXT.at(memoryDevice));
         try
         {
-            const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
-
-            return apiDevice->device->MemoryWrite(dataStorage, region, &val);
+            return apiDevice->device->MemoryWrite(dataStorage, lime::eMemoryRegion::VCTCXO_DAC, &val);
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");
@@ -2407,9 +2405,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
         const auto& dataStorage = apiDevice->device->GetDescriptor().memoryDevices.at(lime::MEMORY_DEVICES_TEXT.at(memoryDevice));
         try
         {
-            const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
-
-            return apiDevice->device->MemoryRead(dataStorage, region, val);
+            return apiDevice->device->MemoryRead(dataStorage, lime::eMemoryRegion::VCTCXO_DAC, val);
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");

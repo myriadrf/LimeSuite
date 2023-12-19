@@ -325,7 +325,7 @@ bool LimeSDR_MMX8::UploadMemory(
     return dev->UploadMemory(device, 0, data, length, callback);
 }
 
-int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, eMemoryRegion memoryRegion, const void* data)
 {
     if (storage == nullptr)
     {
@@ -334,6 +334,7 @@ int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region regio
 
     if (storage->ownerDevice == this)
     {
+        const auto& region = storage->regions.at(memoryRegion);
         return mMainFPGAcomms->MemoryWrite(region.address, data, region.size);
     }
 
@@ -344,10 +345,10 @@ int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region regio
         return -1;
     }
 
-    return dev->MemoryWrite(storage, region, data);
+    return dev->MemoryWrite(storage, memoryRegion, data);
 }
 
-int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, eMemoryRegion memoryRegion, void* data)
 {
     if (storage == nullptr)
     {
@@ -356,6 +357,7 @@ int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region
 
     if (storage->ownerDevice == this)
     {
+        const auto& region = storage->regions.at(memoryRegion);
         return mMainFPGAcomms->MemoryRead(region.address, data, region.size);
     }
 
@@ -366,7 +368,7 @@ int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region
         return -1;
     }
 
-    return dev->MemoryRead(storage, region, data);
+    return dev->MemoryRead(storage, memoryRegion, data);
 }
 
 int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)

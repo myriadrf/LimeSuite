@@ -68,7 +68,7 @@ class pnlBoardControls : public IModuleFrame
         wxButton* btnRead;
         wxButton* btnWrite;
         std::shared_ptr<lime::SDRDevice::DataStorage> dataStorage;
-        lime::SDRDevice::Region memoryRegion;
+        lime::eMemoryRegion memoryRegion;
     };
 
     struct Param_GUI {

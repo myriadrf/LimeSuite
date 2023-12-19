@@ -295,8 +295,8 @@ class LIME_API SDRDevice
         return -1;
     };
 
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, eMemoryRegion memoryRegion, const void* data) { return -1; };
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, eMemoryRegion memoryRegion, void* data) { return -1; };
 };
 
 } // namespace lime
