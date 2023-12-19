@@ -99,6 +99,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
         wxT("Show info about this application"),
         wxITEM_NORMAL);
     helpMenu->Append(menuHelpAbout);
+    Connect(menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
 
     mbar->Append(helpMenu, wxT("&Help"));
     this->SetMenuBar(mbar);
@@ -181,6 +182,8 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
         iter.second->Destroy();
 
     OnDeviceDisconnect();
+    Disconnect(idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
+    Disconnect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 }
 
 void LMS7SuiteAppFrame::OnClose(wxCloseEvent& event)

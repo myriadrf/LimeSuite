@@ -215,7 +215,7 @@ set(LMS7SUITE_GUI_SOURCES
     lms7suiteAppFrame.cpp
     #boards_wxgui/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
-    lms7suiteApp_gui.cpp
+    dlgAbout_view.cpp
     lms7suiteApp.cpp
     #FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp
     dlgAbout.cpp
