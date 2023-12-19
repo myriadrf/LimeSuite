@@ -23,6 +23,7 @@ namespace lime {
 
 LMS64CPacket::LMS64CPacket()
 {
+    assert(sizeof(LMS64CPacket) == 64);
     std::memset(this, 0, sizeof(LMS64CPacket));
 }
 

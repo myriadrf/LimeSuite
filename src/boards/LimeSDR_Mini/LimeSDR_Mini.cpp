@@ -199,13 +199,11 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
 
 LimeSDR_Mini::~LimeSDR_Mini()
 {
-    if (mStreamers[0])
+    auto& streamer = mStreamers.at(0);
+    if (streamer != nullptr && streamer->IsStreamRunning())
     {
-        delete mStreamers[0];
-        mStreamers[0] = nullptr;
+        streamer->Stop();
     }
-
-    delete mFPGA;
 }
 
 void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)

@@ -269,8 +269,6 @@ LimeSDR_X3::~LimeSDR_X3()
         delete mLMSChips[i];
         mLMSChips[i] = nullptr;
     }
-
-    delete mFPGA;
 }
 
 // Setup default register values specifically for onboard LMS1 chip

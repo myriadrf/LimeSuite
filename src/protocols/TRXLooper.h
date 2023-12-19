@@ -27,6 +27,8 @@ class TRXLooper
     virtual void Start();
     virtual void Stop();
 
+    virtual bool IsStreamRunning();
+
     inline const lime::SDRDevice::StreamConfig& GetConfig() const { return mConfig; }
 
     virtual int StreamRx(lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);

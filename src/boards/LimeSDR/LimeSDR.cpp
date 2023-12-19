@@ -184,13 +184,11 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
 
 LimeSDR::~LimeSDR()
 {
-    if (mStreamers[0])
+    auto& streamer = mStreamers.at(0);
+    if (streamer != nullptr && streamer->IsStreamRunning())
     {
-        delete mStreamers[0];
-        mStreamers[0] = nullptr;
+        streamer->Stop();
     }
-
-    delete mFPGA;
 }
 
 void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
