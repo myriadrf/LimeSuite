@@ -15,6 +15,10 @@ namespace lime {
 class FX3 : public USBGeneric
 {
   public:
+    /**
+      @brief Constructs the class for communicating with the FX3 controller.
+      @param usbContext The USB context to use for the communication.
+     */
     FX3(void* usbContext = nullptr);
     virtual ~FX3();
 
@@ -23,7 +27,7 @@ class FX3 : public USBGeneric
 
 #ifndef __unix__
     virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr) override;
-    virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
+    virtual bool WaitForXfer(int contextHandle, int32_t timeout_ms) override;
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif

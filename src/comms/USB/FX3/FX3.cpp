@@ -59,7 +59,7 @@ int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
     return index;
 }
 
-bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
+bool FX3::WaitForXfer(int contextHandle, int32_t timeout_ms)
 {
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {

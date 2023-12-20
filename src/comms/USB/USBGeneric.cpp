@@ -294,7 +294,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
 #endif
 }
 
-bool USBGeneric::WaitForXfer(int contextHandle, uint32_t timeout_ms)
+bool USBGeneric::WaitForXfer(int contextHandle, int32_t timeout_ms)
 {
 #ifdef __unix__
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
