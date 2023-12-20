@@ -45,12 +45,14 @@ class LIME_API DeviceHandle
     /*!
      * Serialize this connection handle into a string format.
      * This string format can be used to represent the handle.
+     * 
+     * @return The handle in string format.
      */
     std::string Serialize(void) const;
 
     /*!
      * Get a displayable string for this handle.
-     * @return a string that may be printed
+     * @return A string that may be printed.
      */
     std::string ToString(void) const;
 };

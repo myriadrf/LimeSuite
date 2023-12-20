@@ -21,26 +21,30 @@ class LIME_API DeviceRegistry
   public:
     /*!
      * Discovery identifiers that can be used to create a connection.
-     * The hint may contain a connection type, serial number, ip address, etc.
-     * \param hint an optional connection handle with some fields filled-in
-     * \return a list of handles which can be used to make a connection
+     * The hint may contain a connection type, serial number, IP address, etc.
+     * \param hint An optional connection handle with some fields filled-in
+     * \return A list of handles which can be used to make a connection
      */
     static std::vector<DeviceHandle> enumerate(const DeviceHandle& hint = DeviceHandle());
 
     /*!
      * Create a connection from an identifying handle.
-     * Return a null pointer when no factories are available.
-     * \param handle a connection handle with fields filled-in
-     * \return a pointer to a connection instance (or null)
+     * Returns a null pointer when no factories are available.
+     * \param handle A connection handle with fields filled-in
+     * \return A pointer to a connection instance (or null)
      */
     static SDRDevice* makeDevice(const DeviceHandle& handle);
 
     /*!
      * Free an connection created by makeConnection().
+     * \param conn The connection to free.
      */
     static void freeDevice(SDRDevice* conn);
 
-    //! Get a list of available registry entry modules by name
+    /*!
+     * Get a list of available registry entry modules by name.
+     * \return std::vector<std::string> The list of available registry modules.
+     */
     static std::vector<std::string> moduleNames(void);
 };
 
@@ -64,6 +68,8 @@ class LIME_API DeviceRegistryEntry
      * registers it into the connection registry.
      * The name describes the device board type,
      * that should be unique to the entry instance.
+     * 
+     * \param name The name of the device entry.
      */
     DeviceRegistryEntry(const std::string& name);
 
@@ -74,15 +80,15 @@ class LIME_API DeviceRegistryEntry
      * A discovery function takes a connection handle hint
      * and returns a list of identifiers that can be used
      * to create connection with makeConnection().
-     * \param hint an optional connection handle with some fields filled-in
-     * \return a list of handles which can be used to make a connection
+     * \param hint An optional connection handle with some fields filled-in.
+     * \return A list of handles which can be used to make a connection.
      */
     virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) = 0;
 
     /*!
      * A factory function creates a SDRDevice from a device handle.
-     * \param handle a device handle with fields filled-in
-     * \return a pointer to a SDRDevice instance
+     * \param handle A device handle with fields filled-in.
+     * \return A pointer to a SDRDevice instance.
      */
     virtual SDRDevice* make(const DeviceHandle& handle) = 0;
 
