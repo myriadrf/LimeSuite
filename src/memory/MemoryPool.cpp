@@ -48,7 +48,7 @@ void* MemoryPool::Allocate(int size)
     std::lock_guard<std::mutex> lock(mLock);
     if (mFreeBlocks.empty())
     {
-        throw std::runtime_error("No memory in pool" + name);
+        throw std::runtime_error("No memory in pool " + name);
     }
 
     void* ptr = mFreeBlocks.top();
