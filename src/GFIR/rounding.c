@@ -56,7 +56,7 @@ void printcode(int** code, int n, int cprec)
     double sumh, sume, sumo;
     int ih;
     double h;
-    int negative, sign, shift, csdprec;
+    int negative, sign = 0, shift, csdprec;
     int symmetry;
 
     /* Find maximum nonzero bits per coefficient */
@@ -303,7 +303,8 @@ int* csdcoder; /* CSD code rounded to 'csdprec' nonzero bits */
 
 /* ************************************************************************ 
    ************************************************************************ */
-int csd2int(cprec, code) int cprec, *code;
+int csd2int(cprec, code)
+int cprec, *code;
 {
     int i, a;
 
