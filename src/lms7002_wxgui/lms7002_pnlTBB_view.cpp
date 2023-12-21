@@ -520,7 +520,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view(wxWindow* parent, wxWindowID id, const 
     temp.clear();
     for (int i = 0; i < 32; ++i)
     {
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     }
     cmbICT_LPFH_F_TBB->Set(temp);
     cmbICT_LPFLAD_F_TBB->Set(temp);

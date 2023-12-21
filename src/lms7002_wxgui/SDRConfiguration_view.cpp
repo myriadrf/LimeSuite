@@ -23,7 +23,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
     {
         const vector<string> titles = { "Enable", "RxAntenna", "RxGain", "RxLPF (MHz)", "RxNCO (MHz)" };
         for (const auto& name : titles)
-            rxGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
+            rxGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
         for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
@@ -76,7 +76,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
         wxArrayString oversampleNames;
         oversampleNames.Add(wxT("max"));
         for (int i = 0; i < 5; ++i)
-            oversampleNames.Add(wxString::Format("%i", 1 << i));
+            oversampleNames.Add(std::to_string(1 << i));
         gui.decimation = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize, oversampleNames);
         gui.decimation->SetSelection(2);
         oversamplingGrid->Add(gui.decimation, ctrlFlags);
@@ -93,7 +93,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
     {
         const vector<string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain", "TxAntenna", "Enable" };
         for (auto name : titles)
-            txGrid->Add(new wxStaticText(base, wxID_ANY, name.c_str()), titleFlags);
+            txGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
         for (int i = 0; i < MAX_GUI_CHANNELS_COUNT; ++i)
         {
@@ -137,18 +137,18 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
 
     const SDRDevice::RFSOCDescriptor& descriptor = device->GetDescriptor().rfSOC.at(index);
     socIndex = index;
-    gui.titledBox->SetLabel(descriptor.name.c_str());
+    gui.titledBox->SetLabel(descriptor.name);
 
     wxArrayString rxPathNames;
     for (const auto& name : descriptor.rxPathNames)
     {
-        rxPathNames.Add(name.c_str());
+        rxPathNames.Add(name);
     }
 
     wxArrayString txPathNames;
     for (const auto& name : descriptor.txPathNames)
     {
-        txPathNames.Add(name.c_str());
+        txPathNames.Add(name);
     }
 
     for (int i = 0; i < descriptor.channelCount; ++i)
@@ -240,11 +240,11 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent& event)
         sdrDevice->Configure(config, socIndex);
     } catch (std::logic_error& e) // settings problem
     {
-        wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Configure failed: " + std::string(e.what()), _("Warning"));
         return;
     } catch (std::runtime_error& e) // communications problem
     {
-        wxMessageBox(wxString::Format("Configure failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Configure failed: " + std::string(e.what()), _("Warning"));
         return;
     }
 }

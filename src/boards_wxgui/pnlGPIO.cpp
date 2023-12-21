@@ -45,7 +45,7 @@ void pnlGPIO::Initialize(lime::SDRDevice* pControl)
     gpioSizer->Add(new wxStaticText(this, wxID_ANY, _("GPIO")), 1, wxEXPAND | wxALL, 5);
 
     for (int i = gpioCount; i--;)
-        gpioSizer->Add(new wxStaticText(this, wxID_ANY, wxString::Format("%d", i)), 1, wxEXPAND | wxALL, 5);
+        gpioSizer->Add(new wxStaticText(this, wxID_ANY, std::to_string(i)), 1, wxEXPAND | wxALL, 5);
 
     wxStaticText* text = new wxStaticText(this, wxID_ANY, _("DIR"));
     text->SetToolTip(_("Check to set GPIO to output"));

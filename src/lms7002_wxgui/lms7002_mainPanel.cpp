@@ -126,11 +126,11 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     tab = new lms7002_pnlCalibrations_view(tabsNotebook, ID_TAB_CALIBRATIONS);
     tabsNotebook->AddPage(tab, _("Calibration"), false);
     mTabs[ID_TAB_CALIBRATIONS] = tab;
-#define CreatePage(klass, title) \
+#define CreatePage(tabClass, title) \
     { \
-        tab = new lms7002_pnl##klass##_view(tabsNotebook, ID_TAB_##klass); \
+        tab = new lms7002_pnl##tabClass##_view(tabsNotebook, ID_TAB_##tabClass); \
         tabsNotebook->AddPage(tab, wxT(title), false); \
-        mTabs[ID_TAB_##klass] = tab; \
+        mTabs[ID_TAB_##tabClass] = tab; \
     }
     CreatePage(RFE, "RFE");
     CreatePage(RBB, "RBB");
@@ -270,7 +270,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent& event)
         soc->ResetChip();
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Reset failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Reset failed: " + std::string(e.what()), _("Warning"));
         return;
     }
     wxNotebookEvent evt;
@@ -304,7 +304,7 @@ void lms7002_mainPanel::OnOpenProject(wxCommandEvent& event)
             wxMessageBox(_("Failed to load file"), _("Warning"));
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Failed to load file: %s", e.what()), _("Warning"));
+        wxMessageBox("Failed to load file: " + std::string(e.what()), _("Warning"));
         return;
     }
     wxCommandEvent tevt;
@@ -391,7 +391,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
         soc->DownloadAll();
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Download all registers failed: " + std::string(e.what()), _("Warning"));
         return;
     }
     UpdateVisiblePanel();
@@ -404,7 +404,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
         soc->UploadAll();
     } catch (std::runtime_error& e)
     {
-        wxMessageBox(wxString::Format("Download all registers failed: %s", e.what()), _("Warning"));
+        wxMessageBox("Download all registers failed: " + std::string(e.what()), _("Warning"));
         return;
     }
     UpdateVisiblePanel();

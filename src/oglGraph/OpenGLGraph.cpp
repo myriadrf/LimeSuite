@@ -180,8 +180,8 @@ bool OpenGLGraph::Initialize(int width, int height)
     if (!oglOk)
     {
         wxMessageBox(
-            wxString::Format("Your OpenGL version is %s, required version is 2.0\nPlease update your graphics card drivers",
-                wxString(userOGLversion)),
+            wxString::Format(
+                "Your OpenGL version is %s, required version is 2.0\nPlease update your graphics card drivers", userOGLversion),
             _("WARNING"),
             wxOK,
             this);

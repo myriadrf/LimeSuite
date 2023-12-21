@@ -1,19 +1,21 @@
 #pragma once
 
+#include "DeviceNodeClass.h"
+
 #include <memory>
 
 namespace lime {
 
 struct DeviceNode {
     DeviceNode(){};
-    DeviceNode(const std::string& name, const std::string& klass, void* ptr)
+    DeviceNode(const std::string& name, eDeviceNodeClass nodeClass, void* ptr)
         : name(name)
-        , klass(klass)
+        , deviceNodeClass(nodeClass)
         , ptr(ptr)
     {
     }
     std::string name;
-    std::string klass;
+    eDeviceNodeClass deviceNodeClass;
     void* ptr;
     std::vector<std::shared_ptr<DeviceNode>> children;
 };

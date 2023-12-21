@@ -3,7 +3,6 @@
 
 #include "LMS7002M_SDRDevice.h"
 #include "protocols/LMS64CProtocol.h"
-#include "dataTypes.h"
 
 #include <vector>
 #include <memory>

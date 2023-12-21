@@ -15,7 +15,6 @@
 #include "TRXLooper_PCIE.h"
 #include "limesuite/SDRDevice.h"
 #include "LitePCIe.h"
-#include "Profiler.h"
 #include "DataPacket.h"
 #include "SamplesPacket.h"
 #include "limesuite/commonTypes.h"
@@ -205,8 +204,7 @@ int TRXLooper_PCIE::TxSetup()
         mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
     }
 
-    char name[64];
-    sprintf(name, "Tx%i_memPool", chipId);
+    const std::string name = "MemPool_Tx" + std::to_string(chipId);
     const int upperAllocationLimit =
         65536; //sizeof(complex32f_t) * mTx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mTx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
@@ -747,8 +745,7 @@ int TRXLooper_PCIE::RxSetup()
     mRxArgs.packetsToBatch = mRx.packetsToBatch;
     mRxArgs.samplesInPacket = samplesInPkt;
 
-    char name[64];
-    sprintf(name, "Rx%i_memPool", chipId);
+    const std::string name = "MemPool_Rx" + std::to_string(chipId);
     const int upperAllocationLimit =
         sizeof(complex32f_t) * mRx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
     mRx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
@@ -887,14 +884,14 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
         mRxArgs.port->CacheFlush(false, false, dma.swIndex % bufferCount);
         uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
-        const RxDataPacket* pkt = reinterpret_cast<const RxDataPacket*>(buffer);
+        const FPGA_RxDataPacket* pkt = reinterpret_cast<const FPGA_RxDataPacket*>(buffer);
         if (outputPkt)
             outputPkt->timestamp = pkt->counter;
 
         const int srcPktCount = mRxArgs.packetsToBatch;
         for (int i = 0; i < srcPktCount; ++i)
         {
-            pkt = reinterpret_cast<const RxDataPacket*>(&buffer[packetSize * i]);
+            pkt = reinterpret_cast<const FPGA_RxDataPacket*>(&buffer[packetSize * i]);
             if (pkt->counter - expectedTS != 0)
             {
                 //printf("Loss: pkt:%i exp: %li, got: %li, diff: %li\n", stats.packets+i, expectedTS, pkt->counter, pkt->counter-expectedTS);
@@ -1008,7 +1005,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
         int samplesDataSize = 0;
 
         port->CacheFlush(true, false, dmaIndex);
-        FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(dmaBuffers[dmaIndex]);
+        FPGA_TxDataPacket* pkt = reinterpret_cast<FPGA_TxDataPacket*>(dmaBuffers[dmaIndex]);
         pkt->counter = 0;
         pkt->reserved[0] = 0;
 

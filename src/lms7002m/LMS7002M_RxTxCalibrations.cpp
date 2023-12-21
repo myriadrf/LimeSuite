@@ -72,9 +72,6 @@ static inline int16_t signextIqCorr(const uint16_t regVal)
 const double TrxCalib_RF_LimitLow = 2.5e6;
 const double TrxCalib_RF_LimitHigh = 120e6;
 
-static const char cSquaresLine[] = "############################################################\n";
-static const char cDashLine[] = "------------------------------------------------------------\n";
-
 #define verbose_printf(...) \
     do \
     { \

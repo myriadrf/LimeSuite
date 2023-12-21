@@ -577,7 +577,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
 bool Si5351C::LoadRegValuesFromFile(string FName)
 {
     fstream fin;
-    fin.open(FName.c_str(), ios::in);
+    fin.open(FName, ios::in);
 
     const int len = 1024;
     char line[len];

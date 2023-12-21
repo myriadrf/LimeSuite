@@ -6,6 +6,8 @@
 #include "FPGA_common.h"
 #include "limesuite/LMS7002M.h"
 
+#include <cmath>
+
 namespace lime {
 
 LMS7002M_SDRDevice::LMS7002M_SDRDevice()
@@ -18,8 +20,29 @@ LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
 {
     for (LMS7002M* soc : mLMSChips)
     {
-        if (soc)
+        if (soc != nullptr)
+        {
             delete soc;
+        }
+    }
+
+    for (auto& streamer : mStreamers)
+    {
+        if (streamer != nullptr)
+        {
+            if (streamer->IsStreamRunning())
+            {
+                streamer->Stop();
+            }
+
+            delete streamer;
+            streamer = nullptr;
+        }
+    }
+
+    if (mFPGA != nullptr)
+    {
+        delete mFPGA;
     }
 }
 
@@ -142,12 +165,17 @@ void LMS7002M_SDRDevice::StreamStart(uint8_t moduleIndex)
 void LMS7002M_SDRDevice::StreamStop(uint8_t moduleIndex)
 {
     if (mStreamers.at(moduleIndex) == nullptr)
+    {
         return;
+    }
 
     mStreamers.at(moduleIndex)->Stop();
 
-    if (mStreamers[moduleIndex])
+    if (mStreamers.at(moduleIndex) != nullptr)
+    {
         delete mStreamers[moduleIndex];
+    }
+
     mStreamers[moduleIndex] = nullptr;
 }
 

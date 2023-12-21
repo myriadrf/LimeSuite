@@ -1,7 +1,8 @@
 #ifndef LIME_SAMPLESPACKET_H
 #define LIME_SAMPLESPACKET_H
 
-#include "dataTypes.h"
+#include <cassert>
+#include <cstring>
 
 namespace lime {
 
@@ -51,7 +52,7 @@ template<uint8_t chCount> class SamplesPacket
         {
             if (src[i] == nullptr)
                 continue;
-            memcpy(tail[i], src[i], samplesToCopy * alignment);
+            std::memcpy(tail[i], src[i], samplesToCopy * alignment);
             tail[i] += samplesToCopy * frameSize;
         }
         length += samplesToCopy;

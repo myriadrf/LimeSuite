@@ -41,8 +41,7 @@ void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
 
 int TRXLooper_USB::TxSetup()
 {
-    char name[64];
-    sprintf(name, "Tx%i_memPool", chipId);
+    const std::string name = "MemPool_Tx" + std::to_string(chipId);
 
     const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
     const int upperAllocationLimit =
@@ -89,7 +88,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
     const uint8_t batchCount = 8; // how many async reads to schedule
     const uint8_t packetsToBatch = mTx.packetsToBatch;
-    const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_DataPacket);
+    const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_TxDataPacket);
 
     std::vector<int> handles(batchCount, -1);
     std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
@@ -239,8 +238,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
 int TRXLooper_USB::RxSetup()
 {
-    char name[64];
-    sprintf(name, "Rx%i_memPool", chipId);
+    const std::string name = "MemPool_Rx" + std::to_string(chipId);
 
     const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / channelCount;
@@ -270,7 +268,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     const uint8_t batchCount = 8; // how many async reads to schedule
     const uint8_t packetsToBatch = mRx.packetsToBatch;
-    const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_DataPacket);
+    const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_RxDataPacket);
 
     std::vector<int> handles(batchCount, -1);
     std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
@@ -332,7 +330,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             }
         }
 
-        const uint8_t fullPacketsReceived = bytesReceived / sizeof(FPGA_DataPacket);
+        const uint8_t fullPacketsReceived = bytesReceived / sizeof(FPGA_RxDataPacket);
         for (uint8_t j = 0; j < fullPacketsReceived; ++j)
         {
             if (outputPkt == nullptr)
@@ -341,8 +339,8 @@ void TRXLooper_USB::ReceivePacketsLoop()
                     SamplesPacketType::ConstructSamplesPacket(mRx.memPool->Allocate(outputPktSize), samplesInPkt, outputSampleSize);
             }
 
-            const FPGA_DataPacket* pkt =
-                reinterpret_cast<FPGA_DataPacket*>(&buffers[bufferIndex * bufferSize + sizeof(FPGA_DataPacket) * j]);
+            const FPGA_RxDataPacket* pkt =
+                reinterpret_cast<FPGA_RxDataPacket*>(&buffers[bufferIndex * bufferSize + sizeof(FPGA_RxDataPacket) * j]);
 
             if (pkt->counter - expectedTS != 0)
             {

@@ -224,7 +224,7 @@ int main(int argc, char** argv)
             device->Init();
         if (iniFilename)
         {
-            char configFilepath[1024];
+            std::string configFilepath;
             config.skipDefaults = true;
             std::string cwd(argv[0]);
             const size_t slash0Pos = cwd.find_last_of("/\\");
@@ -232,9 +232,13 @@ int main(int argc, char** argv)
                 cwd.resize(slash0Pos);
 
             if (iniFilename[0] != '/') // is not global path
-                sprintf(configFilepath, "%s/%s", cwd.c_str(), iniFilename);
+            {
+                configFilepath = cwd + "/" + iniFilename;
+            }
             else
-                sprintf(configFilepath, "%s", iniFilename);
+            {
+                configFilepath = iniFilename;
+            }
 
             LMS7002M* chip = static_cast<LMS7002M*>(device->GetInternalChip(moduleId));
             if (!chip)

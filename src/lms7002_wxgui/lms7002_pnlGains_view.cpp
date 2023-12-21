@@ -191,13 +191,13 @@ lms7002_pnlGains_view::lms7002_pnlGains_view(wxWindow* parent, wxWindowID id, co
 
     temp.clear();
     for (int i = 0; i < 32; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbLOSS_LIN_TXPAD_TRF->Append(temp);
     cmbLOSS_MAIN_TXPAD_TRF->Append(temp);
 
     temp.clear();
     for (int i = 0; i < 32; ++i)
-        temp.push_back(wxString::Format(_("%i dB"), -12 + i));
+        temp.push_back(std::to_string(-12 + i) + " dB");
     cmbG_PGA_RBB->Set(temp);
 
     for (int i = 0; i < 15; ++i)

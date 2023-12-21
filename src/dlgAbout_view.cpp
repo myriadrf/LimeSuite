@@ -15,7 +15,7 @@
     #include <wx/wx.h>
 #endif //WX_PRECOMP
 
-#include "lms7suiteApp_gui.h"
+#include "dlgAbout_view.h"
 
 dlgAbout_view::dlgAbout_view(
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)

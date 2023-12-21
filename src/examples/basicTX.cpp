@@ -155,5 +155,8 @@ int main(int argc, char** argv)
             std::cout << "TX total samples sent: " << totalSamplesSent << std::endl;
         }
     }
+
+    DeviceRegistry::freeDevice(device);
+
     return 0;
 }

@@ -88,16 +88,15 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
     try
     {
         std::string controlFile(handle.addr + "_control");
-        control->Open(controlFile.c_str(), O_RDWR);
+        control->Open(controlFile, O_RDWR);
 
         std::string streamFile(handle.addr + "_trx0");
-        stream->SetPathName(streamFile.c_str());
+        stream->SetPathName(streamFile);
 
         return new LimeSDR_XTRX(route_lms7002m, route_fpga, stream);
     } catch (std::runtime_error& e)
     {
-        char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s)", handle.Serialize().c_str());
+        const std::string reason = "Unable to connect to device using handle (" + handle.Serialize() + ")";
         throw std::runtime_error(reason);
     }
 }

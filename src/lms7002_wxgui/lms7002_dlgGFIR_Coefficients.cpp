@@ -142,7 +142,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
     gridCoef->GetTable()->AppendRows(spinCoefCount->GetValue());
     for (int i = 0; i < iVal; ++i)
     {
-        gridCoef->SetCellValue(i, 0, wxString::Format("%f", cbuf[i]));
+        gridCoef->SetCellValue(i, 0, std::to_string(cbuf[i]));
     }
 }
 
@@ -170,7 +170,7 @@ void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)
     gridCoef->GetTable()->AppendRows(spinCoefCount->GetValue());
     for (int i = 0; i < spinCoefCount->GetValue(); ++i)
     {
-        gridCoef->SetCellValue(i, 0, wxString::Format("%i", 0));
+        gridCoef->SetCellValue(i, 0, "0");
     }
 }
 
