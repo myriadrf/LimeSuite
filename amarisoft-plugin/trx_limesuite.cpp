@@ -349,8 +349,8 @@ static void trx_lms7002m_write(
 
     SDRDevice::StreamMeta meta;
     meta.timestamp = timestamp;
-    meta.useTimestamp = true;
-    meta.flush = (md->flags & TRX_WRITE_MD_FLAG_END_OF_BURST);
+    meta.waitForTimestamp = true;
+    meta.flushPartialPacket = (md->flags & TRX_WRITE_MD_FLAG_END_OF_BURST);
 
     // samples format conversion is done internally
     LimeState* lime = (LimeState*)s->opaque;
@@ -377,8 +377,8 @@ static int trx_lms7002m_read(TRXState* s, trx_timestamp_t* ptimestamp, void** sa
     LimeState* lime = (LimeState*)s->opaque;
 
     SDRDevice::StreamMeta meta;
-    meta.useTimestamp = false;
-    meta.flush = false;
+    meta.waitForTimestamp = false;
+    meta.flushPartialPacket = false;
 
     md->flags = 0;
     int samplesGot =

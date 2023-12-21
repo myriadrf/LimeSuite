@@ -182,9 +182,24 @@ class LIME_API SDRDevice
 
     /** @brief The metadata of a stream packet. */
     struct StreamMeta {
-        int64_t timestamp;
-        bool useTimestamp;
-        bool flush; // submit data to hardware without waiting for full buffer
+        /**
+         * Timestamp is a value of HW counter with a tick based on sample rate.
+         * In RX: time when the first sample in the returned buffer was received.
+         * In TX: time when the first sample in the submitted buffer should be send.
+         */
+        uint64_t timestamp;
+
+        /**
+         * In RX: not used/ignored.
+         * In TX: wait for the specified HW timestamp before broadcasting data over the air.
+         */
+        bool waitForTimestamp;
+
+        /**
+         * In RX: not used/ignored.
+         * In TX: send samples to HW even if packet is not completely filled (end TX burst).
+         */
+        bool flushPartialPacket;
     };
 
     /** @brief Configuration of a general finite impulse response (FIR) filter. */

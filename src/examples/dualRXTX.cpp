@@ -146,8 +146,8 @@ int main(int argc, char** argv)
 
         SDRDevice::StreamMeta txMeta;
         txMeta.timestamp = rxMeta.timestamp + samplesInBuffer * 64;
-        txMeta.useTimestamp = true;
-        txMeta.flush = false;
+        txMeta.waitForTimestamp = true;
+        txMeta.flushPartialPacket = false;
         int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesInBuffer, &txMeta);
         if (samplesSent < 0)
         {

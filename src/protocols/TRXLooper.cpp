@@ -630,12 +630,12 @@ int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::St
             return samplesProduced;
         if (!timestampSet && meta)
         {
-            meta->timestamp = mRx.stagingPacket->timestamp;
+            meta->timestamp = mRx.stagingPacket->metadata.timestamp;
             timestampSet = true;
         }
 
-        int expectedCount = count - samplesProduced;
-        const int samplesToCopy = std::min(expectedCount, mRx.stagingPacket->size());
+        uint32_t expectedCount = count - samplesProduced;
+        const uint32_t samplesToCopy = std::min(expectedCount, mRx.stagingPacket->size());
 
         lime::complex32f_t* const* f32_src = reinterpret_cast<lime::complex32f_t* const*>(mRx.stagingPacket->front());
 
@@ -672,12 +672,12 @@ int TRXLooper::StreamRx(lime::complex16_t** dest, uint32_t count, SDRDevice::Str
             return samplesProduced;
         if (!timestampSet && meta)
         {
-            meta->timestamp = mRx.stagingPacket->timestamp;
+            meta->timestamp = mRx.stagingPacket->metadata.timestamp;
             timestampSet = true;
         }
 
-        int expectedCount = count - samplesProduced;
-        const int samplesToCopy = std::min(expectedCount, mRx.stagingPacket->size());
+        uint32_t expectedCount = count - samplesProduced;
+        const uint32_t samplesToCopy = std::min(expectedCount, mRx.stagingPacket->size());
 
         lime::complex16_t* const* src = reinterpret_cast<lime::complex16_t* const*>(mRx.stagingPacket->front());
 
@@ -703,8 +703,8 @@ int TRXLooper::StreamRx(lime::complex16_t** dest, uint32_t count, SDRDevice::Str
 int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const bool useChannelB = mConfig.txCount > 1;
-    const bool useTimestamp = meta ? meta->useTimestamp : false;
-    const bool flush = meta && meta->flush;
+    const bool useTimestamp = meta ? meta->waitForTimestamp : false;
+    const bool flush = meta && meta->flushPartialPacket;
     int64_t ts = meta ? meta->timestamp : 0;
 
     int samplesRemaining = count;
@@ -713,7 +713,7 @@ int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count
     const int packetsToBatch = mTx.packetsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * sizeof(complex32f_t);
 
-    if (mTx.stagingPacket && mTx.stagingPacket->timestamp + mTx.stagingPacket->size() != meta->timestamp)
+    if (mTx.stagingPacket && mTx.stagingPacket->metadata.timestamp + mTx.stagingPacket->size() != meta->timestamp)
     {
         if (!mTx.fifo->push(mTx.stagingPacket))
             return 0;
@@ -730,8 +730,8 @@ int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count
             if (!mTx.stagingPacket)
                 break;
             mTx.stagingPacket->Reset();
-            mTx.stagingPacket->timestamp = ts;
-            mTx.stagingPacket->useTimestamp = useTimestamp;
+            mTx.stagingPacket->metadata.timestamp = ts;
+            mTx.stagingPacket->metadata.waitForTimestamp = useTimestamp;
         }
 
         int consumed = mTx.stagingPacket->push(src, samplesRemaining);
@@ -745,7 +745,7 @@ int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count
         if (mTx.stagingPacket->isFull() || flush)
         {
             if (samplesRemaining == 0)
-                mTx.stagingPacket->flush = flush;
+                mTx.stagingPacket->metadata.flushPartialPacket = flush;
 
             if (!mTx.fifo->push(mTx.stagingPacket))
                 break;
@@ -758,8 +758,8 @@ int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count
 int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const bool useChannelB = mConfig.txCount > 1;
-    const bool useTimestamp = meta ? meta->useTimestamp : false;
-    const bool flush = meta && meta->flush;
+    const bool useTimestamp = meta ? meta->waitForTimestamp : false;
+    const bool flush = meta && meta->flushPartialPacket;
     int64_t ts = meta ? meta->timestamp : 0;
 
     int samplesRemaining = count;
@@ -767,7 +767,7 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
     const int packetsToBatch = mTx.packetsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * sizeof(complex16_t);
 
-    if (mTx.stagingPacket && mTx.stagingPacket->timestamp + mTx.stagingPacket->size() != meta->timestamp)
+    if (mTx.stagingPacket && mTx.stagingPacket->metadata.timestamp + mTx.stagingPacket->size() != meta->timestamp)
     {
         if (!mTx.fifo->push(mTx.stagingPacket))
             return 0;
@@ -784,8 +784,8 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
             if (!mTx.stagingPacket)
                 break;
             mTx.stagingPacket->Reset();
-            mTx.stagingPacket->timestamp = ts;
-            mTx.stagingPacket->useTimestamp = useTimestamp;
+            mTx.stagingPacket->metadata.timestamp = ts;
+            mTx.stagingPacket->metadata.waitForTimestamp = useTimestamp;
         }
 
         int consumed = mTx.stagingPacket->push(src, samplesRemaining);
@@ -799,7 +799,7 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
         if (mTx.stagingPacket->isFull() || flush)
         {
             if (samplesRemaining == 0)
-                mTx.stagingPacket->flush = flush;
+                mTx.stagingPacket->metadata.flushPartialPacket = flush;
 
             if (!mTx.fifo->push(mTx.stagingPacket))
                 break;

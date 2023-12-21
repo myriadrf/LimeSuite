@@ -128,8 +128,8 @@ int main(int argc, char** argv)
 
     SDRDevice::StreamMeta txMeta;
     txMeta.timestamp = 0;
-    txMeta.useTimestamp = true;
-    txMeta.flush = true;
+    txMeta.waitForTimestamp = true;
+    txMeta.flushPartialPacket = true;
 
     int totalSamplesSent = 0;
 

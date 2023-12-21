@@ -179,7 +179,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
     int64_t totalBytesSent = 0; //for data rate calculation
     int packetsSent = 0;
     int totalPacketSent = 0;
-    uint32_t maxFIFOlevel = 0;
+    std::size_t maxFIFOlevel = 0;
     int64_t lastTS = 0;
 
     struct PendingWrite {
@@ -270,10 +270,10 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
 
             // drop old packets before forming, Rx is needed to get current timestamp
-            if (srcPkt->useTimestamp && mConfig.rxCount > 0)
+            if (srcPkt->metadata.waitForTimestamp && mConfig.rxCount > 0)
             {
                 int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
-                const int64_t txAdvance = srcPkt->timestamp - rxNow;
+                const int64_t txAdvance = srcPkt->metadata.timestamp - rxNow;
                 if (mConfig.hintSampleRate)
                 {
                     int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
@@ -403,7 +403,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                 snprintf(msg,
                     sizeof(msg) - 1,
                     "%s Tx: %3.3f MB/s | TS:%li pkt:%li o:%i shw:%u/%u(%+i) u:%i(%+i) l:%i(%+i) tsAdvance:%+.0f/%+.0f/%+.0f%s, "
-                    "f:%i",
+                    "f:%li",
                     mRxArgs.port->GetPathName().c_str(),
                     dataRate / 1000000.0,
                     lastTS,
@@ -567,7 +567,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     SDRDevice::StreamStats& stats = mRx.stats;
     auto fifo = mRx.fifo;
 
-    const int outputSampleSize =
+    const uint8_t outputSampleSize =
         mConfig.format == SDRDevice::StreamConfig::DataFormat::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
     const int32_t outputPktSize = SamplesPacketType::headerSize + mRxArgs.packetsToBatch * samplesInPkt * outputSampleSize;
 
@@ -626,7 +626,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             char msg[512];
             snprintf(msg,
                 sizeof(msg) - 1,
-                "%s Rx: %3.3f MB/s | TS:%li pkt:%li o:%i(%+i) l:%i(%+i) dma:%u/%u(%u) swFIFO:%i",
+                "%s Rx: %3.3f MB/s | TS:%li pkt:%li o:%i(%+i) l:%i(%+i) dma:%u/%u(%u) swFIFO:%li",
                 mRxArgs.port->GetPathName().c_str(),
                 stats.dataRate_Bps / 1e6,
                 stats.timestamp,
@@ -680,7 +680,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
         const FPGA_RxDataPacket* pkt = reinterpret_cast<const FPGA_RxDataPacket*>(buffer);
         if (outputPkt)
-            outputPkt->timestamp = pkt->counter;
+            outputPkt->metadata.timestamp = pkt->counter;
 
         const int srcPktCount = mRxArgs.packetsToBatch;
         for (int i = 0; i < srcPktCount; ++i)

@@ -182,7 +182,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
     }
 
     // skip some packets at the start in case of leftover data garbage
-    int64_t ignoreSamplesAtStart = 0;
+    uint64_t ignoreSamplesAtStart = 0;
 
     //Initialize stream
     bool streamHadIssues = false;
@@ -211,7 +211,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
 
     bool show = false;
     int fired = 0;
-    int64_t lastRxTS = 0;
+    uint64_t lastRxTS = 0;
 
     int badSignal = 0;
     while (runForever.load())
@@ -255,8 +255,8 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
             ++fired;
             int64_t rxNow = rxMeta.timestamp + samplesInPkt;
             txMeta.timestamp = rxNow + txDeltaTS;
-            txMeta.useTimestamp = true;
-            txMeta.flush = false; // not really matters because of continuous trasmitting
+            txMeta.waitForTimestamp = true;
+            txMeta.flushPartialPacket = false; // not really matters because of continuous trasmitting
 
             auto tt1 = std::chrono::high_resolution_clock::now();
             int samplesSent = dev.StreamTx(testStreamIndex, src, samplesInPkt * txPacketCount, &txMeta);
@@ -369,7 +369,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     }
 
     // skip some packets at the start in case of leftover data garbage
-    int64_t ignoreSamplesAtStart = 0; //samplesInPkt*1024;
+    uint64_t ignoreSamplesAtStart = 0; //samplesInPkt*1024;
     //printf("Skipping %i rx samples at the beginning", ignoreSamplesAtStart);
 
     //Initialize stream
@@ -412,8 +412,8 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
         if (!txPending)
         {
             txMeta.timestamp = rxNow + txDeltaTS;
-            txMeta.useTimestamp = true;
-            txMeta.flush = true;
+            txMeta.waitForTimestamp = true;
+            txMeta.flushPartialPacket = true;
             int samplesSent = dev.StreamTx(chipIndex, src, samplesInPkt, &txMeta);
             if (samplesSent <= 0)
             {

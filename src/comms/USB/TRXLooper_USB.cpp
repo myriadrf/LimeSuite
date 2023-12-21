@@ -166,11 +166,11 @@ void TRXLooper_USB::TransmitPacketsLoop()
             {
                 header->Clear();
                 ++packetsCreated;
-                header->counter = srcPkt->timestamp;
+                header->counter = srcPkt->metadata.timestamp;
                 bytesUsed += sizeof(StreamHeader);
             }
 
-            header->ignoreTimestamp(!srcPkt->useTimestamp);
+            header->ignoreTimestamp(!srcPkt->metadata.waitForTimestamp);
 
             const uint freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
             uint transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint>(srcPkt->size()));
@@ -208,7 +208,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 payloadSize = 0;
                 packetsCreated = 0;
 
-                mTx.stats.timestamp = srcPkt->timestamp;
+                mTx.stats.timestamp = srcPkt->metadata.timestamp;
 
                 header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize]);
                 payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
@@ -276,7 +276,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     const int samplesInPkt =
         (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;
-    const int outputSampleSize =
+    const uint8_t outputSampleSize =
         mConfig.format == SDRDevice::StreamConfig::DataFormat::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
     const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * outputSampleSize;
 

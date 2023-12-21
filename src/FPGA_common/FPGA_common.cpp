@@ -643,7 +643,7 @@ int FPGA::SetDirectClocking(int clockIndex)
 
 /** @brief Parses FPGA packet payload into samples
 */
-int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples)
+int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t* const* samples)
 {
     if (compressed) //compressed samples
     {
@@ -694,7 +694,8 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
 
 /** @brief Parses FPGA packet payload into samples
 */
-int FPGA::FPGAPacketPayload2SamplesFloat(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples)
+int FPGA::FPGAPacketPayload2SamplesFloat(
+    const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t* const* samples)
 {
     const float normalizationAmplitude = compressed ? 2048 : 32768;
     if (compressed) //compressed samples

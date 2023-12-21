@@ -72,14 +72,14 @@ template<class T> class TxBufferManager
                 payloadSize = 0;
             }
 
-            header->ignoreTimestamp(!src->useTimestamp);
+            header->ignoreTimestamp(!src->metadata.waitForTimestamp);
             if (payloadSize == 0)
             {
                 ++packetsCreated;
-                header->counter = src->timestamp;
+                header->counter = src->metadata.timestamp;
                 bytesUsed += sizeof(StreamHeader);
             }
-            const int freeSpace = std::min(maxPayloadSize - payloadSize, mCapacity - bytesUsed - 16);
+            const uint32_t freeSpace = std::min(maxPayloadSize - payloadSize, mCapacity - bytesUsed - 16);
             uint32_t transferCount = std::min(freeSpace / bytesForFrame, src->size());
             transferCount = std::min(transferCount, maxSamplesInPkt);
             if (transferCount > 0)
@@ -123,7 +123,7 @@ template<class T> class TxBufferManager
         }
         if (!hasSpace())
             return true;
-        return src->flush || sendBuffer;
+        return src->metadata.flushPartialPacket || sendBuffer;
     }
 
     inline int size() const { return bytesUsed; };
@@ -141,7 +141,7 @@ template<class T> class TxBufferManager
     uint32_t maxSamplesInPkt;
     uint32_t maxPayloadSize;
     uint16_t packetsCreated;
-    uint16_t payloadSize;
+    uint32_t payloadSize;
     uint8_t bytesForFrame;
 };
 

@@ -1281,8 +1281,8 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
 
     if (meta != nullptr)
     {
-        metadata.flush = meta->flushPartialPacket;
-        metadata.useTimestamp = meta->waitForTimestamp;
+        metadata.flushPartialPacket = meta->flushPartialPacket;
+        metadata.waitForTimestamp = meta->waitForTimestamp;
         metadata.timestamp = meta->timestamp;
     }
 

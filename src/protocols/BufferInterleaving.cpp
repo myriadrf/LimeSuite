@@ -61,15 +61,16 @@ int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t leng
     int samplesProduced;
     if (fmt.destFormat == SDRDevice::StreamConfig::DataFormat::F32)
     {
-        complex32f_t** dest = reinterpret_cast<complex32f_t**>(output->back());
+        complex32f_t* const* dest = reinterpret_cast<complex32f_t* const*>(output->back());
         if (!compressed)
         {
             samplesProduced = length / sizeof(complex16_t);
             if (!mimo)
-                complex16_to_complex32f(dest[0], (const complex16_t*)buffer, length / sizeof(complex16_t));
+                complex16_to_complex32f(dest[0], reinterpret_cast<const complex16_t*>(buffer), length / sizeof(complex16_t));
             else
             {
-                complex16_to_complex32f_unzip(dest[0], dest[1], (const complex16_t*)buffer, length / sizeof(complex16_t));
+                complex16_to_complex32f_unzip(
+                    dest[0], dest[1], reinterpret_cast<const complex16_t*>(buffer), length / sizeof(complex16_t));
                 samplesProduced /= 2;
             }
         }
@@ -78,7 +79,7 @@ int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t leng
     }
     else
     {
-        complex16_t** dest = reinterpret_cast<complex16_t**>(output->back());
+        complex16_t* const* dest = reinterpret_cast<complex16_t* const*>(output->back());
         samplesProduced = FPGA::FPGAPacketPayload2Samples(buffer, length, mimo, compressed, dest);
     }
     output->SetSize(output->size() + samplesProduced);

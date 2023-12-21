@@ -594,7 +594,7 @@ int main(int argc, char** argv)
 
     SDRDevice::StreamMeta rxMeta;
     SDRDevice::StreamMeta txMeta;
-    txMeta.useTimestamp = true;
+    txMeta.waitForTimestamp = true;
     txMeta.timestamp = sampleRate / 100; // send tx samples 10ms after start
 
 #ifdef USE_GNU_PLOT
@@ -653,8 +653,8 @@ int main(int argc, char** argv)
         if (tx && repeater)
         {
             txMeta.timestamp = rxMeta.timestamp + samplesRead + repeaterDelay;
-            txMeta.useTimestamp = true;
-            txMeta.flush = true;
+            txMeta.waitForTimestamp = true;
+            txMeta.flushPartialPacket = true;
             if (useComposite)
                 composite->StreamTx(rxSamples, samplesRead, &txMeta);
             else
