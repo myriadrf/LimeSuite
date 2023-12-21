@@ -45,7 +45,7 @@ class FT601 : public USBGeneric
 
     /**
       @brief Resets the stream buffers of the device.
-      @return int Status of the operation (0 - success; -1 - failure).
+      @return Status of the operation (0 - success; -1 - failure).
      */
     int ResetStreamBuffers();
 

@@ -29,14 +29,14 @@ class AvgRmsCounter
     /**
       @brief Gets the current minimum value and resets it.
       
-      @return double The minimum value recorded.
+      @return The minimum value recorded.
      */
     double Min();
 
     /**
       @brief Gets the current maximum value and resets it.
       
-      @return double The maximum value recorded.
+      @return The maximum value recorded.
      */
     double Max();
   private:

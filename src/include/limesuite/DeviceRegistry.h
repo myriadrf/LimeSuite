@@ -43,7 +43,7 @@ class LIME_API DeviceRegistry
 
     /*!
      * Get a list of available registry entry modules by name.
-     * \return std::vector<std::string> The list of available registry modules.
+     * \return The list of available registry modules.
      */
     static std::vector<std::string> moduleNames(void);
 };

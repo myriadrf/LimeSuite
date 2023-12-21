@@ -43,13 +43,13 @@ template<class T> class DeltaVariable
 
     /**
       @brief Gets the difference between the value at last reset and current value.
-      @return T The delta between the last time the delta variable was reset and the current value.
+      @return The delta between the last time the delta variable was reset and the current value.
      */
     T delta() const { return mValue - mLastValue; }
 
     /**
       @brief Gets the current value of the delta variable.
-      @return T The current stored value of the delta variable.
+      @return The current stored value of the delta variable.
      */
     T value() const { return mValue; }
 

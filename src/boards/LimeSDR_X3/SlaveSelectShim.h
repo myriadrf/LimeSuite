@@ -21,7 +21,7 @@ class SlaveSelectShim : public ISPI
 
     /**
       @brief Send the reset device command to the device under this shim.
-      @return int The success status of the operation (0 on success),
+      @return The success status of the operation (0 on success),
      */
     virtual int ResetDevice();
 

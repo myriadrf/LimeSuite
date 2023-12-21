@@ -16,7 +16,7 @@ class ISerialPort
     @param data The data to write to the device.
     @param length The length of the data.
     @param timeout_ms The timeout (in ms) to wait until the transfer times out.
-    @return int The amount of bytes written.
+    @return The amount of bytes written.
    */
     virtual int Write(const uint8_t* data, std::size_t length, int timeout_ms) = 0;
 
@@ -26,7 +26,7 @@ class ISerialPort
       @param data The buffer in which to store the read data.
       @param length The length of the data to store.
       @param timeout_ms The timeout (in ms) to wait until the transfer times out.
-      @return int The amount of bytes read.
+      @return The amount of bytes read.
      */
     virtual int Read(uint8_t* data, std::size_t length, int timeout_ms) = 0;
 };

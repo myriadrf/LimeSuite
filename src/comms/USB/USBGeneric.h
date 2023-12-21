@@ -40,13 +40,13 @@ class USBGeneric
       @param vid The vendor ID of the device.
       @param pid The prduct ID of the device.
       @param serial The serial number of the device.
-      @return bool The status of the operation (true on success).
+      @return The status of the operation (true on success).
      */
     virtual bool Connect(uint16_t vid, uint16_t pid, const std::string& serial = "");
 
     /**
       @brief Returns whether this instance is connected to a device.
-      @return bool The state of the connection (true = connected).
+      @return The state of the connection (true = connected).
      */
     virtual bool IsConnected();
 
@@ -59,7 +59,7 @@ class USBGeneric
       @param data The pointer to the data buffer.
       @param length The length of data being transferred.
       @param timeout_ms The amount of time to wait (in ms) until the transfer is considered failed.
-      @return int32_t Actual number of bytes transferred.
+      @return Actual number of bytes transferred.
      */
     virtual int32_t BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t timeout_ms = defaultTimeout);
 
@@ -72,7 +72,7 @@ class USBGeneric
       @param data The pointer to the data buffer.
       @param length The length of data being transferred.
       @param timeout_ms The amount of time to wait (in ms) until the transfer is considered failed.
-      @return int32_t Actual number of bytes transferred.
+      @return Actual number of bytes transferred.
      */
     virtual int32_t ControlTransfer(
         int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms = defaultTimeout);
@@ -82,7 +82,7 @@ class USBGeneric
       @param buffer The pointer to the data buffer. 
       @param length The length of the data being transferred.
       @param endPointAddr The endpoint address to use for the transfer.
-      @return int The handle of the transfer context to pass to WaitForXfer and FinishDataXfer functions.
+      @return The handle of the transfer context to pass to WaitForXfer and FinishDataXfer functions.
      */
     virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr);
 
@@ -90,7 +90,7 @@ class USBGeneric
       @brief Waits until an asynchronous data transfer finishes.
       @param contextHandle The context handle to wait for (received from BeginDataXfer).
       @param timeout_ms The timeout (in ms) to wait for the transfer.
-      @return bool Indication whether the transfer is finished or not (true = finished).
+      @return Indication whether the transfer is finished or not (true = finished).
      */
     virtual bool WaitForXfer(int contextHandle, int32_t timeout_ms = defaultTimeout);
 
@@ -99,7 +99,7 @@ class USBGeneric
       @param buffer The pointer to the data buffer. 
       @param length The length of the data being transferred.
       @param contextHandle The handle of the transfer (received from BeginDataXfer).
-      @return int The amount of bytes transferred in the transfer.
+      @return The amount of bytes transferred in the transfer.
      */
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle);
 
