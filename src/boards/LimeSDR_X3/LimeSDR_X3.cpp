@@ -1230,25 +1230,23 @@ bool LimeSDR_X3::UploadMemory(
     return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, eMemoryRegion memoryRegion, const void* data)
+int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
 
-    const auto& region = storage->regions.at(memoryRegion);
     return mfpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, eMemoryRegion memoryRegion, void* data)
+int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
         return -1;
     }
 
-    const auto& region = storage->regions.at(memoryRegion);
     return mfpgaPort->MemoryRead(region.address, data, region.size);
 }
 
