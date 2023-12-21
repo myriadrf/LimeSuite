@@ -22,9 +22,14 @@ USBTransferContext_FX3::~USBTransferContext_FX3()
 }
 #endif
 
+/**
+  On Windows systems, resets the FX3 USB controller device.
+  
+  @return Opposite of `isTransferUsed`.
+ */
 bool USBTransferContext_FX3::Reset()
 {
-    if (used)
+    if (isTransferUsed)
     {
         return false;
     }
