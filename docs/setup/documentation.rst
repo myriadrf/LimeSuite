@@ -23,17 +23,17 @@ To set up the environment, run these commands:
 
 .. code-block:: bash
 
-    python3.8 -m venv venv # Create the virtual environment folder
+    python3.8 -m venv venv # Create the virtual environment directory
     source venv/bin/activate # Activate the virtual environment
     pip install -r requirements.txt # Install all the required dependencies for the generation
 
 .. note::
-    One should run these commands in the `docs` folder.
+    One should run these commands in the `docs` directory.
 
 Generation
 ----------
 
-In the `docs` folder, located in the root folder of the repository, while in the venv, run these commands:
+In the `docs` directory, located in the root directory of the repository, while in the venv, run these commands:
 
 .. code-block:: bash
 
@@ -45,10 +45,10 @@ In the `docs` folder, located in the root folder of the repository, while in the
 .. important:: 
     These commands or the script must be run in the venv, otherwise it will fail.
 
-For ease of convenience, there is also a `generate_docs.sh` script located in the `docs` folder.
+For ease of convenience, there is also a `generate_docs.sh` script located in the `docs` directory.
 
 After a successful generation the resulting documentation pages will be located in 
-`docs/_build/html` folder.
+`docs/_build/html` directory.
 
 Docker
 ------
@@ -63,13 +63,13 @@ In order to use the Docker documentation generation file, you will need to have 
 Running the Docker documentation generation file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To generate this documentation using Docker, in the root folder of the repository run:
+To generate this documentation using Docker, in the root directory of the repository run:
 
 .. code-block:: bash
 
     docker build -o <output_location> -f GenerateDocumentation.Dockerfile .
 
-This will run the whole documentation generation script and place the generated HTML in the specified folder.
+This will run the whole documentation generation script and place the generated HTML in the specified directory.
 
 More information
 ----------------

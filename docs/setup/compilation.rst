@@ -19,15 +19,16 @@ Components needed to compile LimeSuiteGUI2:
 Compilation
 -----------
 
-In the root folder of the repository run these commands:
+In the root directory of the repository run these commands:
 
 .. code-block:: bash
 
-    cd build # Change working directory to the build folder
+    mkdir build # Create the build directory
+    cd build # Change working directory to the build directory
     cmake .. # Generate make file
     make # Compile the program
 
-After a successful compilation the resulting binaries are placed in the `build/bin/` folder
+After a successful compilation the resulting binaries are placed in the `build/bin/` directory
 located in the root directory of the repository.
 
 Testing
@@ -38,11 +39,11 @@ This project contains unit tests to test functionality of some parts of the syst
 Running the tests
 ^^^^^^^^^^^^^^^^^
 
-To run these tests, in the root folder of the repository run these commands:
+To run these tests, in the root directory of the repository run these commands:
 
 .. code-block:: bash
 
-    cd build # Change working directory to the build folder
+    cd build # Change working directory to the build directory
     cmake .. -DBUILD_SHARED_LIBS=OFF # Generate make file with static libraries
     make LimeSuite2Test # Build the tests binary
     bin/LimeSuite2Test # Run the tests binary
@@ -53,11 +54,11 @@ and whether they were successful or not.
 Code coverage
 ^^^^^^^^^^^^^
 
-To generate a web-based testing code coverage report, in the root folder of the repository run these commands:
+To generate a web-based testing code coverage report, in the root directory of the repository run these commands:
 
 .. code-block:: bash
 
-    cd build # Change working directory to the build folder
+    cd build # Change working directory to the build directory
     cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF # Generate make file with static libraries and without optimizations
     make LimeSuite2Test_coverage # Generate the coverage report with lcov
 
