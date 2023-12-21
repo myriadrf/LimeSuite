@@ -126,11 +126,11 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     tab = new lms7002_pnlCalibrations_view(tabsNotebook, ID_TAB_CALIBRATIONS);
     tabsNotebook->AddPage(tab, _("Calibration"), false);
     mTabs[ID_TAB_CALIBRATIONS] = tab;
-#define CreatePage(deviceNodeClass, title) \
+#define CreatePage(tabClass, title) \
     { \
-        tab = new lms7002_pnl##deviceNodeClass##_view(tabsNotebook, ID_TAB_##deviceNodeClass); \
+        tab = new lms7002_pnl##tabClass##_view(tabsNotebook, ID_TAB_##tabClass); \
         tabsNotebook->AddPage(tab, wxT(title), false); \
-        mTabs[ID_TAB_##deviceNodeClass] = tab; \
+        mTabs[ID_TAB_##tabClass] = tab; \
     }
     CreatePage(RFE, "RFE");
     CreatePage(RBB, "RBB");

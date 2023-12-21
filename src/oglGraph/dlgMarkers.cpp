@@ -110,7 +110,7 @@ void dlgMarkers::AddDeltas()
     wxArrayString selections;
     for (unsigned i = 0; i < parent_graph->markers.size(); ++i)
     {
-        selections.push_back("M" + i);
+        selections.push_back("M" + std::to_string(i));
     }
     for (int i = 0; i < 5; ++i)
     {
