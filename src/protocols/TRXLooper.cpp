@@ -6,7 +6,6 @@
 #include <complex>
 #include "LMSBoards.h"
 #include "threadHelper.h"
-#include "Profiler.h"
 
 #include "TRXLooper.h"
 
@@ -575,6 +574,11 @@ void TRXLooper::Start()
 
 void TRXLooper::Stop()
 {
+    if (!mStreamEnabled)
+    {
+        return;
+    }
+
     mTx.terminate.store(true, std::memory_order_relaxed);
     mRx.terminate.store(true, std::memory_order_relaxed);
     try
@@ -601,6 +605,11 @@ void TRXLooper::Stop()
     delete mTx.memPool;
     mTx.memPool = nullptr;
     mStreamEnabled = false;
+}
+
+bool TRXLooper::IsStreamRunning()
+{
+    return mStreamEnabled;
 }
 
 int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)

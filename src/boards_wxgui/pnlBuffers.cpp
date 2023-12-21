@@ -127,7 +127,7 @@ void pnlBuffers::UpdatePanel()
         chkG_PWR_DWN->SetValue(getbit(value, 5));
     }
     else
-        wxMessageBox(wxString::Format(_("GPIO Read: Failed")));
+        wxMessageBox(_("GPIO Read: Failed"));
 }
 
 void pnlBuffers::OnReadAll(wxCommandEvent& event)

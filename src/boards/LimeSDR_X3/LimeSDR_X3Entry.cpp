@@ -94,8 +94,7 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
         std::string streamFile("");
         for (int i = 0; i < 3; ++i)
         {
-            char portName[128];
-            sprintf(portName, "%s_trx%i", handle.addr.c_str(), i);
+            const std::string portName = handle.addr + "_trx" + std::to_string(i);
             trxStreams[i] = std::make_shared<LitePCIe>();
             trxStreams[i]->SetPathName(portName);
         }
@@ -104,8 +103,7 @@ SDRDevice* LimeSDR_X3Entry::make(const DeviceHandle& handle)
         return new LimeSDR_X3(route_lms7002m, route_fpga, std::move(trxStreams), controlPipe);
     } catch (std::runtime_error& e)
     {
-        char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s): %s", handle.Serialize().c_str(), e.what());
+        const std::string reason = "Unable to connect to device using handle (" + handle.Serialize() + ")";
         throw std::runtime_error(reason);
     }
 }

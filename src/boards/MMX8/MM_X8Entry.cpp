@@ -95,21 +95,19 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
     try
     {
         std::string controlFile(handle.addr + "_control");
-        control->Open(controlFile.c_str(), O_RDWR);
+        control->Open(controlFile, O_RDWR);
 
         std::string streamFile("");
         for (size_t i = 0; i < trxStreams.size(); ++i)
         {
-            char portName[128];
-            sprintf(portName, "%s_trx%li", handle.addr.c_str(), i);
+            const std::string portName = handle.addr + "_trx" + std::to_string(i);
             trxStreams[i] = std::make_shared<LitePCIe>();
             trxStreams[i]->SetPathName(portName);
         }
         return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams), adfComms);
     } catch (std::runtime_error& e)
     {
-        char reason[256];
-        sprintf(reason, "Unable to connect to device using handle(%s): %s", handle.Serialize().c_str(), e.what());
+        const std::string reason = "Unable to connect to device using handle (" + handle.Serialize() + "): " + e.what();
         throw std::runtime_error(reason);
     }
 }

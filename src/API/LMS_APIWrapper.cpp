@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -173,6 +174,40 @@ inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
     return config.channel[chan].rx.gain;
 }
 
+inline lime::SDRDevice::SDRConfig GetCurrentConfiguration(LMS_APIDevice* apiDevice)
+{
+    lime::SDRDevice::SDRConfig configuration;
+
+    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
+    if (lms == nullptr)
+    {
+        lime::error("Device is not an LMS device.");
+        throw std::logic_error("Device is not an LMS device.");
+    }
+
+    configuration.referenceClockFreq = lms->GetReferenceClk_SX(lime::TRXDir::Rx);
+
+    auto rxFrequency = lms->GetFrequencySX(lime::TRXDir::Rx);
+    auto txFrequency = lms->GetFrequencySX(lime::TRXDir::Tx);
+
+    auto channelCount = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).channelCount;
+
+    for (int i = 0; i < channelCount; ++i)
+    {
+        configuration.channel[i].rx.centerFrequency = rxFrequency;
+        configuration.channel[i].tx.centerFrequency = txFrequency;
+
+        configuration.channel[i].rx.sampleRate =
+            lms->GetSampleRate(lime::TRXDir::Rx, i == 0 ? lime::LMS7002M::Channel::ChA : lime::LMS7002M::Channel::ChB);
+        configuration.channel[i].tx.sampleRate =
+            lms->GetSampleRate(lime::TRXDir::Tx, i == 0 ? lime::LMS7002M::Channel::ChA : lime::LMS7002M::Channel::ChB);
+
+        // TODO: find ways to get current values for all other fields.
+    }
+
+    return configuration;
+}
+
 static LMS_LogHandler api_msg_handler;
 static void APIMsgHandler(const lime::LogLevel level, const char* message)
 {
@@ -257,7 +292,11 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 
     try
     {
-        return apiDevice->device->Init();
+        int returnCode = apiDevice->device->Init();
+
+        apiDevice->lastSavedSDRConfig = GetCurrentConfiguration(apiDevice);
+
+        return returnCode;
     } catch (...)
     {
         return -1;

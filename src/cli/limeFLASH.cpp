@@ -16,27 +16,6 @@ void inthandler(int sig)
     terminateProgress = true;
 }
 
-struct MemoryDeviceSelect {
-    lime::eMemoryDevice memoryDevice;
-    uint32_t subdevice;
-};
-
-inline MemoryDeviceSelect InputToMemoryDevice(std::string input)
-{
-    auto device = MemoryDeviceSelect();
-    auto at = input.find_last_of('@');
-
-    if (at == std::string::npos)
-    {
-        return { lime::STRING_TO_MEMORY_DEVICES.at(input), 0 };
-    }
-
-    device.memoryDevice = lime::STRING_TO_MEMORY_DEVICES.at(input.substr(0, at));
-    device.subdevice = std::stoi(input.substr(at + 1));
-
-    return device;
-}
-
 static void PrintMemoryDevices(SDRDevice::Descriptor descriptor)
 {
     for (const auto& memoryDevice : descriptor.memoryDevices)
@@ -45,7 +24,7 @@ static void PrintMemoryDevices(SDRDevice::Descriptor descriptor)
     }
 }
 
-static const std::shared_ptr<SDRDevice::DataStorage> FindMemoryDeviceByName(SDRDevice* device, const char* targetName)
+static const std::shared_ptr<SDRDevice::DataStorage> FindMemoryDeviceByName(SDRDevice* device, const std::string& targetName)
 {
     if (!device)
     {
@@ -54,9 +33,9 @@ static const std::shared_ptr<SDRDevice::DataStorage> FindMemoryDeviceByName(SDRD
 
     const auto descriptor = device->GetDescriptor();
     const auto memoryDevices = descriptor.memoryDevices;
-    if (!targetName)
+    if (targetName.size() == 0)
     {
-        // if name is not specified, but only single choice is available, use that.
+        // If name is not specified, but only single choice is available, use that.
         if (memoryDevices.size() == 1)
         {
             return memoryDevices.begin()->second;

@@ -12,7 +12,6 @@
 #include <memory>
 
 #include "PacketsFIFO.h"
-#include "dataTypes.h"
 
 namespace lime {
 

@@ -1,8 +1,6 @@
 #ifndef LIME_LMS7002M_SDRDevice_H
 #define LIME_LMS7002M_SDRDevice_H
 
-#include "dataTypes.h"
-
 #include <vector>
 #include <unordered_map>
 #include <functional>

@@ -24,7 +24,7 @@ class LMS_Programing_wxgui : public IModuleFrame
   public:
     LMS_Programing_wxgui(wxWindow* parent,
         wxWindowID id = wxID_ANY,
-        const wxString& title = _(""),
+        const wxString& title = _("Programming"),
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         int style = wxDEFAULT_DIALOG_STYLE,

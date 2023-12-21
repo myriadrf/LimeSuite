@@ -96,7 +96,7 @@ class pnlBoardControls : public IModuleFrame
 
     pnlBoardControls(wxWindow* parent,
         wxWindowID id = wxID_ANY,
-        const wxString& title = _(""),
+        const wxString& title = _("Board controls"),
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         long style = wxDEFAULT_DIALOG_STYLE);

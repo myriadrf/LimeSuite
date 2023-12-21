@@ -1,7 +1,6 @@
 #ifndef TRXLooper_PCIE_H
 #define TRXLooper_PCIE_H
 
-#include "dataTypes.h"
 #include <vector>
 
 #include "TRXLooper.h"

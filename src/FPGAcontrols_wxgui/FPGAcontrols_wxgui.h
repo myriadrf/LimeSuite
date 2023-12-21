@@ -16,7 +16,6 @@ class wxToggleButton;
 class wxCheckBox;
 
 #include "lime/LimeSuite.h"
-#include "dataTypes.h"
 #include <vector>
 #include <atomic>
 #include <thread>

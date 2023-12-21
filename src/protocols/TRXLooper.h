@@ -4,7 +4,6 @@
 #include <vector>
 #include <atomic>
 #include <thread>
-#include "dataTypes.h"
 #include "limesuite/SDRDevice.h"
 #include "limesuite/complex.h"
 #include "PacketsFIFO.h"
@@ -27,6 +26,8 @@ class TRXLooper
     virtual void Setup(const lime::SDRDevice::StreamConfig& config);
     virtual void Start();
     virtual void Stop();
+
+    virtual bool IsStreamRunning();
 
     inline const lime::SDRDevice::StreamConfig& GetConfig() const { return mConfig; }
 

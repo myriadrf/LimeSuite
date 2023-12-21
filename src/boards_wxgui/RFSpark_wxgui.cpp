@@ -80,7 +80,7 @@ RFSpark_wxgui::RFSpark_wxgui(
         "VDIO_FMC" };
     for (int i = 0; i < mADCcount; ++i)
     {
-        adcElement.title = new wxStaticText(this, wxNewId(), wxString::Format("%s", adcNames[i]));
+        adcElement.title = new wxStaticText(this, wxNewId(), adcNames[i]);
         adcList.push_back(adcElement.title->GetLabel());
         adcElement.value = new wxStaticText(this, wxNewId(), _("????"));
         adcElement.units = new wxStaticText(this, wxNewId(), _("????"));
@@ -107,7 +107,7 @@ RFSpark_wxgui::RFSpark_wxgui(
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
-        wxCheckBox* chkgpio = new wxCheckBox(this, id, wxString::Format("%s", gpios7_0[j]));
+        wxCheckBox* chkgpio = new wxCheckBox(this, id, gpios7_0[j]);
         this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnWriteGPIO);
         sizerGPIOs->Add(chkgpio, wxALIGN_LEFT | wxALIGN_TOP, 0);
         mGPIOboxes.push_back(chkgpio);
@@ -119,7 +119,7 @@ RFSpark_wxgui::RFSpark_wxgui(
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
-        wxCheckBox* chkgpio = new wxCheckBox(this, id, wxString::Format("%s", gpios15_8[j]));
+        wxCheckBox* chkgpio = new wxCheckBox(this, id, gpios15_8[j]);
         this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnWriteGPIO);
         sizerGPIOs->Add(chkgpio, wxALIGN_LEFT | wxALIGN_TOP, 0);
         mGPIOboxes.push_back(chkgpio);
@@ -128,7 +128,7 @@ RFSpark_wxgui::RFSpark_wxgui(
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
-        wxCheckBox* chkgpio = new wxCheckBox(this, id, wxString::Format("%s", gpios23_16[j]));
+        wxCheckBox* chkgpio = new wxCheckBox(this, id, gpios23_16[j]);
         this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnWriteGPIO);
         sizerGPIOs->Add(chkgpio, wxALIGN_LEFT | wxALIGN_TOP, 0);
         mGPIOboxes.push_back(chkgpio);
@@ -168,7 +168,7 @@ void RFSpark_wxgui::UpdateADClabels()
     for (unsigned i = 0; i < mADCdata.size(); ++i)
     {
         mADCgui[i].value->SetLabelText(wxString::Format("%1.3f", mADCdata[i].value));
-        mADCgui[i].units->SetLabelText(wxString::Format("%s", mADCdata[i].units));
+        mADCgui[i].units->SetLabelText(mADCdata[i].units);
     }
 }
 

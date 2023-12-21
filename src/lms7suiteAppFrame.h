@@ -1,7 +1,6 @@
 #ifndef __LMS7SuiteAppFrame__
 #define __LMS7SuiteAppFrame__
 
-#include "lms7suiteApp_gui.h"
 #include "Logger.h"
 
 #include <wx/artprov.h>
@@ -33,8 +32,8 @@
 #include "IModuleFrame.h"
 #include "pnlBoardControls.h"
 #include "GUI/ISOCPanel.h"
-
 #include "GUI/DeviceConnectionPanel.h"
+#include "dlgAbout.h"
 
 class pnlMiniLog;
 class lms7002_mainPanel;
@@ -51,7 +50,6 @@ class LMS7SuiteAppFrame : public wxFrame
     void OnQuit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnDeviceHandleChange(wxCommandEvent& event);
-    void HandleLMSevent(wxCommandEvent& event);
     void OnModuleClose(wxCloseEvent& event);
     void OnShowModule(wxCommandEvent& event);
     void OnDeviceDisconnect();
@@ -68,8 +66,6 @@ class LMS7SuiteAppFrame : public wxFrame
     static void OnGlobalLogEvent(const lime::LogLevel level, const char* message);
     static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
     void OnLogMessage(wxCommandEvent& event);
-    static const int cDeviceInfoCollumn = 1;
-    static const int cDeviceVerRevMaskCollumn = 2;
     void UpdateConnections(lime::SDRDevice* port);
 
     lime::SDRDevice* lmsControl;

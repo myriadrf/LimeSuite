@@ -1986,9 +1986,9 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, 
 */
 float_type LMS7002M::GetFrequencySX(TRXDir dir)
 {
-    Channel ch = this->GetActiveChannel(); //remember previously used channel
+    ChannelScope(this, dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
+
     float_type dMul;
-    this->SetActiveChannel(dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
     uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0); // read whole register to reduce SPI transfers
     uint32_t gFRAC = ((gINT & 0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
 
@@ -1996,7 +1996,6 @@ float_type LMS7002M::GetFrequencySX(TRXDir dir)
     dMul = (float_type)refClk_Hz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
     //Calculate real frequency according to the calculated parameters
     dMul = dMul * ((gINT >> 4) + 4 + (float_type)gFRAC / 1048576.0) * (Get_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG)) + 1);
-    this->SetActiveChannel(ch); //restore used channel
     return dMul;
 }
 

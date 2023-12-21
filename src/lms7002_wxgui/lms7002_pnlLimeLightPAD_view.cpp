@@ -1861,13 +1861,13 @@ void lms7002_pnlLimeLightPAD_view::onbtnReadVerRevMask(wxCommandEvent& event)
     uint16_t value = 0;
 
     value = ReadParam(LMS7param(VER));
-    lblVER->SetLabel(wxString::Format(_("%i"), value));
+    lblVER->SetLabel(std::to_string(value));
 
     value = ReadParam(LMS7param(REV));
-    lblREV->SetLabel(wxString::Format(_("%i"), value));
+    lblREV->SetLabel(std::to_string(value));
 
     value = ReadParam(LMS7param(MASK));
-    lblMASK->SetLabel(wxString::Format(_("%i"), value));
+    lblMASK->SetLabel(std::to_string(value));
 }
 
 void lms7002_pnlLimeLightPAD_view::UpdateGUI()

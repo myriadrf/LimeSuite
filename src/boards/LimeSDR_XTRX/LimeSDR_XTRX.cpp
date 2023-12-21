@@ -164,9 +164,9 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA_XTRX", mFPGA);
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS7002M", "LMS7002M", chip));
-    desc.socTree = std::make_shared<DeviceNode>("XTRX", "SDRDevice", this);
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", eDeviceNodeClass::FPGA_XTRX, mFPGA);
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS7002M", eDeviceNodeClass::LMS7002M, chip));
+    desc.socTree = std::make_shared<DeviceNode>("XTRX", eDeviceNodeClass::SDRDevice, this);
     desc.socTree->children.push_back(fpgaNode);
 }
 
@@ -425,11 +425,10 @@ int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
                 dirFlag = O_RDONLY;
             else if (config.txCount > 0)
                 dirFlag = O_WRONLY;
-            if (trxPort->Open(trxPort->GetPathName().c_str(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
+            if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
             {
-                char ctemp[128];
-                sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
-                throw std::runtime_error(ctemp);
+                const std::string reason = "Failed to open device in stream start: " + trxPort->GetPathName();
+                throw std::runtime_error(reason);
             }
         }
         mStreamers[moduleIndex]->Setup(config);

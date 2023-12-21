@@ -42,7 +42,7 @@
 using namespace std;
 using namespace lime;
 
-static constexpr int controlCollumn = 1;
+static constexpr int controlColumn = 1;
 
 LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr = nullptr;
 
@@ -87,6 +87,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
     wxMenuItem* menuFileQuit = new wxMenuItem(
         fileMenu, idMenuQuit, wxString(wxT("&Quit")) + wxT('\t') + wxT("Alt+F4"), wxT("Quit the application"), wxITEM_NORMAL);
     fileMenu->Append(menuFileQuit);
+    Connect(menuFileQuit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnQuit));
     mbar->Append(fileMenu, wxT("&File"));
 
     mnuModules = new wxMenu();
@@ -99,13 +100,14 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
         wxT("Show info about this application"),
         wxITEM_NORMAL);
     helpMenu->Append(menuHelpAbout);
+    Connect(menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
 
     mbar->Append(helpMenu, wxT("&Help"));
-    this->SetMenuBar(mbar);
+    SetMenuBar(mbar);
 
-    statusBar = this->CreateStatusBar(3, wxSTB_DEFAULT_STYLE, wxNewId());
-    const int mainCollumns = 1;
-    mainSizer = new wxFlexGridSizer(mainCollumns, 0, 0);
+    statusBar = CreateStatusBar(3, wxSTB_DEFAULT_STYLE, wxNewId());
+    const int mainColumns = 1;
+    mainSizer = new wxFlexGridSizer(mainColumns, 0, 0);
     mainSizer->AddGrowableCol(0);
     mainSizer->AddGrowableRow(1);
     mainSizer->SetFlexibleDirection(wxBOTH);
@@ -181,6 +183,10 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
         iter.second->Destroy();
 
     OnDeviceDisconnect();
+
+    Disconnect(idMenuQuit, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnQuit));
+    Disconnect(idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
+    Disconnect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 }
 
 void LMS7SuiteAppFrame::OnClose(wxCloseEvent& event)
@@ -214,11 +220,11 @@ void LMS7SuiteAppFrame::OnDeviceDisconnect()
     if (lmsControl)
     {
         const SDRDevice::Descriptor& info = lmsControl->GetDescriptor();
-        statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
+        statusBar->SetStatusText(_("Control port: Not Connected"), controlColumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(static_cast<int>(lime::LogLevel::INFO));
-        evt.SetString(wxString::Format("Disconnected: %s", info.name.c_str()));
+        evt.SetString("Disconnected: " + info.name);
         wxPostEvent(this, evt);
         UpdateConnections(nullptr);
         lime::DeviceRegistry::freeDevice(lmsControl);
@@ -273,7 +279,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
 
         if (!lmsControl)
         {
-            wxMessageBox(wxString::Format("Failed to connect to: %s", event.GetString()), wxT("Connection error"), wxICON_ERROR);
+            wxMessageBox("Failed to connect to: " + event.GetString(), wxT("Connection error"), wxICON_ERROR);
             return;
         }
 
@@ -291,7 +297,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
             info.gatewareVersion,
             info.gatewareRevision,
             refClk / 1e6));
-        statusBar->SetStatusText(controlDev, controlCollumn);
+        statusBar->SetStatusText(controlDev, controlColumn);
 
         FillDeviceTree(deviceTree, lmsControl, m_scrolledWindow1);
         wxTreeEvent eee(wxEVT_TREE_SEL_CHANGED, deviceTree, deviceTree->GetFocusedItem());
@@ -359,7 +365,7 @@ void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const std::string& title
 
     mModules[moduleId] = module;
     module->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnModuleClose), NULL, this);
-    this->Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
+    Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnShowModule));
 }
 
 void LMS7SuiteAppFrame::RemoveModule(IModuleFrame* module)
@@ -390,46 +396,42 @@ void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent& event)
     }
 }
 
-ISOCPanel* CreateGUI(wxWindow* parent, const std::string& klass, void* socPtr)
+ISOCPanel* CreateGUI(wxWindow* parent, eDeviceNodeClass deviceNodeClass, void* socPtr)
 {
-    if (klass == "SDRDevice")
+    switch (deviceNodeClass)
     {
-        SDRConfiguration_view* pnl = new SDRConfiguration_view(parent, wxNewId());
-        pnl->Setup(reinterpret_cast<SDRDevice*>(socPtr));
-        pnl->Hide();
-        return pnl;
+    case eDeviceNodeClass::ADF4002: {
+        ADF4002_wxgui* adfPanel = new ADF4002_wxgui(parent, wxNewId());
+        adfPanel->Initialize(reinterpret_cast<lime::ADF4002*>(socPtr));
+        return adfPanel;
     }
-    else if (klass == "LMS7002M")
-    {
-        lms7002_mainPanel* pnl = new lms7002_mainPanel(parent, wxNewId());
-        pnl->Initialize(reinterpret_cast<LMS7002M*>(socPtr));
-        return pnl;
+    case eDeviceNodeClass::CDCM6208: {
+        CDCM6208_panelgui* cdcmPanel = new CDCM6208_panelgui(parent, wxNewId());
+        cdcmPanel->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
+        return cdcmPanel;
     }
-    else if (klass == "CDCM6208")
-    {
-        CDCM6208_panelgui* pnl = new CDCM6208_panelgui(parent, wxNewId());
-        pnl->Initialize(reinterpret_cast<CDCM_Dev*>(socPtr));
-        return pnl;
+    case eDeviceNodeClass::LMS7002M: {
+        lms7002_mainPanel* lmsPanel = new lms7002_mainPanel(parent, wxNewId());
+        lmsPanel->Initialize(reinterpret_cast<LMS7002M*>(socPtr));
+        return lmsPanel;
     }
-    else if (klass == "ADF4002")
-    {
-        ADF4002_wxgui* pnl = new ADF4002_wxgui(parent, wxNewId());
-        pnl->Initialize(reinterpret_cast<lime::ADF4002*>(socPtr));
-        return pnl;
+    case eDeviceNodeClass::SDRDevice: {
+        SDRConfiguration_view* sdrPanel = new SDRConfiguration_view(parent, wxNewId());
+        sdrPanel->Setup(reinterpret_cast<SDRDevice*>(socPtr));
+        sdrPanel->Hide();
+        return sdrPanel;
     }
-    else
-    {
-        printf("Unrecognized device class(%s)\n", klass.c_str());
+    default:
+        printf("Unrecognized device class(%u)\n", static_cast<uint8_t>(deviceNodeClass));
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 void LMS7SuiteAppFrame::DeviceTreeSelectionChanged(wxTreeEvent& event)
 {
     DeviceTreeItemData* item = reinterpret_cast<DeviceTreeItemData*>(deviceTree->GetItemData(event.GetItem()));
     if (item->gui == nullptr)
-        item->gui = CreateGUI(m_scrolledWindow1, item->soc->klass, item->soc->ptr);
+        item->gui = CreateGUI(m_scrolledWindow1, item->soc->deviceNodeClass, item->soc->ptr);
 
     if (mContent && mContent != item->gui)
     {

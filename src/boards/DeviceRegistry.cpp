@@ -55,9 +55,10 @@ SDRDevice* DeviceRegistry::makeDevice(const DeviceHandle& handle)
         auto realHandle = r.front(); //just pick the first
         return entry.second->make(realHandle);
     }
-    char reason[128];
-    std::sprintf(reason, "No devices found with given handle(%s)", handle.Serialize().c_str());
+
+    const std::string reason = "No devices found with given handle (" + handle.Serialize() + ")";
     throw(std::runtime_error(reason));
+
     return nullptr;
 }
 

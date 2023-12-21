@@ -1567,19 +1567,19 @@ lms7002_pnlRXTSP_view::lms7002_pnlRXTSP_view(wxWindow* parent, wxWindowID id, co
 
     temp.clear();
     for (int i = 0; i < 8; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbGFIR1_L_RXTSP->Set(temp);
     cmbGFIR2_L_RXTSP->Set(temp);
     cmbGFIR3_L_RXTSP->Set(temp);
 
     temp.clear();
     for (int i = 0; i < 16; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbDTHBIT_RX->Set(temp);
 
     temp.clear();
     for (int i = 0; i < 7; ++i)
-        temp.push_back(wxString::Format(_("2^%i"), i + 12));
+        temp.push_back("2^" + std::to_string(i + 12));
     cmbDCCORR_AVG->Set(temp);
 
     temp.clear();
@@ -1811,7 +1811,7 @@ void lms7002_pnlRXTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
     {
         lblADCI->SetLabel(wxString::Format("0x%0.4X", value));
         lblADCQ->SetLabel(wxString::Format("0x%0.4X", value2));
-        lblRSSI->SetLabel(wxString::Format(" ----- "));
+        lblRSSI->SetLabel(" ----- ");
     }
     else
     {

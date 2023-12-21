@@ -1421,14 +1421,14 @@ lms7002_pnlTXTSP_view::lms7002_pnlTXTSP_view(wxWindow* parent, wxWindowID id, co
 
     temp.clear();
     for (int i = 0; i < 8; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbGFIR1_L_TXTSP->Set(temp);
     cmbGFIR2_L_TXTSP->Set(temp);
     cmbGFIR3_L_TXTSP->Set(temp);
 
     temp.clear();
     for (int i = 0; i < 16; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbDTHBIT_TX->Set(temp);
 
     temp.clear();
@@ -1541,7 +1541,7 @@ void lms7002_pnlTXTSP_view::onbtnReadBISTSignature(wxCommandEvent& event)
 {
     uint16_t value;
     LMS_ReadParam(lmsControl, LMS7param(BSTATE_TXTSP), &value);
-    lblBSTATE_TXTSP->SetLabel(wxString::Format("%i", value));
+    lblBSTATE_TXTSP->SetLabel(std::to_string(value));
     LMS_ReadParam(lmsControl, LMS7param(BSIGI_TXTSP), &value);
     lblBSIGI_TXTSP->SetLabel(wxString::Format("0x%0.6X", value));
     LMS_ReadParam(lmsControl, LMS7param(BSIGQ_TXTSP), &value);

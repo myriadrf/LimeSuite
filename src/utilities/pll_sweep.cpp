@@ -148,7 +148,7 @@ int main(int argc, char** argv)
 
     if (configFilename.length() > 0)
     {
-        if (device->LoadConfig(configFilename.c_str()) != 0)
+        if (device->LoadConfig(configFilename) != 0)
         {
             return -1;
         }

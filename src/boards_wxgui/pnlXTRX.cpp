@@ -52,7 +52,7 @@ pnlXTRX::pnlXTRX(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSi
     Connect(TDDCntrl->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlXTRX::OnInputChange), NULL, this);
 
     wxStaticBoxSizer* mainBoxSizer;
-    mainBoxSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxString::Format("RF controls %s", name)), wxHORIZONTAL);
+    mainBoxSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, "RF controls " + name), wxHORIZONTAL);
     mainBoxSizer->Add(mainSizer, 0, 0, 5);
 
     mainBoxSizer->Fit(this);
