@@ -14,6 +14,10 @@ namespace lime {
 class LMS64C_FPGA_Over_PCIe : public IComms
 {
   public:
+    /**
+      @brief Constructs a new LMS64C_FPGA_Over_PCIe object.
+      @param dataPort The PCIe data bus to use.
+     */
     LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort);
 
     virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;

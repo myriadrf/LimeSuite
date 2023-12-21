@@ -37,6 +37,11 @@ struct VidPid {
 class USBEntry : public DeviceRegistryEntry
 {
   public:
+    /**
+      @brief Constructs a new USBEntry object.
+      @param name The name of the device.
+      @param deviceIds The device Vendor and Product ID pairs to match to.
+     */
     USBEntry(const std::string& name, const std::set<VidPid>& deviceIds);
     virtual ~USBEntry();
 

@@ -17,8 +17,8 @@ class PCIE_CSR_Pipe : public ISerialPort
     @param port The LitePCIe port to use with this pipe.
    */
     explicit PCIE_CSR_Pipe(std::shared_ptr<LitePCIe> port);
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
+    virtual int Write(const uint8_t* data, std::size_t length, int timeout_ms) override;
+    virtual int Read(uint8_t* data, std::size_t length, int timeout_ms) override;
 
   protected:
     std::shared_ptr<LitePCIe> port;
