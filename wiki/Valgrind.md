@@ -17,7 +17,7 @@ looking for the package named `valgrind`.
 
 To use a specific version of Valgrind that is not provided by the maintainers of the distribution being used,
 the recommended way would be to download [the source code](https://sourceware.org/pub/valgrind/)
-of that specific version and compiling it by using the instructions provided with the source code.
+of that specific version and compile it by using the instructions provided with the source code.
 
 ## Usage
 
@@ -33,7 +33,7 @@ Using Valgrind without any tool specified via the `--tool` option defaults to us
 
 Using Valgrind on bigger projects, like this one, and running GUI applications
 can produce quite a lot of noise from the libraries not being clean of issues of their own.
-To help manage this issue, Valgrind has a feature called suppresions
+To help manage this issue, Valgrind has a feature called suppressions
 that helps by suppressing errors that are not interesting to us.
 
 To generate the suppressions for all the errors that Valgrind's tools find
@@ -60,9 +60,9 @@ one can never be certain from running these tools that all the issues in the cod
 
 ### Unknown instructions
 
-Since Valgrind analyses what instructions are being ran on the CPU,
+Since Valgrind analyses what instructions are being run on the CPU,
 it might sometimes come across x86 instructions that it does not know of yet.
-In that case the execution of the program is immediately halted,
+In that case, the execution of the program is immediately halted,
 with the hex dump of the instruction that caused the program to halt printed in the console.
 Using a disassembler [(online version)](https://defuse.ca/online-x86-assembler.htm) can help figure out
 if it is a legitimate instruction or if the memory has been corrupted in such a way
@@ -73,7 +73,8 @@ In the case of LimeSuite2, there are cases where Valgrind runs into unknown inst
 The unknown instructions, at the point of this being written
 (using Valgrind 3.22.0 and GCC 12.3.0),
 seem to be coming from the AVX-512 instruction sets.
-Disabling the compilation of that instruction set (can be done in GCC via `-mno-avx512f`)
+Disabling the compilation of that instruction set
+(which can be done in GCC via the `-mno-avx512f` compiler flag)
 forces the compiler to output potentially slower, but still valid code for the program
 without containing the instructions that Valgrind does not recognise,
 thus still allowing for analysis to be done.
