@@ -501,9 +501,9 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 {
     LimeState* lime = (LimeState*)s1->opaque;
     int txExpectedSamples = lime->samplesInPacket[0];
-    if (lime->streamExtras[0] && lime->streamExtras[0]->txSamplesInPacket > 0)
+    if (lime->streamExtras[0] && lime->streamExtras[0]->tx.samplesInPacket > 0)
     {
-        txExpectedSamples = lime->streamExtras[0]->txSamplesInPacket;
+        txExpectedSamples = lime->streamExtras[0]->tx.samplesInPacket;
     }
     Log(LogLevel::DEBUG, "Hardware expected samples count in Tx packet : %i\n", txExpectedSamples);
     return txExpectedSamples;
@@ -1197,25 +1197,25 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             sprintf(varname, "port%i_rxSamplesInPacket", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->rxSamplesInPacket = val;
+                extra->rx.samplesInPacket = val;
                 s->streamExtras[p] = extra;
             }
             sprintf(varname, "port%i_rxPacketsInBatch", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->rxPacketsInBatch = val;
+                extra->rx.packetsInBatch = val;
                 s->streamExtras[p] = extra;
             }
             sprintf(varname, "port%i_txMaxPacketsInBatch", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->txMaxPacketsInBatch = val;
+                extra->tx.packetsInBatch = val;
                 s->streamExtras[p] = extra;
             }
             sprintf(varname, "port%i_txSamplesInPacket", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->txSamplesInPacket = val;
+                extra->tx.samplesInPacket = val;
                 s->streamExtras[p] = extra;
             }
             sprintf(varname, "port%i_double_freq_conversion_to_lower_side", p);

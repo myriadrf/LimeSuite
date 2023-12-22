@@ -95,6 +95,10 @@ class TRXLooper
 
     Stream mRx;
     Stream mTx;
+
+  private:
+    template<class T> int StreamRxTemplate(T** dest, uint32_t count, SDRDevice::StreamMeta* meta);
+    template<class T> int StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 };
 
 } // namespace lime

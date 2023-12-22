@@ -19,52 +19,54 @@ namespace lime {
 
 struct DeviceNode;
 
-/** @brief SDRDevice can have multiple modules (RF chips), that can operate independently. */
+/// @brief Class for holding information about an SDR (Software Defined Radio) device.
+/// SDRDevice can have multiple modules (RF chips), that can operate independently. 
 class LIME_API SDRDevice
 {
   public:
-    static constexpr uint8_t MAX_CHANNEL_COUNT = 16;
-    static constexpr uint8_t MAX_RFSOC_COUNT = 16;
+    static constexpr uint8_t MAX_CHANNEL_COUNT = 16; ///< Maximum amount of channels an SDR Device can hold
+    static constexpr uint8_t MAX_RFSOC_COUNT = 16; ///< Maximum amount of Radio-Frequency System-on-Chips
 
+    /// @brief Enumerator to define the log level of a log message.
     enum class LogLevel : uint8_t { CRITICAL, ERROR, WARNING, INFO, VERBOSE, DEBUG };
-    typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
-    typedef void (*LogCallbackType)(LogLevel, const char*);
 
-    typedef std::map<std::string, uint32_t> SlaveNameIds_t;
-
-    /** @brief General information about the Radio-Frequency System-on-Chip (RFSoC). */
+    /// @brief General information about the Radio-Frequency System-on-Chip (RFSoC).
     struct RFSOCDescriptor {
-        std::string name;
-        uint8_t channelCount;
-        std::vector<std::string> rxPathNames;
-        std::vector<std::string> txPathNames;
+        std::string name; ///< The name of the chip
+        uint8_t channelCount; ///< The channel amount the chip has
+        std::vector<std::string> rxPathNames; ///< The names of receive paths
+        std::vector<std::string> txPathNames; ///< The names of transmit paths
 
-        Range samplingRateRange;
-        Range frequencyRange;
-        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
+        Range samplingRateRange; ///< Sampling rate capabilities of the device
+        Range frequencyRange; ///< Deliverable frequency capabilities of the device
+        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange; ///< Antenna recommended bandwidths
     };
 
-    /** @brief Structure for the information of a custom parameter. */
+    /// @brief Structure for the information of a custom parameter.
     struct CustomParameter {
-        std::string name;
-        int32_t id;
-        int32_t minValue;
-        int32_t maxValue;
-        bool readOnly;
+        std::string name; ///< The name of the custom parameter
+        int32_t id; ///< The identifier of the custom parameter
+        int32_t minValue; ///< The minimum possible value of the custom parameter
+        int32_t maxValue; ///< The maximum possible value of the custom parameter
+        bool readOnly; ///< Denotes whether this value is read only or not
     };
 
-    /** @brief Structure for storing the information of a memory region. */
+    /// @brief Structure for storing the information of a memory region.
     struct Region {
-        int32_t address;
-        int32_t size;
+        int32_t address; ///< Starting address of the memory region
+        int32_t size; ///< The size of the memory region
     };
 
-    /** @brief Describes a data storage of a certain type a device holds. */
+    /// @brief Describes a data storage of a certain type a device holds.
     struct DataStorage {
-        SDRDevice* ownerDevice;
-        eMemoryDevice memoryDeviceType;
-        std::unordered_map<eMemoryRegion, Region> regions;
+        SDRDevice* ownerDevice; ///< Pointer to the device that actually owns the data storage
+        eMemoryDevice memoryDeviceType; ///< The type of memory being described
+        std::unordered_map<eMemoryRegion, Region> regions; ///< The documented memory regions of the data storage
 
+        /// @brief Constructs a new Data Storage object
+        /// @param device The device this storage belongs to.
+        /// @param type The type of memory being described in this object.
+        /// @param regions The memory regions this memory contains.
         DataStorage(SDRDevice* device = nullptr,
             eMemoryDevice type = eMemoryDevice::COUNT,
             std::unordered_map<eMemoryRegion, Region> regions = {})
@@ -75,112 +77,129 @@ class LIME_API SDRDevice
         }
     };
 
-    /** @brief General information about device internals, static capabilities. */
+    /// @brief General information about device internals, static capabilities.
     struct Descriptor {
-        std::string name; /// The displayable name for the device
+        std::string name; ///< The displayable name for the device
         /*! The displayable name for the expansion card
-        * Ex: if the RFIC is on a daughter-card
+        * Ex: if the RFIC is on a daughter-card.
         */
         std::string expansionName;
-        std::string firmwareVersion; /// The firmware version as a string
-        std::string gatewareVersion; /// Gateware version as a string
-        std::string gatewareRevision; /// Gateware revision as a string
-        std::string gatewareTargetBoard; /// Which board should use this gateware
-        std::string hardwareVersion; /// The hardware version as a string
-        std::string protocolVersion; /// The protocol version as a string
-        uint64_t serialNumber{ 0 }; /// A unique board serial number
+        std::string firmwareVersion; ///< The firmware version as a string
+        std::string gatewareVersion; ///< Gateware version as a string
+        std::string gatewareRevision; ///< Gateware revision as a string
+        std::string gatewareTargetBoard; ///< Which board should use this gateware
+        std::string hardwareVersion; ///< The hardware version as a string
+        std::string protocolVersion; ///< The protocol version as a string
+        uint64_t serialNumber{ 0 }; ///< A unique board serial number
 
-        SlaveNameIds_t spiSlaveIds; // names and SPI bus numbers of internal chips
-        std::vector<RFSOCDescriptor> rfSOC;
-        std::vector<CustomParameter> customParameters;
+        std::map<std::string, uint32_t> spiSlaveIds; ///< Names and SPI bus numbers of internal chips
+        std::vector<RFSOCDescriptor> rfSOC; ///< Descriptors of all RFSoC devices within this device
+        std::vector<CustomParameter> customParameters; ///< Descriptions of all custom parameters of this device
+        /** Descriptions of all memory storage devices on this device */
         std::map<std::string, std::shared_ptr<DataStorage>> memoryDevices;
-        std::shared_ptr<DeviceNode> socTree;
+        std::shared_ptr<DeviceNode> socTree; ///< The device's subdevices tree view representation
 
-        static const char DEVICE_NUMBER_SEPARATOR_SYMBOL;
-        static const char PATH_SEPARATOR_SYMBOL;
+        static const char DEVICE_NUMBER_SEPARATOR_SYMBOL; ///< The symbol used to separate the device's name from its number
+        static const char PATH_SEPARATOR_SYMBOL; ///< The symbol that separates the device's name from its parent's name
     };
 
-    /** @brief Structure for holding the statistics of a stream */
+    /// @brief Structure for holding the statistics of a stream
     struct StreamStats {
-        /** @brief Structure for storing the first in first out queue statistics */
+        /// @brief Structure for storing the first in first out queue statistics
         struct FIFOStats {
-            std::size_t totalCount;
-            std::size_t usedCount;
+            std::size_t totalCount; ///< The total amount of samples that can be in the FIFO queue.
+            std::size_t usedCount; ///< The amount of samples that is currently in the FIFO queue.
 
-            float ratio() { return static_cast<float>(usedCount) / totalCount; }
+            /// @brief Gets the ratio of the amount of FIFO filled up.
+            /// @return The amount of FIFO filled up (0 - completely empty, 1 - completely full).
+            constexpr float ratio() const { return static_cast<float>(usedCount) / totalCount; }
         };
 
-        StreamStats() { memset(this, 0, sizeof(StreamStats)); }
-        uint64_t timestamp;
-        int64_t bytesTransferred;
-        int64_t packets;
-        FIFOStats FIFO;
-        float dataRate_Bps;
-        uint32_t overrun;
-        uint32_t underrun;
-        uint32_t loss;
-        uint32_t late;
+        StreamStats() { std::memset(this, 0, sizeof(StreamStats)); }
+        uint64_t timestamp; ///< The current timestamp of the stream.
+        int64_t bytesTransferred; ///< The total amount of bytes transferred.
+        int64_t packets; ///< The total amount of packets transferred.
+        FIFOStats FIFO; ///< The status of the FIFO queue.
+        float dataRate_Bps; ///< The current data transmission rate.
+        uint32_t overrun; ///< The amount of packets overrun.
+        uint32_t underrun; ///< The amount of packets underrun.
+        uint32_t loss; ///< The amount of packets that are lost.
+        uint32_t late; ///< The amount of packets that arrived late for transmitting and were dropped.
     };
 
-    /** @brief Describes the status of the GPS. */
+    /// @brief Describes the status of a global positioning system.
     struct GPS_Lock {
+        /// @brief Enumerator describing the possible status of a positioning system.
         enum class LockStatus : uint8_t { Undefined, NotAvailable, Has2D, Has3D };
 
-        LockStatus galileo;
-        LockStatus beidou;
-        LockStatus glonass;
-        LockStatus gps;
+        LockStatus galileo; ///< Status for the Galileo system (European system).
+        LockStatus beidou; ///< Status for the BeiDou system (Chinese system).
+        LockStatus glonass; ///< Status for the GLONASS system (Russian system).
+        LockStatus gps; ///< Status for the GPS system (American system).
     };
 
-    /** @brief Configuration settings for a stream. */
+    /// @brief Configuration settings for a stream.
     struct StreamConfig {
-        /** @brief Extra configuration settings for a stream. */
+        /// @brief Extra configuration settings for a stream.
         struct Extras {
+            struct PacketTransmission {
+                uint16_t samplesInPacket; ///< The amount of samples to transfer in a single packet.
+                uint32_t packetsInBatch; ///< The amount of packets to send in a single transfer.
+            };
+
             Extras();
-            bool usePoll;
-            uint16_t rxSamplesInPacket;
-            uint32_t rxPacketsInBatch;
-            uint32_t txMaxPacketsInBatch;
-            uint16_t txSamplesInPacket;
-            bool negateQ;
-            bool waitPPS; // start sampling from next following PPS
+            bool usePoll; ///< Whether to use a polling strategy for PCIe devices.
+
+            PacketTransmission rx; ///< Configuration of the receive transfer direction.
+            PacketTransmission tx; ///< Configuration of the transmit transfer direction.
+
+            bool negateQ; ///< Whether to negate the Q element before sending the data or not.
+            bool waitPPS; ///< Start sampling from next following PPS.
         };
+
+        /// @brief The definition of the function that gets called whenever a stream status changes.
         typedef bool (*StatusCallbackFunc)(bool isTx, const StreamStats* stats, void* userData);
+
+        /// @brief Enumerator describing the data format.
         enum class DataFormat : uint8_t {
-            I16,
-            I12,
-            F32,
+            I16, ///< Data is in a form of two 16-bit integers.
+            I12, ///< Data is in a form of two 12-bit integers.
+            F32, ///< Data is in a form of two 32-bit floating-point values.
         };
 
         StreamConfig();
         ~StreamConfig();
+
+        /// @brief The copy operator of of the class.
+        /// @param srd The
+        /// @return
         StreamConfig& operator=(const StreamConfig& srd);
 
-        uint8_t rxCount;
-        uint8_t rxChannels[MAX_CHANNEL_COUNT];
-        uint8_t txCount;
-        uint8_t txChannels[MAX_CHANNEL_COUNT];
+        uint8_t rxCount; ///< The amount of Receive channels being used.
+        uint8_t rxChannels[MAX_CHANNEL_COUNT]; ///< The list of Receive channels being used.
+        uint8_t txCount; ///< The amount of Transmit channels being used.
+        uint8_t txChannels[MAX_CHANNEL_COUNT]; ///< The list of Transmit channels being used.
 
-        DataFormat format; // samples format used for Read/Write functions
-        DataFormat linkFormat; // samples format used in transport layer Host<->FPGA
+        DataFormat format; ///< Samples format used for Read/Write functions
+        DataFormat linkFormat; ///< Samples format used in transport layer Host<->FPGA
 
-        /// memory size to allocate for each channel buffering
-        /// Default: 0 - allow to decide internally
+        /// @brief Memory size to allocate for each channel buffering.
+        /// Default: 0 - allow to decide internally.
         uint32_t bufferSize;
 
-        /// optional: expected sampling rate for data transfer optimizations.
-        /// Default: 0 - deicide internally
+        /// Optional: expected sampling rate for data transfer optimizations.
+        /// Default: 0 - decide internally.
         float hintSampleRate;
-        bool alignPhase; // attempt to do phases alignment between paired channels
+        bool alignPhase; ///< Attempt to do phases alignment between paired channels
 
-        StatusCallbackFunc statusCallback;
-        void* userData; // will be supplied to statusCallback
+        StatusCallbackFunc statusCallback; ///< Function to call on a status change.
+        void* userData; ///<  Data that will be supplied to statusCallback
         // TODO: callback for drops and errors
 
-        Extras* extraConfig;
+        Extras* extraConfig; ///< A pointer to some extra stream configuration settings.
     };
 
-    /** @brief The metadata of a stream packet. */
+    /// @brief The metadata of a stream packet.
     struct StreamMeta {
         /**
          * Timestamp is a value of HW counter with a tick based on sample rate.
@@ -202,129 +221,228 @@ class LIME_API SDRDevice
         bool flushPartialPacket;
     };
 
-    /** @brief Configuration of a general finite impulse response (FIR) filter. */
+    /// @brief Configuration of a general finite impulse response (FIR) filter.
     struct GFIRFilter {
-        double bandwidth;
-        bool enabled;
+        double bandwidth; ///< The bandwidth of the filter.
+        bool enabled; ///< Whether the filter is enabled or not.
     };
 
-    /** @brief Configuration of a single channel. */
+    /// @brief Configuration of a single channel.
     struct ChannelConfig {
         ChannelConfig() { memset(this, 0, sizeof(ChannelConfig)); }
 
-        /** @brief Configuration for a direction in a channel. */
+        /// @brief Configuration for a direction in a channel.
         struct Direction {
-            double centerFrequency;
-            double NCOoffset;
-            double sampleRate;
-            double gain;
-            double lpf;
-            uint8_t path;
-            uint8_t oversample;
-            GFIRFilter gfir;
-            bool enabled;
-            bool calibrate;
-            bool testSignal;
+            double centerFrequency; ///< The center frequency of the direction of this channel.
+            double NCOoffset; ///< The offset from the channel's numerically controlled oscillator (NCO).
+            double sampleRate; ///< The sample rate of this direction of a channel.
+            double gain; ///< TODO: Not fully implemented yet
+            double lpf; ///< The bandwidth of the Low Pass Filter (LPF).
+            uint8_t path; ///< The antenna being used for this direction.
+            uint8_t oversample; ///< The oversample ratio of this direction.
+            GFIRFilter gfir; ///< The general finite impulse response (FIR) filter settings of this direction.
+            bool enabled; ///< Denotes whether this direction of a channel is enabled or not.
+            bool calibrate; ///< Denotes whether the device will be calibrated or not.
+            bool testSignal; ///< Denotes whether the signal being sent is a test signal or not.
         };
-        Direction rx;
-        Direction tx;
+
+        Direction rx; ///< Configuration settings for the Receive channel.
+        Direction tx; ///< Configuration settings for the Transmit channel.
     };
 
-    /** @brief Configuration of an SDR device. */
+    /// @brief Configuration of an SDR device.
     struct SDRConfig {
         SDRConfig()
             : referenceClockFreq(0)
             , skipDefaults(false){};
-        double referenceClockFreq;
-        ChannelConfig channel[MAX_CHANNEL_COUNT];
+        double referenceClockFreq; ///< The reference clock frequency of the device.
+        ChannelConfig channel[MAX_CHANNEL_COUNT]; ///< The configuration settings for each of the channels.
         // Loopback setup?
-        bool skipDefaults; // skip default values initialization and write on top of current config
+        bool skipDefaults; ///< Skip default values initialization and write on top of current config.
     };
 
     virtual ~SDRDevice(){};
 
+    /// @brief Configures the device using the given configuration.
+    /// @param config The configuration to set up the device with.
+    /// @param moduleIndex The device index to configure.
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
-    /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
+    /// @brief Gets the Descriptor of the SDR Device.
+    /// @return The Descriptor of the device.
     virtual const Descriptor& GetDescriptor() = 0;
 
+    /// @brief Initializes the device with initial settings.
+    /// @return The success status of the initialization (0 on success).
     virtual int Init() = 0;
+
+    /// @brief Resets the device.
     virtual void Reset() = 0;
+
+    /// @brief Gets the current status of the GPS locks.
+    /// @param status The pointer to which to output the GPS status.
     virtual void GetGPSLock(GPS_Lock* status) = 0;
 
+    /// @brief Gets the current sample rate of the device.
+    /// @param moduleIndex The device index to get the sample rate of.
+    /// @param trx The direction of the sample rate to get.
+    /// @return The sample rate of the specified device and direction.
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) = 0;
 
+    /// @brief Gets the frequency of a specified clock.
+    /// @param clk_id The clock ID to get the frequency of.
+    /// @param channel The channel to get the frequency of.
+    /// @return The frequency of the specified clock (in Hz).
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
+
+    /// @brief Sets the frequency of a specified clock.
+    /// @param clk_id The clock ID to set the frequency of.
+    /// @param freq The new frequency of the specified clock (in Hz).
+    /// @param channel The channel to set the frequency of.
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
+    /// @brief Synchronizes the cached changed register values on the host with the real values on the device.
+    /// @param toChip The direction in which to synchronize (true = uploads to the device).
     virtual void Synchronize(bool toChip) = 0;
+
+    /// @brief Enable or disable register value caching on the host side.
+    /// @param enable Whether to enable or disable the register value caching (true = enabled).
     virtual void EnableCache(bool enable) = 0;
 
+    /// @brief Sets up all the streams on a device.
+    /// @param config The configuration to use for setting the streams up.
+    /// @param moduleIndex The index of the device to set up.
+    /// @return Success status (0 on success).
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
+
+    /// @brief Starts all the set up streams on the device.
+    /// @param moduleIndex The index of the device to start the streams on.
     virtual void StreamStart(uint8_t moduleIndex) = 0;
+
+    /// @brief Stops all the set up streams on the device.
+    /// @param moduleIndex The index of the device to stop the streams on.
     virtual void StreamStop(uint8_t moduleIndex) = 0;
 
+    /// @brief Reveives samples from all the active streams in the device.
+    /// @param moduleIndex The index of the device to receive the samples from.
+    /// @param samples The buffer to put the received samples in.
+    /// @param count The amount of samples to reveive.
+    /// @param meta The metadata of the packets of the stream.
+    /// @return The amount of samples received.
     virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) = 0;
+    /// @copydoc SDRDevice::StreamRx()
     virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) = 0;
+
+    /// @brief Transmits packets from all the active streams in the device.
+    /// @param moduleIndex The index of the device to transmit the samples with.
+    /// @param samples The buffer of the samples to transmit.
+    /// @param count The amount of samples to transmit.
+    /// @param meta The metadata of the packets of the stream.
+    /// @return The amount of samples transmitted.
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
+    /// @copydoc SDRDevice::StreamTx()
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
+
+    /// @brief Retrieves the current stream statistics.
+    /// @param moduleIndex The index of the device to retrieve the status from.
+    /// @param rx The pointer (or nullptr if not needed) to store the receive statistics to.
+    /// @param tx The pointer (or nullptr if not needed) to store the transmit statistics to.
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
 
+    /// @brief Uploads waveform to on board memory for later use.
+    /// @param config The configuration of the stream.
+    /// @param moduleIndex The index of the device to upload the waveform to.
+    /// @param samples The samples to upload to the device.
+    /// @param count The amount of samples to upload to the device.
+    /// @return Operation status (0 on success).
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
     {
         return -1;
     }
 
+    /// @copydoc ISPI::SPI()
+    /// @param spiBusAddress The SPI address of the device to use.
     virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+
+    /// @copydoc II2C::I2CWrite()
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
-    virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
+
+    /// @copydoc II2C::I2CRead()
+    virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
 
     /***********************************************************************
      * GPIO API
      **********************************************************************/
 
-    /** \copydoc IComms::GPIOWrite() */
+    /// @copydoc IComms::GPIOWrite()
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /** \copydoc IComms::GPIORead() */
+    /// @copydoc IComms::GPIORead()
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /** \copydoc IComms::GPIODirWrite() */
+    /// @copydoc IComms::GPIODirWrite()
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /** \copydoc IComms::GPIODirRead() */
+    /// @copydoc IComms::GPIODirRead()
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
 
     /***********************************************************************
      * Aribtrary settings API
      **********************************************************************/
 
-    /** @brief Sets custom on board control to given value units
-    @param parameters A vector of parameters describing the parameter to write
-    @return The operation success state
-    */
+    /// @copydoc IComms::CustomParameterWrite()
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
 
-    /** @brief Returns value of custom on board control
-    @param parameters A vector of parameters describing the parameter to read
-    @return The operation success state
-    */
+    /// @copydoc IComms::CustomParameterRead()
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
 
-    /** @brief Sets callback function which gets called each time data is sent or received */
+    /// @brief The definition of a function to run when data is received.
+    typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
+
+    /// @brief Sets callback function which gets called each time data is sent or received
+    /// @param callback The callback to use from this point onwards.
     virtual void SetDataLogCallback(DataCallbackType callback){};
+
+    /// @brief The definition of a function to call when a log message is generated.
+    typedef void (*LogCallbackType)(LogLevel, const char*);
+
+    /// @brief Sets callback function which gets called each a log message is received
+    /// @param callback The callback to use from this point onwards.
     virtual void SetMessageLogCallback(LogCallbackType callback){};
 
+    /// @brief Gets the pointer to an internal chip of the device.
+    /// @param index The index of the device to retreive.
+    /// @return The pointer to the internal device.
     virtual void* GetInternalChip(uint32_t index) { return nullptr; };
 
+    /// @brief The definition of a function to call whenever memory is being uploaded.
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
-    virtual bool UploadMemory(
+    
+    /// @brief Uploads the given memory into the specified device.
+    /// @param device The memory device to upload the memory to.
+    /// @param moduleIndex The index of the main device to upload the memory to.
+    /// @param data The data to upload to the device.
+    /// @param length The length of the memory to upload.
+    /// @param callback The callback to call for status updates.
+    /// @return The success status of the operation (0 on success).
+    virtual int UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
     {
         return -1;
     };
 
+    /// @brief Writes given data into a given memory address in EEPROM memory.
+    /// @param storage The storage device to write to.
+    /// @param region Information of the region in which to write the data to.
+    /// @param data The data to write into the specified memory.
+    /// @return The operation success state.
     virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
+
+    /// @brief Reads data from a given memory address in EEPROM memory.
+    /// @param storage The storage device to read from.
+    /// @param region Information of the region from which to read the memory.
+    /// @param data The storage buffer for the data being read.
+    /// @return The operation success state.
     virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
 };
 

@@ -117,9 +117,9 @@ int TRXLooper_PCIE::TxSetup()
     int samplesInPkt = 256; //(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
     const int packetSize = sizeof(StreamHeader) + samplesInPkt * sampleSize * chCount;
 
-    if (mConfig.extraConfig && mConfig.extraConfig->txSamplesInPacket != 0)
+    if (mConfig.extraConfig && mConfig.extraConfig->tx.samplesInPacket != 0)
     {
-        samplesInPkt = mConfig.extraConfig->txSamplesInPacket;
+        samplesInPkt = mConfig.extraConfig->tx.samplesInPacket;
         printf("Tx samples overide %i\n", samplesInPkt);
     }
 
@@ -127,8 +127,8 @@ int TRXLooper_PCIE::TxSetup()
 
     LitePCIe::DMAInfo dma = mTxArgs.port->GetDMAInfo();
 
-    if (mConfig.extraConfig && mConfig.extraConfig->txMaxPacketsInBatch != 0)
-        mTx.packetsToBatch = mConfig.extraConfig->txMaxPacketsInBatch;
+    if (mConfig.extraConfig && mConfig.extraConfig->tx.packetsInBatch != 0)
+        mTx.packetsToBatch = mConfig.extraConfig->tx.packetsInBatch;
 
     mTx.packetsToBatch = clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
@@ -475,8 +475,8 @@ int TRXLooper_PCIE::RxSetup()
     const int maxSamplesInPkt = 1024 / chCount;
 
     int requestSamplesInPkt = 256; //maxSamplesInPkt;
-    if (mConfig.extraConfig && mConfig.extraConfig->rxSamplesInPacket != 0)
-        requestSamplesInPkt = mConfig.extraConfig->rxSamplesInPacket;
+    if (mConfig.extraConfig && mConfig.extraConfig->rx.samplesInPacket != 0)
+        requestSamplesInPkt = mConfig.extraConfig->rx.samplesInPacket;
 
     int samplesInPkt = clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
     int payloadSize = requestSamplesInPkt * sampleSize * chCount;
@@ -497,8 +497,8 @@ int TRXLooper_PCIE::RxSetup()
 
     LitePCIe::DMAInfo dma = mRxArgs.port->GetDMAInfo();
 
-    if (mConfig.extraConfig && mConfig.extraConfig->rxPacketsInBatch != 0)
-        mRx.packetsToBatch = mConfig.extraConfig->rxPacketsInBatch;
+    if (mConfig.extraConfig && mConfig.extraConfig->rx.packetsInBatch != 0)
+        mRx.packetsToBatch = mConfig.extraConfig->rx.packetsInBatch;
     mRx.packetsToBatch = clamp((int)mRx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
     int irqPeriod = 16;

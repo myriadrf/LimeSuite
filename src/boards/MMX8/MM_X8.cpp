@@ -304,7 +304,7 @@ int LimeSDR_MMX8::CustomParameterRead(std::vector<CustomParameterIO>& parameters
     return ret;
 }
 
-bool LimeSDR_MMX8::UploadMemory(
+int LimeSDR_MMX8::UploadMemory(
     eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
     if (device == eMemoryDevice::FPGA_FLASH && moduleIndex == 0)

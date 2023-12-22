@@ -63,7 +63,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual void* GetInternalChip(uint32_t index);
 
-    virtual bool UploadMemory(
+    virtual int UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
 
     virtual int ReadFPGARegister(uint32_t address);

@@ -500,10 +500,10 @@ int main(int argc, char** argv)
         {
             stream.extraConfig = new SDRDevice::StreamConfig::Extras();
             stream.extraConfig->waitPPS = syncPPS;
-            stream.extraConfig->rxSamplesInPacket = rxSamplesInPacket;
-            stream.extraConfig->txSamplesInPacket = txSamplesInPacket;
-            stream.extraConfig->rxPacketsInBatch = rxPacketsInBatch;
-            stream.extraConfig->txMaxPacketsInBatch = txPacketsInBatch;
+            stream.extraConfig->rx.samplesInPacket = rxSamplesInPacket;
+            stream.extraConfig->tx.samplesInPacket = txSamplesInPacket;
+            stream.extraConfig->rx.packetsInBatch = rxPacketsInBatch;
+            stream.extraConfig->tx.packetsInBatch = txPacketsInBatch;
         }
 
         useComposite = chipIndexes.size() > 1;

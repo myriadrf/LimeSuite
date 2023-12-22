@@ -44,7 +44,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
-    virtual bool UploadMemory(
+    virtual int UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
     virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
     virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;

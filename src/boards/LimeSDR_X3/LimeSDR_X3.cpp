@@ -1209,7 +1209,7 @@ int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
     return mfpgaPort->CustomParameterRead(parameters);
 }
 
-bool LimeSDR_X3::UploadMemory(
+int LimeSDR_X3::UploadMemory(
     eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
     int progMode;

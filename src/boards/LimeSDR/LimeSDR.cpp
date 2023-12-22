@@ -443,13 +443,6 @@ void LimeSDR::Synchronize(bool toChip)
         mLMSChips[0]->DownloadAll();
 }
 
-void LimeSDR::EnableCache(bool enable)
-{
-    mLMSChips[0]->EnableValuesCache(enable);
-    if (mFPGA)
-        mFPGA->EnableValuesCache(enable);
-}
-
 int LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mSerialPort);
@@ -664,11 +657,6 @@ void LimeSDR::StreamStop(uint8_t moduleIndex)
 
     delete mStreamers[0];
     mStreamers[0] = nullptr;
-}
-
-void* LimeSDR::GetInternalChip(uint32_t index)
-{
-    return mLMSChips.at(index);
 }
 
 int LimeSDR::GPIODirRead(uint8_t* buffer, const size_t bufLength)
