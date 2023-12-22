@@ -551,7 +551,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         }
 
         if (cfg.referenceClockFreq != 0)
-            chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
+            chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq);
 
         const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
         if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
@@ -802,14 +802,14 @@ double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel & 1);
+    return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 void LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
+    chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)

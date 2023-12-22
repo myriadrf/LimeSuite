@@ -1928,7 +1928,7 @@ void lms7002_pnlRXTSP_view::UpdateGUI()
     if (lmsControl == nullptr)
         return;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum, mChannel);
-    double freq = lmsControl->GetClockFreq(LMS7002M::ClockID::CLK_RXTSP, mChannel);
+    double freq = lmsControl->GetClockFreq(LMS7002M::ClockID::CLK_RXTSP);
     lblRefClk->SetLabel(wxString::Format(_("%3.3f"), freq / 1e6));
 
     int16_t iqcorr_value;

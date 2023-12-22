@@ -3232,7 +3232,7 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     return 0;
 }
 
-double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
+double LMS7002M::GetClockFreq(ClockID clk_id)
 {
     switch (clk_id)
     {
@@ -3254,7 +3254,7 @@ double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
     }
 }
 
-void LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
+void LMS7002M::SetClockFreq(ClockID clk_id, double freq)
 {
     switch (clk_id)
     {

@@ -238,7 +238,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         if (cfg.referenceClockFreq != 0)
         {
-            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
+            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq);
         }
 
         if (rxUsed)
@@ -348,12 +348,12 @@ void LimeSDR_Mini::Reset()
 
 double LimeSDR_Mini::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
-    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel);
+    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 void LimeSDR_Mini::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
+    mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 void LimeSDR_Mini::Synchronize(bool toChip)

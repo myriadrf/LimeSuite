@@ -222,7 +222,7 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
         // config validation complete, now do the actual configuration
 
         if (cfg.referenceClockFreq != 0)
-            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
+            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq);
 
         if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
             mLMSChips[0]->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
@@ -421,12 +421,12 @@ uint8_t LimeSDR::GetPath(SDRDevice::Dir dir, uint8_t channel) const
 
 double LimeSDR::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
-    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel);
+    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 void LimeSDR::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
+    mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 void LimeSDR::Synchronize(bool toChip)
