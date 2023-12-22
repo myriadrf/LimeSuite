@@ -3,6 +3,12 @@
 #include <stdexcept>
 
 namespace lime {
+
+/// @brief Constructs the Memory Pool and allocates the memory of the pool.
+/// @param blockCount The amount of memory blocks to allocate.
+/// @param blockSize The memory size of a single block.
+/// @param alignment The alignment of the memory.
+/// @param name The name of the memory pool.
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)
     : name(name)
     , allocCnt(0)
@@ -11,7 +17,7 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::
 {
     for (int i = 0; i < blockCount; ++i)
     {
-        void* ptr = aligned_alloc(alignment, blockSize);
+        void* ptr = std::aligned_alloc(alignment, blockSize);
         if (!ptr)
         {
             throw std::runtime_error("Failed to allocate memory");
@@ -22,6 +28,7 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::
         ownedAddresses.insert(ptr);
     }
 }
+
 MemoryPool::~MemoryPool()
 {
     // if(mFreeBlocks.size() != ownedAddresses.size())
@@ -37,6 +44,9 @@ MemoryPool::~MemoryPool()
         free(ptr);
 }
 
+/// @brief Gives a block of memory of a given size.
+/// @param size The size of the memory to give. Must not be more than the maximum size.
+/// @return The pointer to the allocated memory.
 void* MemoryPool::Allocate(int size)
 {
     if (size > mBlockSize)
@@ -58,6 +68,8 @@ void* MemoryPool::Allocate(int size)
     return ptr;
 }
 
+/// @brief Frees the given memory location.
+/// @param ptr The pointer of the memory to free. Must belong to this memory pool.
 void MemoryPool::Free(void* ptr)
 {
     std::lock_guard<std::mutex> lock(mLock);
