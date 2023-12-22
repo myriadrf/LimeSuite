@@ -125,15 +125,22 @@ void FPGA::EnableValuesCache(bool enabled)
         regsCache.clear();
 }
 
-int FPGA::WriteRegister(uint32_t addr, uint32_t val)
+/// @brief Writes the specified value into the specified address into the FPGA.
+/// @param address The address to write to.
+/// @param value The value to write.
+/// @return The operation status (0 on success).
+int FPGA::WriteRegister(uint32_t address, uint32_t value)
 {
-    return WriteRegisters(&addr, &val, 1);
+    return WriteRegisters(&address, &value, 1);
 }
 
-int FPGA::ReadRegister(uint32_t addr)
+/// @brief Reads a value from the specified address in the FPGA.
+/// @param address The address to read from.
+/// @return The value of the register (or -1 on failure).
+int FPGA::ReadRegister(uint32_t address)
 {
     uint32_t val;
-    return ReadRegisters(&addr, &val, 1) != 0 ? -1 : val;
+    return ReadRegisters(&address, &val, 1) != 0 ? -1 : val;
 }
 
 int FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt)

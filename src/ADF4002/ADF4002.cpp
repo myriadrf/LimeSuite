@@ -8,8 +8,9 @@
 
 #include <cmath>
 #include <vector>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
+#include <memory>
 
 using namespace lime;
 
@@ -22,7 +23,7 @@ ADF4002::~ADF4002()
 {
 }
 
-void ADF4002::Initialize(ISPI* comms, double refClkHz)
+void ADF4002::Initialize(std::shared_ptr<ISPI> comms, double refClkHz)
 {
     mComms = comms;
     txtFref = refClkHz / 1e6;

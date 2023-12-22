@@ -107,6 +107,11 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
+/// @brief Constructs a new LimeSDR object
+/// @param spiLMS The communications port to the LMS7002M chip.
+/// @param spiFPGA The communications port to the device's FPGA.
+/// @param streamPort The communications port to send and receive sample data.
+/// @param commsPort The communications port for direct communications with the device.
 LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     std::shared_ptr<IComms> spiFPGA,
     std::shared_ptr<USBGeneric> streamPort,

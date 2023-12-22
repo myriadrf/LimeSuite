@@ -154,8 +154,15 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-// Do not perform any unnecessary configuring to device in constructor, so you
-// could read back it's state for debugging purposes
+
+/// @brief Constructs a new LimeSDR_X3 object
+/// 
+/// Do not perform any unnecessary configuring to device in constructor, so you
+/// could read back it's state for debugging purposes
+/// @param spiLMS7002M The communications port to the LMS7002M chips.
+/// @param spiFPGA The communications port to the device's FPGA.
+/// @param trxStreams The communications ports to send and receive sample data.
+/// @param control The serial port of the device for retrieving device firmware information.
 LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     std::shared_ptr<IComms> spiFPGA,
     std::vector<std::shared_ptr<LitePCIe>> trxStreams,
@@ -163,13 +170,12 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
     , mfpgaPort(spiFPGA)
-    , mSerialPort(control)
     , mConfigInProgress(false)
 {
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo fw;
-    LMS64CProtocol::GetFirmwareInfo(*mSerialPort, fw);
+    LMS64CProtocol::GetFirmwareInfo(*control, fw);
     LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
     desc.spiSlaveIds = {
