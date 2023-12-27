@@ -30,9 +30,9 @@ void pnlGPIO::Initialize(lime::SDRDevice* pControl)
         auto info = device->GetDescriptor();
 
         const std::unordered_map<std::string, int> specialGpioCounts{
-            { string(GetDeviceName(LMS_DEV_LIMESDRMINI)), 10 },
-            { string(GetDeviceName(LMS_DEV_LIMESDRMINI_V2)), 10 },
-            { string(GetDeviceName(LMS_DEV_LIMESDR_PCIE)), 16 },
+            { GetDeviceName(LMS_DEV_LIMESDRMINI), 10 },
+            { GetDeviceName(LMS_DEV_LIMESDRMINI_V2), 10 },
+            { GetDeviceName(LMS_DEV_LIMESDR_PCIE), 16 },
         };
 
         if (specialGpioCounts.find(info.name) != specialGpioCounts.end())
