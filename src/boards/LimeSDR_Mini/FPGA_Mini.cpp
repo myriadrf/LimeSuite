@@ -15,7 +15,7 @@ FPGA_Mini::FPGA_Mini(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms700
 {
 }
 
-int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
+int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
 {
     int status = 0;
 
@@ -44,17 +44,16 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
         clocks[3].phaseShift_deg = rxPhase;
 
         status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
+        return status;
     }
-    else
+
+    status = SetDirectClocking(0);
+    if (status != 0)
     {
-        status = SetDirectClocking(0);
-
-        if (status == 0)
-        {
-            status = SetDirectClocking(1);
-        }
+        return status;
     }
 
+    status = SetDirectClocking(1);
     return status;
 }
 
@@ -79,7 +78,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     if (!phaseSearch)
     {
-        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz);
     }
 
     std::vector<uint32_t> dataRd;
@@ -184,7 +183,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     if (!rxPhaseSearchSuccess || !txPhaseSearchSuccess)
     {
-        SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+        SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz);
         return -1;
     }
     return 0;

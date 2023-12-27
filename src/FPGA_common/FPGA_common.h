@@ -49,8 +49,8 @@ class FPGA
         double rd_actualFrequency;
     };
 
-    virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0);
-    virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0);
+    virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase);
+    virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int channel);
     double DetectRefClk(double fx3Clk = 100e6);
 
     static int FPGAPacketPayload2Samples(
