@@ -395,7 +395,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view(wxWindow* parent, wxWindowID id, const 
 
     temp.clear();
     for (int i = 0; i < 8; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbF_TXPAD_TRF->Append(temp);
 
     temp.clear();
@@ -406,7 +406,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view(wxWindow* parent, wxWindowID id, const 
 
     temp.clear();
     for (int i = 0; i < 32; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbICT_MAIN_TXPAD_TRF->Append(temp);
     cmbLOBIASN_TXM_TRF->Append(temp);
     cmbLOBIASP_TXX_TRF->Append(temp);
@@ -416,7 +416,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view(wxWindow* parent, wxWindowID id, const 
 
     temp.clear();
     for (int i = 0; i < 16; ++i)
-        temp.push_back(wxString::Format(_("%i"), i));
+        temp.push_back(std::to_string(i));
     cmbCDC_I_TRF->Append(temp);
     cmbCDC_Q_TRF->Append(temp);
 

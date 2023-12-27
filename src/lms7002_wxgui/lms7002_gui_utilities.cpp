@@ -76,7 +76,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(
         }
         else if (wndClass->IsKindOf(labelInfo))
         {
-            wxStaticCast(wnd, wxStaticText)->SetLabel(wxString::Format(_("%i"), value));
+            wxStaticCast(wnd, wxStaticText)->SetLabel(std::to_string(value));
         }
         else if (wndClass->IsKindOf(numericSliderInfo))
         {

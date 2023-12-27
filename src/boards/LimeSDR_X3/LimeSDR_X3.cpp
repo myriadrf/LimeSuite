@@ -249,14 +249,14 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     const int chipCount = mLMSChips.size();
     mStreamers.resize(chipCount, nullptr);
 
-    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA_X3", mFPGA);
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", "LMS7002M", lms1));
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", "LMS7002M", lms2));
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", "LMS7002M", lms3));
-    desc.socTree = std::make_shared<DeviceNode>("X3", "SDRDevice", this);
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", eDeviceNodeClass::FPGA_X3, mFPGA);
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_1", eDeviceNodeClass::LMS7002M, lms1));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_2", eDeviceNodeClass::LMS7002M, lms2));
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS_3", eDeviceNodeClass::LMS7002M, lms3));
+    desc.socTree = std::make_shared<DeviceNode>("X3", eDeviceNodeClass::SDRDevice, this);
     desc.socTree->children.push_back(fpgaNode);
 
-    desc.socTree->children.push_back(std::make_shared<DeviceNode>("CDCM6208", "CDCM6208", mClockGeneratorCDCM));
+    desc.socTree->children.push_back(std::make_shared<DeviceNode>("CDCM6208", eDeviceNodeClass::CDCM6208, mClockGeneratorCDCM));
 }
 
 LimeSDR_X3::~LimeSDR_X3()
@@ -269,8 +269,6 @@ LimeSDR_X3::~LimeSDR_X3()
         delete mLMSChips[i];
         mLMSChips[i] = nullptr;
     }
-
-    delete mFPGA;
 }
 
 // Setup default register values specifically for onboard LMS1 chip
@@ -855,11 +853,10 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
                 dirFlag = O_RDONLY;
             else if (config.txCount > 0)
                 dirFlag = O_WRONLY;
-            if (trxPort->Open(trxPort->GetPathName().c_str(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
+            if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
             {
-                char ctemp[128];
-                sprintf(ctemp, "Failed to open device in stream start: %s", trxPort->GetPathName().c_str());
-                throw std::runtime_error(ctemp);
+                const std::string reason = "Failed to open device in stream start: " + trxPort->GetPathName();
+                throw std::runtime_error(reason);
             }
         }
         mStreamers[moduleIndex]->Setup(config);

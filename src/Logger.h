@@ -12,6 +12,7 @@
 #include <cstdarg>
 #include <cerrno>
 #include <stdexcept>
+#include <cstdint>
 
 namespace lime {
 

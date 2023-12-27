@@ -156,7 +156,7 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view(wxWindow* parent, wxWindowID id, const 
     temp.clear();
     for (int i = 0; i < 8; ++i)
     {
-        temp.push_back(wxString::Format(_("%i uA"), 325 + i * 75)); //nominal 625uA
+        temp.push_back(std::to_string(325 + i * 75) + " uA"); //nominal 625uA
     }
     cmbISEL_DAC_AFE->Set(temp);
 

@@ -42,12 +42,12 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     // FPGA::GatewareInfo gw = mFPGA->GetGatewareInfo();
     // FPGA::GatewareToDescriptor(gw, desc);
 
-    desc.socTree = std::make_shared<DeviceNode>("X8", "SDRDevice", this);
+    desc.socTree = std::make_shared<DeviceNode>("X8", eDeviceNodeClass::SDRDevice, this);
 
     mADF = new ADF4002();
     // TODO: readback board's reference clock
     mADF->Initialize(adfComms, 30.72e6);
-    desc.socTree->children.push_back(std::make_shared<DeviceNode>("ADF4002", "ADF4002", mADF));
+    desc.socTree->children.push_back(std::make_shared<DeviceNode>("ADF4002", eDeviceNodeClass::ADF4002, mADF));
 
     mSubDevices.resize(8);
     desc.spiSlaveIds["FPGA"] = 0;
@@ -68,23 +68,20 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
         for (const auto& soc : subdeviceDescriptor.rfSOC)
         {
             RFSOCDescriptor temp = soc;
-            char ctemp[512];
-            sprintf(ctemp, "%s@%li", temp.name.c_str(), i + 1);
-            temp.name = std::string(ctemp);
+            temp.name = soc.name + Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL + std::to_string(i + 1);
             desc.rfSOC.push_back(temp);
         }
 
         for (const auto& slaveId : subdeviceDescriptor.spiSlaveIds)
         {
-            char ctemp[512];
-            sprintf(ctemp, "%s@%li", slaveId.first.c_str(), i + 1);
-            desc.spiSlaveIds[ctemp] = (i + 1) << 8 | slaveId.second;
-            chipSelectToDevice[desc.spiSlaveIds[ctemp]] = mSubDevices[i];
+            const std::string slaveName = slaveId.first + Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL + std::to_string(i + 1);
+            desc.spiSlaveIds[slaveName] = (i + 1) << 8 | slaveId.second;
+            chipSelectToDevice[desc.spiSlaveIds[slaveName]] = mSubDevices[i];
         }
 
         for (const auto& memoryDevice : subdeviceDescriptor.memoryDevices)
         {
-            std::string indexName = subdeviceDescriptor.name + Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL + std::to_string(i) +
+            std::string indexName = subdeviceDescriptor.name + Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL + std::to_string(i + 1) +
                                     Descriptor::PATH_SEPARATOR_SYMBOL + memoryDevice.first;
 
             desc.memoryDevices[indexName] = memoryDevice.second;
@@ -94,16 +91,13 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
         {
             SDRDevice::CustomParameter parameter = customParameter;
             parameter.id |= (i + 1) << 8;
-            char ctemp[512];
-            sprintf(ctemp, "%s@%li", customParameter.name.c_str(), i + 1);
-            parameter.name = ctemp;
+            parameter.name = customParameter.name + Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL + std::to_string(i + 1);
             desc.customParameters.push_back(parameter);
             customParameterToDevice[parameter.id] = mSubDevices[i];
         }
 
-        char ctemp[256];
-        sprintf(ctemp, "%s#%li", subdeviceDescriptor.socTree->name.c_str(), i + 1);
-        subdeviceDescriptor.socTree->name = std::string(ctemp);
+        const std::string treeName = subdeviceDescriptor.socTree->name + "#" + std::to_string(i + 1);
+        subdeviceDescriptor.socTree->name = treeName;
         desc.socTree->children.push_back(subdeviceDescriptor.socTree);
     }
 }

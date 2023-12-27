@@ -54,15 +54,6 @@ Docker
 ------
 
 There also exists a Docker file to generate the documentation.
-
-Docker prerequisites
-^^^^^^^^^^^^^^^^^^^^
-
-In order to use the Docker documentation generation file, you will need to have the `Docker Engine`_ installed and set up.
-
-Running the Docker documentation generation file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 To generate this documentation using Docker, in the root directory of the repository run:
 
 .. code-block:: bash
@@ -83,4 +74,3 @@ check out the `MyriadRF Handbook`_.
 .. _`Doxygen`: https://www.doxygen.nl/
 .. _`Python virtual environment (venv)`: https://docs.python.org/3.8/library/venv.html
 .. _`MyriadRF Handbook`: https://handbook.myriadrf.org/
-.. _`Docker Engine`: https://docs.docker.com/engine/

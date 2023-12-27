@@ -1,5 +1,6 @@
 #include "MemoryPool.h"
 #include <cstring>
+#include <stdexcept>
 
 namespace lime {
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)
@@ -40,16 +41,14 @@ void* MemoryPool::Allocate(int size)
 {
     if (size > mBlockSize)
     {
-        char ctemp[64];
-        sprintf(ctemp, "%s Memory request too big(%i), max allowed(%i)", name.c_str(), size, mBlockSize);
+        const std::string ctemp = "Memory request for " + name + " is too big (" + std::to_string(size) + "), max allowed is " +
+                                  std::to_string(mBlockSize);
         throw std::runtime_error(ctemp);
     }
     std::lock_guard<std::mutex> lock(mLock);
     if (mFreeBlocks.empty())
     {
-        char ctemp[64];
-        sprintf(ctemp, "%s No memory in pool", name.c_str());
-        throw std::runtime_error(ctemp);
+        throw std::runtime_error("No memory in pool " + name);
     }
 
     void* ptr = mFreeBlocks.top();
@@ -81,9 +80,7 @@ void MemoryPool::Free(void* ptr)
         }
         else
         {
-            char ctemp[64];
-            sprintf(ctemp, "%s Ptr does not belong to this pool", name.c_str());
-            throw std::runtime_error(ctemp);
+            throw std::runtime_error("Pointer does not belong to pool " + name);
         }
     }
     ++freeCnt;

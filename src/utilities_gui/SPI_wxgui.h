@@ -5,6 +5,7 @@
 #include "IModuleFrame.h"
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
 
 namespace lime {
 class SDRDevice;
@@ -36,7 +37,7 @@ class SPI_wxgui : public IModuleFrame
   public:
     SPI_wxgui(wxWindow* parent,
         wxWindowID id = wxID_ANY,
-        const wxString& title = wxEmptyString,
+        const wxString& title = "SPI",
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         long styles = wxDEFAULT_DIALOG_STYLE);

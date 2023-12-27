@@ -1383,14 +1383,14 @@ void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
     uint16_t value;
     value = ReadParam(LMS7param(VCO_CMPHO));
 
-    lblVCO_CMPHO->SetLabel(wxString::Format(_("%i"), value));
+    lblVCO_CMPHO->SetLabel(std::to_string(value));
     if (value == 1)
         lblVCO_CMPHO->SetBackgroundColour(*wxGREEN);
     else
         lblVCO_CMPHO->SetBackgroundColour(*wxRED);
 
     value = ReadParam(LMS7param(VCO_CMPLO));
-    lblVCO_CMPLO->SetLabel(wxString::Format(_("%i"), value));
+    lblVCO_CMPLO->SetLabel(std::to_string(value));
     if (value == 0)
         lblVCO_CMPLO->SetBackgroundColour(*wxGREEN);
     else
@@ -1406,7 +1406,7 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick(wxCommandEvent& event)
     double freq;
 
     freq = lmsControl->GetReferenceClk_SX(direction);
-    dlg->SetValue(wxString::Format(_("%f"), freq / 1e6));
+    dlg->SetValue(std::to_string(freq / 1e6));
     if (dlg->ShowModal() == wxID_OK)
     {
         dlg->GetValue().ToDouble(&refClkMHz);
@@ -1461,7 +1461,7 @@ void lms7002_pnlSX_view::OnbtnTuneClick(wxCommandEvent& event)
     assert(lmsControl != nullptr);
     int status = lmsControl->TuneVCO(direction == TRXDir::Tx ? LMS7002M::VCO_Module::VCO_SXT : LMS7002M::VCO_Module::VCO_SXR);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
+        wxMessageBox(_("SX VCO Tune Failed"));
     UpdateGUI();
 }
 
@@ -1491,14 +1491,14 @@ void lms7002_pnlSX_view::UpdateGUI()
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
     uint16_t div;
     div = ReadParam(LMS7param(DIV_LOCH));
-    lblDivider->SetLabel(wxString::Format("2^%i", div));
+    lblDivider->SetLabel("2^" + std::to_string(div));
 
     uint16_t value;
     value = ReadParam(LMS7param(FRAC_SDM_MSB));
     int fracValue = value << 16;
     value = ReadParam(LMS7param(FRAC_SDM_LSB));
     fracValue |= value;
-    lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
+    lblFRAC_SDM->SetLabel(std::to_string(fracValue));
 
     if (direction == TRXDir::Rx)
         chkPD_LOCH_T2RBUF->Hide();

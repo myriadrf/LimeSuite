@@ -202,7 +202,7 @@ pnlBoardControls::pnlBoardControls(
     for (int i = 0; i < ADC_UNITS_COUNT; ++i) //add all defined units
         unitChoices.push_back(wxString(adcUnits2string(i)));
     for (int i = ADC_UNITS_COUNT; i < ADC_UNITS_COUNT + 4; ++i) //add some options to use undefined units
-        unitChoices.push_back(wxString::Format(_("%i"), i));
+        unitChoices.push_back(std::to_string(i));
     cmbCustomUnitsWr = new wxChoice(pnlCustomControls, wxNewId(), wxDefaultPosition, wxDefaultSize, unitChoices, 0);
     cmbCustomUnitsWr->SetSelection(0);
     sizerCustomControls->Add(cmbCustomUnitsWr, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 0);
@@ -275,6 +275,12 @@ pnlBoardControls::~pnlBoardControls()
         delete widget;
         widget = nullptr;
     }
+
+    for (auto& widget : mMemoryGUI_widgets)
+    {
+        delete widget;
+        widget = nullptr;
+    }
 }
 
 void pnlBoardControls::OnReadAll(wxCommandEvent& event)
@@ -329,7 +335,7 @@ void pnlBoardControls::OnReadAll(wxCommandEvent& event)
             wxMessageBox(_("Memory read failed"), _("Error"));
         // uint16_t val;
         // TODO: LMS_VCTCXORead(mDevice, &val);
-        // txtDACValue->SetValue(wxString::Format("%d", val));
+        // txtDACValue->SetValue(std::to_string(val));
     }
 
     Update();
@@ -388,7 +394,7 @@ void pnlBoardControls::Update()
             mGUI_widgets[i]->wValue->SetValue(mParameters[i].value);
         else
             mGUI_widgets[i]->rValue->SetLabel(wxString::Format(_("%1.0f"), mParameters[i].value));
-        mGUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mParameters[i].units));
+        mGUI_widgets[i]->units->SetLabelText(mParameters[i].units);
     }
 
     if (additionalControls)
@@ -432,7 +438,7 @@ int pnlBoardControls::ReadMemory(MemoryParamGUI* gui)
     assert(sizeof(val) >= size_t(gui->memoryRegion.size));
     int rez = mDevice->MemoryRead(gui->dataStorage, gui->memoryRegion, &val);
     if (rez == 0)
-        gui->txtValue->SetValue(wxString::Format("%li", val));
+        gui->txtValue->SetValue(std::to_string(val));
     return rez;
 }
 
@@ -532,7 +538,7 @@ void pnlBoardControls::SetupControls(const std::string& boardID)
             }
             else
                 gui->rValue = new wxStaticText(pnlReadControls, wxID_ANY, _(""));
-            gui->units = new wxStaticText(pnlReadControls, wxID_ANY, wxString::Format("%s", mParameters[i].units));
+            gui->units = new wxStaticText(pnlReadControls, wxID_ANY, mParameters[i].units);
             mGUI_widgets.push_back(gui);
 
             sizerAnalogRd->Add(gui->title, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
@@ -628,8 +634,8 @@ void pnlBoardControls::SetupControls(const std::string& boardID)
         wxFlexGridSizer* submodulesSizer = new wxFlexGridSizer(4, 0, 0, 0);
         for (int i = 0; i < 8; ++i)
         {
-            char spiSlaveName[128];
-            sprintf(spiSlaveName, "FPGA@%i", i + 1);
+            std::string spiSlaveName = "FPGA@" + std::to_string(i + 1);
+
             pnlXTRX* pnl = new pnlXTRX(owner, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, spiSlaveName);
             submodulesSizer->Add(pnl);
             pnl->Initialize(mDevice, spiSlaveName);
@@ -690,7 +696,7 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
         return;
     }
 
-    txtCustomUnitsRd->SetLabel(param[0].units.c_str());
+    txtCustomUnitsRd->SetLabel(param[0].units);
     txtCustomValueRd->SetLabel(wxString::Format(_("%1.1f"), param[0].value));
 }
 

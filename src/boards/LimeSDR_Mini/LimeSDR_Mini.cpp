@@ -189,9 +189,9 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
 
     descriptor.rfSOC.push_back(soc);
 
-    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", "FPGA-Mini", mFPGA);
-    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS", "LMS7002M", mLMSChips[0]));
-    descriptor.socTree = std::make_shared<DeviceNode>("SDR Mini", "SDRDevice", this);
+    auto fpgaNode = std::make_shared<DeviceNode>("FPGA", eDeviceNodeClass::FPGA_MINI, mFPGA);
+    fpgaNode->children.push_back(std::make_shared<DeviceNode>("LMS", eDeviceNodeClass::LMS7002M, mLMSChips[0]));
+    descriptor.socTree = std::make_shared<DeviceNode>("SDR Mini", eDeviceNodeClass::SDRDevice, this);
     descriptor.socTree->children.push_back(fpgaNode);
 
     mDeviceDescriptor = descriptor;
@@ -199,13 +199,11 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
 
 LimeSDR_Mini::~LimeSDR_Mini()
 {
-    if (mStreamers[0])
+    auto& streamer = mStreamers.at(0);
+    if (streamer != nullptr && streamer->IsStreamRunning())
     {
-        delete mStreamers[0];
-        mStreamers[0] = nullptr;
+        streamer->Stop();
     }
-
-    delete mFPGA;
 }
 
 void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)

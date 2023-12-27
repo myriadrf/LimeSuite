@@ -1,3 +1,4 @@
+# Build .deb file for Debian 11, Ubuntu 20.04, Ubuntu 22.04
 FROM ubuntu:20.04 AS build-stage
 
 WORKDIR /LimeSuite2/source
@@ -8,10 +9,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
     apt-get install -y --no-install-recommends \
         dpkg-dev \
-        build-essential \
         debhelper \
     && \
-    ./install_dependencies.sh && \
+    ./install_dependencies.sh -y && \
     rm -rf /var/lib/apt/lists/*
 
 COPY amarisoft-plugin/ amarisoft-plugin/

@@ -40,7 +40,7 @@ void PrintDeviceDetails(SDRDevice* device)
     cout << "\t"
          << "SPI slave devices\t:" << endl;
     for (const auto& nameIds : d.spiSlaveIds)
-        cout << "\t\t\t\t  " << nameIds.first.c_str() << endl;
+        cout << "\t\t\t\t  " << nameIds.first << endl;
     cout << "\t"
          << "Memory devices\t\t:" << endl;
     for (const auto& mem : d.memoryDevices)

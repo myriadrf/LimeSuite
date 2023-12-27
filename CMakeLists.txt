@@ -80,12 +80,6 @@ endif()
 
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-
-    #enable C++11 on older versions of cmake
-    if (CMAKE_VERSION VERSION_LESS "3.1")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-    endif()
-
     #enable warnings in Debug configurations
     add_compile_options(-Wall -Wpedantic)
 

@@ -4,7 +4,6 @@
 #include "OpenGLGraph.h"
 #include <LMSBoards.h>
 #include "kissFFT/kiss_fft.h"
-#include "dataTypes.h"
 #include "limesuite/LMS7002M.h"
 #include "windowFunction.h"
 #include <fstream>
@@ -39,7 +38,7 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice* pDataPort)
 
     for (size_t i = 0; i < desc.rfSOC.size(); ++i)
     {
-        cmbRFSOC->Append(desc.rfSOC[i].name.c_str());
+        cmbRFSOC->Append(desc.rfSOC[i].name);
     }
 
     uint8_t channelCount = desc.rfSOC.at(0).channelCount;
@@ -591,7 +590,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
     /*  if(pthis->captureSamples.load() == true)
     {
         ofstream fout;
-        fout.open(pthis->captureFilename.c_str());
+        fout.open(pthis->captureFilename);
         fout << "AI\tAQ";
         if(channelsCount > 1)
             fout << "\tBI\tBQ";
@@ -609,7 +608,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
         fout.close();
 
         string filename = pthis->captureFilename+".absdbfs";
-        fout.open(filename.c_str());
+        fout.open(filename);
         fout << "AI\tAQ";
         if(channelsCount > 1)
             fout << "\tBI\tBQ";

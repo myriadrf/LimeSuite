@@ -727,7 +727,7 @@ void CDCM6208_panelgui::Initialize(CDCM_Dev* cdcm)
     CDCM->DownloadConfiguration();
     UpdateGUI();
 
-    m_Baseaddr->SetValue(wxString::Format(_("%i"), CDCM->GetSPIBaseAddr()));
+    m_Baseaddr->SetValue(std::to_string(CDCM->GetSPIBaseAddr()));
 }
 
 bool CDCM6208_panelgui::Initialize(lime::SDRDevice* device)
@@ -992,7 +992,7 @@ void CDCM6208_panelgui::UpdateGUI()
     m_SecondaryFreq->SetValue(str);
 
     //R Divider
-    str = wxString::Format(_("%i"), VCO.R_div);
+    str = std::to_string(VCO.R_div);
     m_RDivider->SetValue(str);
 
     //MUX Selection
@@ -1008,11 +1008,11 @@ void CDCM6208_panelgui::UpdateGUI()
     }
 
     //M Divider
-    str = wxString::Format(_("%i"), VCO.M_div);
+    str = std::to_string(VCO.M_div);
     m_MDivider->SetValue(str);
 
     //N Multiplier
-    str = wxString::Format(_("%i"), VCO.N_mul_full);
+    str = std::to_string(VCO.N_mul_full);
     m_NMultiplier->SetValue(str);
 
     //VCO prescalers
@@ -1033,64 +1033,64 @@ void CDCM6208_panelgui::UpdateGUI()
         m_VCOFREQ->SetForegroundColour(wxColour("#000000"));
 
     //Y0Y1 divider
-    str = wxString::Format(_("%i"), (int)Outputs.Y0Y1.divider_val);
+    str = std::to_string((int)Outputs.Y0Y1.divider_val);
     m_Y0Y1_DIV->SetValue(str);
     //Y0Y1 Frequency
-    str = wxString::Format(_("%f"), Outputs.Y0Y1.output_freq / 1e6);
+    str = std::to_string(Outputs.Y0Y1.output_freq / 1e6);
     m_Y0Y1_FREQ->SetValue(str);
 
-    str = wxString::Format(_("%f"), Outputs.Y0Y1.requested_freq / 1e6);
+    str = std::to_string(Outputs.Y0Y1.requested_freq / 1e6);
     m_Y0Y1_FREQ_req->SetValue(str);
 
     //Y2Y3 divider
-    str = wxString::Format(_("%i"), (int)Outputs.Y2Y3.divider_val);
+    str = std::to_string((int)Outputs.Y2Y3.divider_val);
     m_Y2Y3_DIV->SetValue(str);
     //Y2Y3 Frequency
-    str = wxString::Format(_("%f"), Outputs.Y2Y3.output_freq / 1e6);
+    str = std::to_string(Outputs.Y2Y3.output_freq / 1e6);
     m_Y2Y3_FREQ->SetValue(str);
 
-    str = wxString::Format(_("%f"), Outputs.Y2Y3.requested_freq / 1e6);
+    str = std::to_string(Outputs.Y2Y3.requested_freq / 1e6);
     m_Y2Y3_FREQ_req->SetValue(str);
 
     //Y4 divider
-    str = wxString::Format(_("%f"), Outputs.Y4.divider_val);
+    str = std::to_string(Outputs.Y4.divider_val);
     m_Y4_DIV->SetValue(str);
 
     //Y4 Frequency
-    str = wxString::Format(_("%f"), Outputs.Y4.output_freq / 1e6);
+    str = std::to_string(Outputs.Y4.output_freq / 1e6);
     m_Y4_FREQ->SetValue(str);
 
-    str = wxString::Format(_("%f"), Outputs.Y4.requested_freq / 1e6);
+    str = std::to_string(Outputs.Y4.requested_freq / 1e6);
     m_Y4_FREQ_req->SetValue(str);
 
     //Y5 divider
-    str = wxString::Format(_("%f"), Outputs.Y5.divider_val);
+    str = std::to_string(Outputs.Y5.divider_val);
     m_Y5_DIV->SetValue(str);
     //Y5 Frequency
-    str = wxString::Format(_("%f"), Outputs.Y5.output_freq / 1e6);
+    str = std::to_string(Outputs.Y5.output_freq / 1e6);
     m_Y5_FREQ->SetValue(str);
 
-    str = wxString::Format(_("%f"), Outputs.Y5.requested_freq / 1e6);
+    str = std::to_string(Outputs.Y5.requested_freq / 1e6);
     m_Y5_FREQ_req->SetValue(str);
 
     //Y6 divider
-    str = wxString::Format(_("%f"), Outputs.Y6.divider_val);
+    str = std::to_string(Outputs.Y6.divider_val);
     m_Y6_DIV->SetValue(str);
     //Y6 Frequency
-    str = wxString::Format(_("%f"), Outputs.Y6.output_freq / 1e6);
+    str = std::to_string(Outputs.Y6.output_freq / 1e6);
     m_Y6_FREQ->SetValue(str);
 
-    str = wxString::Format(_("%f"), Outputs.Y6.requested_freq / 1e6);
+    str = std::to_string(Outputs.Y6.requested_freq / 1e6);
     m_Y6_FREQ_req->SetValue(str);
 
     //Y7 divider
-    str = wxString::Format(_("%f"), Outputs.Y7.divider_val);
+    str = std::to_string(Outputs.Y7.divider_val);
     m_Y7_DIV->SetValue(str);
     //Y7 Frequency
-    str = wxString::Format(_("%f"), Outputs.Y7.output_freq / 1e6);
+    str = std::to_string(Outputs.Y7.output_freq / 1e6);
     m_Y7_FREQ->SetValue(str);
 
-    str = wxString::Format(_("%f"), Outputs.Y7.requested_freq / 1e6);
+    str = std::to_string(Outputs.Y7.requested_freq / 1e6);
     m_Y7_FREQ_req->SetValue(str);
 
     //PLL Lock status
