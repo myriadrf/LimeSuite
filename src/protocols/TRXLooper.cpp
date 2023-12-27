@@ -303,15 +303,15 @@ template<class T> uint32_t TRXLooper::StreamRxTemplate(T** dest, uint32_t count,
 /// @param count The amount of samples to reveive.
 /// @param meta The metadata of the packets of the stream.
 /// @return The amount of samples received.
-uint32_t TRXLooper::StreamRx(complex32f_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamRx(complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta)
 {
-    return StreamRxTemplate<complex32f_t>(dest, count, meta);
+    return StreamRxTemplate<complex32f_t>(samples, count, meta);
 }
 
 /// @copydoc TRXLooper::StreamRx()
-uint32_t TRXLooper::StreamRx(complex16_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamRx(complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta)
 {
-    return StreamRxTemplate<complex16_t>(dest, count, meta);
+    return StreamRxTemplate<complex16_t>(samples, count, meta);
 }
 
 template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
