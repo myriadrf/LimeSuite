@@ -281,7 +281,6 @@ class LIME_API LMS7002M
     int SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_Deg);
     int SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_Deg);
     float_type GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index);
-    int SetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, const int16_t* coef, uint8_t coefCount);
     int GetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, int16_t* coef, uint8_t coefCount);
     float_type GetReferenceClk_TSP(TRXDir dir);
 

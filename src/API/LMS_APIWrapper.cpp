@@ -1814,15 +1814,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
         return -1;
     }
 
-    std::vector<int16_t> convertedCoefficients(count);
-
-    for (std::size_t i = 0; i < count; ++i)
-    {
-        convertedCoefficients[i] = static_cast<int16_t>(coef[i]);
-    }
-
-    return lms->SetGFIRCoefficients(
-        dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), convertedCoefficients.data(), count);
+    return lms->WriteGFIRCoefficients(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), coef, count);
 }
 
 API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)

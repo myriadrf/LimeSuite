@@ -2116,33 +2116,6 @@ float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
 
     This function does not change GFIR*_L or GFIR*_N parameters, they have to be set manually
 */
-int LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, const int16_t* coef, uint8_t coefCount)
-{
-    uint8_t index;
-    uint8_t coefLimit;
-    uint16_t startAddr;
-    if (GFIR_index == 0)
-        startAddr = 0x0280;
-    else if (GFIR_index == 1)
-        startAddr = 0x02C0;
-    else
-        startAddr = 0x0300;
-
-    if (dir == TRXDir::Rx)
-        startAddr += 0x0200;
-    if (GFIR_index < 2)
-        coefLimit = 40;
-    else
-        coefLimit = 120;
-    if (coefCount > coefLimit)
-        return ReportError(ERANGE, "SetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
-    vector<uint16_t> addresses;
-    for (index = 0; index < coefCount; ++index)
-        addresses.push_back(startAddr + index + 24 * (index / 40));
-    SPI_write_batch(&addresses[0], (uint16_t*)coef, coefCount, true);
-    return 0;
-}
-
 int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount)
 {
     if (gfirIndex > 2)
@@ -2151,7 +2124,7 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
         gfirIndex = 2;
     }
 
-    const uint16_t startAddr = 0x0280 + (gfirIndex * 64) + (dir == TRXDir::Tx ? 0 : 0x0200);
+    const uint16_t startAddr = 0x0280 + (gfirIndex * 0x40) + (dir == TRXDir::Tx ? 0 : 0x0200);
     const uint8_t maxCoefCount = gfirIndex < 2 ? 40 : 120;
     const uint8_t bankCount = gfirIndex < 2 ? 5 : 15;
 
