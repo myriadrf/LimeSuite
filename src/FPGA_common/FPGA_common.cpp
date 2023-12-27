@@ -1,14 +1,14 @@
 #include "FPGA_common.h"
 #include "limesuite/IComms.h"
-#include <vector>
-#include <math.h>
-#include <thread>
-#include "Logger.h"
-#include <algorithm>
-#include <unordered_set>
-#include <assert.h>
 #include "LMSBoards.h"
-using namespace std;
+#include "Logger.h"
+#include "WriteRegistersBatch.h"
+
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <thread>
+#include <vector>
 
 #ifndef NDEBUG
     #define ASSERT_WARNING(cond, message) \
@@ -25,41 +25,6 @@ using namespace std;
 #endif
 
 namespace lime {
-
-/** @brief A class for writing a batch of registers into the FPGA. */
-class WriteRegistersBatch
-{
-  public:
-    /// @brief Constructor for the batch.
-    /// @param fpga The FPGA this batch belongs to.
-    WriteRegistersBatch(FPGA* fpga)
-        : owner(fpga){};
-    ~WriteRegistersBatch() { ASSERT_WARNING(addrs.size() == 0, "FPGA WriteRegistersBatch not flushed"); }
-
-    /// @brief Writes the modified values into the FPGA.
-    /// @return The operation status (0 on success).
-    int Flush()
-    {
-        int status = owner->WriteRegisters(addrs.data(), values.data(), addrs.size());
-        addrs.clear();
-        values.clear();
-        return status;
-    }
-
-    /// @brief Sets an address value pair to write into the FPGA on flushing.
-    /// @param addr The address to write to.
-    /// @param value The value to write.
-    void WriteRegister(uint16_t addr, uint16_t value)
-    {
-        addrs.push_back(addr);
-        values.push_back(value);
-    }
-
-  private:
-    FPGA* owner;
-    std::vector<uint32_t> addrs;
-    std::vector<uint32_t> values;
-};
 
 // 0x000A
 const int RX_EN = 1; //controls both receiver and transmitter
@@ -82,8 +47,8 @@ const uint16_t PHCFG_MODE = 1 << 14;
 const uint16_t busyAddr = 0x0021;
 static const std::chrono::milliseconds busyPollPeriod(10); // time between checking "done" bit
 
-// does the fpga has "done" bit to indicate PLLCFG_START,PHCFG_START,PLLRST_START completion
-static bool HasWaitForDone(uint8_t targetDevice)
+// Does the FPGA have the "done" bit to indicate PLLCFG_START, PHCFG_START, PLLRST_START completion?
+static constexpr bool HasWaitForDone(uint8_t targetDevice)
 {
     // TODO: list devices that don't have it, as it's most likely that future devices will support this
     switch (static_cast<eLMS_DEV>(targetDevice))
@@ -97,7 +62,7 @@ static bool HasWaitForDone(uint8_t targetDevice)
     }
 }
 
-static bool HasFPGAClockPhaseSearch(uint8_t targetDevice, uint8_t version, uint8_t revision)
+static constexpr bool HasFPGAClockPhaseSearch(uint8_t targetDevice, uint8_t version, uint8_t revision)
 {
     const uint16_t ver_rev = version << 8 | revision;
     switch (static_cast<eLMS_DEV>(targetDevice))
@@ -366,8 +331,8 @@ int FPGA::ResetTimestamp()
 
 int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title)
 {
-    const auto timeout = chrono::seconds(3);
-    auto t1 = chrono::high_resolution_clock::now();
+    const auto timeout = std::chrono::seconds(3);
+    auto t1 = std::chrono::high_resolution_clock::now();
     bool done = false;
     uint16_t error = 0;
     if (!title.empty())
@@ -387,7 +352,7 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
 
         if (!done)
         {
-            if ((chrono::high_resolution_clock::now() - t1) > timeout)
+            if ((std::chrono::high_resolution_clock::now() - t1) > timeout)
             {
                 lime::warning("%s timeout", title.c_str());
                 return ETIME;
@@ -463,7 +428,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
 {
     verbose_printf("FPGA SetPllFrequency: PLL[%i] input:%.3f MHz clockCount:%i\n", pllIndex, inputFreq / 1e6, clockCount);
     WriteRegistersBatch batch(this);
-    const auto timeout = chrono::seconds(3);
+    const auto timeout = std::chrono::seconds(3);
     if (not fpgaPort)
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
 
@@ -525,7 +490,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     const double vcoLimits_Hz[2] = { 600e6, 1280e6 };
 
     // Collect all desired VCO frequencies
-    map<uint64_t, uint8_t> desiredVCO; // <VCOfreq, demandByClocks>
+    std::map<uint64_t, uint8_t> desiredVCO; // <VCOfreq, demandByClocks>
     for (int i = 0; i < clockCount; ++i)
     {
         if (clocks[i].outFrequency == 0 || clocks[i].bypass)
@@ -539,7 +504,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if (it != desiredVCO.end())
                 it->second++; // increase demand
             else // add new frequency demand
-                desiredVCO.insert(pair<uint64_t, uint8_t>(freq, 1));
+                desiredVCO.insert(std::pair<uint64_t, uint8_t>(freq, 1));
             freq += clocks[i].outFrequency;
         }
     }
@@ -548,7 +513,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
 
     // Find VCO that satisfies most outputs with integer dividers
     uint64_t bestFreqVCO = std::max_element(
-        desiredVCO.begin(), desiredVCO.end(), [](const pair<uint64_t, uint8_t>& p1, const pair<uint64_t, uint8_t>& p2) {
+        desiredVCO.begin(), desiredVCO.end(), [](const std::pair<uint64_t, uint8_t>& p1, const std::pair<uint64_t, uint8_t>& p2) {
             if (p1.second == p2.second)
                 return p1.first < p2.first; // sort by VCO frequency
             return p1.second < p2.second;
@@ -1276,9 +1241,9 @@ FPGA::GatewareInfo FPGA::GetGatewareInfo()
 void FPGA::GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc)
 {
     desc.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gw.boardID));
-    desc.gatewareVersion = std::to_string(int(gw.version));
-    desc.gatewareRevision = std::to_string(int(gw.revision));
-    desc.hardwareVersion = std::to_string(int(gw.hardwareVersion));
+    desc.gatewareVersion = std::to_string(gw.version);
+    desc.gatewareRevision = std::to_string(gw.revision);
+    desc.hardwareVersion = std::to_string(gw.hardwareVersion);
 }
 
 } //namespace lime

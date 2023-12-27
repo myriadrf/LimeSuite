@@ -4,9 +4,10 @@
 @brief Common functions used to work with FPGA
 */
 
-#ifndef FPGA_COMMON_H
-#define FPGA_COMMON_H
-#include <stdint.h>
+#ifndef LIME_FPGA_H
+#define LIME_FPGA_H
+
+#include <cstdint>
 #include <map>
 #include <memory>
 
@@ -93,4 +94,4 @@ class FPGA
 };
 
 } // namespace lime
-#endif // FPGA_COMMON_H
+#endif // LIME_FPGA_H
