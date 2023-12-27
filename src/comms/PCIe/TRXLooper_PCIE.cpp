@@ -32,20 +32,20 @@ using namespace std::chrono;
 
 namespace lime {
 
-static inline int64_t ts_to_us(int64_t fs, int64_t ts)
+static constexpr int64_t ts_to_us(int64_t fs, int64_t ts)
 {
-    int n, r;
-    n = (ts / fs);
-    r = (ts % fs);
-    return (int64_t)n * 1000000 + (((int64_t)r * 1000000) / fs);
+    int64_t n = (ts / fs);
+    int64_t r = (ts % fs);
+
+    return n * 1000000 + ((r * 1000000) / fs);
 }
 
-template<typename T> inline static T clamp(T value, T low, T high)
-{
-    assert(low <= high);
-    return value < low ? low : (value > high ? high : value);
-}
-
+/// @brief Constructs a new TRXLooper_PCIE object.
+/// @param rxPort The PCIe stream receive port to use.
+/// @param txPort The PCIe stream transmit port to use.
+/// @param f The FPGA to use in this stream.
+/// @param chip The LMS7002M chip to use in this stream.
+/// @param moduleIndex The ID of the chip to use.
 TRXLooper_PCIE::TRXLooper_PCIE(
     std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex)
     : TRXLooper(f, chip, moduleIndex)
@@ -74,7 +74,7 @@ void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
     if (combinedSampleRate != 0)
     {
         batchSize = combinedSampleRate / 61.44e6;
-        batchSize = clamp(batchSize, 1, 4);
+        batchSize = std::clamp(batchSize, 1, 4);
     }
 
     if (config.hintSampleRate)
@@ -130,7 +130,7 @@ int TRXLooper_PCIE::TxSetup()
     if (mConfig.extraConfig && mConfig.extraConfig->tx.packetsInBatch != 0)
         mTx.packetsToBatch = mConfig.extraConfig->tx.packetsInBatch;
 
-    mTx.packetsToBatch = clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
+    mTx.packetsToBatch = std::clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
     std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
     for (uint32_t i = 0; i < dmaBuffers.size(); ++i)
@@ -478,7 +478,7 @@ int TRXLooper_PCIE::RxSetup()
     if (mConfig.extraConfig && mConfig.extraConfig->rx.samplesInPacket != 0)
         requestSamplesInPkt = mConfig.extraConfig->rx.samplesInPacket;
 
-    int samplesInPkt = clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
+    int samplesInPkt = std::clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
     int payloadSize = requestSamplesInPkt * sampleSize * chCount;
 
     // iqSamplesCount must be N*16, or N*8 depending on device BUS width
@@ -499,7 +499,7 @@ int TRXLooper_PCIE::RxSetup()
 
     if (mConfig.extraConfig && mConfig.extraConfig->rx.packetsInBatch != 0)
         mRx.packetsToBatch = mConfig.extraConfig->rx.packetsInBatch;
-    mRx.packetsToBatch = clamp((int)mRx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
+    mRx.packetsToBatch = std::clamp((int)mRx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
     int irqPeriod = 16;
     float bufferTimeDuration = 0;
@@ -508,7 +508,7 @@ int TRXLooper_PCIE::RxSetup()
         bufferTimeDuration = float(samplesInPkt * mRx.packetsToBatch) / mConfig.hintSampleRate;
         irqPeriod = 80e-6 / bufferTimeDuration;
     }
-    irqPeriod = clamp(irqPeriod, 1, 16);
+    irqPeriod = std::clamp(irqPeriod, 1, 16);
     irqPeriod = 4;
 
     if (mCallback_logMessage)
@@ -758,6 +758,9 @@ void TRXLooper_PCIE::RxTeardown()
     mRxArgs.port->RxDMAEnable(false, mRxArgs.bufferSize, 1);
 }
 
+/// @copydoc SDRDevice::UploadTxWaveform()
+/// @param fpga The FPGA device to use.
+/// @param port The PCIe communications port to use.
 int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
     std::shared_ptr<LitePCIe> port,
     const lime::SDRDevice::StreamConfig& config,

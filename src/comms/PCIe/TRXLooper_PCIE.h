@@ -18,8 +18,8 @@ class TRXLooper_PCIE : public TRXLooper
     TRXLooper_PCIE(
         std::shared_ptr<LitePCIe> rxPort, std::shared_ptr<LitePCIe> txPort, FPGA* f, LMS7002M* chip, uint8_t moduleIndex);
     virtual ~TRXLooper_PCIE();
-    virtual void Setup(const SDRDevice::StreamConfig& config);
-    virtual void Start();
+    virtual void Setup(const SDRDevice::StreamConfig& config) override;
+    virtual void Start() override;
 
     static int UploadTxWaveform(FPGA* fpga,
         std::shared_ptr<LitePCIe> port,
@@ -27,8 +27,6 @@ class TRXLooper_PCIE : public TRXLooper
         uint8_t moduleIndex,
         const void** samples,
         uint32_t count);
-
-    typedef SamplesPacket<2> SamplesPacketType;
 
     /** @brief The transfer arguments for the PCIe transfer. */
     struct TransferArgs {

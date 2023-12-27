@@ -17,6 +17,12 @@ namespace lime {
 template<class T> class TxBufferManager
 {
   public:
+    /// @brief Constructs a new TxBufferManager object.
+    /// @param mimo Whether the stream is a Multiple In Multiple Out (MIMO) stream.
+    /// @param compressed Whether the stream is in 12-bit or in 16-bit format (true for 12-bit).
+    /// @param maxSamplesInPkt The maximum amount of samples allowed in a single packet.
+    /// @param maxPacketsInBatch The maximum amount of packets allowed in a single transfer batch.
+    /// @param inputFormat The input format of the samples for the device.
     TxBufferManager(bool mimo,
         bool compressed,
         uint32_t maxSamplesInPkt,
@@ -39,6 +45,9 @@ template<class T> class TxBufferManager
         maxPayloadSize = std::min(4080u, bytesForFrame * maxSamplesInPkt);
     }
 
+    /// @brief Resets the buffer to point to an empty buffer.
+    /// @param memPtr The pointer of memory to set.
+    /// @param capacity The total capacity of the buffer.
     void Reset(uint8_t* memPtr, uint32_t capacity)
     {
         packetsCreated = 0;
@@ -52,14 +61,19 @@ template<class T> class TxBufferManager
         payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
     }
 
-    inline bool hasSpace() const
+    /// @brief Checks if the buffer still has space in it.
+    /// @return Whether there still is space or not.
+    constexpr bool hasSpace() const
     {
         const bool packetNotFull = payloadSize < maxPayloadSize;
         const bool spaceAvailable = mCapacity - bytesUsed > sizeof(StreamHeader);
         return packetNotFull && spaceAvailable;
     }
 
-    inline bool consume(T* src)
+    /// @brief Adds samples from the given source packet into the transfer.
+    /// @param src The source packet to add to the transfer.
+    /// @return The sendability of the transfer (true to send it now).
+    bool consume(T* src)
     {
         bool sendBuffer = false;
         while (!src->empty())
@@ -126,9 +140,17 @@ template<class T> class TxBufferManager
         return src->metadata.flushPartialPacket || sendBuffer;
     }
 
-    inline int size() const { return bytesUsed; };
-    inline uint8_t* data() const { return mData; };
-    inline int packetCount() const { return packetsCreated; };
+    /// @brief Gets the current size of the transfer.
+    /// @return The amount of bytes this transfer is currently using.
+    constexpr uint32_t size() const { return bytesUsed; };
+
+    /// @brief Gets the pointer to the buffer of the transfer.
+    /// @return The pointer to the buffer of the transfer.
+    constexpr uint8_t* data() const { return mData; };
+
+    /// @brief Gets the amount of packets in this transfer.
+    /// @return The amount of packets in this transfer.
+    constexpr uint16_t packetCount() const { return packetsCreated; };
 
   private:
     DataConversion conversion;
