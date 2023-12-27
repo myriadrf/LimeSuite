@@ -201,22 +201,34 @@ int FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned c
     return 0;
 }
 
+/// @brief Writes the given data blocks into LMS7002M chip.
+/// @param data The data to write.
+/// @param length The length of the data to write.
+/// @return Whether the operation succeedded or not.
 int FPGA::WriteLMS7002MSPI(const uint32_t* data, uint32_t length)
 {
 #ifndef NDEBUG
     for (uint32_t i = 0; i < length; ++i)
         assert(data[i] & (1 << 31));
 #endif
-    lms7002mPort->SPI(data, nullptr, length);
-    return 0;
+    return lms7002mPort->SPI(data, nullptr, length);
 }
 
+/// @brief Reads the given addresses from the LMS7002M's memory.
+/// @param writeData The addresses to read from.
+/// @param readData The storage to store the read data.
+/// @param length The length of the data to read.
+/// @return Whether the operation succeedded or not.
 int FPGA::ReadLMS7002MSPI(const uint32_t* writeData, uint32_t* readData, uint32_t length)
 {
-    lms7002mPort->SPI(writeData, readData, length);
-    return 0;
+    return lms7002mPort->SPI(writeData, readData, length);
 }
 
+/// @brief Reads the given registers from the FPGA's memory.
+/// @param addrs The addresses to read.
+/// @param data The data array to write the read values to.
+/// @param cnt The amount of registers to read.
+/// @return The operation status (0 on success).
 int FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
 {
     std::vector<uint32_t> spiBuffer;
