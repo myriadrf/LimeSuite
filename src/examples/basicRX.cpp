@@ -134,8 +134,8 @@ int main(int argc, char** argv)
     SDRDevice::StreamMeta rxMeta;
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
     {
-        int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
-        if (samplesRead <= 0)
+        uint32_t samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        if (samplesRead == 0)
             continue;
 
         // process samples
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
                 (frequencyLO + peakFrequency) / 1e6);
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points\n");
-            for (int j = 0; j < samplesRead; ++j)
+            for (uint32_t j = 0; j < samplesRead; ++j)
                 gp.writef("%f %f\n", rxSamples[0][j].i, rxSamples[0][j].q);
             gp.write("e\n");
             gp.flush();

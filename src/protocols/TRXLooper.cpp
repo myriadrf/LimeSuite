@@ -612,7 +612,7 @@ bool TRXLooper::IsStreamRunning()
     return mStreamEnabled;
 }
 
-template<class T> int TRXLooper::StreamRxTemplate(T** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+template<class T> uint32_t TRXLooper::StreamRxTemplate(T** dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     bool timestampSet = false;
     uint32_t samplesProduced = 0;
@@ -663,24 +663,24 @@ template<class T> int TRXLooper::StreamRxTemplate(T** dest, uint32_t count, SDRD
     return samplesProduced;
 }
 
-int TRXLooper::StreamRx(complex32f_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamRx(complex32f_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     return StreamRxTemplate<complex32f_t>(dest, count, meta);
 }
 
-int TRXLooper::StreamRx(complex16_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamRx(complex16_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     return StreamRxTemplate<complex16_t>(dest, count, meta);
 }
 
-template<class T> int TRXLooper::StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const bool useChannelB = mConfig.txCount > 1;
     const bool useTimestamp = meta ? meta->waitForTimestamp : false;
     const bool flush = meta && meta->flushPartialPacket;
     int64_t ts = meta ? meta->timestamp : 0;
 
-    int samplesRemaining = count;
+    uint32_t samplesRemaining = count;
 
     const int samplesInPkt = mTx.samplesInPkt;
     const int packetsToBatch = mTx.packetsToBatch;
@@ -697,7 +697,7 @@ template<class T> int TRXLooper::StreamTxTemplate(const T* const* samples, uint3
     }
 
     const T* src[2] = { samples[0], useChannelB ? samples[1] : nullptr };
-    while (samplesRemaining)
+    while (samplesRemaining > 0)
     {
         if (!mTx.stagingPacket)
         {
@@ -743,12 +743,12 @@ template<class T> int TRXLooper::StreamTxTemplate(const T* const* samples, uint3
     return count - samplesRemaining;
 }
 
-int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     return StreamTxTemplate(samples, count, meta);
 }
 
-int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     return StreamTxTemplate(samples, count, meta);
 }

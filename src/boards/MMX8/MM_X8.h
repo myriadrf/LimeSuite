@@ -48,11 +48,11 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamTx(
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamTx(
         uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(
+    virtual uint32_t StreamTx(
         uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 

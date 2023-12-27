@@ -632,8 +632,8 @@ int main(int argc, char** argv)
                 const complex16_t* txSamples[16];
                 for (int i = 0; i < 16; ++i)
                     txSamples[i] = &txData[txSent];
-                int samplesSent = useComposite ? composite->StreamTx(txSamples, toSend, &txMeta)
-                                               : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
+                uint32_t samplesSent = useComposite ? composite->StreamTx(txSamples, toSend, &txMeta)
+                                                    : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
                 if (samplesSent > 0)
                 {
                     txSent += samplesSent;
@@ -645,9 +645,9 @@ int main(int argc, char** argv)
         complex16_t* rxSamples[16];
         for (int i = 0; i < 16; ++i)
             rxSamples[i] = rxData[i].data();
-        int samplesRead = useComposite ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
-                                       : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
-        if (samplesRead <= 0)
+        uint32_t samplesRead = useComposite ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
+                                            : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        if (samplesRead == 0)
             continue;
 
         if (tx && repeater)

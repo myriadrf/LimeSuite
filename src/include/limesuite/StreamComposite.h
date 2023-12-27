@@ -25,8 +25,8 @@ class LIME_API StreamComposite
     void StreamStart();
     void StreamStop();
 
-    template<class T> int StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-    template<class T> int StreamTx(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    template<class T> uint32_t StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    template<class T> uint32_t StreamTx(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
   private:
     std::vector<SDRDevice::StreamConfig> SplitAggregateStreamSetup(const SDRDevice::StreamConfig& cfg);

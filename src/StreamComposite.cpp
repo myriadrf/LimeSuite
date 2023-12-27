@@ -67,41 +67,46 @@ void StreamComposite::StreamStop()
         a.device->StreamStop(a.streamIndex);
 }
 
-template<class T> int StreamComposite::StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta)
+template<class T> uint32_t StreamComposite::StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     T** dest = samples;
     for (auto& a : mActiveAggregates)
     {
-        int ret = a.device->StreamRx(a.streamIndex, dest, count, meta);
-        if (ret != static_cast<int>(count))
+        uint32_t ret = a.device->StreamRx(a.streamIndex, dest, count, meta);
+        if (ret != count)
+        {
             return ret;
+        }
 
         dest += a.channels.size();
     }
-    return static_cast<int>(count);
+    return count;
 }
 
-template<class T> int StreamComposite::StreamTx(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+template<class T> uint32_t StreamComposite::StreamTx(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const T* const* src = samples;
     for (auto& a : mActiveAggregates)
     {
-        int ret = a.device->StreamTx(a.streamIndex, src, count, meta);
-        if (ret != static_cast<int>(count))
+        uint32_t ret = a.device->StreamTx(a.streamIndex, src, count, meta);
+        if (ret != count)
+        {
             return ret;
+        }
 
         src += a.channels.size();
     }
-    return static_cast<int>(count);
+    return count;
 }
 
 // force instantiate functions with these types
-template int StreamComposite::StreamRx<lime::complex16_t>(lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamRx<lime::complex32f_t>(
+template uint32_t StreamComposite::StreamRx<lime::complex16_t>(
+    lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
+template uint32_t StreamComposite::StreamRx<lime::complex32f_t>(
     lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamTx<lime::complex16_t>(
+template uint32_t StreamComposite::StreamTx<lime::complex16_t>(
     const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamTx<lime::complex32f_t>(
+template uint32_t StreamComposite::StreamTx<lime::complex32f_t>(
     const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
 } // namespace lime

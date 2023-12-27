@@ -20,7 +20,7 @@ namespace lime {
 struct DeviceNode;
 
 /// @brief Class for holding information about an SDR (Software Defined Radio) device.
-/// SDRDevice can have multiple modules (RF chips), that can operate independently. 
+/// SDRDevice can have multiple modules (RF chips), that can operate independently.
 class LIME_API SDRDevice
 {
   public:
@@ -329,9 +329,9 @@ class LIME_API SDRDevice
     /// @param count The amount of samples to reveive.
     /// @param meta The metadata of the packets of the stream.
     /// @return The amount of samples received.
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) = 0;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) = 0;
     /// @copydoc SDRDevice::StreamRx()
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) = 0;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) = 0;
 
     /// @brief Transmits packets from all the active streams in the device.
     /// @param moduleIndex The index of the device to transmit the samples with.
@@ -339,9 +339,11 @@ class LIME_API SDRDevice
     /// @param count The amount of samples to transmit.
     /// @param meta The metadata of the packets of the stream.
     /// @return The amount of samples transmitted.
-    virtual int StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
+    virtual uint32_t StreamTx(
+        uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     /// @copydoc SDRDevice::StreamTx()
-    virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
+    virtual uint32_t StreamTx(
+        uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
 
     /// @brief Retrieves the current stream statistics.
     /// @param moduleIndex The index of the device to retrieve the status from.
@@ -417,7 +419,7 @@ class LIME_API SDRDevice
 
     /// @brief The definition of a function to call whenever memory is being uploaded.
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
-    
+
     /// @brief Uploads the given memory into the specified device.
     /// @param device The memory device to upload the memory to.
     /// @param moduleIndex The index of the main device to upload the memory to.

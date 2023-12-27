@@ -31,10 +31,10 @@ class TRXLooper
 
     inline const lime::SDRDevice::StreamConfig& GetConfig() const { return mConfig; }
 
-    virtual int StreamRx(lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-    virtual int StreamRx(lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-    virtual int StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
-    virtual int StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamRx(lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamRx(lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
     void SetMessageLogCallback(SDRDevice::LogCallbackType callback) { mCallback_logMessage = callback; }
 
@@ -97,8 +97,8 @@ class TRXLooper
     Stream mTx;
 
   private:
-    template<class T> int StreamRxTemplate(T** dest, uint32_t count, SDRDevice::StreamMeta* meta);
-    template<class T> int StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    template<class T> uint32_t StreamRxTemplate(T** dest, uint32_t count, SDRDevice::StreamMeta* meta);
+    template<class T> uint32_t StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 };
 
 } // namespace lime
