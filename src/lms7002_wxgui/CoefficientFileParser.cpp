@@ -4,12 +4,13 @@
 @brief	Coefficient file parser functions
 */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "CoefficientFileParser.h"
+
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #include <fstream>
-using namespace std;
+#include <vector>
 
 // ***************************************************************
 // Check if 'c' is blank character.
@@ -217,10 +218,10 @@ int Parser::getcoeffs2(const char* filename, float* v1, float* v2, int max)
 // ***************************************************************
 // Saves given coefficients to fir file
 // ***************************************************************
-void Parser::saveToFile(const std::string& filename, const float* coefficients, int coefficientCount)
+void Parser::saveToFile(const std::string& filename, const std::vector<double>& coefficients)
 {
-    fstream fout;
-    fout.open(filename, ios::out);
+    std::ofstream fout;
+    fout.open(filename, std::ios::out);
 
     std::string fname;
     std::size_t name_pos = filename.rfind('\\');
@@ -230,28 +231,33 @@ void Parser::saveToFile(const std::string& filename, const float* coefficients, 
         name_pos = filename.rfind('/');
     }
 
-    fout << "/* ******************************************************************" << endl;
+    fout << "/* ******************************************************************" << std::endl;
     fout << "   FILE:\t";
     if (name_pos != std::string::npos)
     {
         fname = filename.substr(name_pos + 1);
-        fout << fname << endl;
+        fout << fname << std::endl;
     }
     else
     {
-        fout << "???" << endl;
+        fout << filename << std::endl;
     }
 
-    fout << "   DESCRIPTION:\t" << endl;
-    fout << "   DATE:\t" << endl;
-    fout << "   REVISIONS:\t" << endl;
-    fout << "   ****************************************************************** */" << endl << endl;
+    fout << "   DESCRIPTION:\t" << std::endl;
+    fout << "   DATE:\t" << std::endl;
+    fout << "   REVISIONS:\t" << std::endl;
+    fout << "   ****************************************************************** */" << std::endl << std::endl;
 
-    for (int i = 0; i < coefficientCount; ++i)
+    const std::size_t coefficientCount = coefficients.size();
+    for (std::size_t i = 0; i < coefficientCount; ++i)
     {
         fout << "\t" << std::fixed << coefficients[i];
-        if (i < coefficientCount - 1)
-            fout << ',' << endl;
+
+        if (i < coefficientCount - 1) // If not last
+        {
+            fout << ',' << std::endl;
+        }
     }
+
     fout.close();
 }

@@ -152,17 +152,19 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile(wxCommandEvent& event)
 {
     wxFileDialog dlg(this, _("Save coefficients file"), "", "", "FIR Coeffs (*.fir)|*.fir", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
-        return;
-    float coefficients[200];
-    memset(coefficients, 0, sizeof(unsigned short) * 200);
-    double ltemp;
-    for (int i = 0; i < spinCoefCount->GetValue(); ++i)
     {
-        ltemp = 0;
-        gridCoef->GetCellValue(i, 0).ToDouble(&ltemp);
-        coefficients[i] = ltemp;
+        return;
     }
-    Parser::saveToFile(dlg.GetPath().ToStdString(), coefficients, spinCoefCount->GetValue());
+
+    const int coefficientCount = spinCoefCount->GetValue();
+    std::vector<double> coefficients(coefficientCount, 0);
+
+    for (int i = 0; i < coefficientCount; ++i)
+    {
+        gridCoef->GetCellValue(i, 0).ToDouble(&coefficients[i]);
+    }
+
+    Parser::saveToFile(dlg.GetPath().ToStdString(), coefficients);
 }
 
 void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)

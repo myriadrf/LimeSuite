@@ -8,6 +8,7 @@
 */
 
 #include <string>
+#include <vector>
 
 namespace Parser {
 bool IsBlank(char);
@@ -15,7 +16,7 @@ bool IsDigit(char);
 int getValue(FILE*, float*);
 int getcoeffs(const char*, float*, int);
 int getcoeffs2(const char*, float*, float*, int);
-void saveToFile(const std::string& filename, const float* coefficients, int coefficientCount);
+void saveToFile(const std::string& filename, const std::vector<double>& coefficients);
 } // namespace Parser
 
 #endif // COEFFICIENT_FILE_PARSER_H
