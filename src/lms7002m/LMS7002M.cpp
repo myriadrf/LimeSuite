@@ -2120,7 +2120,7 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
 {
     if (gfirIndex > 2)
     {
-        lime::warning("SetGFIRCoefficients: Invalid GFIR index(%i). Will configure GFIR[2].");
+        lime::warning("SetGFIRCoefficients: Invalid GFIR index(%i). Will configure GFIR[2].", gfirIndex);
         gfirIndex = 2;
     }
 
@@ -2130,8 +2130,11 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
 
     if (coefCount > maxCoefCount)
     {
-        return ReportError(
-            ERANGE, "SetGFIRCoefficients: too many coefficients(%i), GFIR[%i] can have only %i", coefCount, maxCoefCount);
+        return ReportError(ERANGE,
+            "SetGFIRCoefficients: too many coefficients(%i), GFIR[%i] can have only %i",
+            coefCount,
+            gfirIndex,
+            maxCoefCount);
     }
 
     uint16_t addrs[120];
@@ -2178,7 +2181,7 @@ int LMS7002M::ReadGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* co
 
     if (gfirIndex > 2)
     {
-        lime::warning("ReadGFIRCoefficients: Invalid GFIR index(%i). Will read GFIR[2].");
+        lime::warning("ReadGFIRCoefficients: Invalid GFIR index(%i). Will read GFIR[2].", gfirIndex);
         gfirIndex = 2;
     }
 
