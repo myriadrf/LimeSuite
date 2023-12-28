@@ -2,6 +2,8 @@
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
 #include "CoefficientFileParser.h"
+#include "limesuite/commonTypes.h"
+#include "limesuite/LMS7002M.h"
 
 lms7002_dlgGFIR_Coefficients::lms7002_dlgGFIR_Coefficients(wxWindow* parent, wxWindowID id, const wxString& title)
     : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, 0)
@@ -214,4 +216,35 @@ void lms7002_dlgGFIR_Coefficients::OnBtnOkClick(wxCommandEvent& event)
 void lms7002_dlgGFIR_Coefficients::OnBtnCancelClick(wxCommandEvent& event)
 {
     EndModal(wxID_CANCEL);
+}
+
+void lms7002_dlgGFIR_Coefficients::ReadCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl)
+{
+    if (gfirIndex > 2)
+    {
+        gfirIndex = 2;
+    }
+
+    std::vector<double> coefficients;
+    const int maxCoefCount = gfirIndex == 2 ? 120 : 40;
+    coefficients.resize(maxCoefCount, 0);
+
+    int status = lmsControl->ReadGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    if (status < 0)
+    {
+        wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
+        Destroy();
+        return;
+    }
+
+    SetCoefficients(coefficients);
+}
+
+void lms7002_dlgGFIR_Coefficients::WriteCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl)
+{
+    if (ShowModal() == wxID_OK)
+    {
+        std::vector<double> coefficients = GetCoefficients();
+        lmsControl->WriteGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    }
 }

@@ -1833,17 +1833,8 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, siz
     }
 
     const uint8_t count = filt == LMS_GFIR3 ? 120 : 40;
-    std::vector<int16_t> coefficientBuffer(count);
 
-    auto returnValue = lms->GetGFIRCoefficients(
-        dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), coefficientBuffer.data(), count);
-
-    for (std::size_t i = 0; i < count; ++i)
-    {
-        coef[i] = static_cast<float_type>(coefficientBuffer[i]);
-    }
-
-    return returnValue;
+    return lms->ReadGFIRCoefficients(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), coef, count);
 }
 
 API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
