@@ -280,7 +280,7 @@ TEST(CoefficientFileParser, MultilineCommentsSingleLineCommentIsIgnored)
 
 TEST(CoefficientFileParser, MultilineCommentsUnclosed)
 {
-    const std::string fileContents = R"""(0.111111/* // 0.222222
+    const std::string fileContents = R"""(0.111111/* 0.222222
     0.333333)""";
 
     const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
