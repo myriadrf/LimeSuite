@@ -119,9 +119,9 @@ TEST(CoefficientFileParser, StandardOutputFile)
 TEST(CoefficientFileParser, EvilFile)
 {
     std::string file_contents = R"""(  0.111111,/*comment*/,-0.222222/*comment*/0.333333//0.444444
+    // This is a multispace single line comment for testing purposes.
 +0.555555 /* 0.666666
-
- 0.777777  /*          -0.888888 */*/0.999999/*comm//ent*/ 1.111111
+ 0.777777  /*        * /  -0.888888 */*/0.999999/*comm//ent*/ 1.111111
 )""";
 
     const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();

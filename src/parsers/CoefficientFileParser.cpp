@@ -38,7 +38,7 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
 
     bool hasValueBeenRead = false;
 
-    do
+    while (!hasValueBeenRead)
     {
         if (token.find(',') == 0)
         {
@@ -51,8 +51,8 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
         }
         else if (token.find("/*") == 0)
         {
-            uint commentLevelsDeep = 1;
-            if (token.size() == 2)
+            token = token.substr(2);
+            if (token.size() == 0)
             {
                 if (file.eof())
                 {
@@ -61,19 +61,8 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
 
                 file >> token;
             }
-            else
-            {
-                token = token.substr(2);
-                if (token.size() == 0)
-                {
-                    if (file.eof())
-                    {
-                        return static_cast<int>(ErrorCodes::END_OF_FILE);
-                    }
 
-                    file >> token;
-                }
-            }
+            uint commentLevelsDeep = 1;
 
             while (commentLevelsDeep != 0)
             {
@@ -150,7 +139,7 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
                 token = "";
             }
         }
-    } while (!hasValueBeenRead);
+    }
 
     std::size_t charsToUnget = token.size();
     for (std::size_t i = 0; i < charsToUnget; ++i)
