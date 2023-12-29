@@ -7,13 +7,15 @@
 @brief	The FIR coefficient file parser.
 */
 
+#include "limesuite/config.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace lime {
 
-class CoefficientFileParser
+class LIME_API CoefficientFileParser
 {
   public:
     static int getcoeffs(const std::string& filename, std::vector<double>& coefficients, int max);
