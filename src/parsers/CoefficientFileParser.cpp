@@ -172,7 +172,7 @@ int CoefficientFileParser::getcoeffs(const std::string& filename, std::vector<do
     }
 
     int index = 0;
-    while (index < max)
+    while (index <= max)
     {
         double value = 0;
 
@@ -181,6 +181,12 @@ int CoefficientFileParser::getcoeffs(const std::string& filename, std::vector<do
         switch (returnValue)
         {
         case ErrorCodes::SUCCESS:
+            if (index == max)
+            {
+                inputFile.close();
+                return static_cast<int>(ErrorCodes::TOO_MANY_COEFFS);
+            }
+
             coefficients[index] = value;
             index++;
             break;

@@ -105,10 +105,10 @@ TEST(CoefficientFileParser, StandardOutputFile)
         1.283670,
         1.822108,
         0.338786 };
-    expectedResult.resize(200, 0);
+    expectedResult.resize(40, 0);
 
-    std::vector<double> coefficients(200, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 200);
+    std::vector<double> coefficients(40, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 40);
 
     EXPECT_EQ(actualReturn, 40);
     EXPECT_THAT(coefficients, expectedResult);
@@ -133,10 +133,10 @@ TEST(CoefficientFileParser, EvilFile)
     outFile.close();
 
     std::vector<double> expectedResult{ 0.111111, -0.222222, +0.333333, +0.555555, 0.999999, 1.111111 };
-    expectedResult.resize(200, 0);
+    expectedResult.resize(10, 0);
 
-    std::vector<double> coefficients(200, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 200);
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 6);
     EXPECT_THAT(coefficients, expectedResult);
