@@ -30,6 +30,7 @@ class CoefficientFileParser
     };
 
     static ErrorCodes getValue(std::ifstream& file, double& value);
+    static void parseMultilineComments(std::ifstream& file, std::string& token);
 };
 
 } // namespace lime

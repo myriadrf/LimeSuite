@@ -14,6 +14,69 @@
 
 using namespace lime;
 
+void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::string& token)
+{
+    token = token.substr(2);
+    if (token.size() == 0)
+    {
+        if (file.eof())
+        {
+            token = "";
+            return;
+        }
+
+        file >> token;
+    }
+
+    uint commentLevelsDeep = 1;
+
+    while (commentLevelsDeep != 0) // Multiline comments can be nested
+    {
+        std::size_t startCommentPos = token.find("/*");
+        std::size_t endCommentPos = token.find("*/");
+
+        // While we're still finding comment starts and ends in this token.
+        while ((startCommentPos != std::string::npos || endCommentPos != std::string::npos) && commentLevelsDeep > 0)
+        {
+            if (endCommentPos < startCommentPos) // We're out of comment section.
+            {
+                commentLevelsDeep--;
+
+                token = token.substr(endCommentPos + 2);
+
+                endCommentPos = token.find("*/");
+                if (startCommentPos != std::string::npos)
+                {
+                    startCommentPos = token.find("/*");
+                }
+            }
+            else if (startCommentPos < endCommentPos)
+            {
+                commentLevelsDeep++;
+
+                token = token.substr(startCommentPos + 2);
+
+                startCommentPos = token.find("/*");
+                if (endCommentPos != std::string::npos)
+                {
+                    endCommentPos = token.find("*/");
+                }
+            }
+        }
+
+        if (commentLevelsDeep != 0) // Keep reading until the end of the comment(s)
+        {
+            if (file.eof())
+            {
+                token = "";
+                return;
+            }
+
+            file >> token;
+        }
+    }
+}
+
 // ***************************************************************
 //	Get integer value from the file
 //	Returns:
@@ -42,76 +105,23 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 
     while (!hasValueBeenRead)
     {
-        if (token.find(',') == 0)
+        if (token.find(',') == 0) // Treat comma as a whitespace character.
         {
             token = token.substr(1);
         }
-        else if (token.find("//") == 0)
+        else if (token.find("//") == 0) // Standard single line comment
         {
             file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             file >> token;
+
+            if (file.eof())
+            {
+                return ErrorCodes::END_OF_FILE;
+            }
         }
-        else if (token.find("/*") == 0)
+        else if (token.find("/*") == 0) // Multiline comments
         {
-            token = token.substr(2);
-            if (token.size() == 0)
-            {
-                if (file.eof())
-                {
-                    return ErrorCodes::END_OF_FILE;
-                }
-
-                file >> token;
-            }
-
-            uint commentLevelsDeep = 1;
-
-            while (commentLevelsDeep != 0)
-            {
-                std::size_t startCommentPos = token.find("/*");
-                std::size_t endCommentPos = token.find("*/");
-
-                while (startCommentPos != std::string::npos || endCommentPos != std::string::npos)
-                {
-                    if (endCommentPos < startCommentPos) // We're out of comment section.
-                    {
-                        commentLevelsDeep--;
-
-                        if (commentLevelsDeep == 0)
-                        {
-                            token = token.substr(endCommentPos + 2);
-                            break;
-                        }
-
-                        endCommentPos = token.find("*/", endCommentPos + 2);
-
-                        if (startCommentPos != std::string::npos)
-                        {
-                            startCommentPos = token.find("/*", endCommentPos + 2);
-                        }
-                    }
-                    else if (startCommentPos < endCommentPos)
-                    {
-                        commentLevelsDeep++;
-                        startCommentPos = token.find("/*", startCommentPos + 2);
-
-                        if (endCommentPos != std::string::npos)
-                        {
-                            endCommentPos = token.find("*/", startCommentPos + 2);
-                        }
-                    }
-                }
-
-                if (commentLevelsDeep != 0)
-                {
-                    if (file.eof())
-                    {
-                        return ErrorCodes::END_OF_FILE;
-                    }
-
-                    file >> token;
-                }
-            }
+            parseMultilineComments(file, token);
         }
         else
         {
@@ -143,6 +153,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
         }
     }
 
+    // Rewind file by the amount of unparsed characters.
     std::size_t charsToUnget = token.size();
     for (std::size_t i = 0; i < charsToUnget; ++i)
     {
