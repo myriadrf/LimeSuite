@@ -6,6 +6,8 @@
 #include <fstream>
 #include <filesystem>
 
+using namespace lime;
+
 TEST(CoefficientFileParser, StandardOutputFile)
 {
     std::string file_contents = R"""(/* ******************************************************************
@@ -132,7 +134,7 @@ TEST(CoefficientFileParser, EvilFile)
     outFile << file_contents;
     outFile.close();
 
-    std::vector<double> expectedResult{ 0.111111, -0.222222, +0.333333, +0.555555, 0.999999, 1.111111 };
+    std::vector<double> expectedResult{ 0.111111, -0.222222, 0.333333, +0.555555, 0.999999, 1.111111 };
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);

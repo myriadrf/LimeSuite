@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+using namespace lime;
+
 // ***************************************************************
 //	Get integer value from the file
 //	Returns:
@@ -19,17 +21,17 @@
 //		-1 if EOF or
 //		-2 if syntax error
 // ***************************************************************
-int CoefficientFileParser::getValue(std::ifstream& file, double& value)
+CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream& file, double& value)
 {
     file >> value;
     if (!file.fail())
     {
-        return static_cast<int>(ErrorCodes::SUCCESS);
+        return ErrorCodes::SUCCESS;
     }
 
     if (file.eof())
     {
-        return static_cast<int>(ErrorCodes::END_OF_FILE);
+        return ErrorCodes::END_OF_FILE;
     }
 
     file.clear();
@@ -56,7 +58,7 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
             {
                 if (file.eof())
                 {
-                    return static_cast<int>(ErrorCodes::END_OF_FILE);
+                    return ErrorCodes::END_OF_FILE;
                 }
 
                 file >> token;
@@ -104,7 +106,7 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
                 {
                     if (file.eof())
                     {
-                        return static_cast<int>(ErrorCodes::END_OF_FILE);
+                        return ErrorCodes::END_OF_FILE;
                     }
 
                     file >> token;
@@ -113,14 +115,14 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
         }
         else
         {
-            return static_cast<int>(ErrorCodes::SYNTAX_ERROR);
+            return ErrorCodes::SYNTAX_ERROR;
         }
 
         if (token.size() == 0)
         {
             if (file.eof())
             {
-                return static_cast<int>(ErrorCodes::END_OF_FILE);
+                return ErrorCodes::END_OF_FILE;
             }
 
             file >> token;
@@ -147,7 +149,7 @@ int CoefficientFileParser::getValue(std::ifstream& file, double& value)
         file.unget();
     }
 
-    return static_cast<int>(ErrorCodes::SUCCESS);
+    return ErrorCodes::SUCCESS;
 }
 
 // ***************************************************************
@@ -176,12 +178,12 @@ int CoefficientFileParser::getcoeffs(const std::string& filename, std::vector<do
     {
         double value = 0;
 
-        ErrorCodes returnValue = static_cast<ErrorCodes>(getValue(inputFile, value));
+        ErrorCodes returnValue = getValue(inputFile, value);
 
         switch (returnValue)
         {
         case ErrorCodes::SUCCESS:
-            if (index == max)
+            if (index >= max)
             {
                 inputFile.close();
                 return static_cast<int>(ErrorCodes::TOO_MANY_COEFFS);
@@ -197,12 +199,11 @@ int CoefficientFileParser::getcoeffs(const std::string& filename, std::vector<do
             inputFile.close();
             return static_cast<int>(ErrorCodes::SYNTAX_ERROR);
         default:
-            break;
+            throw std::logic_error("Unexpected return from getValue");
         }
     }
 
-    inputFile.close();
-    return static_cast<int>(ErrorCodes::TOO_MANY_COEFFS);
+    throw std::logic_error("Unreachable; clearing a warning");
 }
 
 // ***************************************************************

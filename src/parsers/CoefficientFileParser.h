@@ -11,12 +11,15 @@
 #include <string>
 #include <vector>
 
+namespace lime {
+
 class CoefficientFileParser
 {
   public:
     static int getcoeffs(const std::string& filename, std::vector<double>& coefficients, int max);
     static void saveToFile(const std::string& filename, const std::vector<double>& coefficients);
 
+  private:
     enum class ErrorCodes : int8_t {
         SUCCESS = 0,
         END_OF_FILE = -1,
@@ -26,8 +29,9 @@ class CoefficientFileParser
         TOO_MANY_COEFFS = -5,
     };
 
-  private:
-    static int getValue(std::ifstream& file, double& value);
+    static ErrorCodes getValue(std::ifstream& file, double& value);
 };
+
+} // namespace lime
 
 #endif // COEFFICIENT_FILE_PARSER_H
