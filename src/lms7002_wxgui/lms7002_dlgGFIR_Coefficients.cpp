@@ -1,7 +1,7 @@
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
-#include "CoefficientFileParser.h"
+#include "parsers/CoefficientFileParser.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/LMS7002M.h"
 

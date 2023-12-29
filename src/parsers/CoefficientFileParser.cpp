@@ -21,132 +21,141 @@
 // ***************************************************************
 int CoefficientFileParser::getValue(std::ifstream& file, double& value)
 {
-    if (file.eof())
-    {
-        return static_cast<int>(ErrorCodes::END_OF_FILE);
-    }
-
     file >> value;
     if (!file.fail())
     {
         return static_cast<int>(ErrorCodes::SUCCESS);
     }
 
+    if (file.eof())
+    {
+        return static_cast<int>(ErrorCodes::END_OF_FILE);
+    }
+
     file.clear();
     std::string token;
     file >> token;
 
-    std::stringstream stream(token);
-    char c;
+    bool hasValueBeenRead = false;
 
     do
     {
-        stream.clear();
-        stream >> c;
-
-        switch (c)
+        if (token.find(',') == 0)
         {
-        case ',': // Treat commas as whitespace
-            break;
-        case '/':
-            stream >> c;
-            switch (c)
+            token = token.substr(1);
+        }
+        else if (token.find("//") == 0)
+        {
+            file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            file >> token;
+        }
+        else if (token.find("/*") == 0)
+        {
+            uint commentLevelsDeep = 1;
+            if (token.size() == 2)
             {
-            case '/': // "//"
-                file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                file >> token;
-                stream = std::stringstream(token);
-                break;
-            case '*': // "/*"
-            {
-                uint commentLevelsDeep = 1;
-
-                while (commentLevelsDeep != 0)
+                if (file.eof())
                 {
-                    c = stream.peek();
-                    if (stream.eof())
-                    {
-                        if (file.eof())
-                        {
-                            return static_cast<int>(ErrorCodes::END_OF_FILE);
-                        }
+                    return static_cast<int>(ErrorCodes::END_OF_FILE);
+                }
 
-                        file >> token;
-                        stream = std::stringstream(token);
+                file >> token;
+            }
+            else
+            {
+                token = token.substr(2);
+                if (token.size() == 0)
+                {
+                    if (file.eof())
+                    {
+                        return static_cast<int>(ErrorCodes::END_OF_FILE);
                     }
 
-                    stream >> token;
+                    file >> token;
+                }
+            }
 
-                    std::size_t startCommentPos = token.find("/*");
-                    std::size_t endCommentPos = token.find("*/");
+            while (commentLevelsDeep != 0)
+            {
+                std::size_t startCommentPos = token.find("/*");
+                std::size_t endCommentPos = token.find("*/");
 
-                    while (startCommentPos != std::string::npos || endCommentPos != std::string::npos)
+                while (startCommentPos != std::string::npos || endCommentPos != std::string::npos)
+                {
+                    if (endCommentPos < startCommentPos) // We're out of comment section.
                     {
-                        if (endCommentPos < startCommentPos) // We're out of comment section.
+                        commentLevelsDeep--;
+
+                        if (commentLevelsDeep == 0)
                         {
-                            commentLevelsDeep--;
-
-                            if (commentLevelsDeep == 0)
-                            {
-                                token = token.substr(endCommentPos + 2);
-                                stream = std::stringstream(token);
-                                c = stream.peek();
-                                break;
-                            }
-
-                            endCommentPos = token.find("*/", endCommentPos + 2);
-
-                            if (startCommentPos != std::string::npos)
-                            {
-                                startCommentPos = token.find("/*", endCommentPos + 2);
-                            }
+                            token = token.substr(endCommentPos + 2);
+                            break;
                         }
-                        else if (startCommentPos < endCommentPos)
-                        {
-                            commentLevelsDeep++;
-                            startCommentPos = token.find("/*", startCommentPos + 2);
 
-                            if (endCommentPos != std::string::npos)
-                            {
-                                endCommentPos = token.find("*/", startCommentPos + 2);
-                            }
+                        endCommentPos = token.find("*/", endCommentPos + 2);
+
+                        if (startCommentPos != std::string::npos)
+                        {
+                            startCommentPos = token.find("/*", endCommentPos + 2);
+                        }
+                    }
+                    else if (startCommentPos < endCommentPos)
+                    {
+                        commentLevelsDeep++;
+                        startCommentPos = token.find("/*", startCommentPos + 2);
+
+                        if (endCommentPos != std::string::npos)
+                        {
+                            endCommentPos = token.find("*/", startCommentPos + 2);
                         }
                     }
                 }
-                break;
+
+                if (commentLevelsDeep != 0)
+                {
+                    if (file.eof())
+                    {
+                        return static_cast<int>(ErrorCodes::END_OF_FILE);
+                    }
+
+                    file >> token;
+                }
             }
-            default:
-                return static_cast<int>(ErrorCodes::SYNTAX_ERROR);
-            }
-            break;
-        default:
+        }
+        else
+        {
             return static_cast<int>(ErrorCodes::SYNTAX_ERROR);
         }
 
-        if (stream.eof())
+        if (token.size() == 0)
         {
-            file >> token;
-
             if (file.eof())
             {
                 return static_cast<int>(ErrorCodes::END_OF_FILE);
             }
 
-            stream = std::stringstream(token);
+            file >> token;
         }
 
+        std::stringstream stream(token);
         stream >> value;
-    } while (stream.fail());
 
-    if (!stream.eof())
-    {
-        stream >> token;
-
-        std::size_t charsToUnget = token.size();
-        for (std::size_t i = 0; i < charsToUnget; ++i)
+        if (!stream.fail())
         {
-            file.unget();
+            hasValueBeenRead = true;
+            stream >> token;
+
+            if (stream.fail())
+            {
+                token = "";
+            }
         }
+    } while (!hasValueBeenRead);
+
+    std::size_t charsToUnget = token.size();
+    for (std::size_t i = 0; i < charsToUnget; ++i)
+    {
+        file.unget();
     }
 
     return static_cast<int>(ErrorCodes::SUCCESS);
