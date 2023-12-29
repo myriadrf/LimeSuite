@@ -589,9 +589,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent& event)
     int test_code = 0;
     int address = 0;
     int value = 0;
-    int i = 0;
-    int scanStatus = 0;
-    //int temp;
+
     wxFileDialog dlg(this,
         _("Open txt file"),
         _("txt"),
@@ -607,17 +605,12 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent& event)
     temps = temps + m_sTxtFileName;
     lblTestResultsFile->SetLabel(temps);
 
-    FILE* inFile = NULL;
-    inFile = fopen(m_sTxtFileName.mb_str(), "r");
+    std::ifstream inFile(m_sTxtFileName);
 
-    // debugging
-    //FILE * outFile=NULL;
-    //outFile = fopen("Out.txt", "w");
-    // end debugging
-    if (inFile != NULL)
+    if (inFile.is_open())
     {
         m_iTestResultFileLine = 0;
-        for (i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
         {
             TestResultArray_code[i] = 0;
             TestResultArray_address[i] = 0;
@@ -625,31 +618,22 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent& event)
         }
 
         m_iTestResultFileLine = 0;
-        scanStatus = fscanf(inFile, "%d", &test_code);
-        while (!feof(inFile) && scanStatus >= 0)
+        inFile >> test_code;
+
+        while (!inFile.eof() && !inFile.fail())
         {
-            //fscanf(inFile, "%d %d %d", &test_code, &address, &value);
-            scanStatus = fscanf(inFile, "%d ", &address);
-            scanStatus = fscanf(inFile, "%d\n", &value);
-            TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
-            TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
-            TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
+            inFile >> address;
+            inFile >> value;
+            TestResultArray_code[m_iTestResultFileLine] = static_cast<unsigned char>(test_code);
+            TestResultArray_address[m_iTestResultFileLine] = static_cast<unsigned char>(address);
+            TestResultArray_value[m_iTestResultFileLine] = static_cast<unsigned char>(value);
 
             m_iTestResultFileLine++;
-            scanStatus = fscanf(inFile, "%d", &test_code);
+            inFile >> test_code;
         }
     }
-    fclose(inFile);
 
-    // debugging
-    //for (i=0; i<m_iTestResultFileLine; i++) {
-    //  fprintf(outFile, "%d %d %d \n",
-    //          TestResultArray_code[i],
-    //          TestResultArray_address[i],
-    //          TestResultArray_value[i]);
-    //}
-    // fclose(outFile);
-    // end debugging
+    inFile.close();
 }
 
 void lms7002_pnlMCU_BD_view::Wait_CLK_Cycles(int delay)
@@ -921,11 +905,9 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
     wxString m_sTxtFileName = _("lms7suite_mcu/TestResults.txt");
     lblTestResultsFile->SetLabel("Test results file: " + m_sTxtFileName);
 
-    int scanStatus = 0;
-    FILE* inFile = NULL;
-    inFile = fopen(m_sTxtFileName.mb_str(), "r");
+    std::ifstream inFile(m_sTxtFileName);
 
-    if (inFile != NULL)
+    if (inFile.is_open())
     {
         m_iTestResultFileLine = 0;
         for (int i = 0; i < 256; i++)
@@ -939,17 +921,18 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
         int test_code = 0;
         int address = 0;
         int value = 0;
-        scanStatus = fscanf(inFile, "%d", &test_code);
-        while (!feof(inFile) && scanStatus >= 0)
+
+        inFile >> test_code;
+        while (!inFile.eof() && !inFile.fail())
         {
-            scanStatus = fscanf(inFile, "%d ", &address);
-            scanStatus = fscanf(inFile, "%d\n", &value);
-            TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
-            TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
-            TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
+            inFile >> address;
+            inFile >> value;
+            TestResultArray_code[m_iTestResultFileLine] = static_cast<unsigned char>(test_code);
+            TestResultArray_address[m_iTestResultFileLine] = static_cast<unsigned char>(address);
+            TestResultArray_value[m_iTestResultFileLine] = static_cast<unsigned char>(value);
 
             m_iTestResultFileLine++;
-            scanStatus = fscanf(inFile, "%d", &test_code);
+            inFile >> test_code;
         }
     }
     else
@@ -957,7 +940,8 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
         wxMessageBox(_("lms7suite_mcu/TestResults.txt file not found"));
         return;
     }
-    fclose(inFile);
+
+    inFile.close();
 
     unsigned char tempc1, tempc2, tempc3 = 0x00;
     int retval = 0;
