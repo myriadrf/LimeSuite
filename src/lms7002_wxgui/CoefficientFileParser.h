@@ -4,19 +4,30 @@
 /**
 @file	CoefficientFileParser.h
 @author	Lime Microsystems
-@brief	Just group parser functions into the same namespace.
+@brief	The FIR coefficient file parser.
 */
 
+#include <iostream>
 #include <string>
 #include <vector>
 
-namespace Parser {
-bool IsBlank(char);
-bool IsDigit(char);
-int getValue(FILE*, float*);
-int getcoeffs(const char*, float*, int);
-int getcoeffs2(const char*, float*, float*, int);
-void saveToFile(const std::string& filename, const std::vector<double>& coefficients);
-} // namespace Parser
+class CoefficientFileParser
+{
+  public:
+    static int getcoeffs(const std::string& filename, std::vector<double>& coefficients, int max);
+    static void saveToFile(const std::string& filename, const std::vector<double>& coefficients);
+
+    enum class ErrorCodes : int8_t {
+        SUCCESS = 0,
+        END_OF_FILE = -1,
+        SYNTAX_ERROR = -2,
+        EMPTY_FILENAME = -3,
+        UNOPENABLE_FILE = -4,
+        TOO_MANY_COEFFS = -5,
+    };
+
+  private:
+    static int getValue(std::ifstream& file, double& value);
+};
 
 #endif // COEFFICIENT_FILE_PARSER_H

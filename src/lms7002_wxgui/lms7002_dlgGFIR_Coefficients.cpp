@@ -117,8 +117,8 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
-    float cbuf[200];
-    int iVal = Parser::getcoeffs(dlg.GetPath().ToStdString().c_str(), cbuf, 200);
+    std::vector<double> coefficients(200, 0);
+    int iVal = CoefficientFileParser::getcoeffs(dlg.GetPath().ToStdString(), coefficients, 200);
 
     switch (iVal)
     {
@@ -144,7 +144,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
     gridCoef->GetTable()->AppendRows(spinCoefCount->GetValue());
     for (int i = 0; i < iVal; ++i)
     {
-        gridCoef->SetCellValue(i, 0, std::to_string(cbuf[i]));
+        gridCoef->SetCellValue(i, 0, std::to_string(coefficients[i]));
     }
 }
 
@@ -164,7 +164,7 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile(wxCommandEvent& event)
         gridCoef->GetCellValue(i, 0).ToDouble(&coefficients[i]);
     }
 
-    Parser::saveToFile(dlg.GetPath().ToStdString(), coefficients);
+    CoefficientFileParser::saveToFile(dlg.GetPath().ToStdString(), coefficients);
 }
 
 void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)
