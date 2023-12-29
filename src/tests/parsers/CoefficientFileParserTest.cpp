@@ -118,12 +118,12 @@ TEST(CoefficientFileParser, StandardOutputFile)
     std::filesystem::remove(fileName);
 }
 
-TEST(CoefficientFileParser, EvilFile)
+TEST(CoefficientFileParser, SingleLineComments)
 {
-    const std::string fileContents = R"""(  0.111111,/*comment*/,-0.222222/*comment*/0.333333//0.444444
-    // This is a multispace single line comment for testing purposes.
-+0.555555 /* 0.666666
- 0.777777  /*        * /  -0.888888/**/ */*/ ,0.999999/*comm//ent*/ 1.111111   /* unclosed multiline comment
+    const std::string fileContents = R"""(0.111111 // 0.222222
+    0.333333//0.444444
+    0.555555 // Random characters as well
+    0.777777
 )""";
 
     const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
@@ -134,13 +134,169 @@ TEST(CoefficientFileParser, EvilFile)
     outFile << fileContents;
     outFile.close();
 
-    std::vector<double> expectedResult{ 0.111111, -0.222222, 0.333333, +0.555555, 0.999999, 1.111111 };
+    std::vector<double> expectedResult{ 0.111111, 0.333333, 0.555555, 0.777777 };
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
     int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
 
-    EXPECT_EQ(actualReturn, 6);
+    EXPECT_EQ(actualReturn, 4);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, MultilineCommentsSingleLine)
+{
+    const std::string fileContents = R"""(0.111111/*0.222222*/0.333333/* 0.444444*/ 0.555555 /* 0.666666 */ 0.777777)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111, 0.333333, 0.555555, 0.777777 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 4);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, MultilineCommentsMultiLine)
+{
+    const std::string fileContents = R"""(0.111111/*0.222222
+    */0.333333/* 
+    0.444444*/ 0.555555 /* 
+    0.666666 
+    */ 0.777777)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111, 0.333333, 0.555555, 0.777777 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 4);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, MultilineCommentsNested)
+{
+    const std::string fileContents = R"""(0.111111/*0.222222
+    */0.333333/* /*
+    0.444444*/*/ 0.555555 /*/**/*//*
+    0.666666 
+    */ 0.777777)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111, 0.333333, 0.555555, 0.777777 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 4);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, MultilineCommentsSingleLineCommentIsIgnored)
+{
+    const std::string fileContents = R"""(0.111111/* // 0.222222
+    // 0.333333
+    0.444444 */0.555555)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111, 0.555555 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 2);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, MultilineCommentsUnclosed)
+{
+    const std::string fileContents = R"""(0.111111/* // 0.222222
+    0.333333)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 1);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, CommasAreWhitespace)
+{
+    const std::string fileContents = R"""(,,,,,0.111111, , ,0.222222
+ , , , 0.333333,,,,,,)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111, 0.222222, 0.333333 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 3);
     EXPECT_THAT(coefficients, expectedResult);
 
     std::filesystem::remove(fileName);
