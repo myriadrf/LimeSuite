@@ -54,6 +54,9 @@ int main(int argc, char** argv)
     if (LMS_Init(device) != 0)
         error();
 
+    if (LMS_EnableChannel(device, LMS_CH_TX, 0, true)!=0)	// Fix for v2
+        error();
+
     //Enable RX channel
     //Channels are numbered starting at 0
     if (LMS_EnableChannel(device, LMS_CH_RX, 0, true) != 0)
