@@ -7,7 +7,7 @@ static const int CONTROL_BULK_READ_ADDRESS = 0x82;
 
 USB_CSR_Pipe_Mini::USB_CSR_Pipe_Mini(FT601& port)
     : USB_CSR_Pipe()
-    , port(port){};
+    , port(port){}
 
 int USB_CSR_Pipe_Mini::Write(const uint8_t* data, size_t length, int timeout_ms)
 {

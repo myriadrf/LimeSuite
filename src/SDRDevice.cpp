@@ -6,7 +6,7 @@ SDRDevice::StreamConfig::Extras::Extras()
 {
     memset(this, 0, sizeof(Extras));
     usePoll = true;
-};
+}
 
 SDRDevice::StreamConfig::StreamConfig()
 {

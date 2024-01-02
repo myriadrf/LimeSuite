@@ -21,4 +21,4 @@ int LMS64C_LMS7002M_Over_USB::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, 
 int LMS64C_LMS7002M_Over_USB::ResetDevice(int chipSelect)
 {
     return LMS64CProtocol::DeviceReset(*pipe, chipSelect);
-};
+}

@@ -36,7 +36,7 @@ static const std::set<uint8_t> commandsToBulkTransfer = {
 
 USB_CSR_Pipe_SDR::USB_CSR_Pipe_SDR(FX3& port)
     : USB_CSR_Pipe()
-    , port(port){};
+    , port(port){}
 
 int USB_CSR_Pipe_SDR::Write(const uint8_t* data, size_t length, int timeout_ms)
 {
