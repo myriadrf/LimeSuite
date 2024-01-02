@@ -5,7 +5,7 @@ namespace lime {
 enum class TRXDir : bool { Rx, Tx };
 
 struct Range {
-    Range(double min = 0, double max = 0, double step = 0)
+    constexpr Range(double min = 0, double max = 0, double step = 0)
         : min(min)
         , max(max)
         , step(step){};
@@ -21,14 +21,14 @@ struct Range {
 template<class T> class DeltaVariable
 {
   public:
-    DeltaVariable(T init)
+    constexpr DeltaVariable(T init)
         : mValue(init)
         , mLastValue(0){};
-    void set(T val) { mValue = val; }
-    void add(T val) { mValue += val; }
-    T delta() { return mValue - mLastValue; } // value change since last reset
-    T value() const { return mValue; }
-    void checkpoint() { mLastValue = mValue; }
+    constexpr void set(T val) { mValue = val; }
+    constexpr void add(T val) { mValue += val; }
+    constexpr T delta() const { return mValue - mLastValue; } // value change since last reset
+    constexpr T value() const { return mValue; }
+    constexpr void checkpoint() { mLastValue = mValue; }
 
   private:
     T mValue;
