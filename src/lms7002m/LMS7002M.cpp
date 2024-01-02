@@ -2185,12 +2185,12 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
     return SPI_write_batch(addrs, (const uint16_t*)words, actualCoefCount, true);
 }
 
-/** @brief Returns currently loaded FIR coefficients
-    @param dir Transmitter or receiver selection
-    @param GFIR_index GIR index from 0 to 2
-    @param coef array of returned coefficients
-    @param coefCount number of coefficients to read
-    @return 0-success, other-failure
+/** @brief Returns currently loaded FIR coefficients.
+    @param dir Transmitter or receiver selection.
+    @param GFIR_index FIR index from 0 to 2.
+    @param coef Array of returned coefficients.
+    @param coefCount Number of coefficients to read.
+    @return 0-success, other-failure.
 */
 int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, int16_t* coef, uint8_t coefCount)
 {
