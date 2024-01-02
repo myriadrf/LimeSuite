@@ -6,7 +6,7 @@ using namespace lime;
 
 SlaveSelectShim::SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId)
     : port(comms)
-    , slaveId(slaveId){}
+    , slaveId(slaveId){};
 
 int SlaveSelectShim::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
