@@ -14,6 +14,7 @@
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
 #include "limesuite/MemoryRegions.h"
+#include "limesuite/LMS7002M_parameters.h"
 
 namespace lime {
 
@@ -41,6 +42,18 @@ class LIME_API SDRDevice
         Range samplingRateRange;
         Range frequencyRange;
         std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
+
+        struct GainParameter {
+            struct GainValue {
+                uint16_t deviceValue;
+                int8_t actualGainValue;
+            };
+
+            std::vector<GainValue> values;
+            LMS7Parameter parameter;
+        };
+
+        std::unordered_map<TRXDir, std::unordered_map<std::string, GainParameter>> gainValues;
     };
 
     struct CustomParameter {
@@ -227,6 +240,15 @@ class LIME_API SDRDevice
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
+
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, const std::string& gain, double value)
+    {
+        return -1;
+    };
+    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, const std::string& gain, double& value)
+    {
+        return -1;
+    };
 
     virtual void Synchronize(bool toChip) = 0;
     virtual void EnableCache(bool enable) = 0;

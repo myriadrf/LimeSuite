@@ -865,7 +865,7 @@ int LMS7002M::SaveConfig(const std::string& filename)
 
 int LMS7002M::SetRBBPGA_dB(const float_type value)
 {
-    int g_pga_rbb = (int)(value + 12.5);
+    int g_pga_rbb = std::round(value) + 12;
     if (g_pga_rbb > 0x1f)
         g_pga_rbb = 0x1f;
     if (g_pga_rbb < 0)
