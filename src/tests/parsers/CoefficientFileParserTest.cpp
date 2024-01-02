@@ -110,7 +110,7 @@ TEST(CoefficientFileParser, StandardOutputFile)
     expectedResult.resize(40, 0);
 
     std::vector<double> coefficients(40, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 40);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 40);
 
     EXPECT_EQ(actualReturn, 40);
     EXPECT_THAT(coefficients, expectedResult);
@@ -138,7 +138,7 @@ TEST(CoefficientFileParser, SingleLineComments)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 4);
     EXPECT_THAT(coefficients, expectedResult);
@@ -164,7 +164,7 @@ TEST(CoefficientFileParser, SingleLineCommentFileEnd)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 3);
     EXPECT_THAT(coefficients, expectedResult);
@@ -189,7 +189,7 @@ TEST(CoefficientFileParser, MultilineCommentsSingleLine)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 5);
     EXPECT_THAT(coefficients, expectedResult);
@@ -217,7 +217,7 @@ TEST(CoefficientFileParser, MultilineCommentsMultiLine)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 4);
     EXPECT_THAT(coefficients, expectedResult);
@@ -245,7 +245,7 @@ TEST(CoefficientFileParser, MultilineCommentsNested)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 4);
     EXPECT_THAT(coefficients, expectedResult);
@@ -271,7 +271,7 @@ TEST(CoefficientFileParser, MultilineCommentsSingleLineCommentIsIgnored)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 2);
     EXPECT_THAT(coefficients, expectedResult);
@@ -296,7 +296,7 @@ TEST(CoefficientFileParser, MultilineCommentsUnclosed)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 1);
     EXPECT_THAT(coefficients, expectedResult);
@@ -320,7 +320,7 @@ TEST(CoefficientFileParser, MultilineCommentsUnclosedImmediateEndOfFile)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 0);
     EXPECT_THAT(coefficients, expectedResult);
@@ -345,7 +345,7 @@ TEST(CoefficientFileParser, CommasAreWhitespace)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 3);
     EXPECT_THAT(coefficients, expectedResult);
@@ -358,7 +358,7 @@ TEST(CoefficientFileParser, NoFilenameProvided)
     const std::string fileName = "";
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, -3);
 }
@@ -370,7 +370,7 @@ TEST(CoefficientFileParser, NonExistentFilenameProvided)
     const std::string fileName = testSuiteName + "_" + testName + ".fir";
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, -4);
 }
@@ -391,7 +391,7 @@ TEST(CoefficientFileParser, EmptyFile)
     expectedResult.resize(10, 0);
 
     std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 10);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 0);
     EXPECT_THAT(coefficients, expectedResult);
@@ -415,7 +415,7 @@ TEST(CoefficientFileParser, TooManyCoefficients)
     expectedResult.resize(1, 0);
 
     std::vector<double> coefficients(1, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 1);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 1);
 
     EXPECT_EQ(actualReturn, -5);
     EXPECT_THAT(coefficients, expectedResult);
@@ -439,7 +439,7 @@ TEST(CoefficientFileParser, SyntaxError)
     expectedResult.resize(1, 0);
 
     std::vector<double> coefficients(1, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 1);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 1);
 
     EXPECT_EQ(actualReturn, -2);
     EXPECT_THAT(coefficients, expectedResult);
@@ -463,7 +463,7 @@ TEST(CoefficientFileParser, EndOfFileWithComma)
     expectedResult.resize(1, 0);
 
     std::vector<double> coefficients(1, 0);
-    int actualReturn = CoefficientFileParser::getcoeffs(fileName, coefficients, 1);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 1);
 
     EXPECT_EQ(actualReturn, 1);
     EXPECT_THAT(coefficients, expectedResult);

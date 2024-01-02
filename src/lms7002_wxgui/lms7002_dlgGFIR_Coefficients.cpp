@@ -118,7 +118,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
         return;
 
     std::vector<double> coefficients(200, 0);
-    int iVal = lime::CoefficientFileParser::getcoeffs(dlg.GetPath().ToStdString(), coefficients, 200);
+    int iVal = lime::CoefficientFileParser::getCoefficients(dlg.GetPath().ToStdString(), coefficients, 200);
 
     switch (iVal)
     {

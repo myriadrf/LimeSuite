@@ -171,7 +171,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 //	-5	too many coefficients in the file
 //	>=0 	number of the coefficients read
 // ***************************************************************
-int CoefficientFileParser::getcoeffs(const std::string& filename, std::vector<double>& coefficients, int max)
+int CoefficientFileParser::getCoefficients(const std::string& filename, std::vector<double>& coefficients, int max)
 {
     if (filename == "")
     {
@@ -225,20 +225,18 @@ void CoefficientFileParser::saveToFile(const std::string& filename, const std::v
     std::ofstream fout;
     fout.open(filename, std::ios::out);
 
-    std::string fname;
-    std::size_t name_pos = filename.rfind('\\');
+    std::size_t namePosition = filename.rfind('\\');
 
-    if (name_pos == std::string::npos)
+    if (namePosition == std::string::npos)
     {
-        name_pos = filename.rfind('/');
+        namePosition = filename.rfind('/');
     }
 
     fout << "/* ******************************************************************" << std::endl;
     fout << "   FILE:\t";
-    if (name_pos != std::string::npos)
+    if (namePosition != std::string::npos)
     {
-        fname = filename.substr(name_pos + 1);
-        fout << fname << std::endl;
+        fout << filename.substr(namePosition + 1) << std::endl;
     }
     else
     {

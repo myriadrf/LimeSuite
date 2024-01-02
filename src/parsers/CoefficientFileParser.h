@@ -18,7 +18,7 @@ namespace lime {
 class LIME_API CoefficientFileParser
 {
   public:
-    static int getcoeffs(const std::string& filename, std::vector<double>& coefficients, int max);
+    static int getCoefficients(const std::string& filename, std::vector<double>& coefficients, int max);
     static void saveToFile(const std::string& filename, const std::vector<double>& coefficients);
 
   private:
