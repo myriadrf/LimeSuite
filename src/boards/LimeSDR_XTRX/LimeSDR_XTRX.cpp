@@ -149,6 +149,72 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
 
+    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, -30 },
+        { 2, -27 },
+        { 3, -24 },
+        { 4, -21 },
+        { 5, -18 },
+        { 6, -15 },
+        { 7, -12 },
+        { 8, -9 },
+        { 9, -6 },
+        { 10, -5 },
+        { 11, -4 },
+        { 12, -3 },
+        { 13, -2 },
+        { 14, -1 },
+        { 15, 0 } };
+    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, -12 }, { 2, -3 }, { 3, 0 } };
+
+    std::vector<GainValue> PGAParameter(32);
+    for (uint8_t i = 0; i < 32; ++i)
+    {
+        PGAParameter[i] = { i, static_cast<int8_t>(i - 12) };
+    }
+    soc.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
+
+    std::vector<GainValue> IAMPParameter(63);
+    for (uint8_t i = 1; i <= 63; ++i)
+    {
+        IAMPParameter[i - 1] = { i, static_cast<int8_t>(i) };
+    }
+    soc.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
+
+    std::vector<GainValue> PADParameter(31);
+    for (uint8_t i = 0; i < 31; ++i)
+    {
+        PADParameter[i] = { i, static_cast<int8_t>(i) };
+    }
+    soc.gainValues[TRXDir::Tx][eGainTypes::PAD] = PADParameter;
+
+    soc.rxGains = {
+        eGainTypes::LNA,
+        eGainTypes::PGA,
+        eGainTypes::TIA,
+    };
+
+    soc.txGains = {
+        eGainTypes::PAD,
+        eGainTypes::IAMP,
+        eGainTypes::PA,
+    };
+
+    soc.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);
+    soc.gainRange[TRXDir::Rx][eGainTypes::LoopbackLNA] = Range(0, 40);
+    soc.gainRange[TRXDir::Rx][eGainTypes::TIA] = Range(0, 12);
+    soc.gainRange[TRXDir::Rx][eGainTypes::PGA] = Range(-12, 19);
+    soc.gainRange[TRXDir::Tx][eGainTypes::PAD] = Range(0, 52);
+    soc.gainRange[TRXDir::Tx][eGainTypes::LoopbackPAD] = Range(-4.3, 0);
+    soc.gainRange[TRXDir::Tx][eGainTypes::IAMP] = Range(-12, 12);
+
+#ifdef NEW_GAIN_BEHAVIOUR
+    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 49);
+    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(0, 52);
+#else
+    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 61);
+    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(-12, 64);
+#endif
+
     desc.rfSOC.push_back(soc);
 
     LMS7002M* chip = new LMS7002M(spiRFsoc);
@@ -265,7 +331,18 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal ? 1 : 0);
-            // TODO: set gains, filters...
+
+            for (const auto& gain : ch.rx.gain)
+            {
+                SetGain(0, TRXDir::Rx, i, gain.first, gain.second);
+            }
+
+            for (const auto& gain : ch.tx.gain)
+            {
+                SetGain(0, TRXDir::Tx, i, gain.first, gain.second);
+            }
+
+            // TODO: set filters...
         }
         // enabled ADC/DAC is required for FPGA to work
         chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
