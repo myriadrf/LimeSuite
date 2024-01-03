@@ -149,7 +149,7 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
 
-    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { { 1, -30 },
+    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, -30 },
         { 2, -27 },
         { 3, -24 },
         { 4, -21 },
@@ -163,30 +163,27 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
         { 12, -3 },
         { 13, -2 },
         { 14, -1 },
-        { 15, 0 } } };
-    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { { 1, -12 }, { 2, -3 }, { 3, 0 } } };
+        { 15, 0 } };
+    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, -12 }, { 2, -3 }, { 3, 0 } };
 
-    RFSOCDescriptor::GainParameter PGAParameter;
-    PGAParameter.values.resize(32);
+    std::vector<GainValue> PGAParameter(32);
     for (uint8_t i = 0; i < 32; ++i)
     {
-        PGAParameter.values[i] = { i, static_cast<int8_t>(i - 12) };
+        PGAParameter[i] = { i, static_cast<int8_t>(i - 12) };
     }
     soc.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
 
-    RFSOCDescriptor::GainParameter IAMPParameter;
-    IAMPParameter.values.resize(63);
+    std::vector<GainValue> IAMPParameter(63);
     for (uint8_t i = 1; i <= 63; ++i)
     {
-        IAMPParameter.values[i - 1] = { i, static_cast<int8_t>(i) };
+        IAMPParameter[i - 1] = { i, static_cast<int8_t>(i) };
     }
     soc.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
 
-    RFSOCDescriptor::GainParameter PADParameter;
-    PADParameter.values.resize(31);
+    std::vector<GainValue> PADParameter(31);
     for (uint8_t i = 0; i < 31; ++i)
     {
-        PADParameter.values[i] = { i, static_cast<int8_t>(i) };
+        PADParameter[i] = { i, static_cast<int8_t>(i) };
     }
     soc.gainValues[TRXDir::Tx][eGainTypes::PAD] = PADParameter;
 
@@ -201,6 +198,22 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
         eGainTypes::IAMP,
         eGainTypes::PA,
     };
+
+    soc.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);
+    soc.gainRange[TRXDir::Rx][eGainTypes::LoopbackLNA] = Range(0, 40);
+    soc.gainRange[TRXDir::Rx][eGainTypes::TIA] = Range(0, 12);
+    soc.gainRange[TRXDir::Rx][eGainTypes::PGA] = Range(-12, 19);
+    soc.gainRange[TRXDir::Tx][eGainTypes::PAD] = Range(0, 52);
+    soc.gainRange[TRXDir::Tx][eGainTypes::LoopbackPAD] = Range(-4.3, 0);
+    soc.gainRange[TRXDir::Tx][eGainTypes::IAMP] = Range(-12, 12);
+
+#ifdef NEW_GAIN_BEHAVIOUR
+    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 49);
+    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(0, 52);
+#else
+    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 61);
+    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(-12, 64);
+#endif
 
     descriptor.rfSOC.push_back(soc);
 
@@ -290,20 +303,42 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             mLMSChips[0]->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
             mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
+
             if (ch.rx.path == 4)
+            {
                 mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
+            }
             mLMSChips[0]->SetBandTRF(ch.tx.path);
-            // TODO: set gains, filters...
+
+            for (const auto& gain : ch.rx.gain)
+            {
+                SetGain(0, TRXDir::Rx, i, gain.first, gain.second);
+            }
+
+            for (const auto& gain : ch.tx.gain)
+            {
+                SetGain(0, TRXDir::Tx, i, gain.first, gain.second);
+            }
+
+            // TODO: set filters...
         }
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
         // sampling rate
         double sampleRate;
+
         if (rxUsed)
+        {
             sampleRate = cfg.channel[0].rx.sampleRate;
+        }
         else
+        {
             sampleRate = cfg.channel[0].tx.sampleRate;
+        }
+
         if (sampleRate > 0)
+        {
             SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+        }
     } //try
     catch (std::logic_error& e)
     {

@@ -863,8 +863,10 @@ int LMS7002M::SaveConfig(const std::string& filename)
     return 0;
 }
 
-int LMS7002M::SetRBBPGA_dB(const float_type value)
+int LMS7002M::SetRBBPGA_dB(const float_type value, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     int g_pga_rbb = std::clamp(static_cast<int>(std::round(value)) + 12, 0, 31);
     int ret = this->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga_rbb);
 
@@ -885,14 +887,18 @@ int LMS7002M::SetRBBPGA_dB(const float_type value)
     return ret;
 }
 
-float_type LMS7002M::GetRBBPGA_dB(void)
+float_type LMS7002M::GetRBBPGA_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     auto g_pga_rbb = this->Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
     return g_pga_rbb - 12;
 }
 
-int LMS7002M::SetRFELNA_dB(const float_type value)
+int LMS7002M::SetRFELNA_dB(const float_type value, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double gmax = 30;
     double val = value - gmax;
 
@@ -931,8 +937,10 @@ int LMS7002M::SetRFELNA_dB(const float_type value)
     return this->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), g_lna_rfe);
 }
 
-float_type LMS7002M::GetRFELNA_dB(void)
+float_type LMS7002M::GetRFELNA_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double gmax = 30;
     auto g_lna_rfe = this->Get_SPI_Reg_bits(LMS7param(G_LNA_RFE));
     switch (g_lna_rfe)
@@ -971,8 +979,10 @@ float_type LMS7002M::GetRFELNA_dB(void)
     return 0.0;
 }
 
-int LMS7002M::SetRFELoopbackLNA_dB(const float_type gain)
+int LMS7002M::SetRFELoopbackLNA_dB(const float_type gain, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double gmax = 40;
     double val = gain - gmax;
 
@@ -1013,8 +1023,10 @@ int LMS7002M::SetRFELoopbackLNA_dB(const float_type gain)
     return this->Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), g_rxloopb_rfe);
 }
 
-float_type LMS7002M::GetRFELoopbackLNA_dB(void)
+float_type LMS7002M::GetRFELoopbackLNA_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double gmax = 40;
     auto g_rxloopb_rfe = this->Get_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE));
     switch (g_rxloopb_rfe)
@@ -1053,8 +1065,10 @@ float_type LMS7002M::GetRFELoopbackLNA_dB(void)
     return 0.0;
 }
 
-int LMS7002M::SetRFETIA_dB(const float_type value)
+int LMS7002M::SetRFETIA_dB(const float_type value, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double gmax = 12;
     double val = value - gmax;
 
@@ -1069,8 +1083,10 @@ int LMS7002M::SetRFETIA_dB(const float_type value)
     return this->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia_rfe);
 }
 
-float_type LMS7002M::GetRFETIA_dB(void)
+float_type LMS7002M::GetRFETIA_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double gmax = 12;
     auto g_tia_rfe = this->Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
     switch (g_tia_rfe)
@@ -1085,8 +1101,10 @@ float_type LMS7002M::GetRFETIA_dB(void)
     return 0.0;
 }
 
-int LMS7002M::SetTRFPAD_dB(const float_type value)
+int LMS7002M::SetTRFPAD_dB(const float_type value, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double pmax = 52;
     int loss_int = std::round(pmax - value);
 
@@ -1104,8 +1122,10 @@ int LMS7002M::SetTRFPAD_dB(const float_type value)
     return ret;
 }
 
-float_type LMS7002M::GetTRFPAD_dB(void)
+float_type LMS7002M::GetTRFPAD_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     const double pmax = 52;
     auto loss_int = this->Get_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF));
     if (loss_int > 10)
@@ -1113,8 +1133,10 @@ float_type LMS7002M::GetTRFPAD_dB(void)
     return pmax - loss_int;
 }
 
-int LMS7002M::SetTRFLoopbackPAD_dB(const float_type gain)
+int LMS7002M::SetTRFLoopbackPAD_dB(const float_type gain, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     //there are 4 discrete gain values, use the midpoints
     int val = 0;
     if (gain >= (-1.4 - 0) / 2)
@@ -1129,8 +1151,10 @@ int LMS7002M::SetTRFLoopbackPAD_dB(const float_type gain)
     return this->Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), val);
 }
 
-float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
+float_type LMS7002M::GetTRFLoopbackPAD_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     switch (this->Get_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF)))
     {
     case 0:
@@ -1145,8 +1169,10 @@ float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
     return 0.0;
 }
 
-int LMS7002M::SetTBBIAMP_dB(const float_type gain)
+int LMS7002M::SetTBBIAMP_dB(const float_type gain, const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     int ind = this->GetActiveChannelIndex() % 2;
     if (opt_gain_tbb[ind] <= 0)
     {
@@ -1162,8 +1188,10 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
     return 0;
 }
 
-float_type LMS7002M::GetTBBIAMP_dB(void)
+float_type LMS7002M::GetTBBIAMP_dB(const Channel channel)
 {
+    ChannelScope scope(this, channel);
+
     int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), true);
     int ind = this->GetActiveChannelIndex() % 2;
 

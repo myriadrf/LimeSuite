@@ -171,67 +171,67 @@ class LIME_API LMS7002M
      * @param gain in dB range -12.0, 19.0 dB
      * @return 0 for success, else error
      */
-    int SetRBBPGA_dB(const float_type gain);
+    int SetRBBPGA_dB(const float_type gain, const Channel channel);
 
-    float_type GetRBBPGA_dB(void);
+    float_type GetRBBPGA_dB(const Channel channel);
 
     /*!
      * Set the RX LNA gain in dB
      * @param gain in dB range 0.0, 30.0 dB
      * @return 0 for success, else error
      */
-    int SetRFELNA_dB(const float_type gain);
+    int SetRFELNA_dB(const float_type gain, const Channel channel);
 
-    float_type GetRFELNA_dB(void);
+    float_type GetRFELNA_dB(const Channel channel);
 
     /*!
      * Set the RX loopback LNA gain in dB
      * @param gain in dB range 0.0, 40.0 dB
      * @return 0 for success, else error
      */
-    int SetRFELoopbackLNA_dB(const float_type gain);
+    int SetRFELoopbackLNA_dB(const float_type gain, const Channel channel);
 
     //! Get the actual RX loopback LNA gain in dB
-    float_type GetRFELoopbackLNA_dB(void);
+    float_type GetRFELoopbackLNA_dB(const Channel channel);
 
     /*!
      * Set the RX TIA gain in dB
      * @param gain in dB range 0.0, 12.0 dB
      * @return 0 for success, else error
      */
-    int SetRFETIA_dB(const float_type gain);
+    int SetRFETIA_dB(const float_type gain, const Channel channel);
 
-    float_type GetRFETIA_dB(void);
+    float_type GetRFETIA_dB(const Channel channel);
 
     /*!
      * Set the TX PAD gain in dB
      * @param gain in dB range -52.0, 0.0 dB
      * @return 0 for success, else error
      */
-    int SetTRFPAD_dB(const float_type gain);
+    int SetTRFPAD_dB(const float_type gain, const Channel channel);
 
     //! Get the actual TX PAD gain in dB
-    float_type GetTRFPAD_dB(void);
+    float_type GetTRFPAD_dB(const Channel channel);
 
     /*!
      * Set the TBB frontend gain in dB
      * @param gain in dB relative to optimal gain (0 - optimal gain, >0 may cause saturation)
      * @return 0 for success, else error
      */
-    int SetTBBIAMP_dB(const float_type gain);
+    int SetTBBIAMP_dB(const float_type gain, const Channel channel);
 
     //! Get the TBB frontend gain in dB
-    float_type GetTBBIAMP_dB(void);
+    float_type GetTBBIAMP_dB(const Channel channel);
 
     /*!
      * Set the TX loopback PAD gain in dB
      * @param gain in dB range -4.3, 0.0 dB
      * @return 0 for success, else error
      */
-    int SetTRFLoopbackPAD_dB(const float_type gain);
+    int SetTRFLoopbackPAD_dB(const float_type gain, const Channel channel);
 
     //! Get the actual TX loopback PAD gain in dB
-    float_type GetTRFLoopbackPAD_dB(void);
+    float_type GetTRFLoopbackPAD_dB(const Channel channel);
 
     enum class PathRFE : uint8_t {
         PATH_RFE_NONE,
@@ -324,7 +324,7 @@ class LIME_API LMS7002M
     bool GetRxDCRemoval(void);
 
     /*!
-     * Enables/disables TDD mode 
+     * Enables/disables TDD mode
      * @param enable true - use same pll for Tx and Rx, false - us seperate PLLs
      * @return 0 for success for error condition
      */
