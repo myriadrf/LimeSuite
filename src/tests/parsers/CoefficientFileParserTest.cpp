@@ -146,11 +146,37 @@ TEST(CoefficientFileParser, SingleLineComments)
     std::filesystem::remove(fileName);
 }
 
+TEST(CoefficientFileParser, SinglelineCommentsMultilineCommentIsIgnored)
+{
+    const std::string fileContents = R"""(0.111111 ///*0.222222 
+    // /* 0.333333 
+    0.444444)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111, 0.444444 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 2);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
 TEST(CoefficientFileParser, SingleLineCommentFileEnd)
 {
     const std::string fileContents = R"""(0.111111 // 0.222222
     0.333333//0.444444
-    0.555555 // Random characters as well)""";
+    0.555555// Random characters as well)""";
 
     const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
     const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -167,6 +193,30 @@ TEST(CoefficientFileParser, SingleLineCommentFileEnd)
     int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
 
     EXPECT_EQ(actualReturn, 3);
+    EXPECT_THAT(coefficients, expectedResult);
+
+    std::filesystem::remove(fileName);
+}
+
+TEST(CoefficientFileParser, SingleLineCommentImmediateFileEnd)
+{
+    const std::string fileContents = R"""(0.111111 //)""";
+
+    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    const std::string fileName = testSuiteName + "_" + testName + ".fir";
+
+    std::ofstream outFile(fileName);
+    outFile << fileContents;
+    outFile.close();
+
+    std::vector<double> expectedResult{ 0.111111 };
+    expectedResult.resize(10, 0);
+
+    std::vector<double> coefficients(10, 0);
+    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
+
+    EXPECT_EQ(actualReturn, 1);
     EXPECT_THAT(coefficients, expectedResult);
 
     std::filesystem::remove(fileName);
@@ -253,32 +303,6 @@ TEST(CoefficientFileParser, MultilineCommentsNested)
     std::filesystem::remove(fileName);
 }
 
-TEST(CoefficientFileParser, MultilineCommentsSingleLineCommentIsIgnored)
-{
-    const std::string fileContents = R"""(0.111111/* // 0.222222
-    // 0.333333
-    0.444444 */0.555555)""";
-
-    const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
-    const std::string testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
-    const std::string fileName = testSuiteName + "_" + testName + ".fir";
-
-    std::ofstream outFile(fileName);
-    outFile << fileContents;
-    outFile.close();
-
-    std::vector<double> expectedResult{ 0.111111, 0.555555 };
-    expectedResult.resize(10, 0);
-
-    std::vector<double> coefficients(10, 0);
-    int actualReturn = CoefficientFileParser::getCoefficients(fileName, coefficients, 10);
-
-    EXPECT_EQ(actualReturn, 2);
-    EXPECT_THAT(coefficients, expectedResult);
-
-    std::filesystem::remove(fileName);
-}
-
 TEST(CoefficientFileParser, MultilineCommentsUnclosed)
 {
     const std::string fileContents = R"""(0.111111/* 0.222222
@@ -330,7 +354,7 @@ TEST(CoefficientFileParser, MultilineCommentsUnclosedImmediateEndOfFile)
 
 TEST(CoefficientFileParser, CommasAreWhitespace)
 {
-    const std::string fileContents = R"""(,,,,,0.111111, , ,0.222222
+    const std::string fileContents = R"""(,,,,,0.111111,,,0.222222
  , , , 0.333333,,,,,,)""";
 
     const std::string testSuiteName = ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();

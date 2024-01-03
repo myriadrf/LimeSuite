@@ -112,12 +112,13 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
         else if (token.find("//") == 0) // Standard single line comment
         {
             file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            file >> token;
 
             if (file.eof())
             {
                 return ErrorCodes::END_OF_FILE;
             }
+
+            file >> token;
         }
         else if (token.find("/*") == 0) // Multiline comments
         {
