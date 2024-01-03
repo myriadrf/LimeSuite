@@ -164,11 +164,11 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
                                               { 13, -2 },
                                               { 14, -1 },
                                               { 15, 0 } },
-        LMS7_G_LNA_RFE };
-    soc.gainValues[TRXDir::Rx]["TIA"] = { { { 1, -12 }, { 2, -3 }, { 3, 0 } }, LMS7_G_TIA_RFE };
+        &LMS7_G_LNA_RFE };
+    soc.gainValues[TRXDir::Rx]["TIA"] = { { { 1, -12 }, { 2, -3 }, { 3, 0 } }, &LMS7_G_TIA_RFE };
 
     RFSOCDescriptor::GainParameter PGAParameter;
-    PGAParameter.parameter = LMS7_G_PGA_RBB;
+    PGAParameter.parameter = &LMS7_G_PGA_RBB;
     PGAParameter.values.resize(32);
     for (uint8_t i = 0; i < 32; ++i)
     {
@@ -177,16 +177,16 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.gainValues[TRXDir::Rx]["PGA"] = PGAParameter;
 
     RFSOCDescriptor::GainParameter IAMPParameter;
-    IAMPParameter.parameter = LMS7_CG_IAMP_TBB;
-    IAMPParameter.values.resize(64);
-    for (uint8_t i = 1; i < 63; ++i)
+    IAMPParameter.parameter = &LMS7_CG_IAMP_TBB;
+    IAMPParameter.values.resize(63);
+    for (uint8_t i = 1; i <= 63; ++i)
     {
         IAMPParameter.values[i - 1] = { i, static_cast<int8_t>(i) };
     }
     soc.gainValues[TRXDir::Tx]["IAMP"] = IAMPParameter;
 
     RFSOCDescriptor::GainParameter PADParameter;
-    PADParameter.parameter = LMS7_LOSS_MAIN_TXPAD_TRF;
+    PADParameter.parameter = &LMS7_LOSS_MAIN_TXPAD_TRF;
     PADParameter.values.resize(31);
     for (uint8_t i = 0; i < 31; ++i)
     {

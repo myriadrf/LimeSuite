@@ -50,7 +50,7 @@ class LIME_API SDRDevice
             };
 
             std::vector<GainValue> values;
-            LMS7Parameter parameter;
+            const LMS7Parameter* parameter;
         };
 
         std::unordered_map<TRXDir, std::unordered_map<std::string, GainParameter>> gainValues;
