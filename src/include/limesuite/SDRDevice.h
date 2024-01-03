@@ -1,20 +1,21 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
-#include <vector>
-#include <unordered_map>
-#include <map>
 #include <cstring>
-#include <string>
+#include <map>
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/GainTypes.h"
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
 #include "limesuite/MemoryRegions.h"
-#include "limesuite/LMS7002M_parameters.h"
 
 namespace lime {
 
@@ -50,10 +51,11 @@ class LIME_API SDRDevice
             };
 
             std::vector<GainValue> values;
-            const LMS7Parameter* parameter;
         };
 
-        std::unordered_map<TRXDir, std::unordered_map<std::string, GainParameter>> gainValues;
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, GainParameter>> gainValues;
+        std::unordered_set<eGainTypes> rxGains;
+        std::unordered_set<eGainTypes> txGains;
     };
 
     struct CustomParameter {
@@ -241,14 +243,8 @@ class LIME_API SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
-    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, const std::string& gain, double value)
-    {
-        return -1;
-    };
-    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, const std::string& gain, double& value)
-    {
-        return -1;
-    };
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
     virtual void Synchronize(bool toChip) = 0;
     virtual void EnableCache(bool enable) = 0;

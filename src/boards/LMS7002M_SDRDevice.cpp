@@ -128,6 +128,57 @@ double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
     return mLMSChips[moduleIndex]->GetSampleRate(trx, LMS7002M::Channel::ChA);
 }
 
+int LMS7002M_SDRDevice::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
+{
+    auto device = mLMSChips[moduleIndex];
+
+    switch (gain)
+    {
+    case eGainTypes::LNA:
+        return device->SetRFELNA_dB(value);
+    case eGainTypes::PGA:
+        return device->SetRBBPGA_dB(value);
+    case eGainTypes::TIA:
+        return device->SetRFETIA_dB(value);
+    case eGainTypes::PAD:
+        return device->SetTRFPAD_dB(value);
+    case eGainTypes::IAMP:
+        return device->SetTBBIAMP_dB(value);
+    case eGainTypes::PA:
+        // TODO: implement
+    default:
+        return -1;
+    }
+}
+
+int LMS7002M_SDRDevice::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
+{
+    auto device = mLMSChips[moduleIndex];
+
+    switch (gain)
+    {
+    case eGainTypes::LNA:
+        value = device->GetRFELNA_dB();
+        return 0;
+    case eGainTypes::PGA:
+        value = device->GetRBBPGA_dB();
+        return 0;
+    case eGainTypes::TIA:
+        value = device->GetRFETIA_dB();
+        return 0;
+    case eGainTypes::PAD:
+        value = device->GetTRFPAD_dB();
+        return 0;
+    case eGainTypes::IAMP:
+        value = device->GetTBBIAMP_dB();
+        return 0;
+    case eGainTypes::PA:
+        // TODO: implement
+    default:
+        return -1;
+    }
+}
+
 void LMS7002M_SDRDevice::Synchronize(bool toChip)
 {
     for (auto iter : mLMSChips)

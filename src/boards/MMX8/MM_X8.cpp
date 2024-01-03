@@ -165,6 +165,57 @@ void LimeSDR_MMX8::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     mSubDevices[channel / 2]->SetClockFreq(clk_id, freq, channel & 1);
 }
 
+int LimeSDR_MMX8::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
+{
+    auto device = reinterpret_cast<LMS7002M*>(mSubDevices[moduleIndex]->GetInternalChip(0));
+
+    switch (gain)
+    {
+    case eGainTypes::LNA:
+        return device->SetRFELNA_dB(value);
+    case eGainTypes::PGA:
+        return device->SetRBBPGA_dB(value);
+    case eGainTypes::TIA:
+        return device->SetRFETIA_dB(value);
+    case eGainTypes::PAD:
+        return device->SetTRFPAD_dB(value);
+    case eGainTypes::IAMP:
+        return device->SetTBBIAMP_dB(value);
+    case eGainTypes::PA:
+        // TODO: implement
+    default:
+        return -1;
+    }
+}
+
+int LimeSDR_MMX8::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
+{
+    auto device = reinterpret_cast<LMS7002M*>(mSubDevices[moduleIndex]->GetInternalChip(0));
+
+    switch (gain)
+    {
+    case eGainTypes::LNA:
+        value = device->GetRFELNA_dB();
+        return 0;
+    case eGainTypes::PGA:
+        value = device->GetRBBPGA_dB();
+        return 0;
+    case eGainTypes::TIA:
+        value = device->GetRFETIA_dB();
+        return 0;
+    case eGainTypes::PAD:
+        value = device->GetTRFPAD_dB();
+        return 0;
+    case eGainTypes::IAMP:
+        value = device->GetTBBIAMP_dB();
+        return 0;
+    case eGainTypes::PA:
+        // TODO: implement
+    default:
+        return -1;
+    }
+}
+
 void LimeSDR_MMX8::Synchronize(bool toChip)
 {
     for (auto& d : mSubDevices)

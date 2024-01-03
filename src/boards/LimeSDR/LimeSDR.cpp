@@ -149,50 +149,58 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
 
-    soc.gainValues[TRXDir::Rx]["LNA"] = { { { 1, -30 },
-                                              { 2, -27 },
-                                              { 3, -24 },
-                                              { 4, -21 },
-                                              { 5, -18 },
-                                              { 6, -15 },
-                                              { 7, -12 },
-                                              { 8, -9 },
-                                              { 9, -6 },
-                                              { 10, -5 },
-                                              { 11, -4 },
-                                              { 12, -3 },
-                                              { 13, -2 },
-                                              { 14, -1 },
-                                              { 15, 0 } },
-        &LMS7_G_LNA_RFE };
-    soc.gainValues[TRXDir::Rx]["TIA"] = { { { 1, -12 }, { 2, -3 }, { 3, 0 } }, &LMS7_G_TIA_RFE };
+    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { { 1, -30 },
+        { 2, -27 },
+        { 3, -24 },
+        { 4, -21 },
+        { 5, -18 },
+        { 6, -15 },
+        { 7, -12 },
+        { 8, -9 },
+        { 9, -6 },
+        { 10, -5 },
+        { 11, -4 },
+        { 12, -3 },
+        { 13, -2 },
+        { 14, -1 },
+        { 15, 0 } } };
+    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { { 1, -12 }, { 2, -3 }, { 3, 0 } } };
 
     RFSOCDescriptor::GainParameter PGAParameter;
-    PGAParameter.parameter = &LMS7_G_PGA_RBB;
     PGAParameter.values.resize(32);
     for (uint8_t i = 0; i < 32; ++i)
     {
         PGAParameter.values[i] = { i, static_cast<int8_t>(i - 12) };
     }
-    soc.gainValues[TRXDir::Rx]["PGA"] = PGAParameter;
+    soc.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
 
     RFSOCDescriptor::GainParameter IAMPParameter;
-    IAMPParameter.parameter = &LMS7_CG_IAMP_TBB;
     IAMPParameter.values.resize(63);
     for (uint8_t i = 1; i <= 63; ++i)
     {
         IAMPParameter.values[i - 1] = { i, static_cast<int8_t>(i) };
     }
-    soc.gainValues[TRXDir::Tx]["IAMP"] = IAMPParameter;
+    soc.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
 
     RFSOCDescriptor::GainParameter PADParameter;
-    PADParameter.parameter = &LMS7_LOSS_MAIN_TXPAD_TRF;
     PADParameter.values.resize(31);
     for (uint8_t i = 0; i < 31; ++i)
     {
         PADParameter.values[i] = { i, static_cast<int8_t>(i) };
     }
-    soc.gainValues[TRXDir::Tx]["PAD"] = PADParameter;
+    soc.gainValues[TRXDir::Tx][eGainTypes::PAD] = PADParameter;
+
+    soc.rxGains = {
+        eGainTypes::LNA,
+        eGainTypes::PGA,
+        eGainTypes::TIA,
+    };
+
+    soc.txGains = {
+        eGainTypes::PAD,
+        eGainTypes::IAMP,
+        eGainTypes::PA,
+    };
 
     descriptor.rfSOC.push_back(soc);
 

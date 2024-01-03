@@ -34,6 +34,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) override;
+    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) override;
+
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
