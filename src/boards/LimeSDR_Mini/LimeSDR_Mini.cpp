@@ -187,22 +187,22 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 30e6, 1.9e9 };
 
-    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, -30 },
-        { 2, -27 },
-        { 3, -24 },
-        { 4, -21 },
-        { 5, -18 },
-        { 6, -15 },
-        { 7, -12 },
-        { 8, -9 },
-        { 9, -6 },
-        { 10, -5 },
-        { 11, -4 },
-        { 12, -3 },
-        { 13, -2 },
-        { 14, -1 },
-        { 15, 0 } };
-    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, -12 }, { 2, -3 }, { 3, 0 } };
+    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, 0 },
+        { 2, 3 },
+        { 3, 6 },
+        { 4, 9 },
+        { 5, 12 },
+        { 6, 15 },
+        { 7, 18 },
+        { 8, 21 },
+        { 9, 24 },
+        { 10, 25 },
+        { 11, 26 },
+        { 12, 27 },
+        { 13, 28 },
+        { 14, 29 },
+        { 15, 30 } };
+    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, 0 }, { 2, 9 }, { 3, 12 } };
 
     std::vector<GainValue> PGAParameter(32);
     for (uint8_t i = 0; i < 32; ++i)
