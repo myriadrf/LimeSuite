@@ -605,13 +605,13 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, s
     if (dir_tx)
     {
         CopyStringVectorIntoList(rfSOC.txPathNames, list);
+        return rfSOC.txPathNames.size();
     }
     else
     {
         CopyStringVectorIntoList(rfSOC.rxPathNames, list);
+        return rfSOC.rxPathNames.size();
     }
-
-    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
