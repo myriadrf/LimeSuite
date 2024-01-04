@@ -212,46 +212,36 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
 void SOCConfig_view::UpdateGainValues(const wxCommandEvent& event)
 {
     auto size = sdrDevice->GetDescriptor().rfSOC.at(socIndex).channelCount;
-    auto descriptor = sdrDevice->GetDescriptor().rfSOC.at(socIndex);
 
-    auto eventId = event.GetId();
-    auto eventType = event.GetEventType();
-
-    for (std::size_t i = 0; i < size; ++i)
+    for (uint8_t i = 0; i < size; ++i)
     {
-        auto rxGuiId = gui.rx[i].gain->GetId();
-        if (eventType == wxEVT_NULL || eventId == rxGuiId)
-        {
-            wxArrayString rxGainValues;
-            for (const auto& gain :
-                descriptor.gainValues.at(TRXDir::Rx).at(gui.rxSelectionToValue.at(gui.rx[i].gain->GetSelection())))
-            {
-                rxGainValues.Add(std::to_string(gain.actualGainValue));
-            }
-
-            gui.rx[i].gainValues->Clear();
-            gui.rx[i].gainValues->Set(rxGainValues);
-            gui.rx[i].gainValues->SetSelection(0);
-        }
-
-        auto txGuiId = gui.tx[i].gain->GetId();
-        if (eventType == wxEVT_NULL || eventId == txGuiId)
-        {
-            wxArrayString txGainValues;
-            for (const auto& gain :
-                descriptor.gainValues.at(TRXDir::Tx).at(gui.txSelectionToValue.at(gui.tx[i].gain->GetSelection())))
-            {
-                txGainValues.Add(std::to_string(gain.actualGainValue));
-            }
-
-            gui.tx[i].gainValues->Clear();
-            gui.tx[i].gainValues->Set(txGainValues);
-            gui.tx[i].gainValues->SetSelection(0);
-        }
+        UpdateGain(event, gui.rx[i], TRXDir::Rx);
+        UpdateGain(event, gui.tx[i], TRXDir::Tx);
     }
 }
 
-void SOCConfig_view::SubmitConfig(wxCommandEvent& event)
+void SOCConfig_view::UpdateGain(const wxCommandEvent& event, const ChannelConfigGUI& channelGui, TRXDir direction)
+{
+    const auto& descriptor = sdrDevice->GetDescriptor().rfSOC.at(socIndex);
+    const auto& selectionToValue = direction == TRXDir::Rx ? gui.rxSelectionToValue : gui.txSelectionToValue;
+
+    if (event.GetEventType() == wxEVT_NULL || event.GetId() == channelGui.gain->GetId())
+    {
+        wxArrayString gainValues;
+        auto selection = selectionToValue.at(channelGui.gain->GetSelection());
+
+        for (const auto& gain : descriptor.gainValues.at(direction).at(selection))
+        {
+            gainValues.Add(std::to_string(gain.actualGainValue));
+        }
+
+        channelGui.gainValues->Clear();
+        channelGui.gainValues->Set(gainValues);
+        channelGui.gainValues->SetSelection(0);
+    }
+}
+
+void SOCConfig_view::SubmitConfig(const wxCommandEvent& event)
 {
     if (!sdrDevice)
         return;

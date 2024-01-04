@@ -1,7 +1,7 @@
 #ifndef LIME_SDR_CONFIGURATION_VIEW
 #define LIME_SDR_CONFIGURATION_VIEW
 
-#include "wx/panel.h"
+#include <wx/panel.h>
 #include <wx/checkbox.h>
 #include <wx/sizer.h>
 #include <wx/statbox.h>
@@ -12,9 +12,9 @@
 
 #include <map>
 
-#include "limesuite/SDRDevice.h"
-
 #include "GUI/ISOCPanel.h"
+#include "limesuite/commonTypes.h"
+#include "limesuite/SDRDevice.h"
 
 constexpr int MAX_GUI_CHANNELS_COUNT = 2;
 
@@ -53,12 +53,15 @@ class SOCConfig_view : public wxPanel
     void Setup(lime::SDRDevice* sdrDevice, int index);
     void UpdateGainValues(const wxCommandEvent& event);
 
-    void SubmitConfig(wxCommandEvent& event);
+    void SubmitConfig(const wxCommandEvent& event);
 
   protected:
     SDRConfigGUI gui;
     lime::SDRDevice* sdrDevice;
     int socIndex;
+
+  private:
+    void UpdateGain(const wxCommandEvent& event, const ChannelConfigGUI& channelGui, lime::TRXDir direction);
 };
 
 class SDRConfiguration_view : public ISOCPanel
