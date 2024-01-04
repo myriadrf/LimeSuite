@@ -819,7 +819,6 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
     return 0;
 }
 
-// TODO: Implement properly once the Gain API is completed
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type* gain)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -834,7 +833,6 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
     return LMS_SUCCESS;
 }
 
-// TODO: Implement properly once the Gain API is completed
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
