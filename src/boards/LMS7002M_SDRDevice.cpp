@@ -6,9 +6,50 @@
 #include "FPGA_common.h"
 #include "limesuite/LMS7002M.h"
 
+#include <array>
 #include <cmath>
 
 namespace lime {
+
+#ifdef NEW_GAIN_BEHAVIOUR
+constexpr static int MAXIMUM_GAIN_VALUE = 62; // Gain table size
+// clang-format off
+// LNA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> LNATable = {
+    0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+    5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+    11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+};
+// PGA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> PGATable = {
+    0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+    1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+    5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
+    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+};
+// clang-format on
+#else
+constexpr static int MAXIMUM_GAIN_VALUE = 74;
+// clang-format off
+// LNA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> LNATable = {
+    0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+    5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+    11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+};
+// PGA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> PGATable = {
+    0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+    1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+    5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
+    9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+};
+// clang-format on
+#endif
 
 LMS7002M_SDRDevice::LMS7002M_SDRDevice()
     : mCallback_logData(nullptr)
@@ -191,49 +232,10 @@ int LMS7002M_SDRDevice::SetGenericTxGain(lime::LMS7002M* device, LMS7002M::Chann
 
 int LMS7002M_SDRDevice::SetGenericRxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value)
 {
-#ifdef NEW_GAIN_BEHAVIOUR
-    const int maxGain = 62; // Gain table size
-    // clang-format off
-    // LNA table
-    const unsigned lnaTbl[maxGain] = {
-        0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
-        5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
-        11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
-        14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
-    };
-    // PGA table
-    const unsigned pgaTbl[maxGain] = {
-        0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
-        1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
-        5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
-        18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
-    };
-    // clang-format on
-#else
-    const int maxGain = 74;
-    // clang-format off
-    // LNA table
-    const unsigned int lnaTbl[maxGain] = {
-        0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
-        5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
-        11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
-        14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-        14, 14, 14, 14, 14, 14, 14, 14, 14, 14
-    };
-    // PGA table
-    const unsigned int pgaTbl[maxGain] = {
-        0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
-        1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
-        5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
-        9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-        22, 23, 24, 25, 26, 27, 28, 29, 30, 31
-    };
-    // clang-format on
-#endif
-    value = std::clamp(static_cast<int>(value + 12), 0, maxGain - 1);
+    value = std::clamp(static_cast<int>(value + 12), 0, MAXIMUM_GAIN_VALUE - 1);
 
-    unsigned int lna = lnaTbl[std::lround(value)];
-    unsigned int pga = pgaTbl[std::lround(value)];
+    unsigned int lna = LNATable[std::lround(value)];
+    unsigned int pga = PGATable[std::lround(value)];
 
     unsigned int tia = 0;
 #ifdef NEW_GAIN_BEHAVIOUR
