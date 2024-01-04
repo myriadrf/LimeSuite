@@ -97,9 +97,21 @@ class TRXLooper
                 delete fifo;
             }
 
+            DeleteMemoryPool();
+        }
+
+        void DeleteMemoryPool()
+        {
             if (memPool != nullptr)
             {
+                if (stagingPacket != nullptr)
+                {
+                    memPool->Free(stagingPacket);
+                    stagingPacket = nullptr;
+                }
+
                 delete memPool;
+                memPool = nullptr;
             }
         }
     };
