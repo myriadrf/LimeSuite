@@ -214,27 +214,40 @@ void SOCConfig_view::UpdateGainValues(const wxCommandEvent& event)
     auto size = sdrDevice->GetDescriptor().rfSOC.at(socIndex).channelCount;
     auto descriptor = sdrDevice->GetDescriptor().rfSOC.at(socIndex);
 
+    auto eventId = event.GetId();
+    auto eventType = event.GetEventType();
+
     for (std::size_t i = 0; i < size; ++i)
     {
-        wxArrayString rxGainValues;
-        for (const auto& gain : descriptor.gainValues.at(TRXDir::Rx).at(gui.rxSelectionToValue.at(gui.rx[i].gain->GetSelection())))
+        auto rxGuiId = gui.rx[i].gain->GetId();
+        if (eventType == wxEVT_NULL || eventId == rxGuiId)
         {
-            rxGainValues.Add(std::to_string(gain.actualGainValue));
+            wxArrayString rxGainValues;
+            for (const auto& gain :
+                descriptor.gainValues.at(TRXDir::Rx).at(gui.rxSelectionToValue.at(gui.rx[i].gain->GetSelection())))
+            {
+                rxGainValues.Add(std::to_string(gain.actualGainValue));
+            }
+
+            gui.rx[i].gainValues->Clear();
+            gui.rx[i].gainValues->Set(rxGainValues);
+            gui.rx[i].gainValues->SetSelection(0);
         }
 
-        gui.rx[i].gainValues->Clear();
-        gui.rx[i].gainValues->Set(rxGainValues);
-        gui.rx[i].gainValues->SetSelection(0);
-
-        wxArrayString txGainValues;
-        for (const auto& gain : descriptor.gainValues.at(TRXDir::Tx).at(gui.txSelectionToValue.at(gui.tx[i].gain->GetSelection())))
+        auto txGuiId = gui.tx[i].gain->GetId();
+        if (eventType == wxEVT_NULL || eventId == txGuiId)
         {
-            txGainValues.Add(std::to_string(gain.actualGainValue));
-        }
+            wxArrayString txGainValues;
+            for (const auto& gain :
+                descriptor.gainValues.at(TRXDir::Tx).at(gui.txSelectionToValue.at(gui.tx[i].gain->GetSelection())))
+            {
+                txGainValues.Add(std::to_string(gain.actualGainValue));
+            }
 
-        gui.tx[i].gainValues->Clear();
-        gui.tx[i].gainValues->Set(txGainValues);
-        gui.tx[i].gainValues->SetSelection(0);
+            gui.tx[i].gainValues->Clear();
+            gui.tx[i].gainValues->Set(txGainValues);
+            gui.tx[i].gainValues->SetSelection(0);
+        }
     }
 }
 
