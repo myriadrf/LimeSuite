@@ -168,13 +168,13 @@ void LimeSDR_MMX8::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 int LimeSDR_MMX8::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
 {
     auto device = mSubDevices.at(moduleIndex);
-    return device->SetGain(moduleIndex, direction, channel, gain, value);
+    return device->SetGain(0, direction, channel, gain, value);
 }
 
 int LimeSDR_MMX8::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
 {
     auto device = mSubDevices.at(moduleIndex);
-    return device->GetGain(moduleIndex, direction, channel, gain, value);
+    return device->GetGain(0, direction, channel, gain, value);
 }
 
 void LimeSDR_MMX8::Synchronize(bool toChip)
