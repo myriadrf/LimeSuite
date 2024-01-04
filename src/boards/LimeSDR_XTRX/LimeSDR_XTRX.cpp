@@ -196,7 +196,6 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     soc.txGains = {
         eGainTypes::PAD,
         eGainTypes::IAMP,
-        eGainTypes::PA,
     };
 
     soc.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);

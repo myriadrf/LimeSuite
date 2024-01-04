@@ -260,7 +260,6 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     soc.txGains = {
         eGainTypes::PAD,
         eGainTypes::IAMP,
-        eGainTypes::PA,
     };
 
     soc.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);

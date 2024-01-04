@@ -22,6 +22,7 @@ struct ChannelConfigGUI {
     wxCheckBox* enable;
     wxChoice* path;
     wxChoice* gain;
+    wxChoice* gainValues;
     wxTextCtrl* lpf;
     wxTextCtrl* nco;
 };
@@ -36,6 +37,9 @@ struct SDRConfigGUI {
     wxChoice* interpolation;
     ChannelConfigGUI rx[MAX_GUI_CHANNELS_COUNT];
     ChannelConfigGUI tx[MAX_GUI_CHANNELS_COUNT];
+
+    std::map<int, lime::eGainTypes> rxSelectionToValue;
+    std::map<int, lime::eGainTypes> txSelectionToValue;
 };
 
 class SOCConfig_view : public wxPanel
@@ -47,7 +51,7 @@ class SOCConfig_view : public wxPanel
         const wxSize& size = wxDefaultSize,
         long style = wxTAB_TRAVERSAL);
     void Setup(lime::SDRDevice* sdrDevice, int index);
-    void UpdateGUI(const lime::SDRDevice::SDRConfig& config);
+    void UpdateGainValues(const wxCommandEvent& event);
 
     void SubmitConfig(wxCommandEvent& event);
 
