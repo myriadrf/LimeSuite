@@ -7,6 +7,7 @@
 
 namespace lime {
 
+/// @brief Available gain types on the devices.
 enum class eGainTypes : uint8_t {
     LNA, ///< Low Noise Amplifier
     LoopbackLNA,

@@ -231,21 +231,21 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, 0 }, { 2, 9 }, { 3, 12 } };
 
     std::vector<GainValue> PGAParameter(32);
-    for (uint8_t i = 0; i < 32; ++i)
+    for (uint8_t i = 0; i < PGAParameter.size(); ++i)
     {
         PGAParameter[i] = { i, static_cast<int8_t>(i - 12) };
     }
     soc.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
 
     std::vector<GainValue> IAMPParameter(63);
-    for (uint8_t i = 1; i <= 63; ++i)
+    for (uint8_t i = 1; i <= IAMPParameter.size(); ++i)
     {
         IAMPParameter[i - 1] = { i, static_cast<int8_t>(i) };
     }
     soc.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
 
     std::vector<GainValue> PADParameter(31);
-    for (uint8_t i = 0; i < 31; ++i)
+    for (uint8_t i = 0; i < PADParameter.size(); ++i)
     {
         PADParameter[i] = { i, static_cast<int8_t>(i) };
     }
