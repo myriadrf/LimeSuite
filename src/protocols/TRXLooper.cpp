@@ -596,14 +596,31 @@ void TRXLooper::Stop()
 
     RxTeardown();
     TxTeardown();
-    // clear memory pools
-    mRx.stagingPacket = nullptr;
-    mTx.stagingPacket = nullptr;
 
-    delete mRx.memPool;
-    mRx.memPool = nullptr;
-    delete mTx.memPool;
-    mTx.memPool = nullptr;
+    if (mRx.memPool != nullptr)
+    {
+        if (mRx.stagingPacket != nullptr)
+        {
+            mRx.memPool->Free(mRx.stagingPacket);
+            mRx.stagingPacket = nullptr;
+        }
+
+        delete mRx.memPool;
+        mRx.memPool = nullptr;
+    }
+
+    if (mTx.memPool != nullptr)
+    {
+        if (mTx.stagingPacket != nullptr)
+        {
+            mTx.memPool->Free(mTx.stagingPacket);
+            mTx.stagingPacket = nullptr;
+        }
+
+        delete mTx.memPool;
+        mTx.memPool = nullptr;
+    }
+
     mStreamEnabled = false;
 }
 
