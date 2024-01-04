@@ -287,22 +287,23 @@ int LMS7002M_SDRDevice::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t c
 #ifdef NEW_GAIN_BEHAVIOUR
         if (TRXDir::Tx == direction)
         {
-            return device->GetTRFPAD_dB(enumChannel);
+            value = device->GetTRFPAD_dB(enumChannel);
         }
         else
         {
-            return device->GetRFELNA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannelenumChannel);
+            value = device->GetRFELNA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannelenumChannel);
         }
 #else
         if (TRXDir::Tx == direction)
         {
-            return device->GetTRFPAD_dB(enumChannel) + device->GetTBBIAMP_dB(enumChannel);
+            value = device->GetTRFPAD_dB(enumChannel) + device->GetTBBIAMP_dB(enumChannel);
         }
         else
         {
-            return device->GetRFELNA_dB(enumChannel) + device->GetRFETIA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannel);
+            value = device->GetRFELNA_dB(enumChannel) + device->GetRFETIA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannel);
         }
 #endif
+        return 0;
     }
 }
 
