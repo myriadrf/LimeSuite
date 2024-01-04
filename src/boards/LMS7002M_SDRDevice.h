@@ -7,10 +7,10 @@
 #include <string.h>
 
 #include "limesuite/SDRDevice.h"
+#include "limesuite/LMS7002M.h"
 
 namespace lime {
 
-class LMS7002M;
 class TRXLooper;
 class FPGA;
 
@@ -74,6 +74,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
   protected:
     static int UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
+
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;
     std::vector<LMS7002M*> mLMSChips;
@@ -82,6 +83,10 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     Descriptor mDeviceDescriptor;
     StreamConfig mStreamConfig;
     FPGA* mFPGA;
+
+  private:
+    int SetGenericRxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value);
+    int SetGenericTxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value);
 };
 
 } // namespace lime

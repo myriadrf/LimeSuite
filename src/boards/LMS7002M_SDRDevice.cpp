@@ -156,99 +156,113 @@ int LMS7002M_SDRDevice::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t c
     default:
         if (TRXDir::Tx == direction)
         {
-            if (device->SetTRFPAD_dB(value, enumChannel) != 0)
-            {
-                return -1;
-            }
-#ifdef NEW_GAIN_BEHAVIOUR
-            if (value <= 0)
-            {
-                return device->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
-            }
-            if (device->GetTBBIAMP_dB() < 0.0)
-            {
-                return device->CalibrateTxGain(0, nullptr);
-            }
-#else
-            value -= device->GetTRFPAD_dB(enumChannel);
-            if (device->SetTBBIAMP_dB(value, enumChannel) != 0)
-            {
-                return -1;
-            }
-#endif
+            return SetGenericTxGain(device, enumChannel, value);
         }
-        else // TRXDir::Rx
-        {
-#ifdef NEW_GAIN_BEHAVIOUR
-            const int maxGain = 62; // gain table size
-            // clang-format off
-            //LNA table
-            const unsigned lnaTbl[maxGain] = {
-                0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
-                5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
-                11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
-                14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
-            };
-            //PGA table
-            const unsigned pgaTbl[maxGain] = {
-                0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
-                1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
-                5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
-                18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
-            };
-            // clang-format on
-#else
-            const int maxGain = 74;
-            // clang-format off
-            const unsigned int lnaTbl[maxGain] = {
-                0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
-                5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
-                11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
-                14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-                14, 14, 14, 14, 14, 14, 14, 14, 14, 14
-            };
-            //PGA table
-            const unsigned int pgaTbl[maxGain] = {
-                0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
-                1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
-                5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
-                9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                22, 23, 24, 25, 26, 27, 28, 29, 30, 31
-            };
-            // clang-format on
-#endif
-            value = std::clamp(static_cast<int>(value + 12), 0, maxGain - 1);
 
-            unsigned int lna = lnaTbl[std::lround(value)];
-            unsigned int pga = pgaTbl[std::lround(value)];
-
-            unsigned int tia = 0;
-#ifdef NEW_GAIN_BEHAVIOUR
-            if (value > 0)
-            {
-                tia = 1;
-            }
-#else
-            //TIA table
-            if (value > 51)
-            {
-                tia = 2;
-            }
-            else if (value > 42)
-            {
-                tia = 1;
-            }
-#endif
-            int rcc_ctl_pga_rbb = (430 * (pow(0.65, pga / 10.0)) - 110.35) / 20.4516 + 16; //from datasheet
-
-            if ((device->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), lna + 1) != 0) ||
-                (device->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), tia + 1) != 0) ||
-                (device->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), pga) != 0) ||
-                (device->Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), rcc_ctl_pga_rbb) != 0))
-                return -1;
-        }
-        return 0;
+        return SetGenericRxGain(device, enumChannel, value);
     }
+}
+
+int LMS7002M_SDRDevice::SetGenericTxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value)
+{
+    if (device->SetTRFPAD_dB(value, channel) != 0)
+    {
+        return -1;
+    }
+#ifdef NEW_GAIN_BEHAVIOUR
+    if (value <= 0)
+    {
+        return device->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
+    }
+
+    if (device->GetTBBIAMP_dB(channel) < 0.0)
+    {
+        return device->CalibrateTxGain(0, nullptr);
+    }
+#else
+    value -= device->GetTRFPAD_dB(channel);
+    if (device->SetTBBIAMP_dB(value, channel) != 0)
+    {
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+int LMS7002M_SDRDevice::SetGenericRxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value)
+{
+#ifdef NEW_GAIN_BEHAVIOUR
+    const int maxGain = 62; // Gain table size
+    // clang-format off
+    // LNA table
+    const unsigned lnaTbl[maxGain] = {
+        0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+        5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+        11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+        14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+    };
+    // PGA table
+    const unsigned pgaTbl[maxGain] = {
+        0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+        1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+        5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
+        18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+    };
+    // clang-format on
+#else
+    const int maxGain = 74;
+    // clang-format off
+    // LNA table
+    const unsigned int lnaTbl[maxGain] = {
+        0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+        5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+        11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+        14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+        14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+    };
+    // PGA table
+    const unsigned int pgaTbl[maxGain] = {
+        0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+        1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+        5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
+        9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+        22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+    };
+    // clang-format on
+#endif
+    value = std::clamp(static_cast<int>(value + 12), 0, maxGain - 1);
+
+    unsigned int lna = lnaTbl[std::lround(value)];
+    unsigned int pga = pgaTbl[std::lround(value)];
+
+    unsigned int tia = 0;
+#ifdef NEW_GAIN_BEHAVIOUR
+    if (value > 0)
+    {
+        tia = 1;
+    }
+#else
+    // TIA table
+    if (value > 51)
+    {
+        tia = 2;
+    }
+    else if (value > 42)
+    {
+        tia = 1;
+    }
+#endif
+    int rcc_ctl_pga_rbb = (430 * (pow(0.65, pga / 10.0)) - 110.35) / 20.4516 + 16; // From datasheet
+
+    if ((device->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), lna + 1) != 0) ||
+        (device->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), tia + 1) != 0) ||
+        (device->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), pga) != 0) ||
+        (device->Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), rcc_ctl_pga_rbb) != 0))
+    {
+        return -1;
+    }
+
+    return 0;
 }
 
 int LMS7002M_SDRDevice::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
@@ -291,7 +305,7 @@ int LMS7002M_SDRDevice::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t c
         }
         else
         {
-            value = device->GetRFELNA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannelenumChannel);
+            value = device->GetRFELNA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannel);
         }
 #else
         if (TRXDir::Tx == direction)
