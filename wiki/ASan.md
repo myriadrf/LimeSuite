@@ -27,10 +27,7 @@ and prints any found leaks into the terminal.
 ### Not a static analysis tool
 
 Since ASan is not a static analyzer, it can only detect issues in the code that is being executed.
-No ASan output only means that there have been no issues detected only
-in the paths the program actually took, and unless the execution has somehow
-passed through all the possible code path combinations with all the possible variable values,
-one can never be certain from running ASan that all the issues in the code have been detected.
+That means any code paths that were not taken during the program execution are unchecked and may still contain problems.
 
 ## More information
 
