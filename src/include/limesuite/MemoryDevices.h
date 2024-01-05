@@ -9,7 +9,7 @@ namespace lime {
 
 enum class eMemoryDevice : uint8_t { FPGA_RAM = 0, FPGA_FLASH, EEPROM, COUNT };
 
-static const std::unordered_map<eMemoryDevice, std::string> MEMORY_DEVICES_TEXT{
+static const std::unordered_map<eMemoryDevice, const std::string> MEMORY_DEVICES_TEXT{
     { eMemoryDevice::FPGA_RAM, "FPGA RAM" },
     { eMemoryDevice::FPGA_FLASH, "FPGA FLASH" },
     { eMemoryDevice::EEPROM, "EEPROM" },

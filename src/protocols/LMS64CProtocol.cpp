@@ -85,13 +85,13 @@ constexpr size_t LMS64CPacketMemoryWriteView::GetMaxDataSize()
 
 namespace LMS64CProtocol {
 
-static const std::array<std::string, eCMD_STATUS::STATUS_COUNT> COMMAND_STATUS_TEXT = {
+static const std::array<const std::string, eCMD_STATUS::STATUS_COUNT> COMMAND_STATUS_TEXT = {
     "Undefined/Failure", "Completed", "Unknown command", "Busy", "Too many blocks", "Error", "Wrong order", "Resource denied"
 };
 
 static const std::string UNKNOWN{ "Unknown status" };
 
-static inline const std::string& status2string(const int status)
+static constexpr const std::string& status2string(const int status)
 {
     if (status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
     {
@@ -101,7 +101,9 @@ static inline const std::string& status2string(const int status)
     return UNKNOWN;
 }
 
-static const char ADC_UNITS_PREFIX[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
+static constexpr std::array<char, 16> ADC_UNITS_PREFIX = {
+    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'
+};
 
 static int SPI16(ISerialPort& port,
     uint8_t chipSelect,

@@ -44,7 +44,7 @@ enum eLMS_DEV {
     LMS_DEV_COUNT
 };
 
-const std::array<std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
+const std::array<const std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
     "EVB6",
     "DigiGreen",
     "DigiRed",
@@ -99,7 +99,7 @@ enum eEXP_BOARD {
     EXP_BOARD_COUNT
 };
 
-const std::array<std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
+const std::array<const std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
     "UNKNOWN",
     "UNSUPPORTED",
     "NOT AVAILABLE",
