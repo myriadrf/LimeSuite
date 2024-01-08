@@ -9,9 +9,7 @@ namespace lime {
 
 enum class eMemoryRegion : uint8_t { VCTCXO_DAC, COUNT };
 
-static const std::unordered_map<eMemoryRegion, std::string> MEMORY_REGIONS_TEXT{
-    { eMemoryRegion::VCTCXO_DAC, "VCTCXO DAC (non-volatile)" },
-};
+extern const std::unordered_map<eMemoryRegion, std::string> MEMORY_REGIONS_TEXT;
 
 } // namespace lime
 

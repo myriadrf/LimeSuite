@@ -52,6 +52,8 @@ set(LIME_SUITE_SOURCES
     Profiler.cpp
     gnuPlotPipe.h
 
+    EnumToString.cpp
+
     DSP/Equalizer.cpp
     memory/MemoryPool.cpp
 
