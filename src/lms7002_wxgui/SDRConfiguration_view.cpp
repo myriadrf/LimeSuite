@@ -3,7 +3,9 @@
 #include "limesuite/SDRDevice.h"
 #include <wx/msgdlg.h>
 
-using namespace std;
+#include <iomanip>
+#include <sstream>
+
 using namespace lime;
 
 SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -21,7 +23,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
 
     wxFlexGridSizer* rxGrid = new wxFlexGridSizer(6, 4, 4);
     {
-        const vector<string> titles = { "Enable", "RxAntenna", "RxGain", "RxGain (dB)", "RxLPF (MHz)", "RxNCO (MHz)" };
+        const std::vector<std::string> titles = { "Enable", "RxAntenna", "RxGain", "RxGain (dB)", "RxLPF (MHz)", "RxNCO (MHz)" };
         for (const auto& name : titles)
             rxGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
@@ -94,7 +96,7 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
 
     wxFlexGridSizer* txGrid = new wxFlexGridSizer(6, 4, 4);
     {
-        const vector<string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain (dB)", "TxGain", "TxAntenna", "Enable" };
+        const std::vector<std::string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain (dB)", "TxGain", "TxAntenna", "Enable" };
         for (auto name : titles)
             txGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
@@ -232,7 +234,9 @@ void SOCConfig_view::UpdateGain(const wxCommandEvent& event, const ChannelConfig
 
         for (const auto& gain : descriptor.gainValues.at(direction).at(selection))
         {
-            gainValues.Add(std::to_string(gain.actualGainValue));
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(0) << gain.actualGainValue;
+            gainValues.Add(ss.str());
         }
 
         channelGui.gainValues->Clear();
