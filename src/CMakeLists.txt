@@ -49,7 +49,6 @@ set(LIME_SUITE_SOURCES
     windowFunction.cpp
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp
-    Profiler.cpp
     gnuPlotPipe.h
 
     DSP/Equalizer.cpp

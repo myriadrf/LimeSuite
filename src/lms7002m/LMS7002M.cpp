@@ -477,7 +477,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
     if (f.good() == false) //file not found
     {
         f.close();
-        return ReportError(ENOENT, "LoadConfigLegacyFile(%s) - file not found", filename);
+        return ReportError(ENOENT, "LoadConfigLegacyFile(%s) - file not found", filename.c_str());
     }
     f.close();
 
@@ -488,7 +488,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
     typedef INI<string, string, string> ini_t;
     ini_t parser(filename, true);
     if (parser.select("FILE INFO") == false)
-        return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename);
+        return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename.c_str());
 
     string type = "";
     type = parser.get("type", "undefined");
@@ -496,7 +496,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
     if (type.find("LMS7002 configuration") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename);
+        return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename.c_str());
     }
 
     int fileVersion = 0;
@@ -648,7 +648,7 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
         this->SetActiveChannel(ch);
         return 0;
     }
-    return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format", filename);
+    return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format", filename.c_str());
 }
 
 /** @brief Reads configuration file and uploads registers to chip
@@ -662,7 +662,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
     if (f.good() == false) //file not found
     {
         f.close();
-        return ReportError(ENOENT, "LoadConfig(%s) - file not found", filename);
+        return ReportError(ENOENT, "LoadConfig(%s) - file not found", filename.c_str());
     }
     f.close();
 
@@ -686,7 +686,7 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
     if (type.find("lms7002m_minimal_config") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return ReportError(EINVAL, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename);
+        return ReportError(EINVAL, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename.c_str());
     }
 
     int fileVersion = 0;

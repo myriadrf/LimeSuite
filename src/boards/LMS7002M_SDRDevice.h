@@ -21,23 +21,16 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     LMS7002M_SDRDevice();
     virtual ~LMS7002M_SDRDevice();
 
-    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
-
     virtual const Descriptor& GetDescriptor() override;
 
-    virtual int Init() = 0;
     virtual void Reset() override;
     virtual void GetGPSLock(GPS_Lock* status) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
 
-    virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
-    virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
-
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
-    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
@@ -61,7 +54,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void SetDataLogCallback(DataCallbackType callback) override;
     virtual void SetMessageLogCallback(LogCallbackType callback) override;
 
-    virtual void* GetInternalChip(uint32_t index);
+    virtual void* GetInternalChip(uint32_t index) override;
 
     virtual bool UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
