@@ -48,7 +48,7 @@ int TRXLooper_USB::TxSetup()
         sizeof(complex32f_t) * mTx.packetsToBatch * mTx.samplesInPkt * channelCount + SamplesPacketType::headerSize;
 
     const int memPoolBlockCount = 1024;
-    const int memPoolAlignment = 8;
+    const int memPoolAlignment = 4096;
     mTx.memPool = new MemoryPool(memPoolBlockCount, upperAllocationLimit, memPoolAlignment, name);
 
     return 0;
@@ -248,7 +248,7 @@ int TRXLooper_USB::RxSetup()
         sizeof(complex32f_t) * packetsToBatch * samplesInPkt * channelCount + SamplesPacketType::headerSize;
 
     const int memPoolBlockCount = 1024;
-    const int memPoolAlignment = 8;
+    const int memPoolAlignment = 4096;
     mRx.memPool = new MemoryPool(memPoolBlockCount, upperAllocationLimit, memPoolAlignment, name);
 
     return 0;

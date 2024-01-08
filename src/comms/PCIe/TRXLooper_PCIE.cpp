@@ -748,7 +748,7 @@ int TRXLooper_PCIE::RxSetup()
     const std::string name = "MemPool_Rx" + std::to_string(chipId);
     const int upperAllocationLimit =
         sizeof(complex32f_t) * mRx.packetsToBatch * samplesInPkt * chCount + SamplesPacketType::headerSize;
-    mRx.memPool = new MemoryPool(1024, upperAllocationLimit, 8, name);
+    mRx.memPool = new MemoryPool(1024, upperAllocationLimit, 4096, name);
 
     const int32_t readSize = mRxArgs.packetSize * mRxArgs.packetsToBatch;
     mRxArgs.port->RxDMAEnable(true, readSize, irqPeriod);
