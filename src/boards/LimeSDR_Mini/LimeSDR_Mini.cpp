@@ -187,70 +187,7 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 30e6, 1.9e9 };
 
-    soc.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, 0 },
-        { 2, 3 },
-        { 3, 6 },
-        { 4, 9 },
-        { 5, 12 },
-        { 6, 15 },
-        { 7, 18 },
-        { 8, 21 },
-        { 9, 24 },
-        { 10, 25 },
-        { 11, 26 },
-        { 12, 27 },
-        { 13, 28 },
-        { 14, 29 },
-        { 15, 30 } };
-    soc.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, 0 }, { 2, 9 }, { 3, 12 } };
-
-    std::vector<GainValue> PGAParameter(32);
-    for (uint8_t i = 0; i < PGAParameter.size(); ++i)
-    {
-        PGAParameter[i] = { i, static_cast<int8_t>(i - 12) };
-    }
-    soc.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
-
-    std::vector<GainValue> IAMPParameter(63);
-    for (uint8_t i = 1; i <= IAMPParameter.size(); ++i)
-    {
-        IAMPParameter[i - 1] = { i, static_cast<int8_t>(i) };
-    }
-    soc.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
-
-    std::vector<GainValue> PADParameter(31);
-    for (uint8_t i = 0; i < PADParameter.size(); ++i)
-    {
-        PADParameter[i] = { i, static_cast<int8_t>(i) };
-    }
-    soc.gainValues[TRXDir::Tx][eGainTypes::PAD] = PADParameter;
-
-    soc.rxGains = {
-        eGainTypes::LNA,
-        eGainTypes::PGA,
-        eGainTypes::TIA,
-    };
-
-    soc.txGains = {
-        eGainTypes::PAD,
-        eGainTypes::IAMP,
-    };
-
-    soc.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);
-    soc.gainRange[TRXDir::Rx][eGainTypes::LoopbackLNA] = Range(0, 40);
-    soc.gainRange[TRXDir::Rx][eGainTypes::TIA] = Range(0, 12);
-    soc.gainRange[TRXDir::Rx][eGainTypes::PGA] = Range(-12, 19);
-    soc.gainRange[TRXDir::Tx][eGainTypes::PAD] = Range(0, 52);
-    soc.gainRange[TRXDir::Tx][eGainTypes::LoopbackPAD] = Range(-4.3, 0);
-    soc.gainRange[TRXDir::Tx][eGainTypes::IAMP] = Range(-12, 12);
-
-#ifdef NEW_GAIN_BEHAVIOUR
-    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 49);
-    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(0, 52);
-#else
-    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 61);
-    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(-12, 64);
-#endif
+    SetGainInformationInDescriptor(soc);
 
     descriptor.rfSOC.push_back(soc);
 

@@ -447,4 +447,72 @@ int LMS7002M_SDRDevice::WriteFPGARegister(uint32_t address, uint32_t value)
     return mFPGA->WriteRegister(address, value);
 }
 
+void LMS7002M_SDRDevice::SetGainInformationInDescriptor(RFSOCDescriptor& descriptor)
+{
+    descriptor.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, 0 },
+        { 2, 3 },
+        { 3, 6 },
+        { 4, 9 },
+        { 5, 12 },
+        { 6, 15 },
+        { 7, 18 },
+        { 8, 21 },
+        { 9, 24 },
+        { 10, 25 },
+        { 11, 26 },
+        { 12, 27 },
+        { 13, 28 },
+        { 14, 29 },
+        { 15, 30 } };
+    descriptor.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, 0 }, { 2, 9 }, { 3, 12 } };
+
+    std::vector<GainValue> PGAParameter(32);
+    for (uint8_t i = 0; i < PGAParameter.size(); ++i)
+    {
+        PGAParameter[i] = { i, static_cast<float>(i - 12) };
+    }
+    descriptor.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
+
+    std::vector<GainValue> IAMPParameter(63);
+    for (uint8_t i = 1; i <= IAMPParameter.size(); ++i)
+    {
+        IAMPParameter[i - 1] = { i, static_cast<float>(i) };
+    }
+    descriptor.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
+
+    std::vector<GainValue> PADParameter(31);
+    for (uint8_t i = 0; i < PADParameter.size(); ++i)
+    {
+        PADParameter[i] = { i, static_cast<float>(i) };
+    }
+    descriptor.gainValues[TRXDir::Tx][eGainTypes::PAD] = PADParameter;
+
+    descriptor.gains[TRXDir::Rx] = {
+        eGainTypes::LNA,
+        eGainTypes::PGA,
+        eGainTypes::TIA,
+    };
+
+    descriptor.gains[TRXDir::Tx] = {
+        eGainTypes::PAD,
+        eGainTypes::IAMP,
+    };
+
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::LoopbackLNA] = Range(0, 40);
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::TIA] = Range(0, 12);
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::PGA] = Range(-12, 19);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::PAD] = Range(0, 52);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::LoopbackPAD] = Range(-4.3, 0);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::IAMP] = Range(-12, 12);
+
+#ifdef NEW_GAIN_BEHAVIOUR
+    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 49);
+    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(0, 52);
+#else
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 61);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(-12, 64);
+#endif
+}
+
 } // namespace lime

@@ -74,6 +74,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
   protected:
     static int UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
+    void SetGainInformationInDescriptor(RFSOCDescriptor& descriptor);
 
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;

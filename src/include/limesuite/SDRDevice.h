@@ -35,8 +35,8 @@ class LIME_API SDRDevice
     typedef std::map<std::string, uint32_t> SlaveNameIds_t;
 
     struct GainValue {
-        uint16_t deviceValue;
-        int8_t actualGainValue;
+        uint16_t hardwareRegisterValue;
+        float actualGainValue;
     };
 
     struct RFSOCDescriptor {
@@ -51,8 +51,7 @@ class LIME_API SDRDevice
         std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange;
 
         std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues;
-        std::set<eGainTypes> rxGains;
-        std::set<eGainTypes> txGains;
+        std::unordered_map<TRXDir, std::set<eGainTypes>> gains;
     };
 
     struct CustomParameter {
