@@ -202,8 +202,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     // LMS#1
     soc.name = "LMS 1";
     soc.channelCount = 2;
-    soc.rxPathNames = { "None", "LNAH", "LNAL" };
-    soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "LNAL" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1", "Band2" };
 
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
@@ -224,8 +224,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
 
     // LMS#2
     soc.name = "LMS 2";
-    soc.rxPathNames = { "None", "TDD", "FDD", "Calibration (LMS3)" };
-    soc.txPathNames = { "None", "TDD", "FDD" };
+    soc.pathNames[TRXDir::Rx] = { "None", "TDD", "FDD", "Calibration (LMS3)" };
+    soc.pathNames[TRXDir::Tx] = { "None", "TDD", "FDD" };
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[1] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2);
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
@@ -234,8 +234,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
 
     // LMS#3
     soc.name = "LMS 3";
-    soc.rxPathNames = { "None", "LNAH", "Calibration (LMS2)" };
-    soc.txPathNames = { "None", "Band1" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "Calibration (LMS2)" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1" };
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[2] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3);
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);

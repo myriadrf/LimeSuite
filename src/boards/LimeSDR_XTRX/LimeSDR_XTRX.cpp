@@ -137,8 +137,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     // LMS#1
     soc.name = "LMS7002M";
     soc.channelCount = 2;
-    soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
-    soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "LNAL", "LNAW" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1", "Band2" };
 
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };

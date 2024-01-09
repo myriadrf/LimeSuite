@@ -637,7 +637,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
 
             for (int ch = 0; ch < lime->rx_channel_count[p]; ++ch)
             {
-                auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].rxPathNames;
+                auto paths = portDevice->GetDescriptor().rfSOC.at(lime->chipIndex[p]).pathNames.at(lime::TRXDir::Rx);
                 double freq = hostState->rx_freq[rxChannelOffset + ch];
                 char loFreqStr[1024];
                 if (lime->rx_LO_override[p] > 0)
@@ -684,7 +684,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
 
             for (int ch = 0; ch < lime->tx_channel_count[p]; ++ch)
             {
-                auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].txPathNames;
+                auto paths = portDevice->GetDescriptor().rfSOC.at(lime->chipIndex[p]).pathNames.at(lime::TRXDir::Tx);
                 double freq = hostState->tx_freq[txChannelOffset + ch];
                 char loFreqStr[1024];
                 if (lime->tx_LO_override[p] > 0)
@@ -973,7 +973,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             if (rxPathString)
             {
                 bool match = false;
-                auto paths = desc.rfSOC[s->chipIndex[p]].rxPathNames;
+                auto paths = desc.rfSOC[s->chipIndex[p]].pathNames[lime::TRXDir::Rx];
                 for (uint j = 0; j < paths.size(); ++j)
                 {
                     if (strcasecmp(paths[j].c_str(), rxPathString) == 0)
@@ -1000,7 +1000,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             if (txPathString)
             {
                 bool match = false;
-                auto paths = desc.rfSOC[s->chipIndex[p]].txPathNames;
+                auto paths = desc.rfSOC[s->chipIndex[p]].pathNames[lime::TRXDir::Tx];
                 for (uint j = 0; j < paths.size(); ++j)
                 {
                     if (strcasecmp(paths[j].c_str(), txPathString) == 0)

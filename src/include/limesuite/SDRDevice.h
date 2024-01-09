@@ -42,8 +42,7 @@ class LIME_API SDRDevice
     struct RFSOCDescriptor {
         std::string name;
         uint8_t channelCount;
-        std::vector<std::string> rxPathNames;
-        std::vector<std::string> txPathNames;
+        std::unordered_map<TRXDir, std::vector<std::string>> pathNames;
 
         Range samplingRateRange;
         Range frequencyRange;

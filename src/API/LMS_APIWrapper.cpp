@@ -155,14 +155,6 @@ inline void CopyString(const std::string& source, char* destination, std::size_t
     destination[destinationLength - 1] = 0;
 }
 
-inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
-{
-    for (std::size_t i = 0; i < strings.size(); ++i)
-    {
-        CopyString(strings.at(i), list[i], sizeof(lms_name_t));
-    }
-}
-
 inline lms_range_t RangeToLMS_Range(const lime::Range& range)
 {
     return { range.min, range.max, range.step };
@@ -602,16 +594,13 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, s
 
     auto rfSOC = apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex];
 
-    if (dir_tx)
+    const auto& strings = rfSOC.pathNames.at(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+    for (std::size_t i = 0; i < strings.size(); ++i)
     {
-        CopyStringVectorIntoList(rfSOC.txPathNames, list);
-        return rfSOC.txPathNames.size();
+        CopyString(strings.at(i), list[i], sizeof(lms_name_t));
     }
-    else
-    {
-        CopyStringVectorIntoList(rfSOC.rxPathNames, list);
-        return rfSOC.rxPathNames.size();
-    }
+
+    return strings.size();
 }
 
 API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
@@ -673,8 +662,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, siz
     }
 
     lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
-    std::string pathName = dir_tx ? apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).txPathNames.at(path)
-                                  : apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).rxPathNames.at(path);
+    std::string pathName = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).pathNames.at(direction).at(path);
 
     *range = RangeToLMS_Range(
         apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).antennaRange.at(direction).at(pathName));
