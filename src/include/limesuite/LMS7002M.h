@@ -234,12 +234,12 @@ class LIME_API LMS7002M
     float_type GetTRFLoopbackPAD_dB(const Channel channel);
 
     enum class PathRFE : uint8_t {
-        PATH_RFE_NONE,
-        PATH_RFE_LNAH,
-        PATH_RFE_LNAL,
-        PATH_RFE_LNAW,
-        PATH_RFE_LB1,
-        PATH_RFE_LB2,
+        NONE,
+        LNAH,
+        LNAL,
+        LNAW,
+        LB1,
+        LB2,
     };
 
     //! Set the RFE input path.

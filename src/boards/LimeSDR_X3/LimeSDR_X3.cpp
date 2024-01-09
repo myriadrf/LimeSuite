@@ -1009,15 +1009,15 @@ void LimeSDR_X3::LMS1SetPath(TRXDir dir, uint8_t chan, uint8_t pathId)
         switch (ePathLMS1_Rx(pathId))
         {
         case ePathLMS1_Rx::NONE:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_NONE);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::NONE);
             break;
         case ePathLMS1_Rx::LNAH:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAH);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAH);
             break;
         case ePathLMS1_Rx::LNAL:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAL);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAL);
             break;
-        //case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
+        //case ePathLMS1_Rx::LNAW : path = LMS7002M::LNAW; break;
         default:
             throw std::logic_error("Invalid LMS1 Rx path");
         }
@@ -1140,7 +1140,7 @@ void LimeSDR_X3::LMS2SetPath(TRXDir dir, uint8_t chan, uint8_t path)
     mFPGA->WriteRegister(sw_addr, sw_val);
     lime::LMS7002M* lms = mLMSChips.at(1);
     lms->SetBandTRF(1); // LMS2 uses only BAND1
-    lms->SetPathRFE(LMS7002M::PathRFE::PATH_RFE_LNAH); // LMS2 only uses LNAH
+    lms->SetPathRFE(LMS7002M::PathRFE::LNAH); // LMS2 only uses LNAH
 }
 
 void LimeSDR_X3::LMS3SetPath(TRXDir dir, uint8_t chan, uint8_t path)
