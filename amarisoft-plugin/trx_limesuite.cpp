@@ -223,7 +223,7 @@ struct LimeState {
     lime::SDRDevice::StreamConfig::DataFormat samplesFormat;
     lime::SDRDevice::StreamConfig::DataFormat linkFormat[TRX_MAX_RF_PORT];
 
-    // gain overrides, temporary while noramlized gain is unavailable
+    // gain overrides, temporary while normalized gain is unavailable
     int glna[TRX_MAX_RF_PORT];
     int gpga[TRX_MAX_RF_PORT];
     int iamp[TRX_MAX_RF_PORT];

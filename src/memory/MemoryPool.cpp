@@ -1,6 +1,8 @@
 #include "MemoryPool.h"
 #include <cstring>
 #include <stdexcept>
+#include <string>
+#include <sstream>
 
 namespace lime {
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)
@@ -80,7 +82,10 @@ void MemoryPool::Free(void* ptr)
         }
         else
         {
-            throw std::runtime_error("Pointer does not belong to pool " + name);
+            std::stringstream ss;
+            ss << ptr;
+
+            throw std::runtime_error("Pointer " + ss.str() + " does not belong to pool " + name);
         }
     }
     ++freeCnt;

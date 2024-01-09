@@ -7,10 +7,10 @@
 #include <string.h>
 
 #include "limesuite/SDRDevice.h"
+#include "limesuite/LMS7002M.h"
 
 namespace lime {
 
-class LMS7002M;
 class TRXLooper;
 class FPGA;
 
@@ -27,6 +27,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void GetGPSLock(GPS_Lock* status) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
+
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) override;
+    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) override;
 
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
@@ -64,6 +67,8 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
   protected:
     static int UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
+    void SetGainInformationInDescriptor(RFSOCDescriptor& descriptor);
+
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;
     std::vector<LMS7002M*> mLMSChips;
@@ -72,6 +77,10 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     Descriptor mDeviceDescriptor;
     StreamConfig mStreamConfig;
     FPGA* mFPGA;
+
+  private:
+    int SetGenericRxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value);
+    int SetGenericTxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value);
 };
 
 } // namespace lime

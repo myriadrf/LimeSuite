@@ -51,6 +51,8 @@ set(LIME_SUITE_SOURCES
     CDCM6208/CDCM6208_Dev.cpp
     gnuPlotPipe.h
 
+    EnumToString.cpp
+
     DSP/Equalizer.cpp
     memory/MemoryPool.cpp
 

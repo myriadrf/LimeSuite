@@ -1,16 +1,18 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
-#include <vector>
-#include <unordered_map>
-#include <map>
 #include <cstring>
-#include <string>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/GainTypes.h"
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
 #include "limesuite/MemoryRegions.h"
@@ -32,6 +34,11 @@ class LIME_API SDRDevice
 
     typedef std::map<std::string, uint32_t> SlaveNameIds_t;
 
+    struct GainValue {
+        uint16_t hardwareRegisterValue;
+        float actualGainValue;
+    };
+
     struct RFSOCDescriptor {
         std::string name;
         uint8_t channelCount;
@@ -41,6 +48,10 @@ class LIME_API SDRDevice
         Range samplingRateRange;
         Range frequencyRange;
         std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange;
+
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues;
+        std::unordered_map<TRXDir, std::set<eGainTypes>> gains;
     };
 
     struct CustomParameter {
@@ -184,12 +195,30 @@ class LIME_API SDRDevice
     };
 
     struct ChannelConfig {
-        ChannelConfig() { memset(this, 0, sizeof(ChannelConfig)); }
+        ChannelConfig()
+            : rx()
+            , tx()
+        {
+        }
         struct Direction {
+            Direction()
+                : centerFrequency(0)
+                , NCOoffset(0)
+                , sampleRate(0)
+                , lpf(0)
+                , path(0)
+                , oversample(0)
+                , gfir()
+                , enabled(false)
+                , calibrate(false)
+                , testSignal(false)
+            {
+            }
+
             double centerFrequency;
             double NCOoffset;
             double sampleRate;
-            double gain;
+            std::unordered_map<eGainTypes, double> gain;
             double lpf;
             uint8_t path;
             uint8_t oversample;
@@ -198,6 +227,7 @@ class LIME_API SDRDevice
             bool calibrate;
             bool testSignal;
         };
+
         Direction rx;
         Direction tx;
     };
@@ -227,6 +257,9 @@ class LIME_API SDRDevice
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
+
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
     virtual void Synchronize(bool toChip) = 0;
     virtual void EnableCache(bool enable) = 0;

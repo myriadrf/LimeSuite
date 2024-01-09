@@ -187,6 +187,8 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 30e6, 1.9e9 };
 
+    SetGainInformationInDescriptor(soc);
+
     descriptor.rfSOC.push_back(soc);
 
     auto fpgaNode = std::make_shared<DeviceNode>("FPGA", eDeviceNodeClass::FPGA_MINI, mFPGA);
@@ -266,7 +268,18 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             }
 
             mLMSChips[0]->SetBandTRF(ch.tx.path);
-            // TODO: set gains, filters...
+
+            for (const auto& gain : ch.rx.gain)
+            {
+                SetGain(0, TRXDir::Rx, i, gain.first, gain.second);
+            }
+
+            for (const auto& gain : ch.tx.gain)
+            {
+                SetGain(0, TRXDir::Tx, i, gain.first, gain.second);
+            }
+
+            // TODO: set filters...
         }
 
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);

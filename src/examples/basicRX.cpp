@@ -182,5 +182,6 @@ int main(int argc, char** argv)
     for (int i = 0; i < 2; ++i)
         delete[] rxSamples[i];
     delete[] rxSamples;
+    free(m_fftCalcPlan);
     return 0;
 }

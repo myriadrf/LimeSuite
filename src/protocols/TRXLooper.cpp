@@ -600,14 +600,10 @@ void TRXLooper::Stop()
 
     RxTeardown();
     TxTeardown();
-    // clear memory pools
-    mRx.stagingPacket = nullptr;
-    mTx.stagingPacket = nullptr;
 
-    delete mRx.memPool;
-    mRx.memPool = nullptr;
-    delete mTx.memPool;
-    mTx.memPool = nullptr;
+    mRx.DeleteMemoryPool();
+    mTx.DeleteMemoryPool();
+
     mStreamEnabled = false;
 }
 

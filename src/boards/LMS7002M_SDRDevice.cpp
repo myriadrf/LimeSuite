@@ -6,9 +6,50 @@
 #include "FPGA_common.h"
 #include "limesuite/LMS7002M.h"
 
+#include <array>
 #include <cmath>
 
 namespace lime {
+
+#ifdef NEW_GAIN_BEHAVIOUR
+constexpr static int MAXIMUM_GAIN_VALUE = 62; // Gain table size
+// clang-format off
+// LNA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> LNATable = {
+    0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+    5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+    11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+};
+// PGA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> PGATable = {
+    0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+    1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+    5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
+    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+};
+// clang-format on
+#else
+constexpr static int MAXIMUM_GAIN_VALUE = 74;
+// clang-format off
+// LNA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> LNATable = {
+    0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+    5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+    11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+};
+// PGA table
+constexpr static std::array<unsigned int, MAXIMUM_GAIN_VALUE> PGATable = {
+    0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+    1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+    5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
+    9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+};
+// clang-format on
+#endif
 
 LMS7002M_SDRDevice::LMS7002M_SDRDevice()
     : mCallback_logData(nullptr)
@@ -126,6 +167,160 @@ double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
     if (moduleIndex >= mLMSChips.size())
         throw std::logic_error("Invalid module index");
     return mLMSChips[moduleIndex]->GetSampleRate(trx, LMS7002M::Channel::ChA);
+}
+
+int LMS7002M_SDRDevice::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
+{
+    auto device = mLMSChips.at(moduleIndex);
+    LMS7002M::Channel enumChannel = channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+
+    switch (gain)
+    {
+    case eGainTypes::LNA:
+        return device->SetRFELNA_dB(value, enumChannel);
+    case eGainTypes::LoopbackLNA:
+        return device->SetRFELoopbackLNA_dB(value, enumChannel);
+    case eGainTypes::PGA:
+        return device->SetRBBPGA_dB(value, enumChannel);
+    case eGainTypes::TIA:
+        return device->SetRFETIA_dB(value, enumChannel);
+    case eGainTypes::PAD:
+        return device->SetTRFPAD_dB(value, enumChannel);
+    case eGainTypes::IAMP:
+        return device->SetTBBIAMP_dB(value, enumChannel);
+    case eGainTypes::LoopbackPAD:
+        return device->SetTRFLoopbackPAD_dB(value, enumChannel);
+    case eGainTypes::PA:
+        // TODO: implement
+        return -1;
+    case eGainTypes::UNKNOWN:
+    default:
+        if (TRXDir::Tx == direction)
+        {
+            return SetGenericTxGain(device, enumChannel, value);
+        }
+
+        return SetGenericRxGain(device, enumChannel, value);
+    }
+}
+
+int LMS7002M_SDRDevice::SetGenericTxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value)
+{
+    if (device->SetTRFPAD_dB(value, channel) != 0)
+    {
+        return -1;
+    }
+#ifdef NEW_GAIN_BEHAVIOUR
+    if (value <= 0)
+    {
+        return device->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
+    }
+
+    if (device->GetTBBIAMP_dB(channel) < 0.0)
+    {
+        return device->CalibrateTxGain(0, nullptr);
+    }
+#else
+    value -= device->GetTRFPAD_dB(channel);
+    if (device->SetTBBIAMP_dB(value, channel) != 0)
+    {
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+int LMS7002M_SDRDevice::SetGenericRxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value)
+{
+    value = std::clamp(static_cast<int>(value + 12), 0, MAXIMUM_GAIN_VALUE - 1);
+
+    unsigned int lna = LNATable[std::lround(value)];
+    unsigned int pga = PGATable[std::lround(value)];
+
+    unsigned int tia = 0;
+#ifdef NEW_GAIN_BEHAVIOUR
+    if (value > 0)
+    {
+        tia = 1;
+    }
+#else
+    // TIA table
+    if (value > 51)
+    {
+        tia = 2;
+    }
+    else if (value > 42)
+    {
+        tia = 1;
+    }
+#endif
+    int rcc_ctl_pga_rbb = (430 * (pow(0.65, pga / 10.0)) - 110.35) / 20.4516 + 16; // From datasheet
+
+    if ((device->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), lna + 1) != 0) ||
+        (device->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), tia + 1) != 0) ||
+        (device->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), pga) != 0) ||
+        (device->Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), rcc_ctl_pga_rbb) != 0))
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+int LMS7002M_SDRDevice::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
+{
+    auto device = mLMSChips.at(moduleIndex);
+    LMS7002M::Channel enumChannel = channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+
+    switch (gain)
+    {
+    case eGainTypes::LNA:
+        value = device->GetRFELNA_dB(enumChannel);
+        return 0;
+    case eGainTypes::LoopbackLNA:
+        value = device->GetRFELoopbackLNA_dB(enumChannel);
+        return 0;
+    case eGainTypes::PGA:
+        value = device->GetRBBPGA_dB(enumChannel);
+        return 0;
+    case eGainTypes::TIA:
+        value = device->GetRFETIA_dB(enumChannel);
+        return 0;
+    case eGainTypes::PAD:
+        value = device->GetTRFPAD_dB(enumChannel);
+        return 0;
+    case eGainTypes::IAMP:
+        value = device->GetTBBIAMP_dB(enumChannel);
+        return 0;
+    case eGainTypes::LoopbackPAD:
+        value = device->GetTRFLoopbackPAD_dB(enumChannel);
+        return 0;
+    case eGainTypes::PA:
+        // TODO: implement
+        return -1;
+    case eGainTypes::UNKNOWN:
+    default:
+#ifdef NEW_GAIN_BEHAVIOUR
+        if (TRXDir::Tx == direction)
+        {
+            value = device->GetTRFPAD_dB(enumChannel);
+        }
+        else
+        {
+            value = device->GetRFELNA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannel);
+        }
+#else
+        if (TRXDir::Tx == direction)
+        {
+            value = device->GetTRFPAD_dB(enumChannel) + device->GetTBBIAMP_dB(enumChannel);
+        }
+        else
+        {
+            value = device->GetRFELNA_dB(enumChannel) + device->GetRFETIA_dB(enumChannel) + device->GetRBBPGA_dB(enumChannel);
+        }
+#endif
+        return 0;
+    }
 }
 
 void LMS7002M_SDRDevice::Synchronize(bool toChip)
@@ -250,6 +445,74 @@ int LMS7002M_SDRDevice::ReadFPGARegister(uint32_t address)
 int LMS7002M_SDRDevice::WriteFPGARegister(uint32_t address, uint32_t value)
 {
     return mFPGA->WriteRegister(address, value);
+}
+
+void LMS7002M_SDRDevice::SetGainInformationInDescriptor(RFSOCDescriptor& descriptor)
+{
+    descriptor.gainValues[TRXDir::Rx][eGainTypes::LNA] = { { 1, 0 },
+        { 2, 3 },
+        { 3, 6 },
+        { 4, 9 },
+        { 5, 12 },
+        { 6, 15 },
+        { 7, 18 },
+        { 8, 21 },
+        { 9, 24 },
+        { 10, 25 },
+        { 11, 26 },
+        { 12, 27 },
+        { 13, 28 },
+        { 14, 29 },
+        { 15, 30 } };
+    descriptor.gainValues[TRXDir::Rx][eGainTypes::TIA] = { { 1, 0 }, { 2, 9 }, { 3, 12 } };
+
+    std::vector<GainValue> PGAParameter(32);
+    for (uint8_t i = 0; i < PGAParameter.size(); ++i)
+    {
+        PGAParameter[i] = { i, static_cast<float>(i - 12) };
+    }
+    descriptor.gainValues[TRXDir::Rx][eGainTypes::PGA] = PGAParameter;
+
+    std::vector<GainValue> IAMPParameter(63);
+    for (uint8_t i = 1; i <= IAMPParameter.size(); ++i)
+    {
+        IAMPParameter[i - 1] = { i, static_cast<float>(i) };
+    }
+    descriptor.gainValues[TRXDir::Tx][eGainTypes::IAMP] = IAMPParameter;
+
+    std::vector<GainValue> PADParameter(31);
+    for (uint8_t i = 0; i < PADParameter.size(); ++i)
+    {
+        PADParameter[i] = { i, static_cast<float>(i) };
+    }
+    descriptor.gainValues[TRXDir::Tx][eGainTypes::PAD] = PADParameter;
+
+    descriptor.gains[TRXDir::Rx] = {
+        eGainTypes::LNA,
+        eGainTypes::PGA,
+        eGainTypes::TIA,
+    };
+
+    descriptor.gains[TRXDir::Tx] = {
+        eGainTypes::PAD,
+        eGainTypes::IAMP,
+    };
+
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::LNA] = Range(0, 30);
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::LoopbackLNA] = Range(0, 40);
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::TIA] = Range(0, 12);
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::PGA] = Range(-12, 19);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::PAD] = Range(0, 52);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::LoopbackPAD] = Range(-4.3, 0);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::IAMP] = Range(-12, 12);
+
+#ifdef NEW_GAIN_BEHAVIOUR
+    soc.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 49);
+    soc.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(0, 52);
+#else
+    descriptor.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 61);
+    descriptor.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(-12, 64);
+#endif
 }
 
 } // namespace lime
