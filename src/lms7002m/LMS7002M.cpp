@@ -2976,29 +2976,6 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     return status;
 }
 
-float_type LMS7002M::GetSampleRate(TRXDir dir, Channel ch)
-{
-    float_type interface_Hz;
-    int ratio;
-    auto chBck = GetActiveChannel();
-    SetActiveChannel(ch);
-    //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
-    if (dir == TRXDir::Tx)
-    {
-        ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), true);
-        interface_Hz = GetReferenceClk_TSP(TRXDir::Tx);
-    }
-    else
-    {
-        ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), true);
-        interface_Hz = GetReferenceClk_TSP(TRXDir::Rx);
-    }
-    SetActiveChannel(chBck);
-    if (ratio != 7)
-        interface_Hz /= pow(2.0, ratio);
-    return interface_Hz / 2.0;
-}
-
 void LMS7002M::ConfigureLML_RF2BB(
     const LMLSampleSource s0, const LMLSampleSource s1, const LMLSampleSource s2, const LMLSampleSource s3)
 {
@@ -3300,10 +3277,15 @@ void LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
     }
 }
 
-double LMS7002M::GetSampleRate(TRXDir dir, double* rf_rate_Hz)
+float_type LMS7002M::GetSampleRate(TRXDir dir, Channel ch)
 {
-    double interface_Hz;
-    int ratio;
+    ChannelScope scope(this, ch);
+    return GetSampleRate(dir);
+}
+
+float_type LMS7002M::GetSampleRate(TRXDir dir)
+{
+    uint16_t ratio;
 
     if (dir == TRXDir::Tx)
     {
@@ -3314,13 +3296,13 @@ double LMS7002M::GetSampleRate(TRXDir dir, double* rf_rate_Hz)
         ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     }
 
-    interface_Hz = GetReferenceClk_TSP(dir);
+    double interface_Hz = GetReferenceClk_TSP(dir);
 
-    if (rf_rate_Hz)
-        *rf_rate_Hz = interface_Hz;
-
+    // If decimation/interpolation is 0 (2^1) or 7 (bypass), interface clocks should not be divided
     if (ratio != 7)
+    {
         interface_Hz /= 2 * pow(2.0, ratio);
+    }
 
     return interface_Hz;
 }

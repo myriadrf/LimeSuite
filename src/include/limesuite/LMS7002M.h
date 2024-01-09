@@ -298,6 +298,7 @@ class LIME_API LMS7002M
     int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
     float_type GetSampleRate(TRXDir dir, Channel ch);
+    float_type GetSampleRate(TRXDir dir);
 
     enum class LMLSampleSource : uint8_t {
         AI,
@@ -421,7 +422,6 @@ class LIME_API LMS7002M
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
 
-    double GetSampleRate(TRXDir dir, double* rf_rate_Hz = nullptr);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 
