@@ -1,6 +1,8 @@
 #ifndef LIME_GAINTYPES_H
 #define LIME_GAINTYPES_H
 
+#include "limesuite/config.h"
+
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -20,7 +22,7 @@ enum class eGainTypes : uint8_t {
     UNKNOWN
 };
 
-extern const std::unordered_map<eGainTypes, const std::string> GAIN_TYPES_TEXT;
+extern LIME_API const std::unordered_map<eGainTypes, const std::string> GAIN_TYPES_TEXT;
 
 } // namespace lime
 
