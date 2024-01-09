@@ -567,11 +567,9 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0); // enabled DAC is required for FPGA to work
 
         chip->SetActiveChannel(LMS7002M::Channel::ChA);
-        double sampleRate;
-        if (rxUsed)
-            sampleRate = cfg.channel[0].rx.sampleRate;
-        else
-            sampleRate = cfg.channel[0].tx.sampleRate;
+
+        double sampleRate = cfg.channel[0].GetDirection(rxUsed ? TRXDir::Rx : TRXDir::Tx).sampleRate;
+
         if (socIndex == 0 && sampleRate > 0)
         {
             LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
@@ -643,19 +641,8 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
 void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex)
 {
-    std::string dirName;
-    SDRDevice::ChannelConfig::Direction trx;
-
-    if (dir == TRXDir::Rx)
-    {
-        dirName = "Rx";
-        trx = cfg.channel[ch].rx;
-    }
-    else
-    {
-        dirName = "Tx";
-        trx = cfg.channel[ch].tx;
-    }
+    std::string dirName = dir == TRXDir::Rx ? "Rx" : "Tx";
+    SDRDevice::ChannelConfig::Direction trx = cfg.channel[ch].GetDirection(dir);
 
     if (socIndex == 1) // LMS2 uses external ADC/DAC
     {

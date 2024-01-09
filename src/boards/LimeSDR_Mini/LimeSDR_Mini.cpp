@@ -284,16 +284,7 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
         // sampling rate
-        double sampleRate;
-
-        if (rxUsed)
-        {
-            sampleRate = cfg.channel[0].rx.sampleRate;
-        }
-        else
-        {
-            sampleRate = cfg.channel[0].tx.sampleRate;
-        }
+        double sampleRate = cfg.channel[0].GetDirection(rxUsed ? TRXDir::Rx : TRXDir::Tx).sampleRate;
 
         SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
     } //try

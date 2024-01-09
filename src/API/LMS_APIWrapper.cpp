@@ -353,26 +353,14 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
     const double defaultFrequency = 1e8;
 
-    if (dir_tx)
-    {
-        config.channel[chan].tx.enabled = enabled;
+    auto& direction = apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
 
-        if (config.channel[chan].tx.centerFrequency == 0)
-        {
-            config.channel[chan].tx.centerFrequency = defaultFrequency;
-        }
-    }
-    else
+    direction.enabled = enabled;
+    if (direction.centerFrequency == 0)
     {
-        config.channel[chan].rx.enabled = enabled;
-
-        if (config.channel[chan].rx.centerFrequency == 0)
-        {
-            config.channel[chan].rx.centerFrequency = defaultFrequency;
-        }
+        direction.centerFrequency = defaultFrequency;
     }
 
     try
@@ -432,16 +420,9 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx,
 
     for (std::size_t i = 0; i < lime::SDRDevice::MAX_CHANNEL_COUNT; ++i)
     {
-        if (dir_tx)
-        {
-            config.channel[i].tx.sampleRate = rate;
-            config.channel[i].tx.oversample = oversample;
-        }
-        else
-        {
-            config.channel[i].rx.sampleRate = rate;
-            config.channel[i].rx.oversample = oversample;
-        }
+        auto& direction = config.channel[i].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+        direction.sampleRate = rate;
+        direction.oversample = oversample;
     }
 
     try
@@ -466,17 +447,10 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, si
     }
 
     lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    auto& directionConfig = config.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
 
-    if (dir_tx)
-    {
-        *host_Hz = config.channel[chan].tx.sampleRate;
-        *rf_Hz = config.channel[chan].tx.sampleRate * config.channel[chan].tx.oversample;
-    }
-    else
-    {
-        *host_Hz = config.channel[chan].rx.sampleRate;
-        *rf_Hz = config.channel[chan].rx.sampleRate * config.channel[chan].rx.oversample;
-    }
+    *host_Hz = directionConfig.sampleRate;
+    *rf_Hz = directionConfig.sampleRate * directionConfig.oversample;
 
     return 0;
 }
@@ -513,29 +487,19 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
     lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    config.channel[chan].GetDirection(direction).centerFrequency = frequency;
 
-    if (dir_tx)
+    const bool isMIMO = config.channel[0].GetDirection(direction).enabled && config.channel[1].GetDirection(direction).enabled;
+    const bool isSameFrequency =
+        config.channel[0].GetDirection(direction).centerFrequency == config.channel[1].GetDirection(direction).centerFrequency;
+
+    if (isMIMO && !isSameFrequency)
     {
-        config.channel[chan].tx.centerFrequency = frequency;
-
-        const bool txMIMO = config.channel[0].tx.enabled && config.channel[1].tx.enabled;
-        if (txMIMO && config.channel[0].tx.centerFrequency != config.channel[1].tx.centerFrequency)
-        {
-            // Don't configure just yet, wait for both frequencies to be set.
-            return 0;
-        }
-    }
-    else
-    {
-        config.channel[chan].rx.centerFrequency = frequency;
-
-        const bool rxMIMO = config.channel[0].rx.enabled && config.channel[1].rx.enabled;
-        if (rxMIMO && config.channel[0].rx.centerFrequency != config.channel[1].rx.centerFrequency)
-        {
-            // Don't configure just yet, wait for both frequencies to be set.
-            return 0;
-        }
+        // Don't configure just yet, wait for both frequencies to be set.
+        return 0;
     }
 
     try
@@ -559,14 +523,8 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    if (dir_tx)
-    {
-        *frequency = apiDevice->lastSavedSDRConfig.channel[chan].tx.centerFrequency;
-    }
-    else
-    {
-        *frequency = apiDevice->lastSavedSDRConfig.channel[chan].rx.centerFrequency;
-    }
+    *frequency =
+        apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).centerFrequency;
 
     return 0;
 }
@@ -611,16 +569,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.path = path;
-    }
-    else
-    {
-        config.channel[chan].rx.path = path;
-    }
+    apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).path = path;
 
     try
     {
@@ -643,14 +592,7 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        return config.channel[chan].tx.path;
-    }
-
-    return config.channel[chan].rx.path;
+    return apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).path;
 }
 
 API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
@@ -678,17 +620,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.lpf = bandwidth;
-    }
-    else
-    {
-        config.channel[chan].rx.lpf = bandwidth;
-    }
-
+    apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).lpf = bandwidth;
     apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
 
     try
@@ -737,16 +669,9 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
     const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
     gain = range.min + gain * (range.max - range.min);
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.gain[apiDevice->txGain] = gain;
-    }
-    else
-    {
-        config.channel[chan].rx.gain[apiDevice->rxGain] = gain;
-    }
+    auto& directionConfig = apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
+    directionConfig.gain[gainToUse] = gain;
 
     try
     {
@@ -757,7 +682,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
             dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx,
             chan,
             dir_tx ? apiDevice->txGain : apiDevice->rxGain,
-            dir_tx ? config.channel[chan].tx.gain[apiDevice->txGain] : config.channel[chan].rx.gain[apiDevice->rxGain]);
+            directionConfig.gain[gainToUse]);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -776,16 +701,9 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.gain[apiDevice->txGain] = gain;
-    }
-    else
-    {
-        config.channel[chan].rx.gain[apiDevice->rxGain] = gain;
-    }
+    auto& directionConfig = apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
+    directionConfig.gain[gainToUse] = gain;
 
     try
     {
@@ -796,7 +714,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
             dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx,
             chan,
             dir_tx ? apiDevice->txGain : apiDevice->rxGain,
-            dir_tx ? config.channel[chan].tx.gain[apiDevice->txGain] : config.channel[chan].rx.gain[apiDevice->rxGain]);
+            directionConfig.gain[gainToUse]);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -815,8 +733,12 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
         return -1;
     }
 
+    auto& directionConfig = apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
+    auto deviceGain = directionConfig.gain.at(gainToUse);
+
     const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
-    *gain = (GetGain(apiDevice, dir_tx, chan) - range.min) / (range.max - range.min);
+    *gain = (deviceGain - range.min) / (range.max - range.min);
 
     return LMS_SUCCESS;
 }
@@ -829,7 +751,11 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    *gain = std::lround(GetGain(apiDevice, dir_tx, chan)) + 12;
+    auto& directionConfig = apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
+    auto deviceGain = directionConfig.gain.at(gainToUse);
+    *gain = std::lround(deviceGain) + 12;
+
     return 0;
 }
 
@@ -841,16 +767,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.calibrate = true;
-    }
-    else
-    {
-        config.channel[chan].rx.calibrate = true;
-    }
+    apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).calibrate = true;
 
     try
     {
@@ -862,14 +779,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    if (dir_tx)
-    {
-        config.channel[chan].tx.calibrate = false;
-    }
-    else
-    {
-        config.channel[chan].rx.calibrate = false;
-    }
+    apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).calibrate = false;
 
     return 0;
 }
@@ -1633,16 +1543,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t 
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        *bandwidth = config.channel[chan].tx.lpf;
-    }
-    else
-    {
-        *bandwidth = config.channel[chan].rx.lpf;
-    }
+    *bandwidth = apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx).lpf;
 
     return 0;
 }
@@ -1655,29 +1556,15 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t ch
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     if (enabled)
     {
-        if (dir_tx)
-        {
-            config.channel[chan].tx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
-        }
-        else
-        {
-            config.channel[chan].rx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
-        }
+        apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(direction).lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
     }
     else
     {
-        if (dir_tx)
-        {
-            config.channel[chan].tx.lpf = 130e6;
-        }
-        else
-        {
-            config.channel[chan].rx.lpf = 130e6;
-        }
+        apiDevice->lastSavedSDRConfig.channel[chan].GetDirection(direction).lpf = 130e6;
     }
 
     try

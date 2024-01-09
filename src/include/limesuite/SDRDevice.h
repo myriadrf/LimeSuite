@@ -227,6 +227,28 @@ class LIME_API SDRDevice
             bool testSignal;
         };
 
+        Direction& GetDirection(TRXDir direction)
+        {
+            switch (direction)
+            {
+            case TRXDir::Rx:
+                return rx;
+            case TRXDir::Tx:
+                return tx;
+            }
+        }
+
+        const Direction& GetDirection(TRXDir direction) const
+        {
+            switch (direction)
+            {
+            case TRXDir::Rx:
+                return rx;
+            case TRXDir::Tx:
+                return tx;
+            }
+        }
+
         Direction rx;
         Direction tx;
     };
