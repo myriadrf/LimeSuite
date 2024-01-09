@@ -520,6 +520,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         mRx.thread = std::thread(RxLoopFunction);
         SetOSThreadPriority(ThreadPriority::HIGHEST, schedulingPolicy, &mRx.thread);
+#ifdef __linux__
         pthread_setname_np(mRx.thread.native_handle(), "lime:RxLoop");
 
         cpu_set_t cpuset;
@@ -529,6 +530,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         // if (rc != 0) {
         //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
         // }
+#endif
     }
     if (needTx)
     {
@@ -536,6 +538,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         mTx.thread = std::thread(TxLoopFunction);
         SetOSThreadPriority(ThreadPriority::HIGHEST, schedulingPolicy, &mTx.thread);
+#ifdef __linux__
         pthread_setname_np(mTx.thread.native_handle(), "lime:TxLoop");
 
         cpu_set_t cpuset;
@@ -545,6 +548,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         // if (rc != 0) {
         //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
         // }
+#endif
     }
 
     // if (cfg.alignPhase)
