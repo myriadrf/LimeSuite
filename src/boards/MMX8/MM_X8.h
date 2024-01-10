@@ -30,7 +30,7 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual ~LimeSDR_MMX8();
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
-    virtual const Descriptor& GetDescriptor() override;
+    virtual const Descriptor& GetDescriptor() const override;
 
     virtual int Init() override;
     virtual void Reset() override;

@@ -142,7 +142,7 @@ void LMS7002M_SDRDevice::SetMessageLogCallback(LogCallbackType callback)
     mCallback_logMessage = callback;
 }
 
-const SDRDevice::Descriptor& LMS7002M_SDRDevice::GetDescriptor()
+const SDRDevice::Descriptor& LMS7002M_SDRDevice::GetDescriptor() const
 {
     return mDeviceDescriptor;
 }

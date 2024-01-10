@@ -108,7 +108,7 @@ LimeSDR_MMX8::~LimeSDR_MMX8()
         delete mSubDevices[i];
 }
 
-const SDRDevice::Descriptor& LimeSDR_MMX8::GetDescriptor()
+const SDRDevice::Descriptor& LimeSDR_MMX8::GetDescriptor() const
 {
     return mDeviceDescriptor;
 }

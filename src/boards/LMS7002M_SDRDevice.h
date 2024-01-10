@@ -21,7 +21,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     LMS7002M_SDRDevice();
     virtual ~LMS7002M_SDRDevice();
 
-    virtual const Descriptor& GetDescriptor() override;
+    virtual const Descriptor& GetDescriptor() const override;
 
     virtual void Reset() override;
     virtual void GetGPSLock(GPS_Lock* status) override;

@@ -268,7 +268,7 @@ class LIME_API SDRDevice
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
-    virtual const Descriptor& GetDescriptor() = 0;
+    virtual const Descriptor& GetDescriptor() const = 0;
 
     virtual int Init() = 0;
     virtual void Reset() = 0;
