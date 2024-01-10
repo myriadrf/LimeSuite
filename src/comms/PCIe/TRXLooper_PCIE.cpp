@@ -122,8 +122,7 @@ void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
     if (combinedSampleRate != 0)
     {
         batchSize = combinedSampleRate / 61.44e6;
-        batchSize = std::min(batchSize, 4);
-        batchSize = std::max(1, batchSize);
+        batchSize = std::clamp(batchSize, 1, 4);
     }
 
     if (config.hintSampleRate)
@@ -211,7 +210,7 @@ int TRXLooper_PCIE::TxSetup()
     return 0;
 }
 
-/** 
+/**
   @brief A class for managing the transmission buffer for the PCIe transfer.
   @tparam T The samples packet input type.
  */
