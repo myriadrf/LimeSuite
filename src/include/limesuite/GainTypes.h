@@ -23,6 +23,7 @@ enum class eGainTypes : uint8_t {
 };
 
 extern LIME_API const std::unordered_map<eGainTypes, const std::string> GAIN_TYPES_TEXT;
+extern LIME_API const std::unordered_map<std::string, eGainTypes> STRING_TO_GAIN_TYPES;
 
 } // namespace lime
 
