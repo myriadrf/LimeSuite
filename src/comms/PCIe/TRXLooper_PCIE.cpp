@@ -110,12 +110,13 @@ TRXLooper_PCIE::~TRXLooper_PCIE()
 
 void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
 {
-    if (config.rxCount > 0 && !mRxArgs.port->IsOpen())
+    if (config.channels.at(lime::TRXDir::Rx).size() > 0 && !mRxArgs.port->IsOpen())
         throw std::runtime_error("Rx data port not open\n");
-    if (config.txCount > 0 && !mTxArgs.port->IsOpen())
+    if (config.channels.at(lime::TRXDir::Tx).size() > 0 && !mTxArgs.port->IsOpen())
         throw std::runtime_error("Tx data port not open\n");
 
-    float combinedSampleRate = std::max(config.txCount, config.rxCount) * config.hintSampleRate;
+    float combinedSampleRate =
+        std::max(config.channels.at(lime::TRXDir::Tx).size(), config.channels.at(lime::TRXDir::Rx).size()) * config.hintSampleRate;
     int batchSize = 7; // should be good enough for most cases
     // for high data rates e.g 16bit ADC/DAC 2x2 MIMO @ 122.88Msps = ~1973 MB/s
     // need to batch as many packets as possible into transfer buffers
@@ -142,9 +143,9 @@ void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
     fpga->WriteRegisters(addrs, values, 3);
 
     mConfig = config;
-    if (config.rxCount > 0)
+    if (config.channels.at(lime::TRXDir::Rx).size() > 0)
         RxSetup();
-    if (config.txCount > 0)
+    if (config.channels.at(lime::TRXDir::Tx).size() > 0)
         TxSetup();
 
     TRXLooper::Setup(config);
@@ -159,7 +160,7 @@ void TRXLooper_PCIE::Start()
 int TRXLooper_PCIE::TxSetup()
 {
     mTx.lastTimestamp.store(0, std::memory_order_relaxed);
-    const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
+    const int chCount = std::max(mConfig.channels.at(lime::TRXDir::Rx).size(), mConfig.channels.at(lime::TRXDir::Tx).size());
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
 
     int samplesInPkt = 256; //(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
@@ -369,7 +370,7 @@ void FPGATxState(FPGA* fpga)
 
 void TRXLooper_PCIE::TransmitPacketsLoop()
 {
-    const bool mimo = std::max(mConfig.txCount, mConfig.rxCount) > 1;
+    const bool mimo = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size()) > 1;
     const bool compressed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
     const int irqPeriod = 4;
 
@@ -463,10 +464,10 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     switch (mConfig.format)
                     {
                     case SDRDevice::StreamConfig::DataFormat::I16:
-                        srcPkt->Scale<complex16_t>(1, -1, mConfig.txCount);
+                        srcPkt->Scale<complex16_t>(1, -1, mConfig.channels.at(lime::TRXDir::Tx).size());
                         break;
                     case SDRDevice::StreamConfig::DataFormat::F32:
-                        srcPkt->Scale<complex32f_t>(1, -1, mConfig.txCount);
+                        srcPkt->Scale<complex32f_t>(1, -1, mConfig.channels.at(lime::TRXDir::Tx).size());
                         break;
                     default:
                         break;
@@ -475,7 +476,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
 
             // drop old packets before forming, Rx is needed to get current timestamp
-            if (srcPkt->useTimestamp && mConfig.rxCount > 0)
+            if (srcPkt->useTimestamp && mConfig.channels.at(lime::TRXDir::Rx).size() > 0)
             {
                 int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
                 const int64_t txAdvance = srcPkt->timestamp - rxNow;
@@ -535,7 +536,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
             StreamHeader* pkt = reinterpret_cast<StreamHeader*>(output.data());
             lastTS = pkt->counter;
-            if (mConfig.rxCount > 0) // Rx is needed for current timestamp
+            if (mConfig.channels.at(lime::TRXDir::Rx).size() > 0) // Rx is needed for current timestamp
             {
                 int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
                 const int64_t txAdvance = pkt->counter - rxNow;
@@ -675,7 +676,7 @@ int TRXLooper_PCIE::RxSetup()
 {
     mRx.lastTimestamp.store(0, std::memory_order_relaxed);
     const bool usePoll = mConfig.extraConfig ? mConfig.extraConfig->usePoll : true;
-    const int chCount = std::max(mConfig.rxCount, mConfig.txCount);
+    const int chCount = std::max(mConfig.channels.at(lime::TRXDir::Rx).size(), mConfig.channels.at(lime::TRXDir::Tx).size());
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
     const int maxSamplesInPkt = 1024 / chCount;
 
@@ -762,7 +763,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     DataConversion conversion;
     conversion.srcFormat = mConfig.linkFormat;
     conversion.destFormat = mConfig.format;
-    conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+    conversion.channelCount = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size());
 
     const int32_t bufferCount = mRxArgs.buffers.size();
     const int32_t readSize = mRxArgs.packetSize * mRxArgs.packetsToBatch;
@@ -915,10 +916,10 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 switch (mConfig.format)
                 {
                 case SDRDevice::StreamConfig::DataFormat::I16:
-                    outputPkt->Scale<complex16_t>(1, -1, mConfig.rxCount);
+                    outputPkt->Scale<complex16_t>(1, -1, mConfig.channels.at(lime::TRXDir::Rx).size());
                     break;
                 case SDRDevice::StreamConfig::DataFormat::F32:
-                    outputPkt->Scale<complex32f_t>(1, -1, mConfig.rxCount);
+                    outputPkt->Scale<complex32f_t>(1, -1, mConfig.channels.at(lime::TRXDir::Rx).size());
                     break;
                 default:
                     break;
@@ -971,8 +972,8 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
     uint32_t count)
 {
     const int samplesInPkt = 256;
-    const bool useChannelB = config.txCount > 1;
-    const bool mimo = config.txCount == 2;
+    const bool useChannelB = config.channels.at(lime::TRXDir::Tx).size() > 1;
+    const bool mimo = config.channels.at(lime::TRXDir::Tx).size() == 2;
     const bool compressed = config.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
     fpga->WriteRegister(0xFFFF, 1 << moduleIndex);
     fpga->WriteRegister(0x000C, mimo ? 0x3 : 0x1); //channels 0,1

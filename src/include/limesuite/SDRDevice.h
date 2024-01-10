@@ -158,10 +158,7 @@ class LIME_API SDRDevice
         ~StreamConfig();
         StreamConfig& operator=(const StreamConfig& srd);
 
-        uint8_t rxCount;
-        uint8_t rxChannels[MAX_CHANNEL_COUNT];
-        uint8_t txCount;
-        uint8_t txChannels[MAX_CHANNEL_COUNT];
+        std::unordered_map<TRXDir, std::vector<uint8_t>> channels;
 
         DataFormat format; // samples format used for Read/Write functions
         DataFormat linkFormat; // samples format used in transport layer Host<->FPGA

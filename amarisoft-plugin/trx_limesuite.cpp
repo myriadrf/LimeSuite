@@ -776,16 +776,20 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
             }
 
             SDRDevice::StreamConfig& stream = lime->streamCfg[p];
-            stream.rxCount = lime->rx_channel_count[p];
-            stream.txCount = lime->tx_channel_count[p];
+
             stream.linkFormat = lime->linkFormat[p];
             stream.format = lime->samplesFormat;
 
             // Initialize streams and map channels
-            for (int ch = 0; ch < stream.rxCount; ++ch)
-                stream.rxChannels[ch] = ch;
-            for (int ch = 0; ch < stream.txCount; ++ch)
-                stream.txChannels[ch] = ch;
+            for (int ch = 0; ch < lime->rx_channel_count[p]; ++ch)
+            {
+                stream.channels.at(lime::TRXDir::Rx).push_back(ch);
+            }
+
+            for (int ch = 0; ch < lime->tx_channel_count[p]; ++ch)
+            {
+                stream.channels.at(lime::TRXDir::Tx).push_back(ch);
+            }
 
             stream.statusCallback = OnStreamStatusChange;
             stream.userData = (void*)&portStreamStates[p];

@@ -836,11 +836,11 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         if (!trxPort->IsOpen())
         {
             int dirFlag = 0;
-            if (config.rxCount > 0 && config.txCount > 0)
+            if (config.channels.at(lime::TRXDir::Rx).size() > 0 && config.channels.at(lime::TRXDir::Tx).size() > 0)
                 dirFlag = O_RDWR;
-            else if (config.rxCount > 0)
+            else if (config.channels.at(lime::TRXDir::Rx).size() > 0)
                 dirFlag = O_RDONLY;
-            else if (config.txCount > 0)
+            else if (config.channels.at(lime::TRXDir::Tx).size() > 0)
                 dirFlag = O_WRONLY;
             if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
             {

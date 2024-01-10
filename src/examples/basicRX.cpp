@@ -88,9 +88,7 @@ int main(int argc, char** argv)
 
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = 1; // rx channels count
-        stream.rxChannels[0] = 0;
-        stream.txCount = 0;
+        stream.channels[TRXDir::Rx] = { 0 };
         stream.format = SDRDevice::StreamConfig::DataFormat::F32;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
 

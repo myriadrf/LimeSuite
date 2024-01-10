@@ -69,12 +69,8 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
     }
 
     SDRDevice::StreamConfig stream;
-    stream.rxCount = 1; //channelCount;
-    stream.rxChannels[0] = 0;
-    stream.rxChannels[1] = 1;
-    stream.txCount = 1; //channelCount;
-    stream.txChannels[0] = 0;
-    stream.txChannels[1] = 1;
+    stream.channels[TRXDir::Rx] = { 0, 1 };
+    stream.channels[TRXDir::Tx] = { 0, 1 };
     stream.format = SDRDevice::StreamConfig::DataFormat::F32;
     stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
     stream.alignPhase = false;
@@ -250,7 +246,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
         // loopback or verify gain values to know what power change to expect
 
         SDRDevice::StreamMeta txMeta;
-        if (rxMeta.timestamp >= ignoreSamplesAtStart && stream.txCount > 0)
+        if (rxMeta.timestamp >= ignoreSamplesAtStart && stream.channels.at(lime::TRXDir::Tx).size() > 0)
         {
             ++fired;
             int64_t rxNow = rxMeta.timestamp + samplesInPkt;
@@ -332,7 +328,8 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / stream.rxCount;
+    const int samplesInPkt =
+        (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / stream.channels.at(lime::TRXDir::Rx).size();
 
     const float rxBufferTime = 0.005; // max buffer size in time (seconds)
     const uint32_t samplesToBuffer = (int)(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;
@@ -351,7 +348,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
 
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
-    std::vector<std::vector<complex32f_t>> txPattern(stream.txCount);
+    std::vector<std::vector<complex32f_t>> txPattern(stream.channels.at(lime::TRXDir::Tx).size());
     const int txPacketCount = 1;
     for (uint i = 0; i < txPattern.size(); ++i)
     {

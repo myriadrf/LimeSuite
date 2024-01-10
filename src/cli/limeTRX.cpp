@@ -486,12 +486,15 @@ int main(int argc, char** argv)
     {
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = rx ? channelCount : 0; // rx channels count
-        for (int i = 0; i < channelCount; ++i)
-            stream.rxChannels[i] = i;
-        stream.txCount = tx ? channelCount : 0;
-        for (int i = 0; i < channelCount; ++i)
-            stream.txChannels[i] = i;
+        for (int i = 0; rx && i < channelCount; ++i)
+        {
+            stream.channels.at(TRXDir::Rx).push_back(i);
+        }
+
+        for (int i = 0; tx && i < channelCount; ++i)
+        {
+            stream.channels.at(TRXDir::Tx).push_back(i);
+        }
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = linkFormat;

@@ -900,14 +900,8 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     config.bufferSize = stream->fifoSize;
 
     auto channel = stream->channel & ~LMS_ALIGN_CH_PHASE; // Clear the align phase bit
-    if (stream->isTx)
-    {
-        config.txChannels[config.txCount++] = channel;
-    }
-    else
-    {
-        config.rxChannels[config.rxCount++] = channel;
-    }
+
+    config.channels.at(stream->isTx ? lime::TRXDir::Tx : lime::TRXDir::Rx).push_back(channel);
 
     config.alignPhase = stream->channel & LMS_ALIGN_CH_PHASE;
 
@@ -1066,7 +1060,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     }
 
     const uint32_t streamChannel = stream->channel & ~LMS_ALIGN_CH_PHASE;
-    const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
+    const std::size_t rxChannelCount = handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Rx).size();
     const std::size_t sampleSize = sizeof(T);
 
     if (rxChannelCount > 1)
@@ -1091,7 +1085,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     std::vector<T*> sampleBuffer(rxChannelCount);
     for (uint8_t i = 0; i < rxChannelCount; ++i)
     {
-        if (handle->parent->lastSavedStreamConfig.rxChannels[i] == streamChannel)
+        if (handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Rx).at(i) == streamChannel)
         {
             sampleBuffer[i] = reinterpret_cast<T*>(samples);
         }
@@ -1099,8 +1093,11 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         {
             sampleBuffer[i] = reinterpret_cast<T*>(handle->memoryPool.Allocate(sample_count * sampleSize));
 
-            handle->parent->streamBuffers.push_back(
-                { sampleBuffer[i], &handle->memoryPool, direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
+            handle->parent->streamBuffers.push_back({ sampleBuffer[i],
+                &handle->memoryPool,
+                direction,
+                handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Rx).at(i),
+                0 });
         }
     }
 
@@ -1169,7 +1166,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
     }
 
     const uint32_t streamChannel = stream->channel & ~LMS_ALIGN_CH_PHASE;
-    const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
+    const std::size_t txChannelCount = handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Tx).size();
     const std::size_t sampleSize = sizeof(T);
 
     std::vector<const T*> sampleBuffer(txChannelCount, nullptr);
@@ -1178,9 +1175,9 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
     {
         if (buffer.direction == direction)
         {
-            for (uint8_t i = 0; i < txChannelCount; ++i)
+            for (std::size_t i = 0; i < txChannelCount; ++i)
             {
-                if (handle->parent->lastSavedStreamConfig.txChannels[i] == buffer.channel)
+                if (handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Tx).at(i) == buffer.channel)
                 {
                     sampleBuffer[i] = reinterpret_cast<const T*>(buffer.buffer);
                     break;
@@ -1191,7 +1188,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
 
     for (uint8_t i = 0; i < txChannelCount; ++i)
     {
-        if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
+        if (handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Tx).at(i) == streamChannel)
         {
             sampleBuffer[i] = reinterpret_cast<const T*>(samples);
             break;
@@ -2169,7 +2166,6 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** sample
         break;
     }
 
-    config.txCount = chCount;
     config.format = dataFormat;
 
     return apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
