@@ -38,7 +38,7 @@ float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = { 1930e6, 2940e6 };
 
 /// Define for parameter enumeration if prefix might be needed
-extern std::vector<const LMS7Parameter*> LMS7parameterList;
+extern std::vector<std::reference_wrapper<const LMS7Parameter>> LMS7parameterList;
 
 // Module addresses needs to be sorted in ascending order
 const uint16_t LMS7002M::readOnlyRegisters[] = {
@@ -1748,12 +1748,17 @@ int LMS7002M::Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, c
 /** @brief Get parameter by name
     @param name parameter name
 */
-const LMS7Parameter* LMS7002M::GetParam(const std::string& name)
+const LMS7Parameter& LMS7002M::GetParam(const std::string& name)
 {
-    for (const LMS7Parameter* parameter : LMS7parameterList)
-        if (std::string(parameter->name) == name)
+    for (const LMS7Parameter& parameter : LMS7parameterList)
+    {
+        if (std::string(parameter.name) == name)
+        {
             return parameter;
-    return nullptr;
+        }
+    }
+
+    throw std::logic_error("Parameter " + name + " not found");
 }
 
 /** @brief Sets SX frequency

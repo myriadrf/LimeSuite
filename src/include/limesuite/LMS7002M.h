@@ -151,7 +151,7 @@ class LIME_API LMS7002M
     int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
     int RegistersTest(const std::string& fileName = "registersTest.txt");
-    static const LMS7Parameter* GetParam(const std::string& name);
+    static const LMS7Parameter& GetParam(const std::string& name);
 
     int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
     int CalibrateTx(float_type bandwidth, const bool useExtLoopback = false);
