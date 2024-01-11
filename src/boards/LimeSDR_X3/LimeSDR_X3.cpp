@@ -208,6 +208,9 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
 
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
+
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
@@ -600,14 +603,14 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         {
             chip->SetActiveChannel((ch & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
 
-            if (cfg.channel[ch].rx.testSignal)
+            if (cfg.channel[ch].rx.testSignal.enabled)
             {
-                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 0);
+                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, static_cast<uint8_t>(cfg.channel[ch].rx.testSignal.scale));
+                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, cfg.channel[ch].rx.testSignal.dcMode ? 1 : 0);
                 chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal ? 1 : 0);
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal.enabled ? 1 : 0);
 
             ConfigureDirection(TRXDir::Rx, chip, cfg, ch, socIndex);
             ConfigureDirection(TRXDir::Tx, chip, cfg, ch, socIndex);
@@ -764,27 +767,37 @@ void LimeSDR_X3::Reset()
         mLMS7002Mcomms[i]->ResetDevice();
 }
 
-double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
+double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    if (moduleIndex == 1)
+    switch (moduleIndex)
     {
+    case 1:
         if (trx == TRXDir::Rx)
+        {
             return mClockGeneratorCDCM->GetFrequency(CDCM_Y4); // Rx Ch. A
+        }
         else
         {
             const int oversample = mEqualizer->GetOversample();
             return mClockGeneratorCDCM->GetFrequency(CDCM_Y0Y1) / oversample; // Tx Ch. A&B
         }
-    }
-    if (moduleIndex == 2)
-    {
+    case 2:
         if (trx == TRXDir::Rx) // LMS3 Rx uses external ADC
+        {
             return mClockGeneratorCDCM->GetFrequency(CDCM_Y6); // Rx Ch. A
+        }
         else // LMS3 Tx uses internal ADC
-            return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, TRXDir::Tx);
+        {
+            return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, TRXDir::Tx, channel);
+        }
+    default:
+        return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, trx, channel);
     }
-    else
-        return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, trx);
+}
+
+void LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
 }
 
 double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)

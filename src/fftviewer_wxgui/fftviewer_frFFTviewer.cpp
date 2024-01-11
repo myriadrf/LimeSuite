@@ -657,7 +657,7 @@ void fftviewer_frFFTviewer::SetNyquistFrequency()
     if (index < 0)
         return;
     if (device)
-        freqHz = device->GetSampleRate(index, TRXDir::Rx);
+        freqHz = device->GetSampleRate(index, TRXDir::Rx, 0);
     if (freqHz <= 0)
         return;
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));

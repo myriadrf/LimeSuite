@@ -36,7 +36,28 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void Reset() override;
     virtual void GetGPSLock(GPS_Lock* status) override;
 
-    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
+    virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) override;
+
+    virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset) override;
+
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
+
+    virtual double GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) override;
+
+    virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) override;
+
+    virtual void SetTestSignal(uint8_t moduleIndex,
+        TRXDir direction,
+        uint8_t channel,
+        ChannelConfig::Direction::TestSignal signalConfiguration,
+        int16_t dc_i = 0,
+        int16_t dc_q = 0) override;
+    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
@@ -47,12 +68,19 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
+    virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) override;
+    virtual void ConfigureGFIR(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) override;
+
+    virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) override;
+    virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) override;
+
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) override;
     virtual int StreamTx(
         uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual int StreamTx(

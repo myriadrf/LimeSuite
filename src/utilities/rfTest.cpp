@@ -64,8 +64,8 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
         config.channel[i].tx.path = 2; // band1 // TODO: replace with string names
         config.channel[i].rx.calibrate = false;
         config.channel[i].tx.calibrate = false;
-        config.channel[i].rx.testSignal = false;
-        config.channel[i].tx.testSignal = false;
+        config.channel[i].rx.testSignal.enabled = false;
+        config.channel[i].tx.testSignal.enabled = false;
     }
 
     SDRDevice::StreamConfig stream;

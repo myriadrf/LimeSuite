@@ -13,11 +13,12 @@
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
 
-#include <assert.h>
+#include <array>
+#include <cassert>
+#include <cmath>
 #include <memory>
 #include <set>
 #include <stdexcept>
-#include <cmath>
 
 #ifdef __unix__
     #ifdef __GNUC__
@@ -143,6 +144,9 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
 
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
+
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
     soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 2.6e9 };
@@ -260,12 +264,14 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
         }
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
 
+        TRXDir direction = rxUsed ? TRXDir::Rx : TRXDir::Tx;
+
         // sampling rate
-        double sampleRate = cfg.channel[0].GetDirection(rxUsed ? TRXDir::Rx : TRXDir::Tx).sampleRate;
+        double sampleRate = cfg.channel[0].GetDirection(direction).sampleRate;
 
         if (sampleRate > 0)
         {
-            SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+            SetSampleRate(0, direction, 0, sampleRate, cfg.channel[0].GetDirection(direction).oversample);
         }
     } //try
     catch (std::logic_error& e)
@@ -288,12 +294,12 @@ int LimeSDR::UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
+void LimeSDR::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
-    const bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
+    const bool bypass = (oversample == 1) || (oversample == 0 && sampleRate > 62e6);
     uint8_t decimation = 7; // HBD_OVR_RXTSP=7 - bypass
     uint8_t interpolation = 7; // HBI_OVR_TXTSP=7 - bypass
-    double cgenFreq = f_Hz * 4; // AI AQ BI BQ
+    double cgenFreq = sampleRate * 4; // AI AQ BI BQ
     // TODO:
     // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
     // {
@@ -314,28 +320,33 @@ void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
         decimation = 4;
         if (oversample <= 16)
         {
-            const int decTbl[] = { 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
-            decimation = decTbl[oversample];
+            constexpr std::array<int, 17> decimationTable{ 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
+            decimation = decimationTable.at(oversample);
         }
         interpolation = decimation;
         cgenFreq *= 2 << decimation;
     }
+
     if (bypass)
-        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", f_Hz / 1e6, cgenFreq / 1e6);
+    {
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", sampleRate / 1e6, cgenFreq / 1e6);
+    }
     else
+    {
         lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i",
-            f_Hz / 1e6,
+            sampleRate / 1e6,
             cgenFreq / 1e6,
             decimation + 1,
             interpolation + 1); // dec/inter ratio is 2^(value+1)
+    }
 
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[0]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
+    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips[moduleIndex]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
 
 int LimeSDR::Init()

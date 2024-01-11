@@ -583,7 +583,7 @@ int main(int argc, char** argv)
 
     float peakAmplitude = 0;
     float peakFrequency = 0;
-    float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx);
+    float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx, 0);
     if (sampleRate <= 0)
         sampleRate = 1; // sample rate readback not available, assign default value
     float frequencyLO = 0;

@@ -162,11 +162,79 @@ void LMS7002M_SDRDevice::GetGPSLock(GPS_Lock* status)
     status->galileo = static_cast<GPS_Lock::LockStatus>((regValue >> 12) & 0x3);
 }
 
-double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
+double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     if (moduleIndex >= mLMSChips.size())
         throw std::logic_error("Invalid module index");
     return mLMSChips[moduleIndex]->GetSampleRate(trx, LMS7002M::Channel::ChA);
+}
+
+double LMS7002M_SDRDevice::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    // TODO:
+    // double offset = tx ? tx_channels[chan].cF_offset_nco : rx_channels[chan].cF_offset_nco;
+
+    if (trx == TRXDir::Rx)
+    {
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+        if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO) == 1)
+        {
+            trx = TRXDir::Tx; // Assume that Tx PLL used for TX and RX
+        }
+    }
+    return lms->GetFrequencySX(trx); // - offset;
+}
+
+void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+double LMS7002M_SDRDevice::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+void LMS7002M_SDRDevice::SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+void LMS7002M_SDRDevice::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+double LMS7002M_SDRDevice::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+void LMS7002M_SDRDevice::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+uint8_t LMS7002M_SDRDevice::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+void LMS7002M_SDRDevice::SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+void LMS7002M_SDRDevice::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
+}
+
+void LMS7002M_SDRDevice::ConfigureGFIR(
+    uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
 }
 
 int LMS7002M_SDRDevice::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
@@ -352,6 +420,106 @@ void* LMS7002M_SDRDevice::GetInternalChip(uint32_t index)
     return mLMSChips[index];
 }
 
+uint64_t LMS7002M_SDRDevice::GetHardwareTimestamp(uint8_t moduleIndex)
+{
+    return mStreamers.at(0)->GetHardwareTimestamp();
+}
+
+void LMS7002M_SDRDevice::SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now)
+{
+    mStreamers.at(0)->SetHardwareTimestamp(now);
+}
+
+void LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
+    TRXDir direction,
+    uint8_t channel,
+    SDRDevice::ChannelConfig::Direction::TestSignal signalConfiguration,
+    int16_t dc_i,
+    int16_t dc_q)
+{
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+
+    switch (direction)
+    {
+    case TRXDir::Rx:
+        if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_RXTSP), signalConfiguration.enabled, true) != 0)
+        {
+            throw std::runtime_error("Failed to set test mode");
+        }
+
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), static_cast<uint8_t>(signalConfiguration.divide));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), static_cast<uint8_t>(signalConfiguration.scale));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP), signalConfiguration.dcMode);
+        break;
+    case TRXDir::Tx:
+        if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), signalConfiguration.enabled, true) != 0)
+        {
+            throw std::runtime_error("Failed to set test mode");
+        }
+
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), static_cast<uint8_t>(signalConfiguration.divide));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), static_cast<uint8_t>(signalConfiguration.scale));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), signalConfiguration.dcMode);
+        break;
+    }
+
+    if (signalConfiguration.dcMode)
+    {
+        lms->LoadDC_REG_IQ(direction, dc_i, dc_q);
+    }
+}
+
+SDRDevice::ChannelConfig::Direction::TestSignal LMS7002M_SDRDevice::GetTestSignal(
+    uint8_t moduleIndex, TRXDir direction, uint8_t channel)
+{
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    ChannelConfig::Direction::TestSignal signalConfiguration;
+
+    switch (direction)
+    {
+    case TRXDir::Tx:
+        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_TXTSP)) == 0)
+        {
+            return signalConfiguration;
+        }
+        signalConfiguration.enabled = true;
+
+        if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP)) != 0)
+        {
+            signalConfiguration.dcMode = true;
+            return signalConfiguration;
+        }
+
+        signalConfiguration.divide =
+            static_cast<ChannelConfig::Direction::TestSignal::Divide>(lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP)));
+        signalConfiguration.scale =
+            static_cast<ChannelConfig::Direction::TestSignal::Scale>(lms->Get_SPI_Reg_bits(LMS7param(TSGFC_TXTSP)));
+
+        return signalConfiguration;
+    case TRXDir::Rx:
+        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_RXTSP)) == 0)
+        {
+            return signalConfiguration;
+        }
+        signalConfiguration.enabled = true;
+
+        if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP)) != 0)
+        {
+            signalConfiguration.dcMode = true;
+            return signalConfiguration;
+        }
+
+        signalConfiguration.divide =
+            static_cast<ChannelConfig::Direction::TestSignal::Divide>(lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP)));
+        signalConfiguration.scale =
+            static_cast<ChannelConfig::Direction::TestSignal::Scale>(lms->Get_SPI_Reg_bits(LMS7param(TSGFC_RXTSP)));
+
+        return signalConfiguration;
+    }
+
+    throw std::runtime_error("Failed to get test mode");
+}
+
 void LMS7002M_SDRDevice::StreamStart(uint8_t moduleIndex)
 {
     mStreamers.at(moduleIndex)->Start();
@@ -374,12 +542,12 @@ void LMS7002M_SDRDevice::StreamStop(uint8_t moduleIndex)
     mStreamers[moduleIndex] = nullptr;
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex32f_t** dest, uint32_t count, StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t** dest, uint32_t count, StreamMeta* meta)
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }

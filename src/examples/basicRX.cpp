@@ -69,14 +69,14 @@ int main(int argc, char** argv)
     config.channel[0].rx.lpf = 0;
     config.channel[0].rx.path = 2; // TODO: replace with string names
     config.channel[0].rx.calibrate = false;
-    config.channel[0].rx.testSignal = false;
+    config.channel[0].rx.testSignal.enabled = false;
 
     config.channel[0].tx.enabled = false;
     config.channel[0].tx.sampleRate = sampleRate;
     config.channel[0].tx.oversample = 2;
     config.channel[0].tx.path = 2; // TODO: replace with string names
     config.channel[0].tx.centerFrequency = frequencyLO - 1e6;
-    config.channel[0].tx.testSignal = false; // Tx will output sampleRate/4 signal
+    config.channel[0].tx.testSignal.enabled = false;
 
     std::cout << "Configuring device ...\n";
     try

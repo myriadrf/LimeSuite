@@ -219,7 +219,7 @@ add_subdirectory(src)
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver
 ########################################################################
-#add_subdirectory(SoapyLMS7)
+add_subdirectory(SoapyLMS7)
 
 ########################################################################
 ## udev rules for linux usb

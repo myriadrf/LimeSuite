@@ -625,7 +625,7 @@ bool TRXLooper::IsStreamRunning()
     return mStreamEnabled;
 }
 
-int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+int TRXLooper::StreamRx(lime::complex32f_t* const* dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     bool timestampSet = false;
     uint32_t samplesProduced = 0;
@@ -671,7 +671,7 @@ int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::St
     return samplesProduced;
 }
 
-int TRXLooper::StreamRx(lime::complex16_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+int TRXLooper::StreamRx(lime::complex16_t* const* dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     bool timestampSet = false;
     uint32_t samplesProduced = 0;

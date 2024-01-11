@@ -143,6 +143,9 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
 
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
+
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
     soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 2.6e9 };
@@ -258,15 +261,15 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
             chip->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rx.testSignal ? 1 : 0);
-            if (ch.rx.testSignal)
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rx.testSignal.enabled ? 1 : 0);
+            if (ch.rx.testSignal.enabled)
             {
-                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 0);
+                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, static_cast<uint8_t>(ch.rx.testSignal.scale));
+                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, ch.rx.testSignal.dcMode ? 1 : 0);
                 chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal ? 1 : 0);
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal.enabled ? 1 : 0);
 
             for (const auto& gain : ch.rx.gain)
             {
@@ -383,6 +386,11 @@ int LimeSDR_XTRX::Init()
     const bool skipTune = true;
     InitLMS1(mLMSChips.at(0), skipTune);
     return 0;
+}
+
+void LimeSDR_XTRX::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+{
+    throw std::logic_error("Not implemented currently. TODO: implement");
 }
 
 double LimeSDR_XTRX::GetClockFreq(uint8_t clk_id, uint8_t channel)
