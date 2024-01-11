@@ -2,6 +2,7 @@
 #include "limesuite/commonTypes.h"
 #include "limesuite/DeviceHandle.h"
 #include "limesuite/DeviceRegistry.h"
+#include "limesuite/GainTypes.h"
 #include "limesuite/LMS7002M.h"
 #include "limesuite/LMS7002M_parameters.h"
 #include "limesuite/SDRDevice.h"
@@ -55,6 +56,9 @@ struct LMS_APIDevice {
     std::vector<StreamBuffer> streamBuffers;
     lms_dev_info_t* deviceInfo;
 
+    lime::eGainTypes rxGain;
+    lime::eGainTypes txGain;
+
     LMS_APIDevice() = delete;
     LMS_APIDevice(lime::SDRDevice* device)
         : device(device)
@@ -65,6 +69,8 @@ struct LMS_APIDevice {
         , moduleIndex(0)
         , streamBuffers()
         , deviceInfo(nullptr)
+        , rxGain(lime::eGainTypes::UNKNOWN)
+        , txGain(lime::eGainTypes::UNKNOWN)
     {
     }
 
@@ -166,12 +172,27 @@ inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
 {
     lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
 
-    if (dir_tx)
+    try
     {
-        return config.channel[chan].tx.gain;
-    }
+        if (dir_tx)
+        {
+            return config.channel[chan].tx.gain.at(apiDevice->txGain);
+        }
 
-    return config.channel[chan].rx.gain;
+        return config.channel[chan].rx.gain.at(apiDevice->rxGain);
+    } catch (const std::out_of_range& e)
+    {
+        double value = 0;
+
+        int returnValue = apiDevice->device->GetGain(
+            apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, apiDevice->txGain, value);
+        if (returnValue != 0)
+        {
+            throw std::runtime_error("Failed to get gain");
+        }
+
+        return value;
+    }
 }
 
 inline lime::SDRDevice::SDRConfig GetCurrentConfiguration(LMS_APIDevice* apiDevice)
@@ -201,6 +222,16 @@ inline lime::SDRDevice::SDRConfig GetCurrentConfiguration(LMS_APIDevice* apiDevi
             lms->GetSampleRate(lime::TRXDir::Rx, i == 0 ? lime::LMS7002M::Channel::ChA : lime::LMS7002M::Channel::ChB);
         configuration.channel[i].tx.sampleRate =
             lms->GetSampleRate(lime::TRXDir::Tx, i == 0 ? lime::LMS7002M::Channel::ChA : lime::LMS7002M::Channel::ChB);
+
+        int returnValue = apiDevice->device->GetGain(
+            apiDevice->moduleIndex, lime::TRXDir::Rx, i, apiDevice->rxGain, configuration.channel[i].rx.gain[apiDevice->rxGain]);
+        returnValue |= apiDevice->device->GetGain(
+            apiDevice->moduleIndex, lime::TRXDir::Tx, i, apiDevice->txGain, configuration.channel[i].tx.gain[apiDevice->txGain]);
+
+        if (returnValue != 0)
+        {
+            throw std::runtime_error("Failed to get gains");
+        }
 
         // TODO: find ways to get current values for all other fields.
     }
@@ -574,13 +605,13 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, s
     if (dir_tx)
     {
         CopyStringVectorIntoList(rfSOC.txPathNames, list);
+        return rfSOC.txPathNames.size();
     }
     else
     {
         CopyStringVectorIntoList(rfSOC.rxPathNames, list);
+        return rfSOC.rxPathNames.size();
     }
-
-    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
@@ -705,7 +736,6 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lm
     return 0;
 }
 
-// TODO: Implement properly once the Gain API is completed
 API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type gain)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -714,14 +744,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
         return -1;
     }
 
-    if (gain > 1.0)
-    {
-        gain = 1.0;
-    }
-    else if (gain < 0)
-    {
-        gain = 0;
-    }
+    gain = std::clamp(gain, 0.0, 1.0);
 
     const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
     gain = range.min + gain * (range.max - range.min);
@@ -730,16 +753,23 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 
     if (dir_tx)
     {
-        config.channel[chan].tx.gain = gain;
+        config.channel[chan].tx.gain[apiDevice->txGain] = gain;
     }
     else
     {
-        config.channel[chan].rx.gain = gain;
+        config.channel[chan].rx.gain[apiDevice->rxGain] = gain;
     }
 
     try
     {
         apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+
+        // Get the actual set gain value
+        apiDevice->device->GetGain(apiDevice->moduleIndex,
+            dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx,
+            chan,
+            dir_tx ? apiDevice->txGain : apiDevice->rxGain,
+            dir_tx ? config.channel[chan].tx.gain[apiDevice->txGain] : config.channel[chan].rx.gain[apiDevice->rxGain]);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -750,7 +780,6 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
     return 0;
 }
 
-// TODO: Implement properly once the Gain API is completed
 API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned gain)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -763,16 +792,23 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
 
     if (dir_tx)
     {
-        config.channel[chan].tx.gain = gain;
+        config.channel[chan].tx.gain[apiDevice->txGain] = gain;
     }
     else
     {
-        config.channel[chan].rx.gain = gain;
+        config.channel[chan].rx.gain[apiDevice->rxGain] = gain;
     }
 
     try
     {
         apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+
+        // Get the actual set gain value
+        apiDevice->device->GetGain(apiDevice->moduleIndex,
+            dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx,
+            chan,
+            dir_tx ? apiDevice->txGain : apiDevice->rxGain,
+            dir_tx ? config.channel[chan].tx.gain[apiDevice->txGain] : config.channel[chan].rx.gain[apiDevice->rxGain]);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -783,7 +819,6 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
     return 0;
 }
 
-// TODO: Implement properly once the Gain API is completed
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx, size_t chan, float_type* gain)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -798,7 +833,6 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
     return LMS_SUCCESS;
 }
 
-// TODO: Implement properly once the Gain API is completed
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
 {
     LMS_APIDevice* apiDevice = CheckDevice(device, chan);
@@ -807,7 +841,7 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    *gain = static_cast<unsigned>(GetGain(apiDevice, dir_tx, chan) + 12 + 0.5);
+    *gain = std::lround(GetGain(apiDevice, dir_tx, chan)) + 12;
     return 0;
 }
 

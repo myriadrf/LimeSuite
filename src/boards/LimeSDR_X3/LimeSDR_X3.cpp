@@ -213,6 +213,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
 
+    SetGainInformationInDescriptor(soc);
+
     desc.rfSOC.push_back(soc);
 
     LMS7002M* lms1 = new LMS7002M(mLMS7002Mcomms[0]);

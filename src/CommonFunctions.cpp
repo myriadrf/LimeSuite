@@ -4,7 +4,7 @@
 
 namespace lime {
 
-static constexpr uint BUFFER_SIZE = 256;
+static constexpr int BUFFER_SIZE = 256;
 
 const std::string strFormat(const char* format, ...)
 {

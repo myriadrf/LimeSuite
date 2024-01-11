@@ -3,7 +3,9 @@
 #include "limesuite/SDRDevice.h"
 #include <wx/msgdlg.h>
 
-using namespace std;
+#include <iomanip>
+#include <sstream>
+
 using namespace lime;
 
 SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -19,9 +21,9 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
     wxSizerFlags ctrlFlags(0);
     ctrlFlags = ctrlFlags.Center();
 
-    wxFlexGridSizer* rxGrid = new wxFlexGridSizer(5, 4, 4);
+    wxFlexGridSizer* rxGrid = new wxFlexGridSizer(6, 4, 4);
     {
-        const vector<string> titles = { "Enable", "RxAntenna", "RxGain", "RxLPF (MHz)", "RxNCO (MHz)" };
+        const std::vector<std::string> titles = { "Enable", "RxAntenna", "RxGain", "RxGain (dB)", "RxLPF (MHz)", "RxNCO (MHz)" };
         for (const auto& name : titles)
             rxGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
@@ -36,8 +38,11 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
             rxGrid->Add(fields.path, ctrlFlags);
 
             fields.gain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
-            fields.gain->Hide(); // not implemented yet
+            fields.gain->Bind(wxEVT_CHOICE, &SOCConfig_view::UpdateGainValues, this);
             rxGrid->Add(fields.gain, ctrlFlags);
+
+            fields.gainValues = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            rxGrid->Add(fields.gainValues, ctrlFlags);
 
             fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));
             rxGrid->Add(fields.lpf, ctrlFlags);
@@ -89,9 +94,9 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
         centerGrid->Add(oversamplingGrid, wxSizerFlags().Center());
     }
 
-    wxFlexGridSizer* txGrid = new wxFlexGridSizer(5, 4, 4);
+    wxFlexGridSizer* txGrid = new wxFlexGridSizer(6, 4, 4);
     {
-        const vector<string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain", "TxAntenna", "Enable" };
+        const std::vector<std::string> titles = { "TxNCO (MHz)", "TxLPF (MHz)", "TxGain (dB)", "TxGain", "TxAntenna", "Enable" };
         for (auto name : titles)
             txGrid->Add(new wxStaticText(base, wxID_ANY, name), titleFlags);
 
@@ -104,9 +109,12 @@ SOCConfig_view::SOCConfig_view(wxWindow* parent, wxWindowID id, const wxPoint& p
             fields.lpf = new wxTextCtrl(base, wxNewId(), wxT("0"));
             txGrid->Add(fields.lpf, ctrlFlags);
 
+            fields.gainValues = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            txGrid->Add(fields.gainValues, ctrlFlags);
+
             fields.gain = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
+            fields.gain->Bind(wxEVT_CHOICE, &SOCConfig_view::UpdateGainValues, this);
             txGrid->Add(fields.gain, ctrlFlags);
-            fields.gain->Hide(); // not implemented yet
 
             fields.path = new wxChoice(base, wxNewId(), wxDefaultPosition, wxDefaultSize);
             txGrid->Add(fields.path, ctrlFlags);
@@ -151,6 +159,20 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
         txPathNames.Add(name);
     }
 
+    wxArrayString rxGains;
+    for (const auto& gain : descriptor.gains.at(TRXDir::Rx))
+    {
+        gui.rxSelectionToValue[rxGains.size()] = gain;
+        rxGains.Add(GAIN_TYPES_TEXT.at(gain));
+    }
+
+    wxArrayString txGains;
+    for (const auto& gain : descriptor.gains.at(TRXDir::Tx))
+    {
+        gui.txSelectionToValue[txGains.size()] = gain;
+        txGains.Add(GAIN_TYPES_TEXT.at(gain));
+    }
+
     for (int i = 0; i < descriptor.channelCount; ++i)
     {
         gui.rx[i].path->Set(rxPathNames);
@@ -158,7 +180,15 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
 
         gui.tx[i].path->Set(txPathNames);
         gui.tx[i].path->SetSelection(txPathNames.size() > 0 ? 1 : 0);
+
+        gui.rx[i].gain->Set(rxGains);
+        gui.rx[i].gain->SetSelection(0);
+
+        gui.tx[i].gain->Set(txGains);
+        gui.tx[i].gain->SetSelection(0);
     }
+
+    UpdateGainValues(wxCommandEvent{});
 
     for (int i = MAX_GUI_CHANNELS_COUNT - 1; i >= descriptor.channelCount; i--)
     {
@@ -181,11 +211,41 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
     }
 }
 
-void SOCConfig_view::UpdateGUI(const lime::SDRDevice::SDRConfig& config)
+void SOCConfig_view::UpdateGainValues(const wxCommandEvent& event)
 {
+    auto size = sdrDevice->GetDescriptor().rfSOC.at(socIndex).channelCount;
+
+    for (uint8_t i = 0; i < size; ++i)
+    {
+        UpdateGain(event, gui.rx[i], TRXDir::Rx);
+        UpdateGain(event, gui.tx[i], TRXDir::Tx);
+    }
 }
 
-void SOCConfig_view::SubmitConfig(wxCommandEvent& event)
+void SOCConfig_view::UpdateGain(const wxCommandEvent& event, const ChannelConfigGUI& channelGui, TRXDir direction)
+{
+    const auto& descriptor = sdrDevice->GetDescriptor().rfSOC.at(socIndex);
+    const auto& selectionToValue = direction == TRXDir::Rx ? gui.rxSelectionToValue : gui.txSelectionToValue;
+
+    if (event.GetEventType() == wxEVT_NULL || event.GetId() == channelGui.gain->GetId())
+    {
+        wxArrayString gainValues;
+        auto selection = selectionToValue.at(channelGui.gain->GetSelection());
+
+        for (const auto& gain : descriptor.gainValues.at(direction).at(selection))
+        {
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(0) << gain.actualGainValue;
+            gainValues.Add(ss.str());
+        }
+
+        channelGui.gainValues->Clear();
+        channelGui.gainValues->Set(gainValues);
+        channelGui.gainValues->SetSelection(0);
+    }
+}
+
+void SOCConfig_view::SubmitConfig(const wxCommandEvent& event)
 {
     if (!sdrDevice)
         return;
@@ -215,8 +275,22 @@ void SOCConfig_view::SubmitConfig(wxCommandEvent& event)
         ch.tx.NCOoffset = parseGuiValue(gui.tx[i].nco->GetValue()) * multiplier;
         ch.rx.sampleRate = parseGuiValue(gui.sampleRate->GetValue()) * multiplier;
         ch.tx.sampleRate = ch.rx.sampleRate;
-        // ch.rxGain = parseGuiValue(gui.rx[i].gain->GetSelection());
-        // ch.txGain = parseGuiValue(gui.tx[i].gain->GetSelection());
+
+        ch.rx.gain[gui.rxSelectionToValue.at(gui.rx[i].gain->GetSelection())] =
+            sdrDevice->GetDescriptor()
+                .rfSOC.at(socIndex)
+                .gainValues.at(TRXDir::Rx)
+                .at(gui.rxSelectionToValue.at(gui.rx[i].gain->GetSelection()))
+                .at(gui.rx[i].gainValues->GetSelection())
+                .actualGainValue;
+        ch.tx.gain[gui.txSelectionToValue.at(gui.tx[i].gain->GetSelection())] =
+            sdrDevice->GetDescriptor()
+                .rfSOC.at(socIndex)
+                .gainValues.at(TRXDir::Tx)
+                .at(gui.txSelectionToValue.at(gui.tx[i].gain->GetSelection()))
+                .at(gui.tx[i].gainValues->GetSelection())
+                .actualGainValue;
+
         ch.rx.path = gui.rx[i].path->GetSelection();
         ch.tx.path = gui.tx[i].path->GetSelection();
         ch.rx.lpf = parseGuiValue(gui.rx[i].lpf->GetValue()) * multiplier;

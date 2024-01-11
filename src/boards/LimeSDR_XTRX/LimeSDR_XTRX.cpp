@@ -149,6 +149,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
 
+    SetGainInformationInDescriptor(soc);
+
     desc.rfSOC.push_back(soc);
 
     LMS7002M* chip = new LMS7002M(spiRFsoc);
@@ -265,7 +267,18 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
             chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal ? 1 : 0);
-            // TODO: set gains, filters...
+
+            for (const auto& gain : ch.rx.gain)
+            {
+                SetGain(0, TRXDir::Rx, i, gain.first, gain.second);
+            }
+
+            for (const auto& gain : ch.tx.gain)
+            {
+                SetGain(0, TRXDir::Tx, i, gain.first, gain.second);
+            }
+
+            // TODO: set filters...
         }
         // enabled ADC/DAC is required for FPGA to work
         chip->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);

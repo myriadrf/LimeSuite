@@ -90,7 +90,32 @@ class TRXLooper
         {
         }
 
-        ~Stream() { delete fifo; }
+        ~Stream()
+        {
+            if (fifo != nullptr)
+            {
+                delete fifo;
+            }
+
+            DeleteMemoryPool();
+        }
+
+        void DeleteMemoryPool()
+        {
+            if (memPool == nullptr)
+            {
+                return;
+            }
+
+            if (stagingPacket != nullptr)
+            {
+                memPool->Free(stagingPacket);
+                stagingPacket = nullptr;
+            }
+
+            delete memPool;
+            memPool = nullptr;
+        }
     };
 
     Stream mRx;

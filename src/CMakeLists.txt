@@ -49,9 +49,10 @@ set(LIME_SUITE_SOURCES
     windowFunction.cpp
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp
-    Profiler.cpp
     gnuPlotPipe.h
     parsers/CoefficientFileParser.cpp
+
+    EnumToString.cpp
 
     DSP/Equalizer.cpp
     memory/MemoryPool.cpp

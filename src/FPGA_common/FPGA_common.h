@@ -86,7 +86,7 @@ class FPGA
 
   private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
-    int SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val);
+    int SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val);
     bool useCache;
     std::map<uint16_t, uint16_t> regsCache;
 };

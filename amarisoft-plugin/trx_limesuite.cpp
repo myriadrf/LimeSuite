@@ -223,7 +223,7 @@ struct LimeState {
     lime::SDRDevice::StreamConfig::DataFormat samplesFormat;
     lime::SDRDevice::StreamConfig::DataFormat linkFormat[TRX_MAX_RF_PORT];
 
-    // gain overrides, temporary while noramlized gain is unavailable
+    // gain overrides, temporary while normalized gain is unavailable
     int glna[TRX_MAX_RF_PORT];
     int gpga[TRX_MAX_RF_PORT];
     int iamp[TRX_MAX_RF_PORT];
@@ -754,6 +754,8 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
                         chip->Modify_SPI_Reg_bits(LMS7_CG_IAMP_TBB, lime->iamp[p]);
                     if (lime->lossmain[p] >= 0)
                         chip->Modify_SPI_Reg_bits(LMS7_LOSS_MAIN_TXPAD_TRF, lime->lossmain[p]);
+                    if (lime->lossmain[p] >= 0)
+                        chip->Modify_SPI_Reg_bits(LMS7_LOSS_LIN_TXPAD_TRF, lime->lossmain[p]);
                 }
                 chip->Modify_SPI_Reg_bits(LMS7_MAC, 1);
 

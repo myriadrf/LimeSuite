@@ -1,7 +1,7 @@
 #ifndef LIME_SDR_CONFIGURATION_VIEW
 #define LIME_SDR_CONFIGURATION_VIEW
 
-#include "wx/panel.h"
+#include <wx/panel.h>
 #include <wx/checkbox.h>
 #include <wx/sizer.h>
 #include <wx/statbox.h>
@@ -12,9 +12,9 @@
 
 #include <map>
 
-#include "limesuite/SDRDevice.h"
-
 #include "GUI/ISOCPanel.h"
+#include "limesuite/commonTypes.h"
+#include "limesuite/SDRDevice.h"
 
 constexpr int MAX_GUI_CHANNELS_COUNT = 2;
 
@@ -22,6 +22,7 @@ struct ChannelConfigGUI {
     wxCheckBox* enable;
     wxChoice* path;
     wxChoice* gain;
+    wxChoice* gainValues;
     wxTextCtrl* lpf;
     wxTextCtrl* nco;
 };
@@ -36,6 +37,9 @@ struct SDRConfigGUI {
     wxChoice* interpolation;
     ChannelConfigGUI rx[MAX_GUI_CHANNELS_COUNT];
     ChannelConfigGUI tx[MAX_GUI_CHANNELS_COUNT];
+
+    std::map<int, lime::eGainTypes> rxSelectionToValue;
+    std::map<int, lime::eGainTypes> txSelectionToValue;
 };
 
 class SOCConfig_view : public wxPanel
@@ -47,14 +51,17 @@ class SOCConfig_view : public wxPanel
         const wxSize& size = wxDefaultSize,
         long style = wxTAB_TRAVERSAL);
     void Setup(lime::SDRDevice* sdrDevice, int index);
-    void UpdateGUI(const lime::SDRDevice::SDRConfig& config);
+    void UpdateGainValues(const wxCommandEvent& event);
 
-    void SubmitConfig(wxCommandEvent& event);
+    void SubmitConfig(const wxCommandEvent& event);
 
   protected:
     SDRConfigGUI gui;
     lime::SDRDevice* sdrDevice;
     int socIndex;
+
+  private:
+    void UpdateGain(const wxCommandEvent& event, const ChannelConfigGUI& channelGui, lime::TRXDir direction);
 };
 
 class SDRConfiguration_view : public ISOCPanel

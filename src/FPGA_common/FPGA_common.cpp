@@ -387,7 +387,7 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
     return 0;
 }
 
-int FPGA::SetPllClock(uint clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val)
+int FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val)
 {
     WriteRegistersBatch batch(this);
 

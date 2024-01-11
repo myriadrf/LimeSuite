@@ -149,6 +149,8 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
 
+    SetGainInformationInDescriptor(soc);
+
     descriptor.rfSOC.push_back(soc);
 
     auto fpgaNode = std::make_shared<DeviceNode>("FPGA", eDeviceNodeClass::FPGA, mFPGA);
@@ -237,20 +239,42 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             mLMSChips[0]->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
             mLMSChips[0]->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
+
             if (ch.rx.path == 4)
+            {
                 mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
+            }
             mLMSChips[0]->SetBandTRF(ch.tx.path);
-            // TODO: set gains, filters...
+
+            for (const auto& gain : ch.rx.gain)
+            {
+                SetGain(0, TRXDir::Rx, i, gain.first, gain.second);
+            }
+
+            for (const auto& gain : ch.tx.gain)
+            {
+                SetGain(0, TRXDir::Tx, i, gain.first, gain.second);
+            }
+
+            // TODO: set filters...
         }
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
         // sampling rate
         double sampleRate;
+
         if (rxUsed)
+        {
             sampleRate = cfg.channel[0].rx.sampleRate;
+        }
         else
+        {
             sampleRate = cfg.channel[0].tx.sampleRate;
+        }
+
         if (sampleRate > 0)
+        {
             SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+        }
     } //try
     catch (std::logic_error& e)
     {
