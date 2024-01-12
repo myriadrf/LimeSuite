@@ -1,10 +1,11 @@
 #include "LMS7002M_SDRDevice.h"
 
 #include "DeviceExceptions.h"
-#include "LMSBoards.h"
-#include "TRXLooper.h"
 #include "FPGA_common.h"
 #include "limesuite/LMS7002M.h"
+#include "LMSBoards.h"
+#include "Logger.h"
+#include "TRXLooper.h"
 
 #include <array>
 #include <cmath>
@@ -273,7 +274,12 @@ void LMS7002M_SDRDevice::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t chan
 void LMS7002M_SDRDevice::ConfigureGFIR(
     uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    LMS7002M* lms = mLMSChips.at(moduleIndex);
+    int returnValue = lms->SetGFIRFilter(trx, channel, settings.enabled, settings.bandwidth);
+    if (returnValue != 0)
+    {
+        throw std::runtime_error("Setting GFIR Filter failed");
+    }
 }
 
 int LMS7002M_SDRDevice::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
