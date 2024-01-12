@@ -35,7 +35,6 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
-    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
 
     virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) override;
     virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) override;

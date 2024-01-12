@@ -260,6 +260,8 @@ class LIME_API LMS7002M
      */
     int GetBandTRF(void);
 
+    int SetPath(TRXDir direction, uint8_t channel, uint8_t path);
+
     int SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
     float_type GetReferenceClk_SX(TRXDir dir);
     float_type GetFrequencyCGEN();

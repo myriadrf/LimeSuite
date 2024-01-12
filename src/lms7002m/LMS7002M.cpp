@@ -1275,6 +1275,18 @@ int LMS7002M::GetBandTRF(void)
     return 0;
 }
 
+int LMS7002M::SetPath(TRXDir direction, uint8_t channel, uint8_t path)
+{
+    ChannelScope scope(this, channel);
+
+    if (direction == TRXDir::Tx)
+    {
+        return SetBandTRF(path);
+    }
+
+    return SetPathRFE(lime::LMS7002M::PathRFE(path));
+}
+
 int LMS7002M::SetReferenceClk_SX(TRXDir dir, float_type freq_Hz)
 {
     _cachedRefClockRate = freq_Hz;

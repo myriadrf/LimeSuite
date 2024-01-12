@@ -200,20 +200,11 @@ std::string SoapyLMS7::getAntenna(const int direction, const std::size_t channel
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     TRXDir dir = direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx;
 
+    uint8_t path = sdrDevice->GetAntenna(0, dir, channel);
+
     const auto& descriptor = sdrDevice->GetDescriptor().rfSOC.at(0);
-    auto lms = reinterpret_cast<lime::LMS7002M*>(sdrDevice->GetInternalChip(channel / 2));
-
-    std::size_t path;
-    if (dir == TRXDir::Tx)
-    {
-        path = static_cast<std::size_t>(lms->GetBandTRF());
-    }
-    else
-    {
-        path = static_cast<std::size_t>(lms->GetPathRFE());
-    }
-
     const std::vector<std::string>& nameList = descriptor.pathNames.at(dir);
+
     return path < nameList.size() ? nameList.at(path) : "";
 }
 

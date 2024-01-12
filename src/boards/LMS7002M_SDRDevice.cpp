@@ -207,11 +207,6 @@ void LMS7002M_SDRDevice::SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t c
     throw std::logic_error("Not implemented currently. TODO: implement");
 }
 
-void LMS7002M_SDRDevice::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
-{
-    throw std::logic_error("Not implemented currently. TODO: implement");
-}
-
 double LMS7002M_SDRDevice::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     throw std::logic_error("Not implemented currently. TODO: implement");
@@ -224,12 +219,32 @@ void LMS7002M_SDRDevice::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8
 
 uint8_t LMS7002M_SDRDevice::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    auto lms = mLMSChips.at(channel / 2);
+
+    if (trx == TRXDir::Tx)
+    {
+        return static_cast<std::size_t>(lms->GetBandTRF());
+    }
+    else
+    {
+        return static_cast<std::size_t>(lms->GetPathRFE());
+    }
 }
 
 void LMS7002M_SDRDevice::SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    if (path >= mDeviceDescriptor.rfSOC.at(0).pathNames.size())
+    {
+        path = trx == TRXDir::Tx ? 1 : 2; // Default settings: Rx: LNAL, Tx: Band1
+    }
+
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+
+    int returnValue = lms->SetPath(trx, channel % 2, path);
+    if (returnValue != 0)
+    {
+        throw std::runtime_error("Failed to set path.");
+    }
 }
 
 void LMS7002M_SDRDevice::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth)
