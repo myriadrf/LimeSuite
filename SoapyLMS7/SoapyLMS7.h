@@ -9,10 +9,12 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
 
+#include <array>
 #include <chrono>
 #include <map>
 #include <mutex>
 #include <set>
+#include <vector>
 
 struct IConnectionStream;
 
@@ -69,13 +71,6 @@ class SoapyLMS7 : public SoapySDR::Device
         int& flags,
         long long& timeNs,
         const long timeoutUs = 100000);
-
-    int _readStreamAligned(IConnectionStream* stream,
-        void* const* buffs,
-        std::size_t numElems,
-        int64_t requestTime,
-        lime::SDRDevice::StreamMeta& mdOut,
-        const long timeoutMs);
 
     int writeStream(SoapySDR::Stream* stream,
         const void* const* buffs,
@@ -166,14 +161,9 @@ class SoapyLMS7 : public SoapySDR::Device
      * Sample Rate API
      ******************************************************************/
 
-    std::map<std::size_t, int> _interps;
-    std::map<std::size_t, int> _decims;
-
     void setSampleRate(const int direction, const std::size_t channel, const double rate);
 
     double getSampleRate(const int direction, const std::size_t channel) const;
-
-    std::vector<double> listSampleRates(const int direction, const std::size_t channel) const;
 
     SoapySDR::RangeList getSampleRateRange(const int direction, const std::size_t channel) const;
 
@@ -264,30 +254,34 @@ class SoapyLMS7 : public SoapySDR::Device
     unsigned readGPIODir(const std::string& bank) const;
 
   private:
-    struct Channel {
-        Channel()
-            : freq(-1)
-            , bw(-1)
-            , rf_bw(-1)
-            , cal_bw(-1)
-            , gfir_bw(-1)
-            , tst_dc(0){};
-        double freq;
-        double bw;
-        double rf_bw;
-        double cal_bw;
-        double gfir_bw;
-        int tst_dc;
+    struct SettingsCache {
+        SettingsCache()
+            : calibrationBandwidth(-1)
+            , GFIRBandwidth(-1)
+            , DCTestAmplitude(0){};
+        double calibrationBandwidth;
+        double GFIRBandwidth;
+        int DCTestAmplitude;
     };
 
-    const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     const std::string _moduleName;
     lime::SDRDevice* sdrDevice;
-    lime::SDRDevice::SDRConfig lastSavedConfiguration;
-    double sampleRate[2]; //sampleRate[direction]
-    int oversampling;
-    // std::set<std::pair<int, std::size_t>> _channelsToCal;
-    mutable std::recursive_mutex _accessMutex;
-    std::vector<Channel> mChannels[2]; //mChannels[direction]
     std::set<SoapySDR::Stream*> activeStreams;
+
+    mutable std::recursive_mutex _accessMutex;
+
+    std::array<double, 2> sampleRate; // sampleRate[direction]
+    int oversampling;
+
+    std::map<std::size_t, int> _interps;
+    std::map<std::size_t, int> _decims;
+
+    int _readStreamAligned(IConnectionStream* stream,
+        void* const* buffs,
+        std::size_t numElems,
+        int64_t requestTime,
+        lime::SDRDevice::StreamMeta& mdOut,
+        const long timeoutMs);
+
+    std::array<std::vector<SettingsCache>, 2> settingsCache; // settingsCache[direction]
 };

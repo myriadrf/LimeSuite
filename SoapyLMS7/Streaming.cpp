@@ -231,7 +231,8 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
     // Calibrate these channels when activated
     for (const auto& ch : channelIDs)
     {
-        lastSavedConfiguration.channel[ch].GetDirection(dir).calibrate = true;
+        sdrDevice->Calibrate(0, dir, ch, sdrDevice->GetFrequency(0, dir, ch));
+        // lastSavedConfiguration.channel[ch].GetDirection(dir).calibrate = true;
         // _channelsToCal.emplace(direction, ch);
     }
 
@@ -283,7 +284,7 @@ int SoapyLMS7::activateStream(SoapySDR::Stream* stream, const int flags, const l
     //     auto bw = mChannels[dir].at(ch).rf_bw > 0 ? mChannels[dir].at(ch).rf_bw : sampleRate[dir];
     //     bw = bw > 2.5e6 ? bw : 2.5e6;
     //     sdrDevice->Calibrate(dir == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx, ch, bw, 0);
-    //     mChannels[dir].at(ch).cal_bw = bw;
+    //     settingsCache.at(direction).at(ch).calibrationBandwidth = bw;
     //     _channelsToCal.erase(_channelsToCal.begin());
     // }
     // Stream requests used with rx
