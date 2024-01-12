@@ -282,6 +282,16 @@ void LimeSDR_MMX8::EnableCache(bool enable)
         d->EnableCache(enable);
 }
 
+void LimeSDR_MMX8::EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->EnableChannel(0, trx, channel, enable);
+}
+
 void LimeSDR_MMX8::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth)
 {
     if (moduleIndex >= 8)

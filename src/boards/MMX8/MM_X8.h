@@ -36,6 +36,8 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void Reset() override;
     virtual void GetGPSLock(GPS_Lock* status) override;
 
+    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) override;
+
     virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) override;
 

@@ -26,11 +26,13 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void Reset() override;
     virtual void GetGPSLock(GPS_Lock* status) override;
 
-    virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
-    virtual void SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset) override;
+    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) override;
 
     virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) override;
+
+    virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
@@ -44,20 +46,20 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) override;
 
+    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) override;
     virtual void SetTestSignal(uint8_t moduleIndex,
         TRXDir direction,
         uint8_t channel,
         ChannelConfig::Direction::TestSignal signalConfiguration,
         int16_t dc_i = 0,
         int16_t dc_q = 0) override;
-    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) override;
-
-    virtual void Synchronize(bool toChip) override;
-    virtual void EnableCache(bool enable) override;
 
     virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) override;
     virtual void ConfigureGFIR(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) override;
+
+    virtual void Synchronize(bool toChip) override;
+    virtual void EnableCache(bool enable) override;
 
     virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) override;
     virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) override;
@@ -75,10 +77,12 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
     virtual int I2CRead(int addr, uint8_t* dest, uint32_t length) override;
+
     virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
     virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
+
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 

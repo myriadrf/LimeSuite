@@ -87,6 +87,12 @@ LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
     }
 }
 
+void LMS7002M_SDRDevice::EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable)
+{
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lms->EnableChannel(trx, channel % 2, enable);
+}
+
 int LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     throw(OperationNotSupported("TransactSPI not implemented"));

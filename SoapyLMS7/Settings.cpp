@@ -41,7 +41,7 @@ SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
     , oversampling(0) // Auto
 {
     // Connect
-    SoapySDR::logf(SOAPY_SDR_INFO, "Make connection: '%s'", handle.ToString().c_str());
+    SoapySDR::log(SOAPY_SDR_INFO, "Make connection: '" + handle.ToString() + "'");
 
     sdrDevice = DeviceRegistry::makeDevice(handle);
     if (sdrDevice == nullptr)
@@ -53,18 +53,16 @@ SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
     const auto channelCount = descriptor.rfSOC.at(0).channelCount;
 
     // Quick summary
-    SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", descriptor.name);
+    SoapySDR::log(SOAPY_SDR_INFO, "Device name: " + descriptor.name);
     SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", sdrDevice->GetClockFreq(0, 0) / 1e6);
 
     sdrDevice->Init();
 
-    SDRDevice::SDRConfig config;
-
     // Enable all channels
     for (uint8_t channel = 0; channel < channelCount; channel++)
     {
-        config.channel[channel].rx.enabled = true;
-        config.channel[channel].tx.enabled = true;
+        sdrDevice->EnableChannel(0, TRXDir::Rx, channel, true);
+        sdrDevice->EnableChannel(0, TRXDir::Tx, channel, true);
     }
 
     // Disable use of value cache automatically
@@ -82,9 +80,6 @@ SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
     {
         cacheEnable = args.count("enableCache") && std::stoi(args.at("enableCache")) != 0;
     }
-
-    sdrDevice->Configure(config, 0);
-    lastSavedConfiguration = config;
 
     SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M register cache: %s", cacheEnable ? "Enabled" : "Disabled");
     sdrDevice->EnableCache(cacheEnable);

@@ -299,6 +299,8 @@ class LIME_API SDRDevice
     virtual void Reset() = 0;
     virtual void GetGPSLock(GPS_Lock* status) = 0;
 
+    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
+
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
@@ -320,19 +322,19 @@ class LIME_API SDRDevice
     virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
     virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
 
+    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) = 0;
     virtual void SetTestSignal(uint8_t moduleIndex,
         TRXDir direction,
         uint8_t channel,
         ChannelConfig::Direction::TestSignal signalConfiguration,
         int16_t dc_i = 0,
         int16_t dc_q = 0) = 0;
-    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) = 0;
-
-    virtual void Synchronize(bool toChip) = 0;
-    virtual void EnableCache(bool enable) = 0;
 
     virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
     virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
+
+    virtual void Synchronize(bool toChip) = 0;
+    virtual void EnableCache(bool enable) = 0;
 
     virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) = 0;
     virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
@@ -392,7 +394,7 @@ class LIME_API SDRDevice
     virtual void SetDataLogCallback(DataCallbackType callback){};
     virtual void SetMessageLogCallback(LogCallbackType callback){};
 
-    virtual void* GetInternalChip(uint32_t index) { return nullptr; };
+    virtual void* GetInternalChip(uint32_t index) = 0;
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
     virtual bool UploadMemory(
