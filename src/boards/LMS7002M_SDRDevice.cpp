@@ -249,7 +249,25 @@ void LMS7002M_SDRDevice::SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t cha
 
 void LMS7002M_SDRDevice::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
+    lms->SetActiveChannel(static_cast<LMS7002M::Channel>((channel + 1) % 2));
+    int ret;
+    auto reg20 = lms->SPI_read(0x20);
+    lms->SPI_write(0x20, reg20 | (20 << (channel % 2)));
+    if (trx == TRXDir::Tx)
+    {
+        ret = lms->CalibrateTx(bandwidth, false);
+    }
+    else
+    {
+        ret = lms->CalibrateRx(bandwidth, false);
+    }
+    lms->SPI_write(0x20, reg20);
+
+    if (ret != 0)
+    {
+        throw std::runtime_error("Calibration failure");
+    }
 }
 
 void LMS7002M_SDRDevice::ConfigureGFIR(
