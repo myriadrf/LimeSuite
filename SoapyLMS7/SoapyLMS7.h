@@ -27,7 +27,7 @@ class SoapyLMS7 : public SoapySDR::Device
      * Identification API
      ******************************************************************/
 
-    // std::string getDriverKey(void) const;
+    std::string getDriverKey(void) const;
 
     std::string getHardwareKey(void) const;
 
@@ -281,7 +281,7 @@ class SoapyLMS7 : public SoapySDR::Device
     };
 
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
-    // const std::string _moduleName;
+    const std::string _moduleName;
     lime::SDRDevice* sdrDevice;
     lime::SDRDevice::SDRConfig lastSavedConfiguration;
     double sampleRate[2]; //sampleRate[direction]

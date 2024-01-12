@@ -32,6 +32,7 @@ std::vector<DeviceHandle> LimeSDR_X3Entry::enumerate(const DeviceHandle& hint)
     std::vector<DeviceHandle> handles;
     DeviceHandle handle;
     handle.media = "PCIe";
+    handle.module = "LitePCIe";
 
     if (!hint.media.empty() && hint.media != handle.media)
         return handles;

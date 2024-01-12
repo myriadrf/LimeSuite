@@ -13,7 +13,7 @@ namespace lime {
 
   When using DeviceHandle to specify an enumeration hint,
   simply fill in only the fields that the user is interested in.
-  Each default field (empty string, -1 index) will be ignored
+  Each default field (empty string) will be ignored
   by the connection registry entry discovery implementation.
  */
 class LIME_API DeviceHandle
@@ -26,6 +26,12 @@ class LIME_API DeviceHandle
       @param args A serialized string with key=value pairs.
      */
     DeviceHandle(const std::string& args);
+
+    /*!
+     * The name of the IConnection support module.
+     * Example: LitePCIe, FX3, FT601
+     */
+    std::string module;
 
     /*!
       @brief The connection media type.

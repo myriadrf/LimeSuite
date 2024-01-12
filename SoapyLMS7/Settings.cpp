@@ -37,6 +37,7 @@ using namespace lime;
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
     : _deviceArgs(args)
+    , _moduleName(handle.module)
     , sampleRate{ 0.0, 0.0 }
     , oversampling(0) // Auto
 {
@@ -116,10 +117,10 @@ SoapyLMS7::~SoapyLMS7(void)
 /*******************************************************************
  * Identification API
  ******************************************************************/
-// std::string SoapyLMS7::getDriverKey(void) const
-// {
-//     return _moduleName;
-// }
+std::string SoapyLMS7::getDriverKey(void) const
+{
+    return _moduleName;
+}
 
 std::string SoapyLMS7::getHardwareKey(void) const
 {

@@ -44,6 +44,11 @@ static DeviceHandle argsToHandle(const SoapySDR::Kwargs& args)
         handle.media = args.at("media");
     }
 
+    if (args.count("module") != 0)
+    {
+        handle.module = args.at("module");
+    }
+
     if (args.count("name") != 0)
     {
         handle.name = args.at("name");
@@ -70,6 +75,11 @@ static SoapySDR::Kwargs handleToArgs(const DeviceHandle& handle)
     if (not handle.media.empty())
     {
         args["media"] = handle.media;
+    }
+
+    if (not handle.module.empty())
+    {
+        args["module"] = handle.module;
     }
 
     if (not handle.name.empty())
