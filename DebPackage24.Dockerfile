@@ -19,6 +19,7 @@ COPY debian/ debian/
 COPY Desktop/ Desktop/
 COPY external/ external/
 COPY udev-rules/ udev-rules/
+COPY SoapyLMS7/ SoapyLMS7/
 COPY Changelog.txt Changelog.txt
 COPY CMakeLists.txt CMakeLists.txt
 COPY README.md README.md

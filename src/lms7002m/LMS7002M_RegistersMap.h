@@ -1,6 +1,7 @@
 #ifndef LMS7002M_REGISTERS_MAP_H
 #define LMS7002M_REGISTERS_MAP_H
 
+#include <functional>
 #include <vector>
 #include <map>
 #include <cstdint>
