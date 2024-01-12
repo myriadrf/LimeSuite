@@ -329,7 +329,7 @@ std::vector<std::string> SoapyLMS7::listGains(const int direction, const std::si
 {
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
     const auto& gainEnums = sdrDevice->GetDescriptor().rfSOC.at(0).gains.at(dir);
-    std::vector<std::string> gains(gainEnums.size());
+    std::vector<std::string> gains;
 
     for (const auto& gain : gainEnums)
     {
@@ -542,7 +542,8 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const std:
 SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const std::size_t channel) const
 {
     SoapySDR::RangeList ranges;
-    ranges.push_back(SoapySDR::Range(0.0, 3.8e9));
+    auto range = sdrDevice->GetDescriptor().rfSOC.at(0).frequencyRange;
+    ranges.push_back(SoapySDR::Range(range.min, range.max, range.step));
     return ranges;
 }
 
