@@ -644,14 +644,9 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lm
         return -1;
     }
 
-    if (dir_tx)
-    {
-        *range = RangeToLMS_Range({ 5e6, 130e6, 0 });
-    }
-    else
-    {
-        *range = RangeToLMS_Range({ 1.4001e6, 130e6, 0 });
-    }
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
+    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).lowPassFilterRange.at(direction));
 
     return 0;
 }

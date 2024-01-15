@@ -1,6 +1,7 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
+#include <complex>
 #include <cstring>
 #include <map>
 #include <memory>
@@ -332,6 +333,29 @@ class LIME_API SDRDevice
         ChannelConfig::Direction::TestSignal signalConfiguration,
         int16_t dc_i = 0,
         int16_t dc_q = 0) = 0;
+
+    virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
+
+    virtual std::complex<double> GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset) = 0;
+
+    virtual std::complex<double> GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance) = 0;
+
+    virtual bool GetCGENLocked(uint8_t moduleIndex) = 0;
+    virtual double GetTemperature(uint8_t moduleIndex) = 0;
+
+    virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) = 0;
+
+    virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) = 0;
+    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
+
+    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) = 0;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
 
     virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
     virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;

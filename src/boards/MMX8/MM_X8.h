@@ -1,17 +1,18 @@
 #ifndef LIME_LIMESDR_5G_H
 #define LIME_LIMESDR_5G_H
 
-#include "CDCM6208/CDCM6208_Dev.h"
-#include "LMS7002M_SDRDevice.h"
-#include "limesuite/IComms.h"
 #include "ADF4002/ADF4002.h"
+#include "CDCM6208/CDCM6208_Dev.h"
+#include "limesuite/IComms.h"
+#include "limesuite/SDRDevice.h"
+#include "PacketsFIFO.h"
 #include "protocols/LMS64CProtocol.h"
 
-#include <vector>
-#include <array>
+#include <complex>
+#include <cstdint>
+#include <map>
 #include <memory>
-
-#include "PacketsFIFO.h"
+#include <vector>
 
 namespace lime {
 
@@ -69,6 +70,29 @@ class LimeSDR_MMX8 : public SDRDevice
 
     virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) override;
     virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) override;
+
+    virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) override;
+
+    virtual std::complex<double> GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset) override;
+
+    virtual std::complex<double> GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance) override;
+
+    virtual bool GetCGENLocked(uint8_t moduleIndex) override;
+    virtual double GetTemperature(uint8_t moduleIndex) override;
+
+    virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) override;
+
+    virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) override;
+    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) override;
+
+    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) override;
+    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) override;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) override;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) override;
 
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;

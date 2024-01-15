@@ -31,6 +31,8 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
+    virtual double GetTemperature(uint8_t moduleIndex) override;
+
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 

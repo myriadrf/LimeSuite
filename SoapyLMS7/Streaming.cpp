@@ -15,7 +15,6 @@
 #include <thread>
 
 #include "Logger.h"
-#include "protocols/TRXLooper.h"
 
 using namespace lime;
 
@@ -347,7 +346,7 @@ int SoapyLMS7::_readStreamAligned(IConnectionStream* stream,
     void* const* buffs,
     std::size_t numElems,
     int64_t requestTime,
-    lime::SDRDevice::StreamMeta& mdOut,
+    SDRDevice::StreamMeta& mdOut,
     const long timeoutMs)
 {
     const auto& ownerDevice = stream->ownerDevice;
@@ -367,10 +366,10 @@ int SoapyLMS7::_readStreamAligned(IConnectionStream* stream,
     {
     case SDRDevice::StreamConfig::DataFormat::I16:
     case SDRDevice::StreamConfig::DataFormat::I12:
-        status = ownerDevice->StreamRx(0, reinterpret_cast<lime::complex16_t* const*>(buffs), numElems, &mdOut);
+        status = ownerDevice->StreamRx(0, reinterpret_cast<complex16_t* const*>(buffs), numElems, &mdOut);
         break;
     case SDRDevice::StreamConfig::DataFormat::F32:
-        status = ownerDevice->StreamRx(0, reinterpret_cast<lime::complex32f_t* const*>(buffs), numElems, &mdOut);
+        status = ownerDevice->StreamRx(0, reinterpret_cast<complex32f_t* const*>(buffs), numElems, &mdOut);
         break;
     }
 
@@ -463,7 +462,7 @@ int SoapyLMS7::readStream(
         numElems = std::min(numElems, icstream->elemMTU);
     }
 
-    lime::SDRDevice::StreamMeta metadata;
+    SDRDevice::StreamMeta metadata;
     const int64_t cmdTicks =
         ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0) ? SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate[SOAPY_SDR_RX]) : 0;
     int status = _readStreamAligned(icstream, buffs, numElems, cmdTicks, metadata, timeoutUs / 1000);
@@ -546,7 +545,7 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     const auto& ownerDevice = icstream->ownerDevice;
 
     // Input metadata
-    lime::SDRDevice::StreamMeta metadata;
+    SDRDevice::StreamMeta metadata;
     metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate[SOAPY_SDR_RX]);
     metadata.useTimestamp = (flags & SOAPY_SDR_HAS_TIME);
     metadata.flush = (flags & SOAPY_SDR_END_BURST);
@@ -556,10 +555,10 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     {
     case SDRDevice::StreamConfig::DataFormat::I16:
     case SDRDevice::StreamConfig::DataFormat::I12:
-        status = ownerDevice->StreamTx(0, reinterpret_cast<const lime::complex16_t* const*>(buffs), numElems, &metadata);
+        status = ownerDevice->StreamTx(0, reinterpret_cast<const complex16_t* const*>(buffs), numElems, &metadata);
         break;
     case SDRDevice::StreamConfig::DataFormat::F32:
-        status = ownerDevice->StreamTx(0, reinterpret_cast<const lime::complex32f_t* const*>(buffs), numElems, &metadata);
+        status = ownerDevice->StreamTx(0, reinterpret_cast<const complex32f_t* const*>(buffs), numElems, &metadata);
         break;
     }
 
@@ -599,7 +598,7 @@ int SoapyLMS7::readStreamStatus(
 
     int ret = 0;
     flags = 0;
-    lime::SDRDevice::StreamStats metadata;
+    SDRDevice::StreamStats metadata;
     auto start = std::chrono::high_resolution_clock::now();
     while (1)
     {

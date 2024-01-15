@@ -1,10 +1,9 @@
 #ifndef LIME_LMS7002M_SDRDevice_H
 #define LIME_LMS7002M_SDRDevice_H
 
+#include <complex>
+#include <cstdint>
 #include <vector>
-#include <unordered_map>
-#include <functional>
-#include <string.h>
 
 #include "limesuite/SDRDevice.h"
 #include "limesuite/LMS7002M.h"
@@ -55,6 +54,29 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
         ChannelConfig::Direction::TestSignal signalConfiguration,
         int16_t dc_i = 0,
         int16_t dc_q = 0) override;
+
+    virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) override;
+
+    virtual std::complex<double> GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset) override;
+
+    virtual std::complex<double> GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance) override;
+
+    virtual bool GetCGENLocked(uint8_t moduleIndex) override;
+    virtual double GetTemperature(uint8_t moduleIndex) override;
+
+    virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) override;
+
+    virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) override;
+    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) override;
+
+    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) override;
+    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) override;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) override;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) override;
 
     virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) override;
     virtual void ConfigureGFIR(
@@ -113,8 +135,8 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     FPGA* mFPGA;
 
   private:
-    int SetGenericRxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value);
-    int SetGenericTxGain(lime::LMS7002M* device, LMS7002M::Channel channel, double value);
+    int SetGenericRxGain(LMS7002M* device, LMS7002M::Channel channel, double value);
+    int SetGenericTxGain(LMS7002M* device, LMS7002M::Channel channel, double value);
 };
 
 } // namespace lime

@@ -591,6 +591,162 @@ int LMS7002M_SDRDevice::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t c
     }
 }
 
+bool LMS7002M_SDRDevice::GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (trx == TRXDir::Rx)
+    {
+        auto lms = mLMSChips.at(channel / 2);
+        return lms->Get_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), channel) == 0;
+    }
+
+    return false;
+}
+
+void LMS7002M_SDRDevice::SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic)
+{
+    if (trx == TRXDir::Tx)
+    {
+        return;
+    }
+
+    auto lms = mLMSChips.at(channel / 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), isAutomatic == 0, channel);
+}
+
+std::complex<double> LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    double I = 0.0;
+    double Q = 0.0;
+
+    auto lms = mLMSChips.at(channel / 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
+    lms->GetDCOffset(trx, I, Q);
+    return std::complex<double>(I, Q);
+}
+
+void LMS7002M_SDRDevice::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset)
+{
+    auto lms = mLMSChips.at(channel / 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
+    lms->SetDCOffset(trx, offset.real(), offset.imag());
+}
+
+std::complex<double> LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    auto lms = mLMSChips.at(channel / 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
+
+    double phase = 0.0, gainI = 0.0, gainQ = 0.0;
+    lms->GetIQBalance(trx, phase, gainI, gainQ);
+    return (gainI / gainQ) * std::polar(1.0, phase);
+}
+
+void LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance)
+{
+    double gain = std::abs(balance);
+
+    double gainI = 1.0;
+    if (gain < 1.0)
+    {
+        gainI = gain;
+    }
+
+    double gainQ = 1.0;
+    if (gain > 1.0)
+    {
+        gainQ = 1.0 / gain;
+    }
+
+    auto lms = mLMSChips.at(channel / 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
+    lms->SetIQBalance(trx, std::arg(balance), gainI, gainQ);
+}
+
+bool LMS7002M_SDRDevice::GetCGENLocked(uint8_t moduleIndex)
+{
+    auto lms = mLMSChips.at(moduleIndex);
+    return lms->GetCGENLocked();
+}
+
+double LMS7002M_SDRDevice::GetTemperature(uint8_t moduleIndex)
+{
+    auto lms = mLMSChips.at(moduleIndex);
+    return lms->GetTemperature();
+}
+
+bool LMS7002M_SDRDevice::GetSXLocked(uint8_t moduleIndex, TRXDir trx)
+{
+    auto lms = mLMSChips.at(moduleIndex);
+    return lms->GetSXLocked(trx);
+}
+
+unsigned int LMS7002M_SDRDevice::ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA)
+{
+    if (useFPGA)
+    {
+        return ReadFPGARegister(address);
+    }
+
+    auto lms = mLMSChips.at(moduleIndex);
+    return lms->SPI_read(address);
+}
+
+void LMS7002M_SDRDevice::WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA)
+{
+    if (useFPGA)
+    {
+        WriteFPGARegister(address, value);
+    }
+
+    auto lms = mLMSChips.at(moduleIndex);
+
+    int returnValue = lms->SPI_write(address, value);
+    if (returnValue != 0)
+    {
+        throw std::runtime_error("Failure writing register");
+    }
+}
+
+void LMS7002M_SDRDevice::LoadConfig(uint8_t moduleIndex, const std::string& filename)
+{
+    auto lms = mLMSChips.at(moduleIndex);
+    lms->LoadConfig(filename);
+}
+
+void LMS7002M_SDRDevice::SaveConfig(uint8_t moduleIndex, const std::string& filename)
+{
+    auto lms = mLMSChips.at(moduleIndex);
+    lms->SaveConfig(filename);
+}
+
+uint16_t LMS7002M_SDRDevice::GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey)
+{
+    auto lms = mLMSChips.at(channel / 2);
+    lms->SetActiveChannel(channel % 2 == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
+
+    try
+    {
+        uint16_t val = lms->Get_SPI_Reg_bits(lms->GetParam(parameterKey));
+        return val;
+    } catch (...)
+    {
+
+        throw std::runtime_error("failure getting key: " + parameterKey);
+    }
+}
+
+void LMS7002M_SDRDevice::SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value)
+{
+    auto lms = mLMSChips.at(channel / 2);
+    lms->SetActiveChannel(channel % 2 == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
+    int returnValue = lms->Modify_SPI_Reg_bits(lms->GetParam(parameterKey), value);
+
+    if (returnValue < 0)
+    {
+        throw std::runtime_error("failure setting key: " + parameterKey);
+    }
+}
+
 void LMS7002M_SDRDevice::Synchronize(bool toChip)
 {
     for (auto iter : mLMSChips)

@@ -502,6 +502,16 @@ int LimeSDR_Mini::UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
+double LimeSDR_Mini::GetTemperature(uint8_t moduleIndex)
+{
+    if (mDeviceDescriptor.name == GetDeviceName(LMS_DEV_LIMESDRMINI))
+    {
+        throw std::logic_error("LimeSDR-Mini v1 doesn't have a temperature sensor");
+    }
+
+    return LMS7002M_SDRDevice::GetTemperature(moduleIndex);
+}
+
 void LimeSDR_Mini::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
     const bool bypass = (oversample <= 1);
