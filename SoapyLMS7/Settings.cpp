@@ -541,10 +541,10 @@ void SoapyLMS7::setSampleRate(const int direction, const std::size_t channel, co
         //     activateStream(s);
         // }
 
-    } catch (...)
+    } catch (const std::exception& e)
     {
         SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(%s, %ld, %g MHz) Failed", dirName, channel, rate / 1e6);
-        throw std::runtime_error("SoapyLMS7::setSampleRate() failed");
+        throw std::runtime_error("SoapyLMS7::setSampleRate() failed with message " + std::string{ e.what() });
     }
 
     sampleRate[bool(direction)] = rate;

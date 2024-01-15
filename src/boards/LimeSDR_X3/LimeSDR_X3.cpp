@@ -797,7 +797,7 @@ double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channe
 
 void LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    throw std::logic_error("LimeSDR_X3::SetSampleRate not implemented currently. TODO: implement");
 }
 
 double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)

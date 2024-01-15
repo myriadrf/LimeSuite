@@ -31,6 +31,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) override;
 
+    virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index) override;
+    virtual void SetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency) override;
+
     virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset) override;
 

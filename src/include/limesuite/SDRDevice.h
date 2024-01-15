@@ -307,6 +307,9 @@ class LIME_API SDRDevice
     virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
     virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
 
+    virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index) = 0;
+    virtual void SetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency) = 0;
+
     virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
     virtual void SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset) = 0;
 

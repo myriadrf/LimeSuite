@@ -179,12 +179,12 @@ double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_
 double LMS7002M_SDRDevice::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     lime::LMS7002M* lms = mLMSChips.at(channel / 2);
-    // TODO:
-    // double offset = tx ? tx_channels[chan].cF_offset_nco : rx_channels[chan].cF_offset_nco;
+
+    // double offset = GetNCOOffset(moduleIndex, trx, channel);
 
     if (trx == TRXDir::Rx)
     {
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1); // Sets the current channel to channel A
         if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO) == 1)
         {
             trx = TRXDir::Tx; // Assume that Tx PLL used for TX and RX
@@ -195,27 +195,182 @@ double LMS7002M_SDRDevice::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t
 
 void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+
+    int chA = channel & (~1);
+    int chB = channel | 1;
+
+    auto channelAFrequency = GetFrequency(moduleIndex, trx, chA);
+    auto channelBFrequency = GetFrequency(moduleIndex, trx, chB);
+
+    auto channelANCOFrequency = GetNCOFrequency(moduleIndex, trx, chA, 0);
+    auto channelBNCOFrequency = GetNCOFrequency(moduleIndex, trx, chB, 0);
+
+    auto channelANCOOffset = channelAFrequency - channelANCOFrequency;
+    auto channelBNCOOffset = channelBFrequency - channelBNCOFrequency;
+
+    auto channelOffset = channel == chA ? channelANCOOffset : channelBNCOOffset;
+
+    // std::vector<ChannelInfo>& channels = isTx ? tx_channels : rx_channels;
+
+    auto setTDD = [&](double center) {
+        // std::vector<ChannelInfo>& other = isTx ? rx_channels : tx_channels;
+        TRXDir otherDir = trx == TRXDir::Rx ? TRXDir::Tx : TRXDir::Rx;
+        auto otherFrequency = GetFrequency(moduleIndex, otherDir, chA);
+        auto otherOffset = GetNCOOffset(moduleIndex, otherDir, chA);
+
+        bool tdd = std::fabs(otherFrequency + otherOffset - center) > 0.1 ? false : true;
+        lms->EnableSXTDD(tdd);
+
+        if (trx == TRXDir::Tx || (!tdd))
+        {
+            if (lms->SetFrequencySX(trx, center) != 0)
+            {
+                throw std::runtime_error("Setting TDD failed (failed SetFrequencySX)");
+            }
+        }
+
+        return;
+    };
+
+    // channels[chan].freq = frequency;
+
+    if (channel == chA)
+    {
+        channelAFrequency = frequency;
+    }
+    else
+    {
+        channelBFrequency = frequency;
+    }
+
+    if (channelAFrequency > 0 && channelBFrequency > 0)
+    {
+        double delta = std::fabs(channelAFrequency - channelBFrequency);
+        if (delta > 0.1)
+        {
+            double rate = GetSampleRate(moduleIndex, trx, channel);
+            if ((delta <= rate * 31) && (delta + rate <= 160e6))
+            {
+                double center = (channelAFrequency + channelBFrequency) / 2;
+                if (center < 30e6)
+                {
+                    center = 30e6;
+                }
+                channelANCOOffset = center - channelAFrequency;
+                channelBNCOOffset = center - channelBFrequency;
+
+                setTDD(center);
+
+                SetSampleRate(moduleIndex, trx, channel, rate, 2);
+                // return -1;
+                return;
+            }
+        }
+    }
+
+    if (frequency < 30e6)
+    {
+        setTDD(30e6);
+
+        channelOffset = 30e6 - frequency;
+        // double rf_rate;
+        double rate = GetSampleRate(moduleIndex, trx, channel);
+        if (channelOffset + rate / 2.0 >= rate / 2.0)
+        {
+            SetSampleRate(moduleIndex, trx, channel, rate, 2);
+            // return -1;
+            return;
+        }
+        else
+        {
+            auto returnValue = lms->SetNCOFrequency(trx, 0, channelOffset * (trx == TRXDir::Tx ? -1.0 : 1.0));
+            if (returnValue != 0)
+            {
+                throw std::runtime_error("SetNCOFrequency failed");
+            }
+        }
+    }
+
+    if (channelOffset != 0)
+    {
+        lms->SetNCOFrequency(trx, -1, 0.0);
+    }
+
+    setTDD(frequency);
 }
 
 double LMS7002M_SDRDevice::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    // throw std::logic_error("GetNCOOffset not implemented currently. TODO: implement");
+    return GetFrequency(moduleIndex, trx, channel) - GetNCOFrequency(moduleIndex, trx, channel, 0);
 }
 
 void LMS7002M_SDRDevice::SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    throw std::logic_error("SetNCOOffset not implemented currently. TODO: implement");
+}
+
+double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index)
+{
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+
+    lms->SetActiveChannel(channel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
+    double freq = lms->GetNCOFrequency(trx, index, true);
+
+    bool down = lms->Get_SPI_Reg_bits(trx == TRXDir::Tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP);
+    if (!(trx == TRXDir::Tx) && (lms->Get_SPI_Reg_bits(LMS7_MASK) == 0))
+    {
+        down = !down;
+    }
+    return down ? -freq : freq;
+}
+
+void LMS7002M_SDRDevice::SetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency)
+{
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+
+    lms->SetActiveChannel(channel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
+
+    bool enable = (index >= 0) && (frequency != 0);
+    bool tx = trx == TRXDir::Tx;
+
+    if ((lms->Modify_SPI_Reg_bits(tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, !enable) != 0) ||
+        (lms->Modify_SPI_Reg_bits(tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, enable) != 0))
+    {
+        throw std::runtime_error("Failure in LMS7002M_SDRDevice::SetNCOFrequency");
+    }
+
+    if ((index >= 0) && (lms->SetNCOFrequency(trx, index, std::fabs(frequency)) != 0))
+    {
+        throw std::runtime_error("Failure while in LMS7002M::SetNCOFrequency");
+    }
+
+    if (enable)
+    {
+        bool down = frequency < 0;
+        if ((!tx) && (lms->Get_SPI_Reg_bits(LMS7_MASK) == 0))
+        {
+            down = !down;
+        }
+
+        if ((lms->Modify_SPI_Reg_bits(tx ? LMS7_SEL_TX : LMS7_SEL_RX, index) != 0) ||
+            (lms->Modify_SPI_Reg_bits(tx ? LMS7_MODE_TX : LMS7_MODE_RX, 0) != 0) ||
+            (lms->Modify_SPI_Reg_bits(tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down) != 0))
+        {
+            throw std::runtime_error("Failure in LMS7002M_SDRDevice::SetNCOFrequency");
+        }
+    }
 }
 
 double LMS7002M_SDRDevice::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    throw std::logic_error("GetLowPassFilter not implemented currently. TODO: implement");
 }
 
 void LMS7002M_SDRDevice::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf)
 {
-    throw std::logic_error("Not implemented currently. TODO: implement");
+    throw std::logic_error("SetLowPassFilter not implemented currently. TODO: implement");
 }
 
 uint8_t LMS7002M_SDRDevice::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
