@@ -224,7 +224,7 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
 
     auto samplesPerPacket = config.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360;
     // TODO: figure out a way to actually get the correct packet per batch count
-    stream->elemMTU = 8 / config.channels.at(TRXDir::Rx).size() * samplesPerPacket;
+    stream->elemMTU = 8 / config.channels.at(dir).size() * samplesPerPacket;
 
     stream->ownerDevice = sdrDevice;
 

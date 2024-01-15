@@ -406,7 +406,7 @@ void LMS7002M_SDRDevice::SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t cha
 void LMS7002M_SDRDevice::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth)
 {
     lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
-    lms->SetActiveChannel(static_cast<LMS7002M::Channel>((channel + 1) % 2));
+    lms->SetActiveChannel(static_cast<LMS7002M::Channel>((channel % 2) + 1));
     int ret;
     auto reg20 = lms->SPI_read(0x20);
     lms->SPI_write(0x20, reg20 | (20 << (channel % 2)));
