@@ -184,7 +184,7 @@ void SoapyLMS7::setAntenna(const int direction, const std::size_t channel, const
         if (nameList[path] == name)
         {
             sdrDevice->SetAntenna(0, dir, channel, path);
-            sdrDevice->Calibrate(0, dir, channel, sdrDevice->GetFrequency(0, dir, channel));
+            // sdrDevice->Calibrate(0, dir, channel, sdrDevice->GetFrequency(0, dir, channel));
             return;
         }
     }
@@ -397,7 +397,7 @@ void SoapyLMS7::setFrequency(
         {
             sdrDevice->SetClockFreq(clkId, frequency, channel);
             sdrDevice->SetFrequency(0, dir, channel, frequency);
-            sdrDevice->Calibrate(0, dir, channel, frequency);
+            // sdrDevice->Calibrate(0, dir, channel, frequency);
 
             // _channelsToCal.emplace(direction, channel);
             return;
@@ -543,7 +543,7 @@ void SoapyLMS7::setBandwidth(const int direction, const std::size_t channel, con
     try
     {
         sdrDevice->SetLowPassFilter(0, dir, channel, bw);
-        sdrDevice->Calibrate(0, dir, channel, bw);
+        // sdrDevice->Calibrate(0, dir, channel, bw);
     } catch (...)
     {
         SoapySDR::logf(SOAPY_SDR_ERROR, "SoapyLMS7::setBandwidth(%s, %ld, %g MHz) Failed", dirName, channel, bw / 1e6);

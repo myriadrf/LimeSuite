@@ -230,7 +230,7 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
     // Calibrate these channels when activated
     for (const auto& ch : channelIDs)
     {
-        sdrDevice->Calibrate(0, dir, ch, sdrDevice->GetFrequency(0, dir, ch));
+        // sdrDevice->Calibrate(0, dir, ch, sdrDevice->GetFrequency(0, dir, ch));
         // lastSavedConfiguration.channel[ch].GetDirection(dir).calibrate = true;
         // _channelsToCal.emplace(direction, ch);
     }
