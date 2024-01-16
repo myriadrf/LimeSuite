@@ -71,7 +71,7 @@ DeviceHandle::DeviceHandle(const std::string& args)
     if (kwmap.count("media") != 0)
         media = kwmap.at("media");
     if (kwmap.count("module") != 0)
-        media = kwmap.at("module");
+        module = kwmap.at("module");
     if (kwmap.count("name") != 0)
         name = kwmap.at("name");
     if (kwmap.count("addr") != 0)
