@@ -17,6 +17,8 @@ RUN apt update && \
 COPY amarisoft-plugin/ amarisoft-plugin/
 COPY cmake/ cmake/
 COPY debian/ debian/
+RUN rm debian/control
+RUN mv debian/control_deb22 debian/control
 COPY Desktop/ Desktop/
 COPY external/ external/
 COPY udev-rules/ udev-rules/
