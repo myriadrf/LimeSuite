@@ -151,12 +151,12 @@ SoapySDR::Kwargs SoapyLMS7::getHardwareInfo(void) const
  * Channels API
  ******************************************************************/
 
-std::size_t SoapyLMS7::getNumChannels(const int /*direction*/) const
+size_t SoapyLMS7::getNumChannels(const int /*direction*/) const
 {
     return sdrDevice->GetDescriptor().rfSOC.at(0).channelCount;
 }
 
-bool SoapyLMS7::getFullDuplex(const int /*direction*/, const std::size_t /*channel*/) const
+bool SoapyLMS7::getFullDuplex(const int /*direction*/, const size_t /*channel*/) const
 {
     return true;
 }
@@ -165,12 +165,12 @@ bool SoapyLMS7::getFullDuplex(const int /*direction*/, const std::size_t /*chann
  * Antenna API
  ******************************************************************/
 
-std::vector<std::string> SoapyLMS7::listAntennas(const int direction, const std::size_t /*channel*/) const
+std::vector<std::string> SoapyLMS7::listAntennas(const int direction, const size_t /*channel*/) const
 {
     return sdrDevice->GetDescriptor().rfSOC.at(0).pathNames.at(direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx);
 }
 
-void SoapyLMS7::setAntenna(const int direction, const std::size_t channel, const std::string& name)
+void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std::string& name)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
@@ -192,7 +192,7 @@ void SoapyLMS7::setAntenna(const int direction, const std::size_t channel, const
     throw std::runtime_error("SoapyLMS7::setAntenna(TX, " + name + ") - unknown antenna name");
 }
 
-std::string SoapyLMS7::getAntenna(const int direction, const std::size_t channel) const
+std::string SoapyLMS7::getAntenna(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     TRXDir dir = direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx;
@@ -209,55 +209,55 @@ std::string SoapyLMS7::getAntenna(const int direction, const std::size_t channel
  * Frontend corrections API
  ******************************************************************/
 
-bool SoapyLMS7::hasDCOffsetMode(const int direction, const std::size_t /*channel*/) const
+bool SoapyLMS7::hasDCOffsetMode(const int direction, const size_t /*channel*/) const
 {
     return (direction == SOAPY_SDR_RX);
 }
 
-void SoapyLMS7::setDCOffsetMode(const int direction, const std::size_t channel, const bool automatic)
+void SoapyLMS7::setDCOffsetMode(const int direction, const size_t channel, const bool automatic)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     sdrDevice->SetDCOffsetMode(0, direction == SOAPY_SDR_RX ? ::TRXDir::Rx : TRXDir::Tx, channel, automatic);
 }
 
-bool SoapyLMS7::getDCOffsetMode(const int direction, const std::size_t channel) const
+bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     return sdrDevice->GetDCOffsetMode(0, direction == SOAPY_SDR_RX ? ::TRXDir::Rx : TRXDir::Tx, channel);
 }
 
-bool SoapyLMS7::hasDCOffset(const int /*direction*/, const std::size_t /*channel*/) const
+bool SoapyLMS7::hasDCOffset(const int /*direction*/, const size_t /*channel*/) const
 {
     return true;
 }
 
-void SoapyLMS7::setDCOffset(const int direction, const std::size_t channel, const std::complex<double>& offset)
+void SoapyLMS7::setDCOffset(const int direction, const size_t channel, const std::complex<double>& offset)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
     sdrDevice->SetDCOffset(0, lmsDir, channel, offset);
 }
 
-std::complex<double> SoapyLMS7::getDCOffset(const int direction, const std::size_t channel) const
+std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t channel) const
 {
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     return sdrDevice->GetDCOffset(0, lmsDir, channel);
 }
 
-bool SoapyLMS7::hasIQBalance(const int /*direction*/, const std::size_t /*channel*/) const
+bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) const
 {
     return true;
 }
 
-void SoapyLMS7::setIQBalance(const int direction, const std::size_t channel, const std::complex<double>& balance)
+void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const std::complex<double>& balance)
 {
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     sdrDevice->SetIQBalance(0, lmsDir, channel, balance);
 }
 
-std::complex<double> SoapyLMS7::getIQBalance(const int direction, const std::size_t channel) const
+std::complex<double> SoapyLMS7::getIQBalance(const int direction, const size_t channel) const
 {
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
@@ -268,7 +268,7 @@ std::complex<double> SoapyLMS7::getIQBalance(const int direction, const std::siz
  * Gain API
  ******************************************************************/
 
-std::vector<std::string> SoapyLMS7::listGains(const int direction, const std::size_t /*channel*/) const
+std::vector<std::string> SoapyLMS7::listGains(const int direction, const size_t /*channel*/) const
 {
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
     const auto& gainEnums = sdrDevice->GetDescriptor().rfSOC.at(0).gains.at(dir);
@@ -282,7 +282,7 @@ std::vector<std::string> SoapyLMS7::listGains(const int direction, const std::si
     return gains;
 }
 
-void SoapyLMS7::setGain(const int direction, const std::size_t channel, const double value)
+void SoapyLMS7::setGain(const int direction, const size_t channel, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setGain(%s, %ld, %g dB)", dirName, channel, value);
@@ -293,7 +293,7 @@ void SoapyLMS7::setGain(const int direction, const std::size_t channel, const do
     SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s[%ld] gain %g dB", dirName, channel, getGain(direction, channel));
 }
 
-double SoapyLMS7::getGain(const int direction, const std::size_t channel) const
+double SoapyLMS7::getGain(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
@@ -309,7 +309,7 @@ double SoapyLMS7::getGain(const int direction, const std::size_t channel) const
     return gain;
 }
 
-void SoapyLMS7::setGain(const int direction, const std::size_t channel, const std::string& name, const double value)
+void SoapyLMS7::setGain(const int direction, const size_t channel, const std::string& name, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setGain(%s, %ld, %s, %g dB)", dirName, channel, name.c_str(), value);
@@ -323,7 +323,7 @@ void SoapyLMS7::setGain(const int direction, const std::size_t channel, const st
         SOAPY_SDR_DEBUG, "Actual %s%s[%ld] gain %g dB", dirName, name.c_str(), channel, getGain(direction, channel, name));
 }
 
-double SoapyLMS7::getGain(const int direction, const std::size_t channel, const std::string& name) const
+double SoapyLMS7::getGain(const int direction, const size_t channel, const std::string& name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
@@ -341,7 +341,7 @@ double SoapyLMS7::getGain(const int direction, const std::size_t channel, const 
     return gain;
 }
 
-SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const std::size_t channel) const
+SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel) const
 {
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
 
@@ -350,7 +350,7 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const std::size_t c
     return SoapySDR::Range(range.min, range.max, range.step);
 }
 
-SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const std::size_t channel, const std::string& name) const
+SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel, const std::string& name) const
 {
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
     eGainTypes gainType = STRING_TO_GAIN_TYPES.at(name);
@@ -363,12 +363,12 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const std::size_t c
 /*******************************************************************
  * Frequency API
  ******************************************************************/
-SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const std::size_t channel) const
+SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const size_t channel) const
 {
     return SoapySDR::Device::getFrequencyArgsInfo(direction, channel);
 }
 
-void SoapyLMS7::setFrequency(int direction, std::size_t channel, double frequency, const SoapySDR::Kwargs& args)
+void SoapyLMS7::setFrequency(int direction, size_t channel, double frequency, const SoapySDR::Kwargs& args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
@@ -384,7 +384,7 @@ void SoapyLMS7::setFrequency(int direction, std::size_t channel, double frequenc
 }
 
 void SoapyLMS7::setFrequency(
-    const int direction, const std::size_t channel, const std::string& name, const double frequency, const SoapySDR::Kwargs& args)
+    const int direction, const size_t channel, const std::string& name, const double frequency, const SoapySDR::Kwargs& args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(
@@ -417,7 +417,7 @@ void SoapyLMS7::setFrequency(
     throw std::runtime_error("SoapyLMS7::setFrequency(" + name + ") unknown name");
 }
 
-double SoapyLMS7::getFrequency(const int direction, const std::size_t channel, const std::string& name) const
+double SoapyLMS7::getFrequency(const int direction, const size_t channel, const std::string& name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
@@ -436,14 +436,14 @@ double SoapyLMS7::getFrequency(const int direction, const std::size_t channel, c
     throw std::runtime_error("SoapyLMS7::getFrequency(" + name + ") unknown name");
 }
 
-double SoapyLMS7::getFrequency(const int direction, const std::size_t channel) const
+double SoapyLMS7::getFrequency(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
     return sdrDevice->GetFrequency(0, direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx, channel);
 }
 
-std::vector<std::string> SoapyLMS7::listFrequencies(const int /*direction*/, const std::size_t /*channel*/) const
+std::vector<std::string> SoapyLMS7::listFrequencies(const int /*direction*/, const size_t /*channel*/) const
 {
     std::vector<std::string> opts;
     opts.push_back("RF");
@@ -451,7 +451,7 @@ std::vector<std::string> SoapyLMS7::listFrequencies(const int /*direction*/, con
     return opts;
 }
 
-SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const std::size_t channel, const std::string& name) const
+SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size_t channel, const std::string& name) const
 {
     SoapySDR::RangeList ranges;
     if (name == "RF")
@@ -468,7 +468,7 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const std:
     return ranges;
 }
 
-SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const std::size_t channel) const
+SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size_t channel) const
 {
     SoapySDR::RangeList ranges;
     auto range = sdrDevice->GetDescriptor().rfSOC.at(0).frequencyRange;
@@ -480,7 +480,7 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const std:
  * Sample Rate API
  ******************************************************************/
 
-void SoapyLMS7::setSampleRate(const int direction, const std::size_t channel, const double rate)
+void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     // auto streams = activeStreams;
@@ -510,14 +510,14 @@ void SoapyLMS7::setSampleRate(const int direction, const std::size_t channel, co
     return;
 }
 
-double SoapyLMS7::getSampleRate(const int direction, const std::size_t channel) const
+double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
     return sdrDevice->GetSampleRate(0, direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx, 0);
 }
 
-SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const std::size_t channel) const
+SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const size_t channel) const
 {
     Range range = sdrDevice->GetDescriptor().rfSOC.at(0).samplingRateRange;
 
@@ -528,7 +528,7 @@ SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const std
  * Bandwidth API
  ******************************************************************/
 
-void SoapyLMS7::setBandwidth(const int direction, const std::size_t channel, const double bw)
+void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const double bw)
 {
     if (bw == 0.0)
     {
@@ -551,14 +551,14 @@ void SoapyLMS7::setBandwidth(const int direction, const std::size_t channel, con
     }
 }
 
-double SoapyLMS7::getBandwidth(const int direction, const std::size_t channel) const
+double SoapyLMS7::getBandwidth(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
     return sdrDevice->GetLowPassFilter(0, direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx, channel);
 }
 
-SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const std::size_t channel) const
+SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size_t channel) const
 {
     SoapySDR::RangeList bws;
 
@@ -675,14 +675,14 @@ std::string SoapyLMS7::readSensor(const std::string& name) const
     throw std::runtime_error("SoapyLMS7::readSensor(" + name + ") - unknown sensor name");
 }
 
-std::vector<std::string> SoapyLMS7::listSensors(const int /*direction*/, const std::size_t /*channel*/) const
+std::vector<std::string> SoapyLMS7::listSensors(const int /*direction*/, const size_t /*channel*/) const
 {
     std::vector<std::string> sensors;
     sensors.push_back("lo_locked");
     return sensors;
 }
 
-SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const int direction, const std::size_t channel, const std::string& name) const
+SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const int direction, const size_t channel, const std::string& name) const
 {
     SoapySDR::ArgInfo info;
     if (name == "lo_locked")
@@ -696,7 +696,7 @@ SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const int direction, const std::size_
     return info;
 }
 
-std::string SoapyLMS7::readSensor(const int direction, const std::size_t channel, const std::string& name) const
+std::string SoapyLMS7::readSensor(const int direction, const size_t channel, const std::string& name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
@@ -929,7 +929,7 @@ void SoapyLMS7::writeSetting(const std::string& key, const std::string& value)
     }
 }
 
-SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const std::size_t channel) const
+SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_t channel) const
 {
     SoapySDR::ArgInfoList infos;
 
@@ -973,7 +973,7 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const std::
     return infos;
 }
 
-void SoapyLMS7::writeSetting(const int direction, const std::size_t channel, const std::string& key, const std::string& value)
+void SoapyLMS7::writeSetting(const int direction, const size_t channel, const std::string& key, const std::string& value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     const TRXDir dir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
@@ -1073,7 +1073,7 @@ std::string SoapyLMS7::readSetting(const std::string& key) const
     return readSetting(SOAPY_SDR_TX, 0, key);
 }
 
-std::string SoapyLMS7::readSetting(const int direction, const std::size_t channel, const std::string& key) const
+std::string SoapyLMS7::readSetting(const int direction, const size_t channel, const std::string& key) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     if (key == "TSG_NCO")

@@ -24,15 +24,15 @@ using namespace lime;
 struct IConnectionStream {
     SDRDevice* ownerDevice;
     int direction;
-    std::size_t elemSize;
-    std::size_t elemMTU;
+    size_t elemSize;
+    size_t elemMTU;
     bool skipCal;
 
     // Rx command requests
     bool hasCmd;
     int flags;
     long long timeNs;
-    std::size_t numElems;
+    size_t numElems;
 
     SDRDevice::StreamConfig streamConfig;
 };
@@ -40,18 +40,18 @@ struct IConnectionStream {
 /*******************************************************************
  * Stream information
  ******************************************************************/
-std::vector<std::string> SoapyLMS7::getStreamFormats(const int direction, const std::size_t channel) const
+std::vector<std::string> SoapyLMS7::getStreamFormats(const int direction, const size_t channel) const
 {
     return { SOAPY_SDR_CF32, SOAPY_SDR_CS12, SOAPY_SDR_CS16 };
 }
 
-std::string SoapyLMS7::getNativeStreamFormat(const int direction, const std::size_t channel, double& fullScale) const
+std::string SoapyLMS7::getNativeStreamFormat(const int direction, const size_t channel, double& fullScale) const
 {
     fullScale = 32767;
     return SOAPY_SDR_CS16;
 }
 
-SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const std::size_t channel) const
+SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const size_t channel) const
 {
     SoapySDR::ArgInfoList argInfos;
 
@@ -122,7 +122,7 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const st
  * Stream config
  ******************************************************************/
 SoapySDR::Stream* SoapyLMS7::setupStream(
-    const int direction, const std::string& format, const std::vector<std::size_t>& channels, const SoapySDR::Kwargs& args)
+    const int direction, const std::string& format, const std::vector<size_t>& channels, const SoapySDR::Kwargs& args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     // Store result into opaque stream object
@@ -140,7 +140,7 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
     TRXDir dir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir ::Rx;
 
     // Default to channel 0, if none were specified
-    const std::vector<std::size_t>& channelIDs = channels.empty() ? std::vector<std::size_t>{ 0 } : channels;
+    const std::vector<size_t>& channelIDs = channels.empty() ? std::vector<size_t>{ 0 } : channels;
     config.channels[dir] = std::vector<uint8_t>(channelIDs.begin(), channelIDs.end());
 
     if (format == SOAPY_SDR_CF32)
@@ -249,13 +249,13 @@ void SoapyLMS7::closeStream(SoapySDR::Stream* stream)
     ownerDevice->StreamStop(0);
 }
 
-std::size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream* stream) const
+size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream* stream) const
 {
     auto icstream = reinterpret_cast<IConnectionStream*>(stream);
     return icstream->elemMTU;
 }
 
-int SoapyLMS7::activateStream(SoapySDR::Stream* stream, const int flags, const long long timeNs, const std::size_t numElems)
+int SoapyLMS7::activateStream(SoapySDR::Stream* stream, const int flags, const long long timeNs, const size_t numElems)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = reinterpret_cast<IConnectionStream*>(stream);
@@ -330,30 +330,27 @@ int SoapyLMS7::deactivateStream(SoapySDR::Stream* stream, const int flags, const
 /*******************************************************************
  * Stream alignment helper for multiple channels
  ******************************************************************/
-static inline void fastForward(char* const buff,
-    std::size_t& numWritten,
-    const std::size_t elemSize,
-    const uint64_t oldHeadTime,
-    const uint64_t desiredHeadTime)
+static inline void fastForward(
+    char* const buff, size_t& numWritten, const size_t elemSize, const uint64_t oldHeadTime, const uint64_t desiredHeadTime)
 {
-    const std::size_t numPop = std::min<std::size_t>(desiredHeadTime - oldHeadTime, numWritten);
-    const std::size_t numMove = (numWritten - numPop);
+    const size_t numPop = std::min<size_t>(desiredHeadTime - oldHeadTime, numWritten);
+    const size_t numMove = (numWritten - numPop);
     numWritten -= numPop;
     std::memmove(buff, buff + (numPop * elemSize), numMove * elemSize);
 }
 
 int SoapyLMS7::_readStreamAligned(IConnectionStream* stream,
     void* const* buffs,
-    std::size_t numElems,
+    size_t numElems,
     int64_t requestTime,
     SDRDevice::StreamMeta& mdOut,
     const long timeoutMs)
 {
     const auto& ownerDevice = stream->ownerDevice;
-    // const std::size_t elemSize = stream->elemSize;
-    std::size_t numWritten{ 0 };
+    // const size_t elemSize = stream->elemSize;
+    size_t numWritten{ 0 };
     //{
-    std::size_t& N = numWritten;
+    size_t& N = numWritten;
     const int64_t expectedTime(requestTime + N);
     if (numElems <= N)
     {
@@ -383,8 +380,8 @@ int SoapyLMS7::_readStreamAligned(IConnectionStream* stream,
     }
 
     // Update accounting
-    const std::size_t elemsRead = std::size_t(status);
-    const std::size_t prevN = N;
+    const size_t elemsRead = size_t(status);
+    const size_t prevN = N;
     N += elemsRead; // Num written total
 
     // Unspecified request time, set the new head condition
@@ -440,7 +437,7 @@ int SoapyLMS7::_readStreamAligned(IConnectionStream* stream,
  * Stream API
  ******************************************************************/
 int SoapyLMS7::readStream(
-    SoapySDR::Stream* stream, void* const* buffs, std::size_t numElems, int& flags, long long& timeNs, const long timeoutUs)
+    SoapySDR::Stream* stream, void* const* buffs, size_t numElems, int& flags, long long& timeNs, const long timeoutUs)
 {
     auto icstream = reinterpret_cast<IConnectionStream*>(stream);
 
@@ -531,7 +528,7 @@ int SoapyLMS7::readStream(
 
 int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     const void* const* buffs,
-    const std::size_t numElems,
+    const size_t numElems,
     int& flags,
     const long long timeNs,
     const long timeoutUs)
@@ -590,8 +587,7 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     return status;
 }
 
-int SoapyLMS7::readStreamStatus(
-    SoapySDR::Stream* stream, std::size_t& chanMask, int& flags, long long& timeNs, const long timeoutUs)
+int SoapyLMS7::readStreamStatus(SoapySDR::Stream* stream, size_t& chanMask, int& flags, long long& timeNs, const long timeoutUs)
 {
     auto icstream = reinterpret_cast<IConnectionStream*>(stream);
     const auto& ownerDevice = icstream->ownerDevice;
