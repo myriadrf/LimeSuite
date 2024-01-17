@@ -12,23 +12,23 @@
 
 using namespace lime;
 
-static void limeSuiteLogHandler(const lime::LogLevel level, const char* message)
+static void limeSuiteLogHandler(const LogLevel level, const char* message)
 {
     switch (level)
     {
-    case lime::LogLevel::CRITICAL:
+    case LogLevel::CRITICAL:
         SoapySDR::log(SOAPY_SDR_CRITICAL, message);
         return;
-    case lime::LogLevel::ERROR:
+    case LogLevel::ERROR:
         SoapySDR::log(SOAPY_SDR_ERROR, message);
         return;
-    case lime::LogLevel::WARNING:
+    case LogLevel::WARNING:
         SoapySDR::log(SOAPY_SDR_WARNING, message);
         return;
-    case lime::LogLevel::INFO:
+    case LogLevel::INFO:
         SoapySDR::log(SOAPY_SDR_INFO, message);
         return;
-    case lime::LogLevel::DEBUG:
+    case LogLevel::DEBUG:
         SoapySDR::log(SOAPY_SDR_DEBUG, message);
         return;
     }
@@ -105,7 +105,7 @@ static SoapySDR::Kwargs handleToArgs(const DeviceHandle& handle)
 
 static SoapySDR::KwargsList findIConnection(const SoapySDR::Kwargs& matchArgs)
 {
-    lime::registerLogHandler(&limeSuiteLogHandler);
+    registerLogHandler(&limeSuiteLogHandler);
     SoapySDR::KwargsList results;
 
     for (const auto& handle : DeviceRegistry::enumerate(argsToHandle(matchArgs)))
@@ -118,7 +118,7 @@ static SoapySDR::KwargsList findIConnection(const SoapySDR::Kwargs& matchArgs)
 
 static SoapySDR::Device* makeIConnection(const SoapySDR::Kwargs& args)
 {
-    lime::registerLogHandler(&limeSuiteLogHandler);
+    registerLogHandler(&limeSuiteLogHandler);
     return new SoapyLMS7(argsToHandle(args), args);
 }
 
