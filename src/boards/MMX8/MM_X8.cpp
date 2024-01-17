@@ -179,14 +179,15 @@ double LimeSDR_MMX8::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t ch
     return mSubDevices[moduleIndex]->GetNCOFrequency(0, trx, channel, index);
 }
 
-void LimeSDR_MMX8::SetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency)
+void LimeSDR_MMX8::SetNCOFrequency(
+    uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset)
 {
     if (moduleIndex >= 8)
     {
         moduleIndex = 0;
     }
 
-    return mSubDevices[moduleIndex]->SetNCOFrequency(0, trx, channel, index, frequency);
+    return mSubDevices[moduleIndex]->SetNCOFrequency(0, trx, channel, index, frequency, phaseOffset);
 }
 
 double LimeSDR_MMX8::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
@@ -441,6 +442,26 @@ void LimeSDR_MMX8::SetParameter(uint8_t moduleIndex, uint8_t channel, const std:
     return mSubDevices[moduleIndex]->SetParameter(0, channel, parameterKey, value);
 }
 
+uint16_t LimeSDR_MMX8::GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetParameter(0, channel, address, msb, lsb);
+}
+
+void LimeSDR_MMX8::SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetParameter(0, channel, address, msb, lsb, value);
+}
+
 void LimeSDR_MMX8::Synchronize(bool toChip)
 {
     for (auto& d : mSubDevices)
@@ -481,6 +502,37 @@ void LimeSDR_MMX8::ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channe
     }
 
     return mSubDevices[moduleIndex]->ConfigureGFIR(0, trx, channel, settings);
+}
+
+std::vector<double> LimeSDR_MMX8::GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetGFIRCoefficients(0, trx, channel, gfirID);
+}
+
+void LimeSDR_MMX8::SetGFIRCoefficients(
+    uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetGFIRCoefficients(0, trx, channel, gfirID, coefficients);
+}
+
+void LimeSDR_MMX8::SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetGFIR(0, trx, channel, gfirID, enabled);
 }
 
 uint64_t LimeSDR_MMX8::GetHardwareTimestamp(uint8_t moduleIndex)
