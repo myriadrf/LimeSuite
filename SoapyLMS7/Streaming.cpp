@@ -228,12 +228,12 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
     stream->ownerDevice = sdrDevice;
 
     // Calibrate these channels when activated
-    for (const auto& ch : channelIDs)
-    {
-        // sdrDevice->Calibrate(0, dir, ch, sdrDevice->GetFrequency(0, dir, ch));
-        // lastSavedConfiguration.channel[ch].GetDirection(dir).calibrate = true;
-        // _channelsToCal.emplace(direction, ch);
-    }
+    // for (const auto& ch : channelIDs)
+    // {
+    // sdrDevice->Calibrate(0, dir, ch, sdrDevice->GetFrequency(0, dir, ch));
+    // lastSavedConfiguration.channel[ch].GetDirection(dir).calibrate = true;
+    // _channelsToCal.emplace(direction, ch);
+    // }
 
     stream->streamConfig = config;
 
@@ -292,15 +292,6 @@ int SoapyLMS7::activateStream(SoapySDR::Stream* stream, const int flags, const l
     icstream->numElems = numElems;
     icstream->hasCmd = true;
 
-    // for (auto i : ownerDevice)
-    // {
-    //     int status = i->Start();
-    //     if (status != 0)
-    //     {
-    //         return SOAPY_SDR_STREAM_ERROR;
-    //     }
-    // }
-
     ownerDevice->StreamStart(0);
     activeStreams.insert(stream);
     return 0;
@@ -313,124 +304,10 @@ int SoapyLMS7::deactivateStream(SoapySDR::Stream* stream, const int flags, const
     const auto& ownerDevice = icstream->ownerDevice;
     icstream->hasCmd = false;
 
-    // for (auto i : ownerDevice)
-    // {
-    //     int status = i->Stop();
-    //     if (status != 0)
-    //     {
-    //         return SOAPY_SDR_STREAM_ERROR;
-    //     }
-    // }
     ownerDevice->StreamStop(0);
 
     activeStreams.erase(stream);
     return 0;
-}
-
-/*******************************************************************
- * Stream alignment helper for multiple channels
- ******************************************************************/
-static inline void fastForward(
-    char* const buff, size_t& numWritten, const size_t elemSize, const uint64_t oldHeadTime, const uint64_t desiredHeadTime)
-{
-    const size_t numPop = std::min<size_t>(desiredHeadTime - oldHeadTime, numWritten);
-    const size_t numMove = (numWritten - numPop);
-    numWritten -= numPop;
-    std::memmove(buff, buff + (numPop * elemSize), numMove * elemSize);
-}
-
-int SoapyLMS7::_readStreamAligned(IConnectionStream* stream,
-    void* const* buffs,
-    size_t numElems,
-    int64_t requestTime,
-    SDRDevice::StreamMeta& mdOut,
-    const long timeoutMs)
-{
-    const auto& ownerDevice = stream->ownerDevice;
-    // const size_t elemSize = stream->elemSize;
-    size_t numWritten{ 0 };
-    //{
-    size_t& N = numWritten;
-    const int64_t expectedTime(requestTime + N);
-    if (numElems <= N)
-    {
-        // continue;
-    }
-    // int status = ownerDevice[i]->Read(buffs[i] + (elemSize * N), numElems - N, &mdOut, timeoutMs);
-
-    int status;
-    switch (stream->streamConfig.format)
-    {
-    case SDRDevice::StreamConfig::DataFormat::I16:
-    case SDRDevice::StreamConfig::DataFormat::I12:
-        status = ownerDevice->StreamRx(0, reinterpret_cast<complex16_t* const*>(buffs), numElems, &mdOut);
-        break;
-    case SDRDevice::StreamConfig::DataFormat::F32:
-        status = ownerDevice->StreamRx(0, reinterpret_cast<complex32f_t* const*>(buffs), numElems, &mdOut);
-        break;
-    }
-
-    if (status == 0)
-    {
-        return SOAPY_SDR_TIMEOUT;
-    }
-    if (status < 0)
-    {
-        return SOAPY_SDR_STREAM_ERROR;
-    }
-
-    // Update accounting
-    const size_t elemsRead = size_t(status);
-    const size_t prevN = N;
-    N += elemsRead; // Num written total
-
-    // Unspecified request time, set the new head condition
-    if (requestTime == 0)
-    {
-        requestTime = mdOut.timestamp;
-        numElems = elemsRead;
-        // continue;
-    }
-
-    // Good contiguous read, read again for remainder
-    if (expectedTime == mdOut.timestamp)
-    {
-        // continue;
-    }
-
-    // Request time is later, fast forward buffer
-    if (mdOut.timestamp < expectedTime)
-    {
-        if (prevN != 0)
-        {
-            SoapySDR::log(SOAPY_SDR_ERROR, "readStream() experienced non-monotonic timestamp");
-            return SOAPY_SDR_CORRUPTION;
-        }
-        // fastForward(buffs[i], N, elemSize, mdOut.timestamp, requestTime);
-        // if (i == 0 and N != 0)
-        // {
-        //     numElems = N; // Match size on other channels
-        // }
-        // continue; // Read again into the remaining buffer
-    }
-
-    // Overflow in the middle of a contiguous buffer
-    // Fast-forward all prior channels and restart loop
-    if (mdOut.timestamp > expectedTime)
-    {
-        // for (std::size_t j = 0; j < i; j++)
-        // {
-        //     fastForward(buffs[j], numWritten[j], elemSize, requestTime, mdOut.timestamp);
-        // }
-        // fastForward(buffs[i], N, elemSize, mdOut.timestamp - prevN, mdOut.timestamp);
-        // i = 0; // Start over at channel 0
-    }
-
-    requestTime = mdOut.timestamp;
-    numElems = elemsRead;
-    //}
-    mdOut.timestamp = requestTime;
-    return int(numElems);
 }
 
 /*******************************************************************
@@ -462,10 +339,36 @@ int SoapyLMS7::readStream(
     SDRDevice::StreamMeta metadata;
     const int64_t cmdTicks =
         ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0) ? SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate[SOAPY_SDR_RX]) : 0;
-    int status = _readStreamAligned(icstream, buffs, numElems, cmdTicks, metadata, timeoutUs / 1000);
+
+    int status;
+    switch (icstream->streamConfig.format)
+    {
+    case SDRDevice::StreamConfig::DataFormat::I16:
+    case SDRDevice::StreamConfig::DataFormat::I12:
+        status = icstream->ownerDevice->StreamRx(0, reinterpret_cast<complex16_t* const*>(buffs), numElems, &metadata);
+        break;
+    case SDRDevice::StreamConfig::DataFormat::F32:
+        status = icstream->ownerDevice->StreamRx(0, reinterpret_cast<complex32f_t* const*>(buffs), numElems, &metadata);
+        break;
+    }
+
+    flags = 0;
+
+    if (status == 0)
+    {
+        return SOAPY_SDR_TIMEOUT;
+    }
     if (status < 0)
     {
-        return status;
+        return SOAPY_SDR_STREAM_ERROR;
+    }
+
+    const int64_t expectedTime(cmdTicks + status);
+
+    if (metadata.timestamp < expectedTime)
+    {
+        SoapySDR::log(SOAPY_SDR_ERROR, "readStream() experienced non-monotonic timestamp");
+        return SOAPY_SDR_CORRUPTION;
     }
 
     // The command had a time, so we need to compare it to received time
@@ -509,7 +412,6 @@ int SoapyLMS7::readStream(
     }
 
     // Output metadata
-    flags = 0;
     if (metadata.flush)
     {
         flags |= SOAPY_SDR_END_BURST;
@@ -559,8 +461,6 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
         break;
     }
 
-    // Write the 0th channel: get number of samples written
-    // int status = ownerDevice[0]->Write(buffs[0], numElems, &metadata, timeoutUs / 1000);
     if (status == 0)
     {
         return SOAPY_SDR_TIMEOUT;
@@ -569,19 +469,6 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     {
         return SOAPY_SDR_STREAM_ERROR;
     }
-
-    // Write subsequent channels with the same size and large timeout.
-    // We should always be able to do a matching buffer write quickly
-    // or there is an unknown internal issue with the stream fifo
-    // for (std::size_t i = 1; i < ownerDevice.size(); i++)
-    // {
-    //     int status_i = ownerDevice[i]->Write(buffs[i], status, &metadata, 1000 /*1s*/);
-    //     if (status_i != status)
-    //     {
-    //         SoapySDR::logf(SOAPY_SDR_ERROR, "Multi-channel stream alignment failed!");
-    //         return SOAPY_SDR_CORRUPTION;
-    //     }
-    // }
 
     // Return num written
     return status;

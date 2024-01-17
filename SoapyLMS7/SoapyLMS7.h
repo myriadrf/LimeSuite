@@ -275,12 +275,5 @@ class SoapyLMS7 : public SoapySDR::Device
     std::map<std::size_t, int> _interps;
     std::map<std::size_t, int> _decims;
 
-    int _readStreamAligned(IConnectionStream* stream,
-        void* const* buffs,
-        std::size_t numElems,
-        int64_t requestTime,
-        lime::SDRDevice::StreamMeta& mdOut,
-        const long timeoutMs);
-
     std::array<std::vector<SettingsCache>, 2> settingsCache; // settingsCache[direction]
 };

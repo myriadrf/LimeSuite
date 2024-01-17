@@ -22,13 +22,6 @@ using namespace lime;
 
 #define dirName ((direction == SOAPY_SDR_RX) ? "Rx" : "Tx")
 
-// Reasonable fallback limits when advertising the rate
-#define MIN_FALLBACK_SAMP_RATE 1e5
-#define MAX_FALLBACK_SAMP_RATE 65e6
-
-// Reasonable step between sample rates
-#define STEP_SAMP_RATE 5e5
-
 /*******************************************************************
  * Constructor/destructor
  ******************************************************************/
@@ -67,7 +60,7 @@ SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
     bool cacheEnable = false;
     if (args.count("cacheCalibrations"))
     {
-        SoapySDR::logf(SOAPY_SDR_INFO, "'cacheCalibrations' setting is deprecated use 'enableCache' instead", descriptor.name);
+        SoapySDR::log(SOAPY_SDR_INFO, "'cacheCalibrations' setting is deprecated use 'enableCache' instead");
         if (std::stoi(args.at("cacheCalibrations")))
         {
             cacheEnable = true;
@@ -96,15 +89,11 @@ SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
 SoapyLMS7::~SoapyLMS7(void)
 {
     // Power down all channels
-    SDRDevice::SDRConfig config;
-
     for (uint8_t channel = 0; channel < sdrDevice->GetDescriptor().rfSOC.at(0).channelCount; channel++)
     {
-        config.channel[channel].rx.enabled = false;
-        config.channel[channel].tx.enabled = false;
+        sdrDevice->EnableChannel(0, TRXDir::Rx, channel, false);
+        sdrDevice->EnableChannel(0, TRXDir::Tx, channel, false);
     }
-
-    sdrDevice->Configure(config, 0);
 
     DeviceRegistry::freeDevice(sdrDevice);
 }
@@ -345,7 +334,7 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channe
 {
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
 
-    auto range = sdrDevice->GetDescriptor().rfSOC[0].gainRange.at(dir).at(eGainTypes::UNKNOWN);
+    auto range = sdrDevice->GetDescriptor().rfSOC.at(0).gainRange.at(dir).at(eGainTypes::UNKNOWN);
 
     return SoapySDR::Range(range.min, range.max, range.step);
 }
@@ -355,7 +344,7 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channe
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
     eGainTypes gainType = STRING_TO_GAIN_TYPES.at(name);
 
-    auto range = sdrDevice->GetDescriptor().rfSOC[0].gainRange.at(dir).at(gainType);
+    auto range = sdrDevice->GetDescriptor().rfSOC.at(0).gainRange.at(dir).at(gainType);
 
     return SoapySDR::Range(range.min, range.max, range.step);
 }
@@ -456,7 +445,8 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
     SoapySDR::RangeList ranges;
     if (name == "RF")
     {
-        ranges.push_back(SoapySDR::Range(30e6, 3.8e9));
+        auto range = sdrDevice->GetDescriptor().rfSOC.at(0).frequencyRange;
+        ranges.push_back(SoapySDR::Range(range.min, range.max, range.step));
     }
     if (name == "BB")
     {
@@ -738,9 +728,11 @@ void SoapyLMS7::writeRegister(const std::string& name, const unsigned addr, cons
 
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
+    uint8_t index = std::stoi(name.substr(4));
+
     try
     {
-        sdrDevice->WriteRegister(0, addr, value);
+        sdrDevice->WriteRegister(index, addr, value);
     } catch (...)
     {
         throw std::runtime_error("SoapyLMS7::WriteRegister(" + name + ", " + std::to_string(addr) + ") FAIL");
@@ -761,9 +753,11 @@ unsigned SoapyLMS7::readRegister(const std::string& name, const unsigned addr) c
         throw std::runtime_error("SoapyLMS7::readRegister(" + name + ") unknown interface");
     }
 
+    uint8_t index = std::stoi(name.substr(4));
+
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
-    return sdrDevice->ReadRegister(name[4] - '0', addr);
+    return sdrDevice->ReadRegister(index, addr);
 }
 
 void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)
