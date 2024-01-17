@@ -523,7 +523,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            chipIndex = chipIndexes[0];
+            chipIndex = chipIndexes.empty() ? 0 : chipIndexes[0];
             device->StreamSetup(stream, chipIndex);
         }
     } catch (std::runtime_error& e)
