@@ -28,7 +28,8 @@ static const uint8_t SPI_FPGA = 1;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 
-static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides = { { 0x0022, 0x0FFF },
+static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides = {
+    { 0x0022, 0x0FFF },
     { 0x0023, 0x5550 },
     { 0x002B, 0x0038 },
     { 0x002C, 0x0000 },
@@ -80,7 +81,8 @@ static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides
     { 0x0093, 0x01B1 },
     { 0x00A6, 0x000F },
     // XBUF
-    { 0x0085, 0x0019 } };
+    { 0x0085, 0x0019 },
+};
 
 static inline void ValidateChannel(uint8_t channel)
 {
@@ -390,7 +392,7 @@ int LimeSDR_XTRX::Init()
 
 void LimeSDR_XTRX::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
-    throw std::logic_error("LimeSDR_XTRX::SetSampleRate not implemented currently. TODO: implement");
+    LMS1_SetSampleRate(sampleRate, oversample, oversample);
 }
 
 double LimeSDR_XTRX::GetClockFreq(uint8_t clk_id, uint8_t channel)
