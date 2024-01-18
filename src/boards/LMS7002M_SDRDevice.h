@@ -147,6 +147,8 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
   private:
     int SetGenericRxGain(LMS7002M* device, LMS7002M::Channel channel, double value);
     int SetGenericTxGain(LMS7002M* device, LMS7002M::Channel channel, double value);
+
+    std::unordered_map<TRXDir, std::unordered_map<uint8_t, double>> lowPassFilterCache;
 };
 
 } // namespace lime

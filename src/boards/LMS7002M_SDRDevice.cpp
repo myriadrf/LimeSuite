@@ -370,12 +370,53 @@ void LMS7002M_SDRDevice::SetNCOFrequency(
 
 double LMS7002M_SDRDevice::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    throw std::logic_error("GetLowPassFilter not implemented currently. TODO: implement");
+    return lowPassFilterCache[trx][channel]; // Default initializes to 0
 }
 
 void LMS7002M_SDRDevice::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf)
 {
-    throw std::logic_error("SetLowPassFilter not implemented currently. TODO: implement");
+    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+
+    LMS7002M::Channel ch = channel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB;
+
+    lms->SetActiveChannel(ch);
+
+    const auto& bw_range = mDeviceDescriptor.rfSOC.at(moduleIndex).lowPassFilterRange.at(trx);
+    bool tx = trx == TRXDir::Tx;
+
+    if (lpf < 0)
+    {
+        lpf = lowPassFilterCache[trx][channel]; // Default initializes to 0
+    }
+
+    double newLPF = std::clamp(lpf, bw_range.min, bw_range.max);
+
+    if (newLPF != lpf)
+    {
+        lime::warning("%cXLPF set to %.3f MHz (requested %0.3f MHz [out of range])", tx ? 'T' : 'R', newLPF / 1e6, lpf / 1e6);
+    }
+
+    lpf = newLPF;
+    lowPassFilterCache[trx][channel] = lpf;
+
+    int status = 0;
+    if (tx)
+    {
+        int gain = lms->GetTBBIAMP_dB(ch);
+        status = lms->TuneTxFilter(lpf);
+        lms->SetTBBIAMP_dB(gain, ch);
+    }
+    else
+    {
+        status = lms->TuneRxFilter(lpf);
+    }
+
+    if (status != 0)
+    {
+        throw std::runtime_error("Failed to set Low Pass Filter");
+    }
+
+    lime::info("%cX LPF configured", tx ? 'T' : 'R');
 }
 
 uint8_t LMS7002M_SDRDevice::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
