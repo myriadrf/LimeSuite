@@ -797,7 +797,31 @@ double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channe
 
 void LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
-    throw std::logic_error("LimeSDR_X3::SetSampleRate not implemented currently. TODO: implement");
+    if (moduleIndex == 0 && sampleRate > 0)
+    {
+        LMS1_SetSampleRate(sampleRate, oversample, oversample);
+    }
+    else if (moduleIndex == 1 && sampleRate > 0)
+    {
+        Equalizer::Config eqCfg;
+        for (int i = 0; i < 2; ++i)
+        {
+            eqCfg.bypassRxEqualizer[i] = true;
+            eqCfg.bypassTxEqualizer[i] = true;
+            eqCfg.cfr[i].bypass = true;
+            eqCfg.cfr[i].sleep = true;
+            eqCfg.cfr[i].bypassGain = true;
+            eqCfg.cfr[i].interpolation = oversample;
+            eqCfg.fir[i].sleep = true;
+            eqCfg.fir[i].bypass = true;
+        }
+        mEqualizer->Configure(eqCfg);
+        LMS2_SetSampleRate(sampleRate, oversample);
+    }
+    else if (moduleIndex == 2 && sampleRate > 0)
+    {
+        LMS3_SetSampleRate_ExternalDAC(sampleRate, sampleRate);
+    }
 }
 
 double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)

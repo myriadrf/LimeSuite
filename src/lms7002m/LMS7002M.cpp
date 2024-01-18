@@ -3297,16 +3297,9 @@ float_type LMS7002M::GetSampleRate(TRXDir dir, Channel ch)
 
 float_type LMS7002M::GetSampleRate(TRXDir dir)
 {
-    uint16_t ratio;
+    const auto& parameter = dir == TRXDir::Tx ? LMS7_HBI_OVR_TXTSP : LMS7_HBD_OVR_RXTSP;
 
-    if (dir == TRXDir::Tx)
-    {
-        ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-    }
-    else
-    {
-        ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-    }
+    uint16_t ratio = Get_SPI_Reg_bits(parameter);
 
     double interface_Hz = GetReferenceClk_TSP(dir);
 
