@@ -35,11 +35,20 @@ float_type LMS7002M::gCGEN_VCO_frequencies[2] = { 1930e6, 2940e6 };
 extern std::vector<std::reference_wrapper<const LMS7Parameter>> LMS7parameterList;
 
 // Module addresses needs to be sorted in ascending order
-const uint16_t LMS7002M::readOnlyRegisters[] = {
-    0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F
-};
-const uint16_t LMS7002M::readOnlyRegistersMasks[] = {
-    0x0000, 0x0FFF, 0x007F, 0x0000, 0x0000, 0x0000, 0x0000, 0x003F, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+const std::vector<LMS7002M::ReadOnlyRegister> LMS7002M::readOnlyRegisters{
+    { 0x002F, 0x0000 },
+    { 0x008C, 0x0FFF },
+    { 0x00A8, 0x007F },
+    { 0x00A9, 0x0000 },
+    { 0x00AA, 0x0000 },
+    { 0x00AB, 0x0000 },
+    { 0x00AC, 0x0000 },
+    { 0x0123, 0x003F },
+    { 0x0209, 0x0000 },
+    { 0x020A, 0x0000 },
+    { 0x020B, 0x0000 },
+    { 0x040E, 0x0000 },
+    { 0x040F, 0x0000 },
 };
 
 /** @brief Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope */
@@ -177,7 +186,6 @@ LMS7002M::LMS7002M(std::shared_ptr<ISPI> port)
     , useCache(0)
     , mRegistersMap(new LMS7002M_RegistersMap())
     , controlPort(port)
-    , mSelfCalDepth(0)
     , _cachedRefClockRate(30.72e6)
 {
     mCalibrationByMCU = true;
@@ -2640,13 +2648,17 @@ int LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16
         addrToWrite.push_back(addr);
     }
     dataMasks.resize(addrToWrite.size(), 0xFFFF);
-    for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
-        for (uint16_t k = 0; k < addrToWrite.size(); ++k)
-            if (readOnlyRegisters[j] == addrToWrite[k])
+    for (std::size_t j = 0; j < readOnlyRegisters.size(); ++j)
+    {
+        for (std::size_t k = 0; k < addrToWrite.size(); ++k)
+        {
+            if (readOnlyRegisters[j].address == addrToWrite[k])
             {
-                dataMasks[k] = readOnlyRegistersMasks[j];
+                dataMasks[k] = readOnlyRegisters[j].mask;
                 break;
             }
+        }
+    }
 
     dataToWrite.clear();
     dataReceived.clear();
@@ -2758,17 +2770,19 @@ bool LMS7002M::IsSynced()
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
         uint16_t regValue = mRegistersMap->GetValue(0, addrToRead[i]);
-        if (addrToRead[i] <= readOnlyRegisters[sizeof(readOnlyRegisters) / sizeof(uint16_t) - 1] &&
-            addrToRead[i] >= readOnlyRegisters[0])
+        if (addrToRead[i] <= readOnlyRegisters[readOnlyRegisters.size() - 1].address &&
+            addrToRead[i] >= readOnlyRegisters[0].address)
         {
             //mask out readonly bits
-            for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
-                if (readOnlyRegisters[j] == addrToRead[i])
+            for (std::size_t j = 0; j < readOnlyRegisters.size(); ++j)
+            {
+                if (readOnlyRegisters[j].address == addrToRead[i])
                 {
-                    dataReceived[i] &= readOnlyRegistersMasks[j];
-                    regValue &= readOnlyRegistersMasks[j];
+                    dataReceived[i] &= readOnlyRegisters[j].mask;
+                    regValue &= readOnlyRegisters[j].mask;
                     break;
                 }
+            }
         }
         if (dataReceived[i] != regValue)
         {
@@ -2793,17 +2807,19 @@ bool LMS7002M::IsSynced()
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
         uint16_t regValue = mRegistersMap->GetValue(1, addrToRead[i]);
-        if (addrToRead[i] <= readOnlyRegisters[sizeof(readOnlyRegisters) / sizeof(uint16_t) - 1] &&
-            addrToRead[i] >= readOnlyRegisters[0])
+        if (addrToRead[i] <= readOnlyRegisters[readOnlyRegisters.size() - 1].address &&
+            addrToRead[i] >= readOnlyRegisters[0].address)
         {
             //mask out readonly bits
-            for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
-                if (readOnlyRegisters[j] == addrToRead[i])
+            for (std::size_t j = 0; j < readOnlyRegisters.size(); ++j)
+            {
+                if (readOnlyRegisters[j].address == addrToRead[i])
                 {
-                    dataReceived[i] &= readOnlyRegistersMasks[j];
-                    regValue &= readOnlyRegistersMasks[j];
+                    dataReceived[i] &= readOnlyRegisters[j].mask;
+                    regValue &= readOnlyRegisters[j].mask;
                     break;
                 }
+            }
         }
         if (dataReceived[i] != regValue)
         {
