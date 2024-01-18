@@ -558,23 +558,23 @@ void LimeSDR_Mini::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channe
             interpolation + 1); // dec/inter ratio is 2^(value+1)
     }
 
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR, 1);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR, 1);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML, !bypass);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR, 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR, 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML, !bypass);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     if (bypass)
     {
-        mLMSChips[moduleIndex]->SetInterfaceFrequency(sampleRate * 4, 7, 7);
+        mLMSChips.at(moduleIndex)->SetInterfaceFrequency(sampleRate * 4, 7, 7);
     }
     else
     {
-        mLMSChips[moduleIndex]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
+        mLMSChips.at(moduleIndex)->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
     }
 }
 

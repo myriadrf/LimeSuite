@@ -340,13 +340,13 @@ void LimeSDR::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, do
             interpolation + 1); // dec/inter ratio is 2^(value+1)
     }
 
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    mLMSChips[moduleIndex]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[moduleIndex]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips.at(moduleIndex)->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
 
 int LimeSDR::Init()
