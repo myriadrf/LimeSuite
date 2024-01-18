@@ -279,22 +279,17 @@ void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t c
         if (channelOffset + rate / 2.0 >= rate / 2.0)
         {
             SetSampleRate(moduleIndex, trx, channel, rate, 2);
-            // return -1;
             return;
         }
         else
         {
-            auto returnValue = lms->SetNCOFrequency(trx, 0, channelOffset * (trx == TRXDir::Tx ? -1.0 : 1.0));
-            if (returnValue != 0)
-            {
-                throw std::runtime_error("SetNCOFrequency failed");
-            }
+            SetNCOFrequency(moduleIndex, trx, channel, 0, channelOffset * (trx == TRXDir::Tx ? -1.0 : 1.0));
         }
     }
 
     if (channelOffset != 0)
     {
-        lms->SetNCOFrequency(trx, -1, 0.0);
+        SetNCOFrequency(moduleIndex, trx, channel, -1, 0.0);
     }
 
     setTDD(frequency);
@@ -341,7 +336,7 @@ void LMS7002M_SDRDevice::SetNCOFrequency(
         throw std::runtime_error("Failure in LMS7002M_SDRDevice::SetNCOFrequency");
     }
 
-    if ((index >= 0) && (lms->SetNCOFrequency(trx, index, std::fabs(frequency)) != 0))
+    if ((index >= 0 && index <= 15) && (lms->SetNCOFrequency(trx, index, std::fabs(frequency)) != 0))
     {
         throw std::runtime_error("Failure while in LMS7002M::SetNCOFrequency");
     }
