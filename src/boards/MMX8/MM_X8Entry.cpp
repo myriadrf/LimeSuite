@@ -60,18 +60,26 @@ std::vector<DeviceHandle> LimeSDR_MMX8Entry::enumerate(const DeviceHandle& hint)
 
     for (const auto& devPath : devices)
     {
-        size_t pos = devPath.find(searchDevName);
+        std::size_t pos = devPath.find(searchDevName);
         if (pos == std::string::npos)
+        {
             continue;
+        }
 
         if (!hint.addr.empty() && devPath.find(hint.addr) == std::string::npos)
+        {
             continue;
+        }
 
         std::string dev_nr(&devPath[pos + searchDevName.length()], &devPath[devPath.find("_")]);
         handle.name = GetDeviceName(LMS_DEV_LIMESDR_MMX8) + (dev_nr == "0" ? "" : " (" + dev_nr + ")");
 
         handle.addr = devPath.substr(0, devPath.find("_"));
-        handles.push_back(handle);
+
+        if (handle.IsEqualIgnoringEmpty(hint))
+        {
+            handles.push_back(handle);
+        }
     }
     return handles;
 }

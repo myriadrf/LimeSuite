@@ -30,7 +30,7 @@ std::vector<DeviceHandle> DeviceRegistry::enumerate(const DeviceHandle& hint)
     for (const auto& entry : registryEntries)
     {
         // filter by media type if specified
-        if (not hint.media.empty() and hint.media != entry.first)
+        if (not hint.deviceType.empty() and hint.deviceType != entry.first)
             continue;
 
         for (auto handle : entry.second->enumerate(hint))

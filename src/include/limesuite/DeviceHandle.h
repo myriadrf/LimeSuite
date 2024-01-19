@@ -39,6 +39,9 @@ class LIME_API DeviceHandle
      */
     std::string media;
 
+    /// @brief The type of the device. Example: LimeSDR, LimeSDR_XTRX, LimeSDR_MMX8
+    std::string deviceType;
+
     /// The name of the device. Example: STREAM, NOVENA.
     std::string name;
 
@@ -59,6 +62,14 @@ class LIME_API DeviceHandle
      * @return a string that may be printed
      */
     std::string ToString(void) const;
+
+    /*!
+     * Checks whether both handles are equal, but ignoring fields that are empty on the passed in one.
+     * NOTE: foo.IsEqualIgnoringEmpty(bar) IS NOT EQUAL TO bar.IsEqualIgnoringEmpty(foo)
+     * @param other The handle to compare to (empty values from this one are ignored)
+     * @return Whether both DeviceHandles are equal (ignoring empty fields)
+     */
+    bool IsEqualIgnoringEmpty(const DeviceHandle& other) const;
 };
 
 } // namespace lime
