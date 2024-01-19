@@ -501,12 +501,11 @@ int main(int argc, char** argv)
 
         if (syncPPS || rxSamplesInPacket || rxPacketsInBatch || txSamplesInPacket || txPacketsInBatch)
         {
-            stream.extraConfig = new SDRDevice::StreamConfig::Extras();
-            stream.extraConfig->waitPPS = syncPPS;
-            stream.extraConfig->rxSamplesInPacket = rxSamplesInPacket;
-            stream.extraConfig->txSamplesInPacket = txSamplesInPacket;
-            stream.extraConfig->rxPacketsInBatch = rxPacketsInBatch;
-            stream.extraConfig->txMaxPacketsInBatch = txPacketsInBatch;
+            stream.extraConfig.waitPPS = syncPPS;
+            stream.extraConfig.rxSamplesInPacket = rxSamplesInPacket;
+            stream.extraConfig.txSamplesInPacket = txSamplesInPacket;
+            stream.extraConfig.rxPacketsInBatch = rxPacketsInBatch;
+            stream.extraConfig.txMaxPacketsInBatch = txPacketsInBatch;
         }
 
         useComposite = chipIndexes.size() > 1;

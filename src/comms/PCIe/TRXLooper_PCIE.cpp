@@ -166,9 +166,9 @@ int TRXLooper_PCIE::TxSetup()
     int samplesInPkt = 256; //(mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / chCount;
     const int packetSize = sizeof(StreamHeader) + samplesInPkt * sampleSize * chCount;
 
-    if (mConfig.extraConfig && mConfig.extraConfig->txSamplesInPacket != 0)
+    if (mConfig.extraConfig.txSamplesInPacket != 0)
     {
-        samplesInPkt = mConfig.extraConfig->txSamplesInPacket;
+        samplesInPkt = mConfig.extraConfig.txSamplesInPacket;
         printf("Tx samples overide %i\n", samplesInPkt);
     }
 
@@ -176,8 +176,10 @@ int TRXLooper_PCIE::TxSetup()
 
     LitePCIe::DMAInfo dma = mTxArgs.port->GetDMAInfo();
 
-    if (mConfig.extraConfig && mConfig.extraConfig->txMaxPacketsInBatch != 0)
-        mTx.packetsToBatch = mConfig.extraConfig->txMaxPacketsInBatch;
+    if (mConfig.extraConfig.txMaxPacketsInBatch != 0)
+    {
+        mTx.packetsToBatch = mConfig.extraConfig.txMaxPacketsInBatch;
+    }
 
     mTx.packetsToBatch = clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
@@ -459,7 +461,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     std::this_thread::yield();
                     break;
                 }
-                if (mConfig.extraConfig != nullptr && mConfig.extraConfig->negateQ)
+                if (mConfig.extraConfig.negateQ)
                 {
                     switch (mConfig.format)
                     {
@@ -516,10 +518,14 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
         bool canSend = pendingBuffers < overflowLimit;
         if (!canSend)
         {
-            if (mConfig.extraConfig == nullptr || mConfig.extraConfig->usePoll)
+            if (mConfig.extraConfig.usePoll)
+            {
                 canSend = mTxArgs.port->WaitTx();
+            }
             else
+            {
                 std::this_thread::yield();
+            }
         }
         // send output buffer if possible
         if (outputReady && canSend)
@@ -675,14 +681,16 @@ void TRXLooper_PCIE::TxTeardown()
 int TRXLooper_PCIE::RxSetup()
 {
     mRx.lastTimestamp.store(0, std::memory_order_relaxed);
-    const bool usePoll = mConfig.extraConfig ? mConfig.extraConfig->usePoll : true;
+    const bool usePoll = mConfig.extraConfig.usePoll;
     const int chCount = std::max(mConfig.channels.at(lime::TRXDir::Rx).size(), mConfig.channels.at(lime::TRXDir::Tx).size());
     const int sampleSize = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 4 : 3); // sizeof IQ pair
     const int maxSamplesInPkt = 1024 / chCount;
 
     int requestSamplesInPkt = 256; //maxSamplesInPkt;
-    if (mConfig.extraConfig && mConfig.extraConfig->rxSamplesInPacket != 0)
-        requestSamplesInPkt = mConfig.extraConfig->rxSamplesInPacket;
+    if (mConfig.extraConfig.rxSamplesInPacket != 0)
+    {
+        requestSamplesInPkt = mConfig.extraConfig.rxSamplesInPacket;
+    }
 
     int samplesInPkt = clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
     int payloadSize = requestSamplesInPkt * sampleSize * chCount;
@@ -703,8 +711,11 @@ int TRXLooper_PCIE::RxSetup()
 
     LitePCIe::DMAInfo dma = mRxArgs.port->GetDMAInfo();
 
-    if (mConfig.extraConfig && mConfig.extraConfig->rxPacketsInBatch != 0)
-        mRx.packetsToBatch = mConfig.extraConfig->rxPacketsInBatch;
+    if (mConfig.extraConfig.rxPacketsInBatch != 0)
+    {
+        mRx.packetsToBatch = mConfig.extraConfig.rxPacketsInBatch;
+    }
+
     mRx.packetsToBatch = clamp((int)mRx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
     int irqPeriod = 16;
@@ -872,12 +883,16 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
         if (!buffersAvailable)
         {
-            if (!mConfig.extraConfig || (mConfig.extraConfig && mConfig.extraConfig->usePoll))
+            if (mConfig.extraConfig.usePoll)
             {
                 if (mRxArgs.port->WaitRx())
+                {
                     continue;
+                }
                 else
+                {
                     std::this_thread::yield();
+                }
             }
             continue;
         }
@@ -911,7 +926,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
 
         if (outputPkt)
         {
-            if (mConfig.extraConfig != nullptr && mConfig.extraConfig->negateQ)
+            if (mConfig.extraConfig.negateQ)
             {
                 switch (mConfig.format)
                 {

@@ -233,7 +233,6 @@ struct LimeState {
     double rx_LO_override[TRX_MAX_RF_PORT];
     double tx_LO_override[TRX_MAX_RF_PORT];
     std::vector<uint32_t> writeRegisters[TRX_MAX_RF_PORT];
-    SDRDevice::StreamConfig::Extras* streamExtras[TRX_MAX_RF_PORT];
 
     LimeState()
     {
@@ -255,7 +254,6 @@ struct LimeState {
         memnull(gpga);
         memnull(rxOversample);
         memnull(txOversample);
-        memnull(streamExtras);
         memnull(rx_LO_override);
         memnull(tx_LO_override);
 #undef memnull
@@ -501,9 +499,9 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 {
     LimeState* lime = (LimeState*)s1->opaque;
     int txExpectedSamples = lime->samplesInPacket[0];
-    if (lime->streamExtras[0] && lime->streamExtras[0]->txSamplesInPacket > 0)
+    if (lime->streamCfg[0].extraConfig.txSamplesInPacket > 0)
     {
-        txExpectedSamples = lime->streamExtras[0]->txSamplesInPacket;
+        txExpectedSamples = lime->streamCfg[0].extraConfig.txSamplesInPacket;
     }
     Log(LogLevel::DEBUG, "Hardware expected samples count in Tx packet : %i\n", txExpectedSamples);
     return txExpectedSamples;
@@ -795,7 +793,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
             stream.userData = (void*)&portStreamStates[p];
             stream.hintSampleRate = samplingRate;
 
-            stream.extraConfig = lime->streamExtras[p] ? lime->streamExtras[p] : nullptr;
+            stream.extraConfig = lime->streamCfg[p].extraConfig;
 
             lime->samplesInPacket[p] = 256;
             Log(LogLevel::DEBUG,
@@ -1186,50 +1184,44 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                 free(writeRegisters);
             }
 
-            SDRDevice::StreamConfig::Extras* extra = new SDRDevice::StreamConfig::Extras();
+            SDRDevice::StreamConfig::Extras extra;
 
             sprintf(varname, "port%i_syncPPS", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->waitPPS = val != 0;
-                s->streamExtras[p] = extra;
+                extra.waitPPS = val != 0;
             }
             sprintf(varname, "port%i_usePoll", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->usePoll = val != 0;
-                s->streamExtras[p] = extra;
+                extra.usePoll = val != 0;
             }
             sprintf(varname, "port%i_rxSamplesInPacket", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->rxSamplesInPacket = val;
-                s->streamExtras[p] = extra;
+                extra.rxSamplesInPacket = val;
             }
             sprintf(varname, "port%i_rxPacketsInBatch", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->rxPacketsInBatch = val;
-                s->streamExtras[p] = extra;
+                extra.rxPacketsInBatch = val;
             }
             sprintf(varname, "port%i_txMaxPacketsInBatch", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->txMaxPacketsInBatch = val;
-                s->streamExtras[p] = extra;
+                extra.txMaxPacketsInBatch = val;
             }
             sprintf(varname, "port%i_txSamplesInPacket", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->txSamplesInPacket = val;
-                s->streamExtras[p] = extra;
+                extra.txSamplesInPacket = val;
             }
             sprintf(varname, "port%i_double_freq_conversion_to_lower_side", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->negateQ = val;
-                s->streamExtras[p] = extra;
+                extra.negateQ = val;
             }
+            s->streamCfg->extraConfig = extra;
         }
 
         // TODO: right now no need to specify samples format, as only floating point is supported by Amarisoft

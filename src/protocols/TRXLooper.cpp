@@ -516,8 +516,10 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     constexpr uint16_t waitGPS_PPS = 1 << 2;
     int interface_ctrl_000A = fpga->ReadRegister(0x000A);
     interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
-    if (cfg.extraConfig && cfg.extraConfig->waitPPS)
+    if (cfg.extraConfig.waitPPS)
+    {
         interface_ctrl_000A |= waitGPS_PPS;
+    }
     fpga->WriteRegister(0x000A, interface_ctrl_000A);
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.

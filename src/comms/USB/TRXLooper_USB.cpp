@@ -259,6 +259,7 @@ int TRXLooper_USB::RxSetup()
 */
 void TRXLooper_USB::ReceivePacketsLoop()
 {
+    const uint8_t safeRxEndPt = rxEndPt; // To make sure no undefined behaviour happens when killing the thread
     //at this point FPGA has to be already configured to output samples
 
     DataConversion conversion;
@@ -282,7 +283,6 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     SamplesPacketType* outputPkt = nullptr;
     int64_t expectedTS = 0;
-    const uint8_t safeRxEndPt = rxEndPt; // To make sure no undefined behaviour happens when killing the thread
 
     SDRDevice::StreamStats& stats = mRx.stats;
 
@@ -412,7 +412,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
 void TRXLooper_USB::NegateQ(SamplesPacketType* packet, TRXDir direction)
 {
-    if (mConfig.extraConfig == nullptr || !mConfig.extraConfig->negateQ)
+    if (!mConfig.extraConfig.negateQ)
     {
         return;
     }

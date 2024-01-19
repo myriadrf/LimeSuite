@@ -158,8 +158,6 @@ class LIME_API SDRDevice
         };
 
         StreamConfig();
-        ~StreamConfig();
-        StreamConfig& operator=(const StreamConfig& srd);
 
         std::unordered_map<TRXDir, std::vector<uint8_t>> channels;
 
@@ -179,7 +177,7 @@ class LIME_API SDRDevice
         void* userData; // will be supplied to statusCallback
         // TODO: callback for drops and errors
 
-        Extras* extraConfig;
+        Extras extraConfig;
     };
 
     struct StreamMeta {
