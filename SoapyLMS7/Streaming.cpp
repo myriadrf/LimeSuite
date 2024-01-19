@@ -132,7 +132,7 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
     stream->hasCmd = false;
     stream->skipCal = args.count("skipCal") != 0 and args.at("skipCal") == "true";
 
-    SDRDevice::StreamConfig config;
+    SDRDevice::StreamConfig& config = streamConfig;
     config.alignPhase = args.count("alignPhase") != 0 and args.at("alignPhase") == "true";
     // config.performanceLatency = 0.5;
     config.bufferSize = 0; // Auto
@@ -247,6 +247,7 @@ void SoapyLMS7::closeStream(SoapySDR::Stream* stream)
 
     const auto& ownerDevice = icstream->ownerDevice;
     ownerDevice->StreamStop(0);
+    delete icstream;
 }
 
 size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream* stream) const

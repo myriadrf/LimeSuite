@@ -181,9 +181,9 @@ class LIME_API SDRDevice
     };
 
     struct StreamMeta {
-        int64_t timestamp;
-        bool useTimestamp;
-        bool flush; // submit data to hardware without waiting for full buffer
+        int64_t timestamp = 0;
+        bool useTimestamp = false;
+        bool flush = false; // submit data to hardware without waiting for full buffer
     };
 
     struct ChannelConfig {

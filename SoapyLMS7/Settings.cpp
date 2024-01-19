@@ -27,6 +27,7 @@ using namespace lime;
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
     : _moduleName(handle.module)
+    , streamConfig()
     , sampleRate{ 0.0, 0.0 }
     , oversampling(0) // Auto
 {

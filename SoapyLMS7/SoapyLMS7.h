@@ -267,6 +267,8 @@ class SoapyLMS7 : public SoapySDR::Device
     lime::SDRDevice* sdrDevice;
     std::set<SoapySDR::Stream*> activeStreams;
 
+    lime::SDRDevice::StreamConfig streamConfig;
+
     mutable std::recursive_mutex _accessMutex;
 
     std::array<double, 2> sampleRate; // sampleRate[direction]
