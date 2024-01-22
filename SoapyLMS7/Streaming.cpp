@@ -341,7 +341,7 @@ int SoapyLMS7::readStream(
     const int64_t cmdTicks =
         ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0) ? SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate[SOAPY_SDR_RX]) : 0;
 
-    int status;
+    int status = 0;
     switch (icstream->streamConfig.format)
     {
     case SDRDevice::StreamConfig::DataFormat::I16:
@@ -450,7 +450,7 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     metadata.useTimestamp = (flags & SOAPY_SDR_HAS_TIME);
     metadata.flush = (flags & SOAPY_SDR_END_BURST);
 
-    int status;
+    int status = 0;
     switch (icstream->streamConfig.format)
     {
     case SDRDevice::StreamConfig::DataFormat::I16:
