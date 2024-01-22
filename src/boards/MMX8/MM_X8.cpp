@@ -200,16 +200,6 @@ double LimeSDR_MMX8::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t chann
     return mSubDevices[moduleIndex]->GetNCOOffset(0, trx, channel);
 }
 
-void LimeSDR_MMX8::SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset)
-{
-    if (moduleIndex >= 8)
-    {
-        moduleIndex = 0;
-    }
-
-    return mSubDevices[moduleIndex]->SetNCOOffset(0, trx, channel, offset);
-}
-
 double LimeSDR_MMX8::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     if (moduleIndex >= 8)

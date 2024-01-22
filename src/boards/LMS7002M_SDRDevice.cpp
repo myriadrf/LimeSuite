@@ -300,11 +300,6 @@ double LMS7002M_SDRDevice::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t
     return GetFrequency(moduleIndex, trx, channel) - GetNCOFrequency(moduleIndex, trx, channel, 0);
 }
 
-void LMS7002M_SDRDevice::SetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double offset)
-{
-    throw std::logic_error("SetNCOOffset not implemented currently. TODO: implement");
-}
-
 double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index)
 {
     lime::LMS7002M* lms = mLMSChips.at(channel / 2);
