@@ -20,6 +20,23 @@ TRXLooper_USB::TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002
 
 TRXLooper_USB::~TRXLooper_USB()
 {
+    Stop();
+    mRx.terminate.store(true, std::memory_order_relaxed);
+    mTx.terminate.store(true, std::memory_order_relaxed);
+
+    // Thread joining code has to be as high as possible,
+    // so that every variable and virtual function is still properly accessible when the thread is still executing.
+    // Otherwise, it can cause crashes when the destructor is being called before the thread is fully stopped and
+    // it is still trying to access variables, or, even worse, virtual functions of the class.
+    if (mTx.thread.joinable())
+    {
+        mTx.thread.join();
+    }
+
+    if (mRx.thread.joinable())
+    {
+        mRx.thread.join();
+    }
 }
 
 void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)

@@ -106,6 +106,23 @@ TRXLooper_PCIE::TRXLooper_PCIE(
 
 TRXLooper_PCIE::~TRXLooper_PCIE()
 {
+    Stop();
+    mRx.terminate.store(true, std::memory_order_relaxed);
+    mTx.terminate.store(true, std::memory_order_relaxed);
+
+    // Thread joining code has to be as high as possible,
+    // so that every variable and virtual function is still properly accessible when the thread is still executing.
+    // Otherwise, it can cause crashes when the destructor is being called before the thread is fully stopped and
+    // it is still trying to access variables, or, even worse, virtual functions of the class.
+    if (mTx.thread.joinable())
+    {
+        mTx.thread.join();
+    }
+
+    if (mRx.thread.joinable())
+    {
+        mRx.thread.join();
+    }
 }
 
 void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)

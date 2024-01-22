@@ -39,13 +39,6 @@ TRXLooper::TRXLooper(FPGA* f, LMS7002M* chip, int id)
 
 TRXLooper::~TRXLooper()
 {
-    Stop();
-    mRx.terminate.store(true, std::memory_order_relaxed);
-    mTx.terminate.store(true, std::memory_order_relaxed);
-    if (mTx.thread.joinable())
-        mTx.thread.join();
-    if (mRx.thread.joinable())
-        mRx.thread.join();
 }
 
 uint64_t TRXLooper::GetHardwareTimestamp(void)
