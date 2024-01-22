@@ -179,6 +179,9 @@ if(ENABLE_TESTING)
       GIT_TAG        b10fad38c4026a29ea6561ab15fc4818170d1c10 # latest main at the time of writing this
     )
 
+    set(INSTALL_GMOCK OFF) # Don't install the GMock headers
+    set(INSTALL_GTEST OFF) # Don't install the GTest headers
+
     FetchContent_MakeAvailable(googletest)
 
     enable_testing()
