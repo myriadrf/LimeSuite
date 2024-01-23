@@ -1041,6 +1041,7 @@ void LimeSDR_X3::LMS1SetPath(TRXDir dir, uint8_t chan, uint8_t pathId)
         case ePathLMS1_Rx::LNAL:
             path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAL);
             break;
+        // TODO:
         //case ePathLMS1_Rx::LNAW : path = LMS7002M::LNAW; break;
         default:
             throw std::logic_error("Invalid LMS1 Rx path");

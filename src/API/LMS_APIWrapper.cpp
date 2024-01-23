@@ -275,9 +275,10 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     try
     {
-        apiDevice->device->EnableChannel(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, enabled);
+        apiDevice->device->EnableChannel(apiDevice->moduleIndex, direction, chan, enabled);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -317,9 +318,11 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx,
         return -1;
     }
 
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
     try
     {
-        apiDevice->device->SetSampleRate(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, 0, rate, oversample);
+        apiDevice->device->SetSampleRate(apiDevice->moduleIndex, direction, 0, rate, oversample);
 
     } catch (...)
     {
@@ -339,7 +342,8 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
-    auto rate = apiDevice->device->GetSampleRate(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, 0);
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    auto rate = apiDevice->device->GetSampleRate(apiDevice->moduleIndex, direction, 0);
 
     *host_Hz = rate;
     *rf_Hz = rate;
@@ -447,9 +451,11 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
         return -1;
     }
 
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
     try
     {
-        apiDevice->device->SetAntenna(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, path);
+        apiDevice->device->SetAntenna(apiDevice->moduleIndex, direction, chan, path);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -468,7 +474,9 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_
         return -1;
     }
 
-    return apiDevice->device->GetAntenna(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan);
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
+    return apiDevice->device->GetAntenna(apiDevice->moduleIndex, direction, chan);
 }
 
 API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
@@ -496,9 +504,11 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
         return -1;
     }
 
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
     try
     {
-        apiDevice->device->SetLowPassFilter(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, bandwidth);
+        apiDevice->device->SetLowPassFilter(apiDevice->moduleIndex, direction, chan, bandwidth);
         apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
     } catch (...)
     {

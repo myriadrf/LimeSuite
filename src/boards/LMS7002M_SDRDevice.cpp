@@ -180,6 +180,7 @@ double LMS7002M_SDRDevice::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t
 {
     lime::LMS7002M* lms = mLMSChips.at(channel / 2);
 
+    // TODO:
     // double offset = GetNCOOffset(moduleIndex, trx, channel);
 
     if (trx == TRXDir::Rx)
@@ -211,10 +212,7 @@ void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t c
 
     auto channelOffset = channel == chA ? channelANCOOffset : channelBNCOOffset;
 
-    // std::vector<ChannelInfo>& channels = isTx ? tx_channels : rx_channels;
-
     auto setTDD = [&](double center) {
-        // std::vector<ChannelInfo>& other = isTx ? rx_channels : tx_channels;
         TRXDir otherDir = trx == TRXDir::Rx ? TRXDir::Tx : TRXDir::Rx;
         auto otherFrequency = GetFrequency(moduleIndex, otherDir, chA);
         auto otherOffset = GetNCOOffset(moduleIndex, otherDir, chA);
@@ -232,8 +230,6 @@ void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t c
 
         return;
     };
-
-    // channels[chan].freq = frequency;
 
     if (channel == chA)
     {
@@ -263,7 +259,6 @@ void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t c
                 setTDD(center);
 
                 SetSampleRate(moduleIndex, trx, channel, rate, 2);
-                // return -1;
                 return;
             }
         }
@@ -274,7 +269,6 @@ void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t c
         setTDD(30e6);
 
         channelOffset = 30e6 - frequency;
-        // double rf_rate;
         double rate = GetSampleRate(moduleIndex, trx, channel);
         if (channelOffset + rate / 2.0 >= rate / 2.0)
         {

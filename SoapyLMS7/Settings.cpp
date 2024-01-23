@@ -174,6 +174,8 @@ void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std:
         if (nameList[path] == name)
         {
             sdrDevice->SetAntenna(0, dir, channel, path);
+
+            // TODO:
             // sdrDevice->Calibrate(0, dir, channel, sdrDevice->GetFrequency(0, dir, channel));
             return;
         }
@@ -387,9 +389,9 @@ void SoapyLMS7::setFrequency(
         {
             sdrDevice->SetClockFreq(clkId, frequency, channel);
             sdrDevice->SetFrequency(0, dir, channel, frequency);
-            // sdrDevice->Calibrate(0, dir, channel, frequency);
 
-            // _channelsToCal.emplace(direction, channel);
+            // TODO:
+            // sdrDevice->Calibrate(0, dir, channel, frequency);
             return;
         } catch (...)
         {
@@ -474,6 +476,7 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    // TODO: check if it's valid logic
     // auto streams = activeStreams;
     // for (auto s : streams)
     // {
@@ -486,6 +489,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     {
         sdrDevice->SetSampleRate(0, direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx, channel, rate, oversampling);
 
+        // TODO: check if it's valid logic
         // for (auto s : streams)
         // {
         //     activateStream(s);
@@ -534,6 +538,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     try
     {
         sdrDevice->SetLowPassFilter(0, dir, channel, bw);
+        // TODO:
         // sdrDevice->Calibrate(0, dir, channel, bw);
     } catch (...)
     {
