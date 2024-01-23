@@ -506,14 +506,19 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     fpga->WriteRegister(0x0007, channelEnables);
     fpga->ResetTimestamp();
 
-    constexpr uint16_t waitGPS_PPS = 1 << 2;
-    int interface_ctrl_000A = fpga->ReadRegister(0x000A);
-    interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
-    if (cfg.extraConfig.waitPPS)
+    // XTRX has RF switches control bits where the GPS_PPS control should be.
+    bool hasGPSPPS = fpga->ReadRegister(0x0000) != LMS_DEV_LIMESDR_XTRX;
+    if (hasGPSPPS)
     {
-        interface_ctrl_000A |= waitGPS_PPS;
+        constexpr uint16_t waitGPS_PPS = 1 << 2;
+        int interface_ctrl_000A = fpga->ReadRegister(0x000A);
+        interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
+        if (cfg.extraConfig.waitPPS)
+        {
+            interface_ctrl_000A |= waitGPS_PPS;
+        }
+        fpga->WriteRegister(0x000A, interface_ctrl_000A);
     }
-    fpga->WriteRegister(0x000A, interface_ctrl_000A);
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.
     // if the thread blocks for too long, Linux can trigger RT throttling
