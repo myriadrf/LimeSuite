@@ -26,7 +26,7 @@ using namespace lime;
  * Constructor/destructor
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const DeviceHandle& handle, const SoapySDR::Kwargs& args)
-    : _moduleName(handle.module)
+    : _moduleName(handle.media)
     , streamConfig()
     , sampleRate{ 0.0, 0.0 }
     , oversampling(0) // Auto

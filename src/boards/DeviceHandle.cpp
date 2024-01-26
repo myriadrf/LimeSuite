@@ -70,8 +70,6 @@ DeviceHandle::DeviceHandle(const std::string& args)
     auto kwmap = argsToMap("name=" + args); //append name= since it was stripped in serialize
     if (kwmap.count("media") != 0)
         media = kwmap.at("media");
-    if (kwmap.count("module") != 0)
-        module = kwmap.at("module");
     if (kwmap.count("name") != 0)
         name = kwmap.at("name");
     if (kwmap.count("addr") != 0)
@@ -87,8 +85,6 @@ std::string DeviceHandle::Serialize(void) const
         out += name;
     if (not media.empty())
         out += ", media=" + media;
-    if (not module.empty())
-        out += ", module=" + module;
     if (not addr.empty())
         out += ", addr=" + addr;
     if (not serial.empty())
@@ -122,11 +118,6 @@ std::string DeviceHandle::ToString(void) const
 
 bool DeviceHandle::IsEqualIgnoringEmpty(const DeviceHandle& other) const
 {
-    if (!other.module.empty() && module != other.module)
-    {
-        return false;
-    }
-
     if (!other.media.empty() && media != other.media)
     {
         return false;

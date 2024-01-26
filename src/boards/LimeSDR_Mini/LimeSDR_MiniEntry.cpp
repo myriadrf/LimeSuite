@@ -41,24 +41,11 @@ LimeSDR_MiniEntry::LimeSDR_MiniEntry()
 {
 }
 
+#ifndef __unix__
 std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
 {
     std::vector<DeviceHandle> handles;
-#ifdef __unix__
-    const std::string_view moduleName = "FT601";
 
-    auto hintCopy = hint;
-    if (hint.module.empty() || hint.module == moduleName)
-    {
-        hintCopy.module = "";
-        handles = USBEntry::enumerate(hintCopy);
-    }
-
-    for (auto& handle : handles)
-    {
-        handle.module = std::string{ moduleName };
-    }
-#else
     if (!hint.media.empty() && hint.media.find("USB") == std::string::npos)
     {
         return handles;
@@ -91,9 +78,9 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
             }
         }
     }
-#endif
     return handles;
 }
+#endif
 
 SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
 {

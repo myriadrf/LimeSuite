@@ -28,21 +28,12 @@ class LIME_API DeviceHandle
     DeviceHandle(const std::string& args);
 
     /*!
-     * The name of the IConnection support module.
-     * Example: LitePCIe, FX3, FT601
-     */
-    std::string module;
-
-    /*!
       @brief The connection media type.
       Example: SPI, COM, USB, PCIe...
      */
     std::string media;
 
-    /// @brief The type of the device. Example: LimeSDR, LimeSDR_XTRX, LimeSDR_MMX8
-    std::string deviceType;
-
-    /// The name of the device. Example: STREAM, NOVENA.
+    /// The name of the device. Example: "LimeSDR-USB", "LimeSDR X3", "LimeSDR Mini".
     std::string name;
 
     /// An address such a URL, IP address, VID:PID or similar.

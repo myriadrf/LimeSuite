@@ -38,24 +38,10 @@ LimeSDREntry::LimeSDREntry()
 {
 }
 
+#ifndef __unix__
 std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
 {
     std::vector<DeviceHandle> handles;
-#ifdef __unix__
-    const std::string_view moduleName = "FX3";
-
-    auto hintCopy = hint;
-    if (hint.module.empty() || hint.module == moduleName)
-    {
-        hintCopy.module = "";
-        handles = USBEntry::enumerate(hintCopy);
-    }
-
-    for (auto& handle : handles)
-    {
-        handle.module = std::string{ moduleName };
-    }
-#else
     if (!hint.media.empty() && hint.media.find("USB") == std::string::npos)
     {
         return handles;
@@ -84,9 +70,9 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
             device.Close();
         }
     }
-#endif
     return handles;
 }
+#endif
 
 SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
 {
