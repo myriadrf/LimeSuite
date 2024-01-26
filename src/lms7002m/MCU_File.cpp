@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include "Logger.h"
 
 using namespace std;
 
@@ -13,11 +14,7 @@ MCU_File::MCU_File(const char* fileName, const char* mode)
         return;
     }
 
-    cout << "Error opening";
-    //string errorStr = "Error opening ";
-    //errorStr += fileName;
-    //errorStr += "\n";
-    //throw errorStr;
+    lime::error("Error opening "s + fileName + '\n');
 }
 
 MCU_File::~MCU_File()
@@ -39,7 +36,7 @@ void MCU_File::ReadBin(unsigned long limit)
     m_chunks.push_back(MemBlock());
     m_chunks.back().m_startAddress = 0;
 
-    cout << "Reading binary file\n";
+    lime::debug("Reading binary file\n"s);
 
     int tmp = fgetc(m_file);
 
@@ -51,8 +48,8 @@ void MCU_File::ReadBin(unsigned long limit)
         {
             m_chunks.back().m_bytes.pop_back();
             m_top = m_chunks.back().m_bytes.size() - 1;
-            cout << "Ignoring data above address space!\n";
-            cout << " Limit: " << limit << "\n";
+            lime::error("Ignoring data above address space!\n"s);
+            lime::error(" Limit: "s + std::to_string(limit) + '\n');
             return;
         }
 
@@ -63,7 +60,7 @@ void MCU_File::ReadBin(unsigned long limit)
 
     if (!m_chunks.back().m_bytes.size())
     {
-        cout << "No data!\n";
+        lime::warning("No data!\n"s);
 
         m_chunks.pop_back();
     }
@@ -114,24 +111,24 @@ void MCU_File::ReadHex(unsigned long limit)
         {
             if (szLine[0] != ':' && szLine[0] != 'S')
             {
-                cout << "Ignoring garbage line!\n";
+                lime::warning("Ignoring garbage line!\n"s);
                 continue;
             }
             if (szLine[0] == 'S')
             {
                 intel = false;
-                cout << "Detected S-Record\n";
+                lime::info("Detected S-Record\n"s);
             }
             else
             {
                 intel = true;
-                cout << "Detected intel hex file\n";
+                lime::info("Detected intel hex file\n"s);
             }
             formatDetected = true;
         }
         else if ((intel && szLine[0] != ':') || (!intel && szLine[0] != 'S'))
         {
-            cout << "Ignoring garbage line!\n";
+            lime::warning("Ignoring garbage line!\n"s);
             continue;
         }
 
@@ -197,9 +194,9 @@ void MCU_File::ReadHex(unsigned long limit)
                         sscanf(&szLine[9 + i * 2], "%2lx", &tmp);
                         if (addressBase + startAddress + i > limit)
                         {
-                            cout << "Ignoring data above address space!\n";
-                            cout << "Data address: " << addressBase + startAddress + i;
-                            cout << " Limit: " << limit << "\n";
+                            lime::warning("Ignoring data above address space!\n"s);
+                            lime::warning("Data address: "s + std::to_string(addressBase + startAddress + i));
+                            lime::warning(" Limit: "s + std::to_string(limit) + '\n');
                             if (!m_chunks.back().m_bytes.size())
                             {
                                 m_chunks.pop_back();
@@ -215,11 +212,11 @@ void MCU_File::ReadHex(unsigned long limit)
                 // End-of-file record
                 if (dataBytes != 0)
                 {
-                    cout << "Warning: End of file record not zero length!\n";
+                    lime::warning("End of file record not zero length!\n"s);
                 }
                 if (startAddress != 0)
                 {
-                    cout << "Warning: End of file record address not zero!\n";
+                    lime::warning("End of file record address not zero!\n"s);
                 }
                 endSeen = true;
                 break;
@@ -243,11 +240,11 @@ void MCU_File::ReadHex(unsigned long limit)
                 // Start segment address record
                 if (dataBytes != 4)
                 {
-                    cout << "Warning: Length field must be 4 in start segment address record!\n";
+                    lime::warning("Length field must be 4 in start segment address record!\n"s);
                 }
                 if (startAddress != 0)
                 {
-                    cout << "Warning: Address field must be zero in start segment address record!\n";
+                    lime::warning("Warning: Address field must be zero in start segment address record!\n"s);
                 }
                 if (dataBytes == 4)
                 {
@@ -255,8 +252,8 @@ void MCU_File::ReadHex(unsigned long limit)
                     char ssaStr[16];
                     sscanf(&szLine[9], "%8lx", &ssa);
                     sprintf(ssaStr, "%08lX\n", ssa);
-                    cout << "Segment start address (CS/IP): ";
-                    cout << ssaStr;
+                    lime::debug("Segment start address (CS/IP): "s);
+                    lime::debug("%s\n", ssaStr);
                 }
                 break;
 
@@ -279,11 +276,11 @@ void MCU_File::ReadHex(unsigned long limit)
                 // Start linear address record
                 if (dataBytes != 4)
                 {
-                    cout << "Warning: Length field must be 4 in start linear address record!\n";
+                    lime::warning("Length field must be 4 in start linear address record!\n"s);
                 }
                 if (startAddress != 0)
                 {
-                    cout << "Warning: Address field must be zero in start linear address record!\n";
+                    lime::warning("Address field must be zero in start linear address record!\n"s);
                 }
                 if (dataBytes == 4)
                 {
@@ -291,13 +288,13 @@ void MCU_File::ReadHex(unsigned long limit)
                     char lsaStr[16];
                     sscanf(&szLine[9], "%8lx", &lsa);
                     sprintf(lsaStr, "%08lX\n", lsa);
-                    cout << "Linear start address: ";
-                    cout << lsaStr;
+                    lime::debug("Linear start address: "s);
+                    lime::debug("%s\n", lsaStr);
                 }
                 break;
 
             default:
-                cout << "Waring: Unknown record found!\n";
+                lime::warning("Unknown record found!\n"s);
             }
         }
         else
@@ -345,7 +342,7 @@ void MCU_File::ReadHex(unsigned long limit)
                     header[i] = 0;
                     if (i > 0)
                     {
-                        cout << "Module name: " << header << "\n";
+                        lime::info("Module name: "s + header + '\n');
                     }
                 }
                 break;
@@ -381,9 +378,9 @@ void MCU_File::ReadHex(unsigned long limit)
                         sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
                         if (startAddress + i > limit)
                         {
-                            cout << "Ignoring data above address space!\n";
-                            cout << "Data address: " << startAddress + i;
-                            cout << " Limit: " << limit << "\n";
+                            lime::warning("Ignoring data above address space!\n"s);
+                            lime::warning("Data address: "s + std::to_string(startAddress + i));
+                            lime::warning(" Limit: "s + std::to_string(limit) + '\n');
                             if (!m_chunks.back().m_bytes.size())
                             {
                                 m_chunks.pop_back();
@@ -411,17 +408,17 @@ void MCU_File::ReadHex(unsigned long limit)
             case '8':
             case '9':
                 // Start address record
-                cout << "Ignoring start address record!\n";
+                lime::warning("Ignoring start address record!\n"s);
                 break;
 
             default:
-                cout << "Unknown record found!\n";
+                lime::warning("Unknown record found!\n"s);
             }
         }
     }
     if (intel && !endSeen)
     {
-        cout << "No end of file record!\n";
+        lime::warning("No end of file record!\n"s);
     }
     if (!m_chunks.size())
     {

@@ -122,7 +122,7 @@ void LimeSDR_MMX8::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR_MMX8 config: %s\n", e.what());
+        lime::error("LimeSDR_MMX8 config: %s\n", e.what());
         throw;
     } catch (std::runtime_error& e)
     {

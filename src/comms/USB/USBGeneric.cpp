@@ -3,6 +3,8 @@
 
 #include <cassert>
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 #ifdef __unix__
@@ -199,7 +201,7 @@ int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length
 
     if (status != 0)
     {
-        printf("USBGeneric::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
+        lime::error("USBGeneric::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
             endPointAddr,
             libusb_error_name(status),
             actualTransferred,
@@ -285,7 +287,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
 
     if (status != 0)
     {
-        printf("BEGIN DATA TRANSFER %s\n", libusb_error_name(status));
+        lime::error("BEGIN DATA TRANSFER %s\n", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -355,7 +357,7 @@ int USBGeneric::GetUSBContextIndex()
 
     if (!contextFound)
     {
-        printf("No contexts left for reading or sending data\n");
+        lime::error("No contexts left for reading or sending data\n"s);
         return -1;
     }
 

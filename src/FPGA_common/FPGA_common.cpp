@@ -13,13 +13,13 @@ using namespace std;
 #ifndef NDEBUG
     #define ASSERT_WARNING(cond, message) \
         if (!cond) \
-        printf("W: %s (%s)\n", message, #cond)
+        lime::warning("W: %s (%s)\n", message, #cond)
 #else
     #define ASSERT_WARNING(cond, message)
 #endif
 
 #if 0
-    #define verbose_printf(...) printf(__VA_ARGS__);
+    #define verbose_printf(...) lime::debug(__VA_ARGS__);
 #else
     #define verbose_printf(...)
 #endif

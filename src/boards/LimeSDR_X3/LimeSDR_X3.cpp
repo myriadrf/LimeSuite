@@ -633,7 +633,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR_X3 config: %s\n", e.what());
+        lime::error("LimeSDR_X3 config: %s\n", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
@@ -866,11 +866,11 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         return 0;
     } catch (std::logic_error& e)
     {
-        printf("LimeSDR_X3::StreamSetup logic_error %s\n", e.what());
+        lime::error("LimeSDR_X3::StreamSetup logic_error %s\n", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
-        printf("LimeSDR_X3::StreamSetup runtime_error %s\n", e.what());
+        lime::error("LimeSDR_X3::StreamSetup runtime_error %s\n", e.what());
         throw;
     }
 }

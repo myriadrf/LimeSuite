@@ -1,8 +1,11 @@
 #include "MemoryPool.h"
+
 #include <cstring>
 #include <stdexcept>
 #include <string>
 #include <sstream>
+
+#include "Logger.h"
 
 namespace lime {
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)
@@ -77,7 +80,7 @@ void MemoryPool::Free(void* ptr)
                 mFreeBlocks.size(),
                 ptr);
             for (auto adr : mUsedBlocks)
-                printf("addrs: %p\n", adr);
+                lime::error("addrs: %p\n", adr);
             throw std::runtime_error(ctemp);
         }
         else

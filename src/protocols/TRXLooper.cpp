@@ -10,6 +10,7 @@
 #include "TRXLooper.h"
 
 using namespace std;
+using namespace std::literals::string_literals;
 
 namespace lime {
 
@@ -599,7 +600,7 @@ void TRXLooper::Stop()
             mTx.thread.join();
     } catch (...)
     {
-        printf("Failed to join TRXLooper threads\n");
+        lime::error("Failed to join TRXLooper threads\n"s);
     }
     fpga->StopStreaming();
 

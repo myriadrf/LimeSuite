@@ -292,12 +292,12 @@ int MCU_BD::Read_IRAM()
         }
         ++stepsDone;
 #ifndef NDEBUG
-        printf("MCU reading IRAM: %2i/256\r", stepsDone.load());
+        lime::debug("MCU reading IRAM: %2i/256\r", stepsDone.load());
 #endif
         Wait_CLK_Cycles(64);
     }
 #ifndef NDEBUG
-    printf("\nMCU reading IRAM finished\n");
+    lime::debug("\nMCU reading IRAM finished\n"s);
 #endif
     return retval;
 }
@@ -327,11 +327,11 @@ int MCU_BD::Erase_IRAM()
         }
         ++stepsDone;
 #ifndef NDEBUG
-        printf("MCU erasing IRAM: %2i/256\r", stepsDone.load());
+        lime::debug("MCU erasing IRAM: %2i/256\r", stepsDone.load());
 #endif
     }
 #ifndef NDEBUG
-    printf("\nMCU erasing IRAM finished\n");
+    lime::debug("\nMCU erasing IRAM finished\n"s);
 #endif
     return retval;
 }
@@ -699,7 +699,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
             if (callback)
                 abort = callback(i + fifoLen, byte_array_size, "");
 #ifndef NDEBUG
-            printf("MCU programming : %4i/%4li\r", i + fifoLen, long(byte_array_size));
+            lime::debug("MCU programming : %4i/%4li\r", i + fifoLen, long(byte_array_size));
 #endif
         };
         if (abort)
@@ -719,7 +719,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
 
 #ifndef NDEBUG
         auto timeEnd = std::chrono::high_resolution_clock::now();
-        printf("\nMCU Programming finished, %li ms\n",
+        lime::debug("\nMCU Programming finished, %li ms\n",
             std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count());
 #endif
         if (!programmed)
@@ -728,7 +728,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
     } catch (std::runtime_error& e)
     {
 #ifndef NDEBUG
-        printf("MCU programming failed : %s", e.what());
+        lime::error("MCU programming failed : %s", e.what());
 #endif
         return -1;
     }

@@ -77,7 +77,7 @@ const double TrxCalib_RF_LimitHigh = 120e6;
     { \
         if (verboseEnabled) \
         { \
-            fprintf(stderr, __VA_ARGS__); \
+            lime::debug(__VA_ARGS__); \
         } \
     } while (0)
 

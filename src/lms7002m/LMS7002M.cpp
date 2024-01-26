@@ -3389,7 +3389,7 @@ int LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwi
         w2 = w * 1.05;
         if (w2 > 0.495)
         {
-            printf("GFIR LPF cannot be set to the requested bandwidth (%f)", bandwidth);
+            lime::error("GFIR LPF cannot be set to the requested bandwidth (%f)", bandwidth);
             return -1;
         }
     }
@@ -3427,7 +3427,7 @@ int LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwi
     for (int i = 0; i < L * 15; ++i)
         ss << " " << coef[i];
     ss << std::endl;
-    printf("%s", ss.str().c_str());
+    lime::info(ss.str());
 
     return ResetLogicregisters();
 }

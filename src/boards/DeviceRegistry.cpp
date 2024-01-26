@@ -1,5 +1,6 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
+#include "Logger.h"
 #include <mutex>
 #include <map>
 #include <memory>
@@ -8,7 +9,7 @@
 using namespace lime;
 
 #if 0
-    #define verbose_printf(...) printf(__VA_ARGS__)
+    #define verbose_printf(...) lime::debug(__VA_ARGS__)
 #else
     #define verbose_printf(...)
 #endif
