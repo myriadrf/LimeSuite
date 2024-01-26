@@ -91,7 +91,7 @@ LMS7002M_SDRDevice::~LMS7002M_SDRDevice()
 
 void LMS7002M_SDRDevice::EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
     lms->EnableChannel(trx, channel % 2, enable);
 }
 
@@ -179,7 +179,7 @@ double LMS7002M_SDRDevice::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_
 
 double LMS7002M_SDRDevice::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     // TODO:
     // double offset = GetNCOOffset(moduleIndex, trx, channel);
@@ -197,7 +197,7 @@ double LMS7002M_SDRDevice::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t
 
 void LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     int chA = channel & (~1);
     int chB = channel | 1;
@@ -297,7 +297,7 @@ double LMS7002M_SDRDevice::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t
 
 double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     lms->SetActiveChannel(channel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
     double freq = lms->GetNCOFrequency(trx, index, true);
@@ -313,7 +313,7 @@ double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint
 void LMS7002M_SDRDevice::SetNCOFrequency(
     uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     lms->SetActiveChannel(channel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
 
@@ -360,7 +360,7 @@ double LMS7002M_SDRDevice::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uin
 
 void LMS7002M_SDRDevice::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     LMS7002M::Channel ch = channel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB;
 
@@ -406,7 +406,7 @@ void LMS7002M_SDRDevice::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8
 
 uint8_t LMS7002M_SDRDevice::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
 
     if (trx == TRXDir::Tx)
     {
@@ -425,7 +425,7 @@ void LMS7002M_SDRDevice::SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t cha
         path = trx == TRXDir::Tx ? 1 : 2; // Default settings: Rx: LNAL, Tx: Band1
     }
 
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     int returnValue = lms->SetPath(trx, channel % 2, path);
     if (returnValue != 0)
@@ -626,7 +626,7 @@ bool LMS7002M_SDRDevice::GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_
 {
     if (trx == TRXDir::Rx)
     {
-        auto lms = mLMSChips.at(channel / 2);
+        auto lms = mLMSChips.at(moduleIndex);
         return lms->Get_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), channel) == 0;
     }
 
@@ -640,7 +640,7 @@ void LMS7002M_SDRDevice::SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_
         return;
     }
 
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), isAutomatic == 0, channel);
 }
 
@@ -649,7 +649,7 @@ complex64f_t LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, ui
     double I = 0.0;
     double Q = 0.0;
 
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
     lms->GetDCOffset(trx, I, Q);
     return { I, Q };
@@ -657,14 +657,14 @@ complex64f_t LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, ui
 
 void LMS7002M_SDRDevice::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
     lms->SetDCOffset(trx, offset.i, offset.q);
 }
 
 complex64f_t LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
 
     double phase = 0.0, gainI = 0.0, gainQ = 0.0;
@@ -690,7 +690,7 @@ void LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t c
         gainQ = 1.0 / gain;
     }
 
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
     lms->SetIQBalance(trx, std::arg(bal), gainI, gainQ);
 }
@@ -754,7 +754,7 @@ void LMS7002M_SDRDevice::SaveConfig(uint8_t moduleIndex, const std::string& file
 
 uint16_t LMS7002M_SDRDevice::GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->SetActiveChannel(channel % 2 == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
 
     try
@@ -769,7 +769,7 @@ uint16_t LMS7002M_SDRDevice::GetParameter(uint8_t moduleIndex, uint8_t channel, 
 
 void LMS7002M_SDRDevice::SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->SetActiveChannel(channel % 2 == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
     int returnValue = lms->Modify_SPI_Reg_bits(lms->GetParam(parameterKey), value);
 
@@ -781,7 +781,7 @@ void LMS7002M_SDRDevice::SetParameter(uint8_t moduleIndex, uint8_t channel, cons
 
 uint16_t LMS7002M_SDRDevice::GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->SetActiveChannel(channel % 2 == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
 
     try
@@ -798,7 +798,7 @@ uint16_t LMS7002M_SDRDevice::GetParameter(uint8_t moduleIndex, uint8_t channel, 
 void LMS7002M_SDRDevice::SetParameter(
     uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value)
 {
-    auto lms = mLMSChips.at(channel / 2);
+    auto lms = mLMSChips.at(moduleIndex);
     lms->SetActiveChannel(channel % 2 == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
     int returnValue = lms->Modify_SPI_Reg_bits(address, msb, lsb, value);
 
@@ -854,7 +854,7 @@ void LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
     int16_t dc_i,
     int16_t dc_q)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     switch (direction)
     {
@@ -889,7 +889,7 @@ void LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
 SDRDevice::ChannelConfig::Direction::TestSignal LMS7002M_SDRDevice::GetTestSignal(
     uint8_t moduleIndex, TRXDir direction, uint8_t channel)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
     ChannelConfig::Direction::TestSignal signalConfiguration;
 
     switch (direction)
@@ -939,7 +939,7 @@ SDRDevice::ChannelConfig::Direction::TestSignal LMS7002M_SDRDevice::GetTestSigna
 
 std::vector<double> LMS7002M_SDRDevice::GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     const uint8_t count = gfirID == 2 ? 120 : 40;
     std::vector<int16_t> coefficientBuffer(count);
@@ -952,7 +952,7 @@ std::vector<double> LMS7002M_SDRDevice::GetGFIRCoefficients(uint8_t moduleIndex,
 void LMS7002M_SDRDevice::SetGFIRCoefficients(
     uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     std::vector<int16_t> convertedCoefficients(coefficients.begin(), coefficients.end());
 
@@ -961,7 +961,7 @@ void LMS7002M_SDRDevice::SetGFIRCoefficients(
 
 void LMS7002M_SDRDevice::SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled)
 {
-    lime::LMS7002M* lms = mLMSChips.at(channel / 2);
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     lms->SetActiveChannel(static_cast<LMS7002M::Channel>((channel % 2) + 1));
 
