@@ -252,12 +252,12 @@ int LimeSDR_MMX8::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO,
     return dev->SPI(subSelect, MOSI, MISO, count);
 }
 
-int LimeSDR_MMX8::I2CWrite(int address, const uint8_t* data, uint32_t length)
+int LimeSDR_MMX8::I2CWrite(int address, const std::byte* data, uint32_t length)
 {
     return -1;
 }
 
-int LimeSDR_MMX8::I2CRead(int addres, uint8_t* dest, uint32_t length)
+int LimeSDR_MMX8::I2CRead(int addres, std::byte* dest, uint32_t length)
 {
     return -1;
 }
@@ -317,7 +317,7 @@ int LimeSDR_MMX8::CustomParameterRead(std::vector<CustomParameterIO>& parameters
 }
 
 bool LimeSDR_MMX8::UploadMemory(
-    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+    eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback)
 {
     if (device == eMemoryDevice::FPGA_FLASH && moduleIndex == 0)
     {
@@ -337,7 +337,7 @@ bool LimeSDR_MMX8::UploadMemory(
     return dev->UploadMemory(device, 0, data, length, callback);
 }
 
-int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const std::byte* data)
 {
     if (storage == nullptr)
     {
@@ -359,7 +359,7 @@ int LimeSDR_MMX8::MemoryWrite(std::shared_ptr<DataStorage> storage, Region regio
     return dev->MemoryWrite(storage, region, data);
 }
 
-int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, std::byte* data)
 {
     if (storage == nullptr)
     {
@@ -381,7 +381,7 @@ int LimeSDR_MMX8::MemoryRead(std::shared_ptr<DataStorage> storage, Region region
     return dev->MemoryRead(storage, region, data);
 }
 
-int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+int LimeSDR_MMX8::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const std::byte** samples, uint32_t count)
 {
     return mSubDevices[moduleIndex]->UploadTxWaveform(config, 0, samples, count);
 }

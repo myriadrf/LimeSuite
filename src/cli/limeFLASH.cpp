@@ -193,7 +193,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    std::vector<char> data;
+    std::vector<std::byte> data;
     std::ifstream inputFile;
     inputFile.open(filePath, std::ifstream::in | std::ifstream::binary);
     if (!inputFile)
@@ -207,7 +207,7 @@ int main(int argc, char** argv)
     inputFile.seekg(0, std::ios_base::beg);
     cerr << "File size : " << cnt << " bytes." << endl;
     data.resize(cnt);
-    inputFile.read(data.data(), cnt);
+    inputFile.read(reinterpret_cast<char*>(data.data()), cnt);
     inputFile.close();
 
     if (memorySelect->ownerDevice->UploadMemory(memorySelect->memoryDeviceType, 0, data.data(), data.size(), progressCallBack) != 0)

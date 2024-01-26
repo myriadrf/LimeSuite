@@ -11,12 +11,12 @@ class USB_CSR_PipeMock
     , public USB_CSR_Pipe
 {
   public:
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms)
+    virtual int Write(const std::byte* data, size_t length, int timeout_ms)
     {
         return SerialPortMock::Write(data, length, timeout_ms);
     }
 
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) { return SerialPortMock::Read(data, length, timeout_ms); }
+    virtual int Read(std::byte* data, size_t length, int timeout_ms) { return SerialPortMock::Read(data, length, timeout_ms); }
 };
 
 } // namespace lime::testing

@@ -38,20 +38,20 @@ USB_CSR_Pipe_SDR::USB_CSR_Pipe_SDR(FX3& port)
     : USB_CSR_Pipe()
     , port(port){};
 
-int USB_CSR_Pipe_SDR::Write(const uint8_t* data, size_t length, int timeout_ms)
+int USB_CSR_Pipe_SDR::Write(const std::byte* data, size_t length, int timeout_ms)
 {
     const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
 
     if (commandsToBulkTransfer.find(pkt->cmd) != commandsToBulkTransfer.end())
     {
-        return port.BulkTransfer(CONTROL_BULK_OUT_ADDRESS, const_cast<uint8_t*>(data), length, timeout_ms);
+        return port.BulkTransfer(CONTROL_BULK_OUT_ADDRESS, const_cast<std::byte*>(data), length, timeout_ms);
     }
 
     return port.ControlTransfer(
-        LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, timeout_ms);
+        LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<std::byte*>(data), length, timeout_ms);
 }
 
-int USB_CSR_Pipe_SDR::Read(uint8_t* data, size_t length, int timeout_ms)
+int USB_CSR_Pipe_SDR::Read(std::byte* data, size_t length, int timeout_ms)
 {
     const LMS64CPacket* pkt = reinterpret_cast<const LMS64CPacket*>(data);
 

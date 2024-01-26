@@ -274,30 +274,30 @@ class LIME_API SDRDevice
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
 
-    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const std::byte** samples, uint32_t count)
     {
         return -1;
     }
 
     virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
-    virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
+    virtual int I2CWrite(int address, const std::byte* data, uint32_t length) = 0;
+    virtual int I2CRead(int addres, std::byte* dest, uint32_t length) = 0;
 
     /***********************************************************************
      * GPIO API
      **********************************************************************/
 
     /** \copydoc IComms::GPIOWrite() */
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIOWrite(const std::byte* buffer, const size_t bufLength) { return -1; };
 
     /** \copydoc IComms::GPIORead() */
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIORead(std::byte* buffer, const size_t bufLength) { return -1; };
 
     /** \copydoc IComms::GPIODirWrite() */
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIODirWrite(const std::byte* buffer, const size_t bufLength) { return -1; };
 
     /** \copydoc IComms::GPIODirRead() */
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIODirRead(std::byte* buffer, const size_t bufLength) { return -1; };
 
     /***********************************************************************
      * Aribtrary settings API
@@ -323,13 +323,13 @@ class LIME_API SDRDevice
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
     virtual bool UploadMemory(
-        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+        eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback)
     {
         return -1;
     };
 
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const std::byte* data) { return -1; };
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, std::byte* data) { return -1; };
 };
 
 } // namespace lime

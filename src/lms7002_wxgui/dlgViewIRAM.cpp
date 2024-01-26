@@ -40,7 +40,7 @@ dlgViewIRAM::~dlgViewIRAM()
 {
 }
 
-void dlgViewIRAM::InitGridData(const unsigned char* data)
+void dlgViewIRAM::InitGridData(const std::byte* data)
 {
     for (int i = 0; i <= 31; i++)
         Grid1->SetRowLabelValue(i, wxString::Format(_("Row: 0x%02X"), 0xF8 - i * 8));

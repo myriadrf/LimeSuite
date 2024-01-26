@@ -30,12 +30,12 @@ I2CToSDR::I2CToSDR(lime::SDRDevice& sdr)
 {
 }
 
-int I2CToSDR::I2CWrite(int address, const uint8_t* data, uint32_t length)
+int I2CToSDR::I2CWrite(int address, const std::byte* data, uint32_t length)
 {
     return device.I2CWrite(address, data, length);
 }
 
-int I2CToSDR::I2CRead(int address, uint8_t* dest, uint32_t length)
+int I2CToSDR::I2CRead(int address, std::byte* dest, uint32_t length)
 {
     return device.I2CRead(address, dest, length);
 }

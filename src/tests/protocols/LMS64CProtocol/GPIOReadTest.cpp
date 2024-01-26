@@ -36,18 +36,18 @@ TEST(LMS64CProtocol, GPIOReadTestOneBlock)
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
 
-    const uint8_t value = 0b01010101;
-    packet.payload[0] = value;
+    const std::byte value{ 0b01010101 };
+    packet.payload[0] = std::to_integer<uint8_t>(value);
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GPIO_RD), IsBlockCountCorrect(1)), PACKET_SIZE, _))
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     int returnValue = LMS64CProtocol::GPIORead(mockPort, &actual, 1);
 
     EXPECT_EQ(returnValue, 0);
@@ -60,21 +60,21 @@ TEST(LMS64CProtocol, GPIOReadTestTwoBlocks)
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
 
-    const uint8_t value1 = 0b01010101;
-    const uint8_t value2 = 0b10101010;
+    const std::byte value1{ 0b01010101 };
+    const std::byte value2{ 0b10101010 };
 
-    packet.payload[0] = value1;
-    packet.payload[1] = value2;
+    packet.payload[0] = std::to_integer<uint8_t>(value1);
+    packet.payload[1] = std::to_integer<uint8_t>(value2);
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GPIO_RD), IsBlockCountCorrect(2)), PACKET_SIZE, _))
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    std::array<uint8_t, 2> actual{ 0, 0 };
+    std::array<std::byte, 2> actual{ std::byte{ 0 }, std::byte{ 0 } };
     int returnValue = LMS64CProtocol::GPIORead(mockPort, actual.data(), 2);
 
     EXPECT_EQ(returnValue, 0);
@@ -92,7 +92,7 @@ TEST(LMS64CProtocol, GPIOReadTestNotFullyWritten)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIORead(mockPort, &actual, 1);, std::runtime_error);
 }
 
@@ -106,7 +106,7 @@ TEST(LMS64CProtocol, GPIOReadTestNotFullyRead)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIORead(mockPort, &actual, 1);, std::runtime_error);
 }
 
@@ -118,13 +118,13 @@ TEST(LMS64CProtocol, GPIOReadTestWrongStatus)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GPIO_RD), IsBlockCountCorrect(1)), PACKET_SIZE, _))
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIORead(mockPort, &actual, 1);, std::runtime_error);
 }
 
@@ -135,6 +135,6 @@ TEST(LMS64CProtocol, GPIOReadTestBufferSizeTooBig)
     EXPECT_CALL(mockPort, Write(_, PACKET_SIZE, _)).Times(0);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIORead(mockPort, &actual, 64);, std::invalid_argument);
 }

@@ -1,5 +1,7 @@
 #include "USBGeneric.h"
+
 #include "Logger.h"
+#include "USBTransferContext.h"
 
 #include <cassert>
 
@@ -182,7 +184,7 @@ void USBGeneric::Disconnect()
     contexts = nullptr;
 }
 
-int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
+int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, std::byte* data, int length, int32_t timeout_ms)
 {
     long len = 0;
     if (not IsConnected())
@@ -190,11 +192,10 @@ int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length
         throw std::runtime_error("BulkTransfer: USB device is not connected");
     }
 
-    assert(data);
-
 #ifdef __unix__
     int actualTransferred = 0;
-    int status = libusb_bulk_transfer(dev_handle, endPointAddr, data, length, &actualTransferred, timeout_ms);
+    int status = libusb_bulk_transfer(
+        dev_handle, endPointAddr, reinterpret_cast<unsigned char*>(data), length, &actualTransferred, timeout_ms);
     len = actualTransferred;
 
     if (status != 0)
@@ -210,7 +211,7 @@ int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length
 }
 
 int32_t USBGeneric::ControlTransfer(
-    int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
+    int requestType, int request, int value, int index, std::byte* data, uint32_t length, int32_t timeout_ms)
 {
     long len = length;
     if (not IsConnected())
@@ -218,9 +219,9 @@ int32_t USBGeneric::ControlTransfer(
         throw std::runtime_error("ControlTransfer: USB device is not connected");
     }
 
-    assert(data);
 #ifdef __unix__
-    len = libusb_control_transfer(dev_handle, requestType, request, value, index, data, length, timeout_ms);
+    len = libusb_control_transfer(
+        dev_handle, requestType, request, value, index, reinterpret_cast<unsigned char*>(data), length, timeout_ms);
 #endif
     return len;
 }
@@ -267,7 +268,7 @@ static void process_libusbtransfer(libusb_transfer* trans)
 }
 #endif
 
-int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
+int USBGeneric::BeginDataXfer(std::byte* buffer, uint32_t length, uint8_t endPointAddr)
 {
 #ifdef __unix__
     int i = GetUSBContextIndex();
@@ -278,7 +279,8 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
     }
 
     libusb_transfer* tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, endPointAddr, buffer, length, process_libusbtransfer, &contexts[i], 0);
+    libusb_fill_bulk_transfer(
+        tr, dev_handle, endPointAddr, reinterpret_cast<unsigned char*>(buffer), length, process_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
     int status = libusb_submit_transfer(tr);
@@ -308,7 +310,7 @@ bool USBGeneric::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     return true; // There is nothing to wait for (signal wait finished)
 }
 
-int USBGeneric::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
+int USBGeneric::FinishDataXfer(std::byte* buffer, uint32_t length, int contextHandle)
 {
 #ifdef __unix__
     if (contextHandle >= 0 && contexts[contextHandle].used == true)

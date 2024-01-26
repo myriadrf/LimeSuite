@@ -30,7 +30,7 @@ class USBTransferContext
 
 #ifdef __unix__
     libusb_transfer* transfer;
-    long bytesXfered;
+    int bytesXfered;
     std::atomic<bool> done;
     std::mutex transferLock;
     std::condition_variable cv;

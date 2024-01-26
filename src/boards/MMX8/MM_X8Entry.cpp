@@ -124,18 +124,18 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
         return LMS64CProtocol::CustomParameterRead(pipe, parameters, subdeviceIndex);
     }
     virtual int ProgramWrite(
-        const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
+        const std::byte* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
     {
         return LMS64CProtocol::ProgramWrite(
             pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback, subdeviceIndex);
     }
 
-    int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
+    int MemoryWrite(uint32_t address, const std::byte* data, uint32_t dataLength)
     {
         return LMS64CProtocol::MemoryWrite(pipe, address, data, dataLength, subdeviceIndex);
     }
 
-    int MemoryRead(uint32_t address, void* data, uint32_t dataLength)
+    int MemoryRead(uint32_t address, std::byte* data, uint32_t dataLength)
     {
         return LMS64CProtocol::MemoryRead(pipe, address, data, dataLength, subdeviceIndex);
     }

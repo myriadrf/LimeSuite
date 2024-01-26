@@ -540,11 +540,11 @@ int LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint
 
         // flush packet
         //printPacket(pkt, 4, "Wr:");
-        int sent = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = mSerialPort->Write(reinterpret_cast<std::byte*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
             throw std::runtime_error("SPI failed");
 
-        int recv = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = mSerialPort->Read(reinterpret_cast<std::byte*>(&pkt), sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
         if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD)
@@ -631,13 +631,13 @@ void LimeSDR::ResetUSBFIFO()
     pkt.blockCount = 1;
     pkt.payload[0] = 0;
 
-    int sentBytes = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int sentBytes = mSerialPort->Write(reinterpret_cast<std::byte*>(&pkt), sizeof(pkt), 100);
     if (sentBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::ResetUSBFIFO write failed");
     }
 
-    int gotBytes = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+    int gotBytes = mSerialPort->Read(reinterpret_cast<std::byte*>(&pkt), sizeof(pkt), 100);
     if (gotBytes != sizeof(pkt))
     {
         throw std::runtime_error("LimeSDR::ResetUSBFIFO read failed");
@@ -695,22 +695,22 @@ void* LimeSDR::GetInternalChip(uint32_t index)
     return mLMSChips.at(index);
 }
 
-int LimeSDR::GPIODirRead(uint8_t* buffer, const size_t bufLength)
+int LimeSDR::GPIODirRead(std::byte* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIODirRead(buffer, bufLength);
 }
 
-int LimeSDR::GPIORead(uint8_t* buffer, const size_t bufLength)
+int LimeSDR::GPIORead(std::byte* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIORead(buffer, bufLength);
 }
 
-int LimeSDR::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
+int LimeSDR::GPIODirWrite(const std::byte* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIODirWrite(buffer, bufLength);
 }
 
-int LimeSDR::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
+int LimeSDR::GPIOWrite(const std::byte* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIOWrite(buffer, bufLength);
 }

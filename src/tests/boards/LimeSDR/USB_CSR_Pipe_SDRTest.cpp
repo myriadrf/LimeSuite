@@ -32,9 +32,10 @@ TEST(USB_CSR_Pipe_SDR, WriteBulkTransfer)
     int timeout = 100;
     int length = sizeof(LMS64CPacket);
 
-    EXPECT_CALL(mockConnection, BulkTransfer(CONTROL_BULK_OUT_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+    EXPECT_CALL(
+        mockConnection, BulkTransfer(CONTROL_BULK_OUT_ADDRESS, Pointer(reinterpret_cast<std::byte*>(&pkt)), length, timeout))
         .Times(1);
-    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    pipe.Write(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_SDR, WriteControlTransfer)
@@ -53,11 +54,11 @@ TEST(USB_CSR_Pipe_SDR, WriteControlTransfer)
             CTR_W_REQCODE,
             CTR_W_VALUE,
             CTR_W_INDEX,
-            Pointer(reinterpret_cast<uint8_t*>(&pkt)),
+            Pointer(reinterpret_cast<std::byte*>(&pkt)),
             length,
             timeout))
         .Times(1);
-    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    pipe.Write(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_SDR, ReadBulkTransfer)
@@ -71,9 +72,9 @@ TEST(USB_CSR_Pipe_SDR, ReadBulkTransfer)
     int timeout = 100;
     int length = sizeof(LMS64CPacket);
 
-    EXPECT_CALL(mockConnection, BulkTransfer(CONTROL_BULK_IN_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+    EXPECT_CALL(mockConnection, BulkTransfer(CONTROL_BULK_IN_ADDRESS, Pointer(reinterpret_cast<std::byte*>(&pkt)), length, timeout))
         .Times(1);
-    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    pipe.Read(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_SDR, ReadControlTransfer)
@@ -92,9 +93,9 @@ TEST(USB_CSR_Pipe_SDR, ReadControlTransfer)
             CTR_R_REQCODE,
             CTR_R_VALUE,
             CTR_R_INDEX,
-            Pointer(reinterpret_cast<uint8_t*>(&pkt)),
+            Pointer(reinterpret_cast<std::byte*>(&pkt)),
             length,
             timeout))
         .Times(1);
-    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    pipe.Read(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }

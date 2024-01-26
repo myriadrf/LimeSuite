@@ -204,7 +204,7 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
         fin.SeekI(0, wxFromEnd);
         unsigned int m_data_size = fin.TellI();
 
-        mProgramData.resize(m_data_size, 0);
+        mProgramData.resize(m_data_size, std::byte{ 0 });
         fin.SeekI(0, wxFromStart);
         fin.Read(mProgramData.data(), m_data_size);
     }

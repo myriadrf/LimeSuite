@@ -427,7 +427,7 @@ lms7002_pnlMCU_BD_view::~lms7002_pnlMCU_BD_view()
 */
 int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
 {
-    unsigned char ch = 0x00;
+    std::byte ch{ 0x00 };
     bool find_byte = false;
     size_t i = 0;
 
@@ -452,7 +452,7 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
             if (find_byte == true)
                 byte_array[i] = ch;
             else
-                byte_array[i] = 0x00;
+                byte_array[i] = std::byte{ 0x00 };
         };
     }
     else
@@ -463,12 +463,12 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
         if (fin.good() == false)
             return -1;
         mLoadedProgramFilename = inFileName;
-        memset(byte_array, 0, max_array_size);
+        byte_array.fill(std::byte{ 0 });
         for (size_t i = 0; i < max_array_size && !fin.eof(); ++i)
         {
             inByte = 0;
             fin.read(&inByte, 1);
-            byte_array[i] = inByte;
+            byte_array[i] = static_cast<std::byte>(inByte);
         }
     }
     return 0;
@@ -798,7 +798,7 @@ int lms7002_pnlMCU_BD_view::WaitUntilWritten()
     // pass if WRITE_REQ is '0'
 }
 
-int lms7002_pnlMCU_BD_view::ReadOneByte(unsigned char* data)
+int lms7002_pnlMCU_BD_view::ReadOneByte(std::byte& data)
 {
     unsigned short tempi = 0x0000;
     int countDown = m_iLoopTries;
@@ -819,10 +819,10 @@ int lms7002_pnlMCU_BD_view::ReadOneByte(unsigned char* data)
         LMS_ReadLMSReg(lmsControl, 0x0005, &tempi);
         ; // REG5 read
         // return the read byte
-        (*data) = (unsigned char)(tempi);
+        data = static_cast<std::byte>(tempi);
     }
     else
-        (*data) = 0;
+        data = std::byte{ 0 };
     // return the zero, default value
 
     if (countDown == 0)
@@ -831,11 +831,11 @@ int lms7002_pnlMCU_BD_view::ReadOneByte(unsigned char* data)
         return 0; // finished regularly
 }
 
-int lms7002_pnlMCU_BD_view::One_byte_command(unsigned short data1, unsigned char* rdata1)
+int lms7002_pnlMCU_BD_view::One_byte_command(unsigned short data1, std::byte& rdata1)
 {
-    unsigned char tempc = 0x00;
+    std::byte tempc{ 0x00 };
     int retval = 0;
-    *rdata1 = 0x00; //default return value
+    rdata1 = std::byte{ 0x00 }; //default return value
 
     // sends the one byte command
     LMS_WriteLMSReg(lmsControl, 0x8004, data1); //REG4 write
@@ -845,35 +845,30 @@ int lms7002_pnlMCU_BD_view::One_byte_command(unsigned short data1, unsigned char
     // error if operation executes too long
 
     // gets the one byte answer
-    retval = ReadOneByte(&tempc);
+    retval = ReadOneByte(tempc);
     if (retval == -1)
         return -1;
     // error if operation takes too long
 
-    *rdata1 = tempc;
+    rdata1 = tempc;
     return 0;
 }
 
 int lms7002_pnlMCU_BD_view::ResetPC_MCU()
 {
-    unsigned char tempc1 = 0x00;
+    std::byte tempc1{ 0x00 };
     int retval = 0;
-    retval = One_byte_command(0x70, &tempc1);
+    retval = One_byte_command(0x70, tempc1);
     return retval;
 }
 
-int lms7002_pnlMCU_BD_view::Three_byte_command(unsigned char data1,
-    unsigned char data2,
-    unsigned char data3,
-    unsigned char* rdata1,
-    unsigned char* rdata2,
-    unsigned char* rdata3)
+int lms7002_pnlMCU_BD_view::Three_byte_command(
+    std::byte data1, std::byte data2, std::byte data3, std::byte& rdata1, std::byte& rdata2, std::byte& rdata3)
 {
-
     int retval = 0;
-    *rdata1 = 0x00;
-    *rdata2 = 0x00;
-    *rdata3 = 0x00;
+    rdata1 = std::byte{ 0x00 };
+    rdata2 = std::byte{ 0x00 };
+    rdata3 = std::byte{ 0x00 };
 
     LMS_WriteLMSReg(lmsControl, 0x8004, (unsigned short)data1);
     retval = WaitUntilWritten();
@@ -906,13 +901,13 @@ int lms7002_pnlMCU_BD_view::Three_byte_command(unsigned char data1,
 
 int lms7002_pnlMCU_BD_view::RunInstr_MCU(unsigned short* pPCVAL)
 {
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
+    std::byte tempc1, tempc2, tempc3{ 0x00 };
     int retval = 0;
-    retval = Three_byte_command(0x74, 0x00, 0x00, &tempc1, &tempc2, &tempc3);
+    retval = Three_byte_command(std::byte{ 0x74 }, std::byte{ 0x00 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3);
     if (retval == -1)
         (*pPCVAL) = 0;
     else
-        (*pPCVAL) = tempc2 * 256 + tempc3;
+        (*pPCVAL) = std::to_integer<unsigned short>(tempc2) * 256 + std::to_integer<unsigned short>(tempc3);
     return retval;
 }
 
@@ -959,7 +954,7 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
     }
     fclose(inFile);
 
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
+    std::byte tempc1, tempc2, tempc3{ 0x00 };
     int retval = 0;
     int m_iError = 0;
     int i = 0;
@@ -984,8 +979,9 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
     {
         if (TestResultArray_code[i] == m_iTestNo)
         {
-            retval = Three_byte_command(0x78, (unsigned char)(TestResultArray_address[i]), 0x00, &tempc1, &tempc2, &tempc3);
-            if ((retval == -1) || (tempc3 != TestResultArray_value[i]))
+            retval = Three_byte_command(
+                std::byte{ 0x78 }, static_cast<std::byte>(TestResultArray_address[i]), std::byte{ 0x00 }, tempc1, tempc2, tempc3);
+            if ((retval == -1) || (std::to_integer<int>(tempc3) != TestResultArray_value[i]))
                 m_iError = 1;
             else
                 i++;
@@ -1088,256 +1084,256 @@ void lms7002_pnlMCU_BD_view::OnResetPCClick(wxCommandEvent& event)
 int lms7002_pnlMCU_BD_view::Read_SFR()
 {
     int i = 0;
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
+    std::byte tempc1, tempc2, tempc3{ 0x00 };
     int retval = 0;
 
     //default m_SFR array initialization
     for (i = 0; i <= 255; i++)
-        m_SFR[i] = 0x00;
+        m_SFR[i] = std::byte{ 0x00 };
     OnProgrammingCallback(0, 48, "");
     // code 0x7A is for reading the SFR registers
-    retval = Three_byte_command(0x7A, 0x80, 0x00, &tempc1, &tempc2, &tempc3); // P0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x80 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // P0
     if (retval == -1)
         return -1;
     m_SFR[0x80] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x81, 0x00, &tempc1, &tempc2, &tempc3); // SP
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x81 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // SP
     if (retval == -1)
         return -1;
     m_SFR[0x81] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x82, 0x00, &tempc1, &tempc2, &tempc3); // DPL0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x82 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DPL0
     if (retval == -1)
         return -1;
     m_SFR[0x82] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x83, 0x00, &tempc1, &tempc2, &tempc3); // DPH0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x83 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DPH0
     if (retval == -1)
         return -1;
     m_SFR[0x83] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x84, 0x00, &tempc1, &tempc2, &tempc3); // DPL1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x84 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DPL1
     if (retval == -1)
         return -1;
     m_SFR[0x84] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x85, 0x00, &tempc1, &tempc2, &tempc3); // DPH1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x85 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DPH1
     if (retval == -1)
         return -1;
     m_SFR[0x85] = tempc3;
     OnProgrammingCallback(6, 48, "");
 
-    retval = Three_byte_command(0x7A, 0x86, 0x00, &tempc1, &tempc2, &tempc3); // DPS
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x86 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DPS
     if (retval == -1)
         return -1;
     m_SFR[0x86] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x87, 0x00, &tempc1, &tempc2, &tempc3); // PCON
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x87 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // PCON
     if (retval == -1)
         return -1;
     m_SFR[0x87] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x88, 0x00, &tempc1, &tempc2, &tempc3); // TCON
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x88 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TCON
     if (retval == -1)
         return -1;
     m_SFR[0x88] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x89, 0x00, &tempc1, &tempc2, &tempc3); // TMOD
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x89 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TMOD
     if (retval == -1)
         return -1;
     m_SFR[0x89] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x8A, 0x00, &tempc1, &tempc2, &tempc3); // TL0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x8A }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TL0
     if (retval == -1)
         return -1;
     m_SFR[0x8A] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x8B, 0x00, &tempc1, &tempc2, &tempc3); // TL1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x8B }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TL1
     if (retval == -1)
         return -1;
     m_SFR[0x8B] = tempc3;
     OnProgrammingCallback(12, 48, "");
 
-    retval = Three_byte_command(0x7A, 0x8C, 0x00, &tempc1, &tempc2, &tempc3); // TH0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x8C }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TH0
     if (retval == -1)
         return -1;
     m_SFR[0x8C] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x8D, 0x00, &tempc1, &tempc2, &tempc3); // TH1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x8D }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TH1
     if (retval == -1)
         return -1;
     m_SFR[0x8D] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x8E, 0x00, &tempc1, &tempc2, &tempc3); // PMSR
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x8E }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // PMSR
     if (retval == -1)
         return -1;
     m_SFR[0x8E] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x90, 0x00, &tempc1, &tempc2, &tempc3); // P1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x90 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // P1
     if (retval == -1)
         return -1;
     m_SFR[0x90] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x91, 0x00, &tempc1, &tempc2, &tempc3); // DIR1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x91 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DIR1
     if (retval == -1)
         return -1;
     m_SFR[0x91] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x98, 0x00, &tempc1, &tempc2, &tempc3); // SCON
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x98 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // SCON
     if (retval == -1)
         return -1;
     m_SFR[0x98] = tempc3;
     OnProgrammingCallback(18, 48, "");
 
-    retval = Three_byte_command(0x7A, 0x99, 0x00, &tempc1, &tempc2, &tempc3); // SBUF
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0x99 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // SBUF
     if (retval == -1)
         return -1;
     m_SFR[0x99] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xA0, 0x00, &tempc1, &tempc2, &tempc3); // P2
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xA0 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // P2
     if (retval == -1)
         return -1;
     m_SFR[0xA0] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xA1, 0x00, &tempc1, &tempc2, &tempc3); // DIR2
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xA1 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DIR2
     if (retval == -1)
         return -1;
     m_SFR[0xA1] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xA2, 0x00, &tempc1, &tempc2, &tempc3); // DIR0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xA2 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // DIR0
     if (retval == -1)
         return -1;
     m_SFR[0xA2] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xA8, 0x00, &tempc1, &tempc2, &tempc3); // IEN0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xA8 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // IEN0
     if (retval == -1)
         return -1;
     m_SFR[0xA8] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xA9, 0x00, &tempc1, &tempc2, &tempc3); // IEN1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xA9 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // IEN1
     if (retval == -1)
         return -1;
     m_SFR[0xA9] = tempc3;
     OnProgrammingCallback(24, 48, "");
 
-    retval = Three_byte_command(0x7A, 0xB0, 0x00, &tempc1, &tempc2, &tempc3); // EECTRL
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xB0 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // EECTRL
     if (retval == -1)
         return -1;
     m_SFR[0xB0] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xB1, 0x00, &tempc1, &tempc2, &tempc3); // EEDATA
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xB1 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // EEDATA
     if (retval == -1)
         return -1;
     m_SFR[0xB1] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xB8, 0x00, &tempc1, &tempc2, &tempc3); // IP0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xB8 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // IP0
     if (retval == -1)
         return -1;
     m_SFR[0xB8] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xB9, 0x00, &tempc1, &tempc2, &tempc3); // IP1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xB9 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // IP1
     if (retval == -1)
         return -1;
     m_SFR[0xB9] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xBF, 0x00, &tempc1, &tempc2, &tempc3); // USR2
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xBF }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // USR2
     if (retval == -1)
         return -1;
     m_SFR[0xBF] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xC0, 0x00, &tempc1, &tempc2, &tempc3); // IRCON
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xC0 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // IRCON
     if (retval == -1)
         return -1;
     m_SFR[0xC0] = tempc3;
     OnProgrammingCallback(30, 48, "");
 
-    retval = Three_byte_command(0x7A, 0xC8, 0x00, &tempc1, &tempc2, &tempc3); // T2CON
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xC8 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // T2CON
     if (retval == -1)
         return -1;
     m_SFR[0xC8] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xCA, 0x00, &tempc1, &tempc2, &tempc3); // RCAP2L
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xCA }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // RCAP2L
     if (retval == -1)
         return -1;
     m_SFR[0xCA] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xCB, 0x00, &tempc1, &tempc2, &tempc3); // RCAP2H
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xCB }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // RCAP2H
     if (retval == -1)
         return -1;
     m_SFR[0xCB] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xCC, 0x00, &tempc1, &tempc2, &tempc3); // TL2
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xCC }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TL2
     if (retval == -1)
         return -1;
     m_SFR[0xCC] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xCD, 0x00, &tempc1, &tempc2, &tempc3); // TH2
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xCD }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // TH2
     if (retval == -1)
         return -1;
     m_SFR[0xCD] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xD0, 0x00, &tempc1, &tempc2, &tempc3); // PSW
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xD0 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // PSW
     if (retval == -1)
         return -1;
     m_SFR[0xD0] = tempc3;
     OnProgrammingCallback(36, 48, "");
 
-    retval = Three_byte_command(0x7A, 0xE0, 0x00, &tempc1, &tempc2, &tempc3); // ACC
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xE0 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // ACC
     if (retval == -1)
         return -1;
     m_SFR[0xE0] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xF0, 0x00, &tempc1, &tempc2, &tempc3); // B
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xF0 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // B
     if (retval == -1)
         return -1;
     m_SFR[0xF0] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xEC, 0x00, &tempc1, &tempc2, &tempc3); // REG0
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xEC }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG0
     if (retval == -1)
         return -1;
     m_SFR[0xEC] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xED, 0x00, &tempc1, &tempc2, &tempc3); // REG1
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xED }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG1
     if (retval == -1)
         return -1;
     m_SFR[0xED] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xEE, 0x00, &tempc1, &tempc2, &tempc3); // REG2
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xEE }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG2
     if (retval == -1)
         return -1;
     m_SFR[0xEE] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xEF, 0x00, &tempc1, &tempc2, &tempc3); // REG3
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xEF }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG3
     if (retval == -1)
         return -1;
     m_SFR[0xEF] = tempc3;
     OnProgrammingCallback(42, 48, "");
-    retval = Three_byte_command(0x7A, 0xF4, 0x00, &tempc1, &tempc2, &tempc3); // REG4
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xF4 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG4
     if (retval == -1)
         return -1;
     m_SFR[0xF4] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xF5, 0x00, &tempc1, &tempc2, &tempc3); // REG5
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xF5 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG5
     if (retval == -1)
         return -1;
     m_SFR[0xF5] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xF6, 0x00, &tempc1, &tempc2, &tempc3); // REG6
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xF6 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG6
     if (retval == -1)
         return -1;
     m_SFR[0xF6] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xF7, 0x00, &tempc1, &tempc2, &tempc3); // REG7
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xF7 }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG7
     if (retval == -1)
         return -1;
     m_SFR[0xF7] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xFC, 0x00, &tempc1, &tempc2, &tempc3); // REG8
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xFC }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG8
     if (retval == -1)
         return -1;
     m_SFR[0xFC] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0xFD, 0x00, &tempc1, &tempc2, &tempc3); // REG9
+    retval = Three_byte_command(std::byte{ 0x7A }, std::byte{ 0xFD }, std::byte{ 0x00 }, tempc1, tempc2, tempc3); // REG9
     if (retval == -1)
         return -1;
     m_SFR[0xFD] = tempc3;
@@ -1371,21 +1367,21 @@ void lms7002_pnlMCU_BD_view::OnViewSFRsClick(wxCommandEvent& event)
 
 int lms7002_pnlMCU_BD_view::Read_IRAM()
 {
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
+    std::byte tempc1, tempc2, tempc3{ 0x00 };
     int i = 0;
     int retval = 0;
 
     //default
     //IRAM array initialization
     for (i = 0; i <= 255; i++)
-        m_IRAM[i] = 0x00;
+        m_IRAM[i] = std::byte{ 0x00 };
 
     unsigned stepsDone = 0;
     OnProgrammingCallback(stepsDone, 256, "");
     for (i = 0; i <= 255; i++)
     {
         // code 0x78 is for reading the IRAM locations
-        retval = Three_byte_command(0x78, ((unsigned char)(i)), 0x00, &tempc1, &tempc2, &tempc3);
+        retval = Three_byte_command(std::byte{ 0x78 }, static_cast<std::byte>(i), std::byte{ 0x00 }, tempc1, tempc2, tempc3);
         if (retval == 0)
             m_IRAM[i] = tempc3;
         else
@@ -1429,21 +1425,21 @@ void lms7002_pnlMCU_BD_view::OnViewIRAMClick(wxCommandEvent& event)
 
 int lms7002_pnlMCU_BD_view::Erase_IRAM()
 {
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
+    std::byte tempc1, tempc2, tempc3{ 0x00 };
     int retval = 0;
     int i = 0;
 
     //default ini.
     for (i = 0; i <= 255; i++)
-        m_IRAM[i] = 0x00;
+        m_IRAM[i] = std::byte{ 0x00 };
 
     unsigned stepsDone = 0;
     OnProgrammingCallback(stepsDone, 256, "");
     for (i = 0; i <= 255; i++)
     {
-        m_IRAM[i] = 0x00;
+        m_IRAM[i] = std::byte{ 0x00 };
         // code 0x7C is for writing the IRAM locations
-        retval = Three_byte_command(0x7C, ((unsigned char)(i)), 0x00, &tempc1, &tempc2, &tempc3);
+        retval = Three_byte_command(std::byte{ 0x7C }, static_cast<std::byte>(i), std::byte{ 0x00 }, tempc1, tempc2, tempc3);
         if (retval == -1)
         {
             i = 256;
@@ -1484,13 +1480,12 @@ void lms7002_pnlMCU_BD_view::OnEraseIRAMClick(wxCommandEvent& event)
         this);
 }
 
-int lms7002_pnlMCU_BD_view::Change_MCUFrequency(unsigned char data)
+int lms7002_pnlMCU_BD_view::Change_MCUFrequency(std::byte data)
 {
-
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
+    std::byte tempc1, tempc2, tempc3{ 0x00 };
     int retval = 0;
     // code 0x7E is for writing the SFR registers
-    retval = Three_byte_command(0x7E, 0x8E, data, &tempc1, &tempc2, &tempc3);
+    retval = Three_byte_command(std::byte{ 0x7E }, std::byte{ 0x8E }, std::byte{ data }, tempc1, tempc2, tempc3);
     // PMSR register, address 0x8E
     return retval;
 }
@@ -1501,7 +1496,7 @@ void lms7002_pnlMCU_BD_view::OnSelDivSelect(wxCommandEvent& event)
     int tempi = 0;
 
     tempi = SelDiv->GetSelection();
-    retval = Change_MCUFrequency(tempi);
+    retval = Change_MCUFrequency(static_cast<std::byte>(tempi));
     if (retval == -1)
         wxMessageBox(_("Cannot set the MCU's frequency"));
     else
@@ -1571,7 +1566,7 @@ void lms7002_pnlMCU_BD_view::OnReadIRAMfinished(wxThreadEvent& event)
         return;
     }
     dlgViewIRAM dlg(this);
-    dlg.InitGridData(m_IRAM);
+    dlg.InitGridData(m_IRAM.data());
     dlg.ShowModal();
 }
 

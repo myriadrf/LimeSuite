@@ -92,32 +92,32 @@ int LMS7002M_SDRDevice::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t*
     throw(OperationNotSupported("TransactSPI not implemented"));
 }
 
-int LMS7002M_SDRDevice::I2CWrite(int address, const uint8_t* data, uint32_t length)
+int LMS7002M_SDRDevice::I2CWrite(int address, const std::byte* data, uint32_t length)
 {
     throw(OperationNotSupported("WriteI2C not implemented"));
 }
 
-int LMS7002M_SDRDevice::I2CRead(int addr, uint8_t* dest, uint32_t length)
+int LMS7002M_SDRDevice::I2CRead(int addr, std::byte* dest, uint32_t length)
 {
     throw(OperationNotSupported("ReadI2C not implemented"));
 }
 
-int LMS7002M_SDRDevice::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
+int LMS7002M_SDRDevice::GPIOWrite(const std::byte* buffer, const size_t bufLength)
 {
     throw(OperationNotSupported("GPIOWrite not implemented"));
 }
 
-int LMS7002M_SDRDevice::GPIORead(uint8_t* buffer, const size_t bufLength)
+int LMS7002M_SDRDevice::GPIORead(std::byte* buffer, const size_t bufLength)
 {
     throw(OperationNotSupported("GPIORead not implemented"));
 }
 
-int LMS7002M_SDRDevice::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
+int LMS7002M_SDRDevice::GPIODirWrite(const std::byte* buffer, const size_t bufLength)
 {
     throw(OperationNotSupported("GPIODirWrite not implemented"));
 }
 
-int LMS7002M_SDRDevice::GPIODirRead(uint8_t* buffer, const size_t bufLength)
+int LMS7002M_SDRDevice::GPIODirRead(std::byte* buffer, const size_t bufLength)
 {
     throw(OperationNotSupported("GPIODirRead not implemented"));
 }
@@ -409,7 +409,7 @@ void LMS7002M_SDRDevice::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStat
 }
 
 bool LMS7002M_SDRDevice::UploadMemory(
-    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+    eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback)
 {
     throw(OperationNotSupported("UploadMemory not implemented"));
 }

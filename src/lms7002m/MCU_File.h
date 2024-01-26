@@ -3,15 +3,16 @@
 
 #include "limesuite/config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <vector>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
 #include <string>
+#include <vector>
 
 /** @brief Structure describing a memory block. */
 struct MemBlock {
     size_t m_startAddress;
-    std::vector<unsigned char> m_bytes;
+    std::vector<std::byte> m_bytes;
 };
 
 class LIME_API MCU_File
@@ -28,7 +29,7 @@ class LIME_API MCU_File
     // Read hex file
     void ReadHex(unsigned long limit);
 
-    bool GetByte(const unsigned long address, unsigned char& chr);
+    bool GetByte(const unsigned long address, std::byte& chr);
     bool BitString(const unsigned long address, const unsigned char bits, const bool lEndian, std::string& str);
 
     FILE* Handle() const { return m_file; };

@@ -12,8 +12,8 @@ class PCIE_CSR_Pipe : public ISerialPort
 {
   public:
     explicit PCIE_CSR_Pipe(std::shared_ptr<LitePCIe> port);
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
+    virtual int Write(const std::byte* data, size_t length, int timeout_ms) override;
+    virtual int Read(std::byte* data, size_t length, int timeout_ms) override;
 
   protected:
     std::shared_ptr<LitePCIe> port;
@@ -44,10 +44,10 @@ class LMS64C_FPGA_Over_PCIe : public lime::IComms
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual int ProgramWrite(
-        const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;
+        const std::byte* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;
 
-    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) override;
-    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) override;
+    virtual int MemoryWrite(uint32_t address, const std::byte* data, uint32_t dataLength) override;
+    virtual int MemoryRead(uint32_t address, std::byte* data, uint32_t dataLength) override;
 
   private:
     PCIE_CSR_Pipe pipe;

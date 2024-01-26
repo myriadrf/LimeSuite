@@ -109,7 +109,7 @@ void dlgViewSFR::StrArrayIni()
     strArray[0xFD] = "REG9: ";
 }
 
-void dlgViewSFR::InitGridData(const unsigned char* data)
+void dlgViewSFR::InitGridData(const std::byte* data)
 {
     StrArrayIni();
     for (int i = 0; i < 16; i++)

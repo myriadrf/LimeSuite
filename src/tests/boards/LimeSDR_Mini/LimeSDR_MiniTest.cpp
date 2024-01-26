@@ -75,7 +75,7 @@ TEST(LimeSDR_Mini, Constructor)
 
     ON_CALL(*usbPipeMock, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     // Sink uninteresting calls so that any new changes don't immediately break tests
     EXPECT_CALL(*usbPipeMock, Write(_, PACKET_SIZE, _)).Times(AnyNumber());
@@ -149,8 +149,8 @@ TEST(LimeSDR_Mini, Constructor)
     EXPECT_CALL(*usbPipeMock, Read(FPGADetectRefClkReadRegister0x65Matcher, PACKET_SIZE, _))
         .Times(1)
         .InSequence(FPGADetectRefClockSequence)
-        .WillOnce(DoAll(SetArrayArgument<0>(
-                            reinterpret_cast<uint8_t*>(&detectRefClkPacket), reinterpret_cast<uint8_t*>(&detectRefClkPacket + 1)),
+        .WillOnce(DoAll(SetArrayArgument<0>(reinterpret_cast<std::byte*>(&detectRefClkPacket),
+                            reinterpret_cast<std::byte*>(&detectRefClkPacket + 1)),
             ReturnArg<1>()))
         .RetiresOnSaturation();
 

@@ -15,6 +15,7 @@
 #include <cassert>
 #include <ciso646> // alternative operators for visual c++: not, and, or...
 #include <vector>
+#include <cstddef>
 #include "limesuite/IComms.h"
 
 using namespace std;
@@ -44,482 +45,247 @@ void realToFrac(const float real, int& A, int& B, int& C)
 }
 
 /// Default configuration
-const unsigned char Si5351C::m_defaultConfiguration[] = { 0,
-    0x00,
-    1,
-    0x00,
-    2,
-    0x08,
-    3,
-    0x00,
-    4,
-    0x00,
-    5,
-    0x00,
-    6,
-    0x00,
-    7,
-    0x00,
-    8,
-    0x00,
-    9,
-    0x00,
-    10,
-    0x00,
-    11,
-    0x00,
-    12,
-    0x00,
-    13,
-    0x00,
-    14,
-    0x00,
-    15,
-    0x04,
-    16,
-    0x4F,
-    17,
-    0x4F,
-    18,
-    0x4F,
-    19,
-    0x4F,
-    20,
-    0x4F,
-    21,
-    0x4F,
-    22,
-    0x0F,
-    23,
-    0x0F,
-    24,
-    0x00,
-    25,
-    0x00,
-    26,
-    0x00,
-    27,
-    0x80,
-    28,
-    0x00,
-    29,
-    0x0B,
-    30,
-    0x2F,
-    31,
-    0x00,
-    32,
-    0x00,
-    33,
-    0x00,
-    34,
-    0x00,
-    35,
-    0x00,
-    36,
-    0x00,
-    37,
-    0x00,
-    38,
-    0x00,
-    39,
-    0x00,
-    40,
-    0x00,
-    41,
-    0x00,
-    42,
-    0x00,
-    43,
-    0x01,
-    44,
-    0x00,
-    45,
-    0x0D,
-    46,
-    0x00,
-    47,
-    0x00,
-    48,
-    0x00,
-    49,
-    0x00,
-    50,
-    0x00,
-    51,
-    0x01,
-    52,
-    0x00,
-    53,
-    0x0D,
-    54,
-    0x00,
-    55,
-    0x00,
-    56,
-    0x00,
-    57,
-    0x00,
-    58,
-    0x00,
-    59,
-    0x01,
-    60,
-    0x00,
-    61,
-    0x0D,
-    62,
-    0x00,
-    63,
-    0x00,
-    64,
-    0x00,
-    65,
-    0x00,
-    66,
-    0x00,
-    67,
-    0x01,
-    68,
-    0x00,
-    69,
-    0x0D,
-    70,
-    0x00,
-    71,
-    0x00,
-    72,
-    0x00,
-    73,
-    0x00,
-    74,
-    0x00,
-    75,
-    0x01,
-    76,
-    0x00,
-    77,
-    0x0D,
-    78,
-    0x00,
-    79,
-    0x00,
-    80,
-    0x00,
-    81,
-    0x00,
-    82,
-    0x00,
-    83,
-    0x01,
-    84,
-    0x00,
-    85,
-    0x0D,
-    86,
-    0x00,
-    87,
-    0x00,
-    88,
-    0x00,
-    89,
-    0x00,
-    90,
-    0x1E,
-    91,
-    0x1E,
-    92,
-    0x00,
-    93,
-    0x00,
-    94,
-    0x00,
-    95,
-    0x00,
-    96,
-    0x00,
-    97,
-    0x00,
-    98,
-    0x00,
-    99,
-    0x00,
-    100,
-    0x00,
-    101,
-    0x00,
-    102,
-    0x00,
-    103,
-    0x00,
-    104,
-    0x00,
-    105,
-    0x00,
-    106,
-    0x00,
-    107,
-    0x00,
-    108,
-    0x00,
-    109,
-    0x00,
-    110,
-    0x00,
-    111,
-    0x00,
-    112,
-    0x00,
-    113,
-    0x00,
-    114,
-    0x00,
-    115,
-    0x00,
-    116,
-    0x00,
-    117,
-    0x00,
-    118,
-    0x00,
-    119,
-    0x00,
-    120,
-    0x00,
-    121,
-    0x00,
-    122,
-    0x00,
-    123,
-    0x00,
-    124,
-    0x00,
-    125,
-    0x00,
-    126,
-    0x00,
-    127,
-    0x00,
-    128,
-    0x00,
-    129,
-    0x00,
-    130,
-    0x00,
-    131,
-    0x00,
-    132,
-    0x00,
-    133,
-    0x00,
-    134,
-    0x00,
-    135,
-    0x00,
-    136,
-    0x00,
-    137,
-    0x00,
-    138,
-    0x00,
-    139,
-    0x00,
-    140,
-    0x00,
-    141,
-    0x00,
-    142,
-    0x00,
-    143,
-    0x00,
-    144,
-    0x00,
-    145,
-    0x00,
-    146,
-    0x00,
-    147,
-    0x00,
-    148,
-    0x00,
-    149,
-    0x00,
-    150,
-    0x00,
-    151,
-    0x00,
-    152,
-    0x00,
-    153,
-    0x00,
-    154,
-    0x00,
-    155,
-    0x00,
-    156,
-    0x00,
-    157,
-    0x00,
-    158,
-    0x00,
-    159,
-    0x00,
-    160,
-    0x00,
-    161,
-    0x00,
-    162,
-    0x00,
-    163,
-    0x00,
-    164,
-    0x00,
-    165,
-    0x00,
-    166,
-    0x00,
-    167,
-    0x00,
-    168,
-    0x00,
-    169,
-    0x00,
-    170,
-    0x00,
-    171,
-    0x00,
-    172,
-    0x00,
-    173,
-    0x00,
-    174,
-    0x00,
-    175,
-    0x00,
-    176,
-    0x00,
-    177,
-    0x00,
-    178,
-    0x00,
-    179,
-    0x00,
-    180,
-    0x00,
-    181,
-    0x30,
-    182,
-    0x00,
-    183,
-    0xD2,
-    184,
-    0x60,
-    185,
-    0x60,
-    186,
-    0x00,
-    187,
-    0xC0,
-    188,
-    0x00,
-    189,
-    0x00,
-    190,
-    0x00,
-    191,
-    0x00,
-    192,
-    0x00,
-    193,
-    0x00,
-    194,
-    0x00,
-    195,
-    0x00,
-    196,
-    0x00,
-    197,
-    0x00,
-    198,
-    0x00,
-    199,
-    0x00,
-    200,
-    0x00,
-    201,
-    0x00,
-    202,
-    0x00,
-    203,
-    0x00,
-    204,
-    0x00,
-    205,
-    0x00,
-    206,
-    0x00,
-    207,
-    0x00,
-    208,
-    0x00,
-    209,
-    0x00,
-    210,
-    0x00,
-    211,
-    0x00,
-    212,
-    0x00,
-    213,
-    0x00,
-    214,
-    0x00,
-    215,
-    0x00,
-    216,
-    0x00,
-    217,
-    0x00,
-    218,
-    0x00,
-    219,
-    0x00,
-    220,
-    0x00,
-    221,
-    0x0D,
-    222,
-    0x00,
-    223,
-    0x00,
-    224,
-    0x00,
-    225,
-    0x00,
-    226,
-    0x00,
-    227,
-    0x00,
-    228,
-    0x00,
-    229,
-    0x00,
-    230,
-    0x00,
-    231,
-    0x00,
-    232,
-    0x00 };
+const std::vector<Si5351C::Si5351CConfigurationValue> Si5351C::m_defaultConfiguration = { {
+    { 0, std::byte{ 0x00 } },
+    { 1, std::byte{ 0x00 } },
+    { 2, std::byte{ 0x08 } },
+    { 3, std::byte{ 0x00 } },
+    { 4, std::byte{ 0x00 } },
+    { 5, std::byte{ 0x00 } },
+    { 6, std::byte{ 0x00 } },
+    { 7, std::byte{ 0x00 } },
+    { 8, std::byte{ 0x00 } },
+    { 9, std::byte{ 0x00 } },
+    { 10, std::byte{ 0x00 } },
+    { 11, std::byte{ 0x00 } },
+    { 12, std::byte{ 0x00 } },
+    { 13, std::byte{ 0x00 } },
+    { 14, std::byte{ 0x00 } },
+    { 15, std::byte{ 0x04 } },
+    { 16, std::byte{ 0x4F } },
+    { 17, std::byte{ 0x4F } },
+    { 18, std::byte{ 0x4F } },
+    { 19, std::byte{ 0x4F } },
+    { 20, std::byte{ 0x4F } },
+    { 21, std::byte{ 0x4F } },
+    { 22, std::byte{ 0x0F } },
+    { 23, std::byte{ 0x0F } },
+    { 24, std::byte{ 0x00 } },
+    { 25, std::byte{ 0x00 } },
+    { 26, std::byte{ 0x00 } },
+    { 27, std::byte{ 0x80 } },
+    { 28, std::byte{ 0x00 } },
+    { 29, std::byte{ 0x0B } },
+    { 30, std::byte{ 0x2F } },
+    { 31, std::byte{ 0x00 } },
+    { 32, std::byte{ 0x00 } },
+    { 33, std::byte{ 0x00 } },
+    { 34, std::byte{ 0x00 } },
+    { 35, std::byte{ 0x00 } },
+    { 36, std::byte{ 0x00 } },
+    { 37, std::byte{ 0x00 } },
+    { 38, std::byte{ 0x00 } },
+    { 39, std::byte{ 0x00 } },
+    { 40, std::byte{ 0x00 } },
+    { 41, std::byte{ 0x00 } },
+    { 42, std::byte{ 0x00 } },
+    { 43, std::byte{ 0x01 } },
+    { 44, std::byte{ 0x00 } },
+    { 45, std::byte{ 0x0D } },
+    { 46, std::byte{ 0x00 } },
+    { 47, std::byte{ 0x00 } },
+    { 48, std::byte{ 0x00 } },
+    { 49, std::byte{ 0x00 } },
+    { 50, std::byte{ 0x00 } },
+    { 51, std::byte{ 0x01 } },
+    { 52, std::byte{ 0x00 } },
+    { 53, std::byte{ 0x0D } },
+    { 54, std::byte{ 0x00 } },
+    { 55, std::byte{ 0x00 } },
+    { 56, std::byte{ 0x00 } },
+    { 57, std::byte{ 0x00 } },
+    { 58, std::byte{ 0x00 } },
+    { 59, std::byte{ 0x01 } },
+    { 60, std::byte{ 0x00 } },
+    { 61, std::byte{ 0x0D } },
+    { 62, std::byte{ 0x00 } },
+    { 63, std::byte{ 0x00 } },
+    { 64, std::byte{ 0x00 } },
+    { 65, std::byte{ 0x00 } },
+    { 66, std::byte{ 0x00 } },
+    { 67, std::byte{ 0x01 } },
+    { 68, std::byte{ 0x00 } },
+    { 69, std::byte{ 0x0D } },
+    { 70, std::byte{ 0x00 } },
+    { 71, std::byte{ 0x00 } },
+    { 72, std::byte{ 0x00 } },
+    { 73, std::byte{ 0x00 } },
+    { 74, std::byte{ 0x00 } },
+    { 75, std::byte{ 0x01 } },
+    { 76, std::byte{ 0x00 } },
+    { 77, std::byte{ 0x0D } },
+    { 78, std::byte{ 0x00 } },
+    { 79, std::byte{ 0x00 } },
+    { 80, std::byte{ 0x00 } },
+    { 81, std::byte{ 0x00 } },
+    { 82, std::byte{ 0x00 } },
+    { 83, std::byte{ 0x01 } },
+    { 84, std::byte{ 0x00 } },
+    { 85, std::byte{ 0x0D } },
+    { 86, std::byte{ 0x00 } },
+    { 87, std::byte{ 0x00 } },
+    { 88, std::byte{ 0x00 } },
+    { 89, std::byte{ 0x00 } },
+    { 90, std::byte{ 0x1E } },
+    { 91, std::byte{ 0x1E } },
+    { 92, std::byte{ 0x00 } },
+    { 93, std::byte{ 0x00 } },
+    { 94, std::byte{ 0x00 } },
+    { 95, std::byte{ 0x00 } },
+    { 96, std::byte{ 0x00 } },
+    { 97, std::byte{ 0x00 } },
+    { 98, std::byte{ 0x00 } },
+    { 99, std::byte{ 0x00 } },
+    { 100, std::byte{ 0x00 } },
+    { 101, std::byte{ 0x00 } },
+    { 102, std::byte{ 0x00 } },
+    { 103, std::byte{ 0x00 } },
+    { 104, std::byte{ 0x00 } },
+    { 105, std::byte{ 0x00 } },
+    { 106, std::byte{ 0x00 } },
+    { 107, std::byte{ 0x00 } },
+    { 108, std::byte{ 0x00 } },
+    { 109, std::byte{ 0x00 } },
+    { 110, std::byte{ 0x00 } },
+    { 111, std::byte{ 0x00 } },
+    { 112, std::byte{ 0x00 } },
+    { 113, std::byte{ 0x00 } },
+    { 114, std::byte{ 0x00 } },
+    { 115, std::byte{ 0x00 } },
+    { 116, std::byte{ 0x00 } },
+    { 117, std::byte{ 0x00 } },
+    { 118, std::byte{ 0x00 } },
+    { 119, std::byte{ 0x00 } },
+    { 120, std::byte{ 0x00 } },
+    { 121, std::byte{ 0x00 } },
+    { 122, std::byte{ 0x00 } },
+    { 123, std::byte{ 0x00 } },
+    { 124, std::byte{ 0x00 } },
+    { 125, std::byte{ 0x00 } },
+    { 126, std::byte{ 0x00 } },
+    { 127, std::byte{ 0x00 } },
+    { 128, std::byte{ 0x00 } },
+    { 129, std::byte{ 0x00 } },
+    { 130, std::byte{ 0x00 } },
+    { 131, std::byte{ 0x00 } },
+    { 132, std::byte{ 0x00 } },
+    { 133, std::byte{ 0x00 } },
+    { 134, std::byte{ 0x00 } },
+    { 135, std::byte{ 0x00 } },
+    { 136, std::byte{ 0x00 } },
+    { 137, std::byte{ 0x00 } },
+    { 138, std::byte{ 0x00 } },
+    { 139, std::byte{ 0x00 } },
+    { 140, std::byte{ 0x00 } },
+    { 141, std::byte{ 0x00 } },
+    { 142, std::byte{ 0x00 } },
+    { 143, std::byte{ 0x00 } },
+    { 144, std::byte{ 0x00 } },
+    { 145, std::byte{ 0x00 } },
+    { 146, std::byte{ 0x00 } },
+    { 147, std::byte{ 0x00 } },
+    { 148, std::byte{ 0x00 } },
+    { 149, std::byte{ 0x00 } },
+    { 150, std::byte{ 0x00 } },
+    { 151, std::byte{ 0x00 } },
+    { 152, std::byte{ 0x00 } },
+    { 153, std::byte{ 0x00 } },
+    { 154, std::byte{ 0x00 } },
+    { 155, std::byte{ 0x00 } },
+    { 156, std::byte{ 0x00 } },
+    { 157, std::byte{ 0x00 } },
+    { 158, std::byte{ 0x00 } },
+    { 159, std::byte{ 0x00 } },
+    { 160, std::byte{ 0x00 } },
+    { 161, std::byte{ 0x00 } },
+    { 162, std::byte{ 0x00 } },
+    { 163, std::byte{ 0x00 } },
+    { 164, std::byte{ 0x00 } },
+    { 165, std::byte{ 0x00 } },
+    { 166, std::byte{ 0x00 } },
+    { 167, std::byte{ 0x00 } },
+    { 168, std::byte{ 0x00 } },
+    { 169, std::byte{ 0x00 } },
+    { 170, std::byte{ 0x00 } },
+    { 171, std::byte{ 0x00 } },
+    { 172, std::byte{ 0x00 } },
+    { 173, std::byte{ 0x00 } },
+    { 174, std::byte{ 0x00 } },
+    { 175, std::byte{ 0x00 } },
+    { 176, std::byte{ 0x00 } },
+    { 177, std::byte{ 0x00 } },
+    { 178, std::byte{ 0x00 } },
+    { 179, std::byte{ 0x00 } },
+    { 180, std::byte{ 0x00 } },
+    { 181, std::byte{ 0x30 } },
+    { 182, std::byte{ 0x00 } },
+    { 183, std::byte{ 0xD2 } },
+    { 184, std::byte{ 0x60 } },
+    { 185, std::byte{ 0x60 } },
+    { 186, std::byte{ 0x00 } },
+    { 187, std::byte{ 0xC0 } },
+    { 188, std::byte{ 0x00 } },
+    { 189, std::byte{ 0x00 } },
+    { 190, std::byte{ 0x00 } },
+    { 191, std::byte{ 0x00 } },
+    { 192, std::byte{ 0x00 } },
+    { 193, std::byte{ 0x00 } },
+    { 194, std::byte{ 0x00 } },
+    { 195, std::byte{ 0x00 } },
+    { 196, std::byte{ 0x00 } },
+    { 197, std::byte{ 0x00 } },
+    { 198, std::byte{ 0x00 } },
+    { 199, std::byte{ 0x00 } },
+    { 200, std::byte{ 0x00 } },
+    { 201, std::byte{ 0x00 } },
+    { 202, std::byte{ 0x00 } },
+    { 203, std::byte{ 0x00 } },
+    { 204, std::byte{ 0x00 } },
+    { 205, std::byte{ 0x00 } },
+    { 206, std::byte{ 0x00 } },
+    { 207, std::byte{ 0x00 } },
+    { 208, std::byte{ 0x00 } },
+    { 209, std::byte{ 0x00 } },
+    { 210, std::byte{ 0x00 } },
+    { 211, std::byte{ 0x00 } },
+    { 212, std::byte{ 0x00 } },
+    { 213, std::byte{ 0x00 } },
+    { 214, std::byte{ 0x00 } },
+    { 215, std::byte{ 0x00 } },
+    { 216, std::byte{ 0x00 } },
+    { 217, std::byte{ 0x00 } },
+    { 218, std::byte{ 0x00 } },
+    { 219, std::byte{ 0x00 } },
+    { 220, std::byte{ 0x00 } },
+    { 221, std::byte{ 0x0D } },
+    { 222, std::byte{ 0x00 } },
+    { 223, std::byte{ 0x00 } },
+    { 224, std::byte{ 0x00 } },
+    { 225, std::byte{ 0x00 } },
+    { 226, std::byte{ 0x00 } },
+    { 227, std::byte{ 0x00 } },
+    { 228, std::byte{ 0x00 } },
+    { 229, std::byte{ 0x00 } },
+    { 230, std::byte{ 0x00 } },
+    { 231, std::byte{ 0x00 } },
+    { 232, std::byte{ 0x00 } },
+} };
 
 // ---------------------------------------------------------------------------
 Si5351C::Si5351C(lime::II2C& i2c_comms)
     : comms(i2c_comms)
 {
-    memset(m_newConfiguration, 0, 255);
-    for (unsigned int i = 0; i < sizeof(m_defaultConfiguration); i += 2)
-    {
-        m_newConfiguration[m_defaultConfiguration[i]] = m_defaultConfiguration[i + 1];
-    }
+    Reset();
 }
 // ---------------------------------------------------------------------------
 
@@ -531,33 +297,33 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    std::vector<uint8_t> outBuffer;
+    std::vector<std::byte> outBuffer;
     //Disable outputs
-    outBuffer.push_back(3);
-    outBuffer.push_back(uint8_t(0xFF));
+    outBuffer.push_back(std::byte{ 3 });
+    outBuffer.push_back(std::byte{ 0xFF });
     //Power down all output drivers
-    for (int i = 0; i < 8; ++i)
+    for (uint8_t i = 0; i < 8; ++i)
     {
-        outBuffer.push_back(16 + i);
-        outBuffer.push_back(uint8_t(0x84));
+        outBuffer.push_back(static_cast<std::byte>(16 + i));
+        outBuffer.push_back(std::byte{ 0x84 });
     }
     //write new configuration
-    for (int i = 15; i <= 92; ++i)
+    for (uint8_t i = 15; i <= 92; ++i)
     {
-        outBuffer.push_back(i);
-        outBuffer.push_back(m_newConfiguration[i]);
+        outBuffer.push_back(std::byte{ i });
+        outBuffer.push_back(std::byte{ m_newConfiguration[i] });
     }
-    for (int i = 149; i <= 170; ++i)
+    for (uint8_t i = 149; i <= 170; ++i)
     {
-        outBuffer.push_back(i);
-        outBuffer.push_back(m_newConfiguration[i]);
+        outBuffer.push_back(std::byte{ i });
+        outBuffer.push_back(std::byte{ m_newConfiguration[i] });
     }
     //apply soft reset
-    outBuffer.push_back(uint8_t(177));
-    outBuffer.push_back(uint8_t(0xAC));
+    outBuffer.push_back(std::byte{ 177 });
+    outBuffer.push_back(std::byte{ 0xAC });
     //Enabe desired outputs
-    outBuffer.push_back(3);
-    outBuffer.push_back(m_newConfiguration[3]);
+    outBuffer.push_back(std::byte{ 3 });
+    outBuffer.push_back(std::byte{ m_newConfiguration[3] });
 
     try
     {
@@ -593,7 +359,7 @@ bool Si5351C::LoadRegValuesFromFile(string FName)
         if (strcmp(line, "#END_PROFILE") == 0)
             break;
         sscanf(line, "%i,%x", &addr, &value);
-        m_newConfiguration[addr] = value;
+        m_newConfiguration[addr] = static_cast<std::byte>(value);
     }
 
     fin.close();
@@ -821,7 +587,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
     if (bestVCOB == 0) //just in case if pllb is not used make it the same frequency as plla
         bestVCOB = bestVCOA;
     plls[1].VCO_Hz = bestVCOB;
-    plls[1].feedbackDivider = (double)bestVCOB / plls[0].inputFreqHz;
+    plls[1].feedbackDivider = static_cast<double>(bestVCOB) / plls[0].inputFreqHz;
     for (int i = 0; i < clockCount; ++i)
     {
         if (clocks[i].outputFreqHz == 0 || !clocks[i].powered)
@@ -838,7 +604,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
         else
         {
             clocks[i].int_mode = false;
-            clocks[i].multisynthDivider = (double)bestVCOB / clocks[i].outputFreqHz;
+            clocks[i].multisynthDivider = static_cast<double>(bestVCOB) / clocks[i].outputFreqHz;
         }
         clocks[i].pllSource = 1;
     }
@@ -851,24 +617,26 @@ Si5351C::Status Si5351C::ConfigureClocks()
 {
     FindVCO(CLK, PLL, 600000000, 900000000);
     int addr;
-    m_newConfiguration[3] = 0;
+    m_newConfiguration[3] = std::byte{ 0 };
     for (int i = 0; i < 8; ++i)
     {
-        m_newConfiguration[3] |= (!CLK[i].powered) << i; //enabled
-        m_newConfiguration[16 + i] = 0;
-        m_newConfiguration[16 + i] |= !CLK[i].powered << 7; // powered
+        m_newConfiguration[3] |= static_cast<std::byte>((!CLK[i].powered) << i); //enabled
+        m_newConfiguration[16 + i] = std::byte{ 0 };
+        m_newConfiguration[16 + i] |= static_cast<std::byte>(!CLK[i].powered << 7); // powered
 
         if (CLK[i].int_mode)
         {
-            m_newConfiguration[16 + i] |= 1 << 6; //integer mode
+            m_newConfiguration[16 + i] |= std::byte{ 1 << 6 }; //integer mode
         }
         else
-            m_newConfiguration[16 + i] |= 0 << 6;
+        {
+            m_newConfiguration[16 + i] |= std::byte{ 0 << 6 };
+        }
 
-        m_newConfiguration[16 + i] |= CLK[i].pllSource << 5; //PLL source
-        m_newConfiguration[16 + i] |= CLK[i].inverted << 4; // invert
-        m_newConfiguration[16 + i] |= 3 << 2;
-        m_newConfiguration[16 + i] |= 3;
+        m_newConfiguration[16 + i] |= static_cast<std::byte>(CLK[i].pllSource << 5); //PLL source
+        m_newConfiguration[16 + i] |= static_cast<std::byte>(CLK[i].inverted << 4); // invert
+        m_newConfiguration[16 + i] |= std::byte{ 3 << 2 };
+        m_newConfiguration[16 + i] |= std::byte{ 3 };
 
         addr = 42 + i * 8;
         int DivA, DivB, DivC;
@@ -897,20 +665,19 @@ Si5351C::Status Si5351C::ConfigureClocks()
                 unsigned MSX_P2 = 128 * DivB - DivC * floor(128 * DivB / DivC);
                 unsigned MSX_P3 = DivC;
 
-                m_newConfiguration[addr] = MSX_P3 >> 8;
-                m_newConfiguration[addr + 1] = MSX_P3;
+                m_newConfiguration[addr] = static_cast<std::byte>(MSX_P3 >> 8);
+                m_newConfiguration[addr + 1] = static_cast<std::byte>(MSX_P3);
 
-                m_newConfiguration[addr + 2] = 0;
-                m_newConfiguration[addr + 2] |= (MSX_P1 >> 16) & 0x03;
-                m_newConfiguration[addr + 3] = MSX_P1 >> 8;
-                m_newConfiguration[addr + 4] = MSX_P1;
+                m_newConfiguration[addr + 2] = std::byte{ 0 };
+                m_newConfiguration[addr + 2] |= static_cast<std::byte>((MSX_P1 >> 16) & 0x03);
+                m_newConfiguration[addr + 3] = static_cast<std::byte>(MSX_P1 >> 8);
+                m_newConfiguration[addr + 4] = static_cast<std::byte>(MSX_P1);
 
-                m_newConfiguration[addr + 5] = 0;
-                m_newConfiguration[addr + 5] = (MSX_P2 >> 16) & 0x0F;
-                m_newConfiguration[addr + 5] |= (MSX_P3 >> 16) << 4;
+                m_newConfiguration[addr + 5] = static_cast<std::byte>((MSX_P2 >> 16) & 0x0F);
+                m_newConfiguration[addr + 5] |= static_cast<std::byte>((MSX_P3 >> 16) << 4);
 
-                m_newConfiguration[addr + 6] = MSX_P2;
-                m_newConfiguration[addr + 7] = MSX_P2 >> 8;
+                m_newConfiguration[addr + 6] = static_cast<std::byte>(MSX_P2);
+                m_newConfiguration[addr + 7] = static_cast<std::byte>(MSX_P2 >> 8);
             }
             else if (CLK[i].outputFreqHz <= 160000000) // AVAILABLE ONLY ON 0-5 MULTISYNTHS
             {
@@ -924,7 +691,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
             {
                 if (i == 6)
                 {
-                    m_newConfiguration[90] = DivA;
+                    m_newConfiguration[90] = static_cast<std::byte>(DivA);
                     if (DivA % 2 != 0)
                     {
                         lime::error("Si5351C - CLK6 multisynth divider is not even integer");
@@ -933,7 +700,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
                 }
                 else
                 {
-                    m_newConfiguration[91] = DivA;
+                    m_newConfiguration[91] = static_cast<std::byte>(DivA);
                     if (DivA % 2 != 0)
                     {
                         lime::error("Si5351C - CLK7 multisynth divider is not even integer");
@@ -951,9 +718,9 @@ Si5351C::Status Si5351C::ConfigureClocks()
 
     //configure pll
     //set input clk source
-    m_newConfiguration[15] = m_newConfiguration[15] & 0xF3;
-    m_newConfiguration[15] |= (PLL[0].CLK_SRC & 1) << 2;
-    m_newConfiguration[15] |= (PLL[1].CLK_SRC & 1) << 3;
+    m_newConfiguration[15] = m_newConfiguration[15] & std::byte{ 0xF3 };
+    m_newConfiguration[15] |= static_cast<std::byte>((PLL[0].CLK_SRC & 1) << 2);
+    m_newConfiguration[15] |= static_cast<std::byte>((PLL[1].CLK_SRC & 1) << 3);
     for (int i = 0; i < 2; ++i)
     {
         addr = 26 + i * 8;
@@ -984,22 +751,21 @@ Si5351C::Status Si5351C::ConfigureClocks()
             DivB,
             DivC);
 
-        MSNx_P1 = 128 * DivA + floor(128 * ((float)DivB / DivC)) - 512;
+        MSNx_P1 = 128 * DivA + floor(128 * (static_cast<float>(DivB) / DivC)) - 512;
         MSNx_P2 = 128 * DivB - DivC * floor(128 * DivB / DivC);
         MSNx_P3 = DivC;
 
-        m_newConfiguration[addr + 4] = MSNx_P1;
-        m_newConfiguration[addr + 3] = MSNx_P1 >> 8;
-        m_newConfiguration[addr + 2] = MSNx_P1 >> 16;
+        m_newConfiguration[addr + 4] = static_cast<std::byte>(MSNx_P1);
+        m_newConfiguration[addr + 3] = static_cast<std::byte>(MSNx_P1 >> 8);
+        m_newConfiguration[addr + 2] = static_cast<std::byte>(MSNx_P1 >> 16);
 
-        m_newConfiguration[addr + 7] = MSNx_P2;
-        m_newConfiguration[addr + 6] = MSNx_P2 >> 8;
-        m_newConfiguration[addr + 5] = 0;
-        m_newConfiguration[addr + 5] = (MSNx_P2 >> 16) & 0x0F;
+        m_newConfiguration[addr + 7] = static_cast<std::byte>(MSNx_P2);
+        m_newConfiguration[addr + 6] = static_cast<std::byte>(MSNx_P2 >> 8);
+        m_newConfiguration[addr + 5] = static_cast<std::byte>((MSNx_P2 >> 16) & 0x0F);
 
-        m_newConfiguration[addr + 5] |= (MSNx_P3 >> 16) << 4;
-        m_newConfiguration[addr + 1] |= MSNx_P3;
-        m_newConfiguration[addr] |= MSNx_P3 >> 8;
+        m_newConfiguration[addr + 5] |= static_cast<std::byte>((MSNx_P3 >> 16) << 4);
+        m_newConfiguration[addr + 1] |= static_cast<std::byte>(MSNx_P3);
+        m_newConfiguration[addr] |= static_cast<std::byte>(MSNx_P3 >> 8);
     }
     return Status::SUCCESS;
 }
@@ -1044,19 +810,20 @@ void Si5351C::SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC)
 */
 void Si5351C::Reset()
 {
-    memset(m_newConfiguration, 0, 255);
-    for (unsigned int i = 0; i < sizeof(m_defaultConfiguration); i += 2)
+    m_newConfiguration.fill(std::byte{ 0 });
+
+    for (const auto& value : m_defaultConfiguration)
     {
-        m_newConfiguration[m_defaultConfiguration[i]] = m_defaultConfiguration[i + 1];
+        m_newConfiguration[value.index] = value.value;
     }
 }
 
 Si5351C::StatusBits Si5351C::GetStatusBits()
 {
     StatusBits stat;
-    std::vector<uint8_t> dataIo;
-    dataIo.push_back(0);
-    dataIo.push_back(1);
+    std::vector<std::byte> dataIo;
+    dataIo.push_back(std::byte{ 0 });
+    dataIo.push_back(std::byte{ 1 });
 
     try
     {
@@ -1066,24 +833,22 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
         return stat;
     }
 
-    uint8_t reg0 = dataIo[0] & 0xFF;
-    uint8_t reg1 = dataIo[1] & 0xFF;
-    stat.sys_init = (reg0 >> 7);
-    stat.lol_b = (reg0 >> 6) & 0x1;
-    stat.lol_a = (reg0 >> 5) & 0x1;
-    stat.los = (reg0 >> 4) & 0x1;
-    stat.sys_init_stky = (reg1 >> 7);
-    stat.lol_b_stky = (reg1 >> 6) & 0x1;
-    stat.lol_a_stky = (reg1 >> 5) & 0x1;
-    stat.los_stky = (reg1 >> 4) & 0x1;
+    stat.sys_init = static_cast<int>(dataIo[0] >> 7);
+    stat.lol_b = static_cast<int>((dataIo[0] >> 6) & std::byte{ 0x1 });
+    stat.lol_a = static_cast<int>((dataIo[0] >> 5) & std::byte{ 0x1 });
+    stat.los = static_cast<int>((dataIo[0] >> 4) & std::byte{ 0x1 });
+    stat.sys_init_stky = static_cast<int>((dataIo[1] >> 7));
+    stat.lol_b_stky = static_cast<int>((dataIo[1] >> 6) & std::byte{ 0x1 });
+    stat.lol_a_stky = static_cast<int>((dataIo[1] >> 5) & std::byte{ 0x1 });
+    stat.los_stky = static_cast<int>((dataIo[1] >> 4) & std::byte{ 0x1 });
     return stat;
 }
 
 Si5351C::Status Si5351C::ClearStatus()
 {
-    std::vector<uint8_t> dataWr;
-    dataWr.push_back(1);
-    dataWr.push_back(0x1);
+    std::vector<std::byte> dataWr;
+    dataWr.push_back(std::byte{ 1 });
+    dataWr.push_back(std::byte{ 0x1 });
 
     try
     {

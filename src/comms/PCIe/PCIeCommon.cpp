@@ -7,11 +7,11 @@ PCIE_CSR_Pipe::PCIE_CSR_Pipe(std::shared_ptr<LitePCIe> port)
 {
 }
 
-int PCIE_CSR_Pipe::Write(const uint8_t* data, size_t length, int timeout_ms)
+int PCIE_CSR_Pipe::Write(const std::byte* data, size_t length, int timeout_ms)
 {
     return port->WriteControl(data, length, timeout_ms);
 }
-int PCIE_CSR_Pipe::Read(uint8_t* data, size_t length, int timeout_ms)
+int PCIE_CSR_Pipe::Read(std::byte* data, size_t length, int timeout_ms)
 {
     return port->ReadControl(data, length, timeout_ms);
 }
@@ -56,17 +56,17 @@ int LMS64C_FPGA_Over_PCIe::CustomParameterRead(std::vector<CustomParameterIO>& p
     return LMS64CProtocol::CustomParameterRead(pipe, parameters);
 }
 
-int LMS64C_FPGA_Over_PCIe::ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
+int LMS64C_FPGA_Over_PCIe::ProgramWrite(const std::byte* data, size_t length, int prog_mode, int target, ProgressCallback callback)
 {
     return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
 }
 
-int LMS64C_FPGA_Over_PCIe::MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
+int LMS64C_FPGA_Over_PCIe::MemoryWrite(uint32_t address, const std::byte* data, uint32_t dataLength)
 {
     return LMS64CProtocol::MemoryWrite(pipe, address, data, dataLength);
 }
 
-int LMS64C_FPGA_Over_PCIe::MemoryRead(uint32_t address, void* data, uint32_t dataLength)
+int LMS64C_FPGA_Over_PCIe::MemoryRead(uint32_t address, std::byte* data, uint32_t dataLength)
 {
     return LMS64CProtocol::MemoryRead(pipe, address, data, dataLength);
 }

@@ -77,7 +77,7 @@ TEST(LMS64CProtocol, CustomParameterReadTestOneParameter)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_RD), IsBlockCountCorrect(1), IsSubdeviceCorrect(subdevice)),
@@ -90,7 +90,7 @@ TEST(LMS64CProtocol, CustomParameterReadTestOneParameter)
     int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
     EXPECT_EQ(returnValue, 0);
-    EXPECT_EQ(parameters[0].value, static_cast<uint16_t>(value));
+    EXPECT_EQ(parameters[0].value, value);
     EXPECT_EQ(parameters[0].units, "");
 }
 
@@ -112,8 +112,9 @@ TEST(LMS64CProtocol, CustomParameterReadTestSixteenParameters)
     }
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
-        .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet1), reinterpret_cast<uint8_t*>(&packet1 + 1)), ReturnArg<1>()));
+        .WillByDefault(
+            DoAll(SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet1), reinterpret_cast<std::byte*>(&packet1 + 1)),
+                ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_RD), IsBlockCountCorrect(14), IsSubdeviceCorrect(subdevice)),
@@ -151,7 +152,7 @@ TEST(LMS64CProtocol, CustomParameterReadCorrectPrefix)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_RD), IsBlockCountCorrect(1), IsSubdeviceCorrect(subdevice)),
@@ -184,7 +185,7 @@ TEST(LMS64CProtocol, CustomParameterReadTemperatureCorrection)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_RD), IsBlockCountCorrect(1), IsSubdeviceCorrect(subdevice)),
@@ -217,7 +218,7 @@ TEST(LMS64CProtocol, CustomParameterReadUnknownUnits)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_RD), IsBlockCountCorrect(1), IsSubdeviceCorrect(subdevice)),
@@ -284,7 +285,7 @@ TEST(LMS64CProtocol, CustomParameterReadWrongStatus)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_ANALOG_VAL_RD), IsBlockCountCorrect(1), IsSubdeviceCorrect(subdevice)),

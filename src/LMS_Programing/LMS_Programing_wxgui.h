@@ -48,7 +48,7 @@ class LMS_Programing_wxgui : public IModuleFrame
 
     void DoProgramming();
     static bool OnProgrammingCallback(size_t bsent, size_t btotal, const char* progressMsg);
-    std::vector<char> mProgramData;
+    std::vector<std::byte> mProgramData;
     lime::SDRDevice* lmsControl;
     std::vector<std::shared_ptr<lime::SDRDevice::DataStorage>> dataStorageEntries;
     std::atomic<bool> mProgrammingInProgress;

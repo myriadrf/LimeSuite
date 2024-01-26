@@ -1427,7 +1427,7 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t
         return -1;
     }
 
-    return apiDevice->device->GPIORead(buffer, len);
+    return apiDevice->device->GPIORead(reinterpret_cast<std::byte*>(buffer), len);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
@@ -1438,7 +1438,7 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer,
         return -1;
     }
 
-    return apiDevice->device->GPIOWrite(buffer, len);
+    return apiDevice->device->GPIOWrite(reinterpret_cast<const std::byte*>(buffer), len);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
@@ -1449,7 +1449,7 @@ API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, siz
         return -1;
     }
 
-    return apiDevice->device->GPIODirRead(buffer, len);
+    return apiDevice->device->GPIODirRead(reinterpret_cast<std::byte*>(buffer), len);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
@@ -1460,7 +1460,7 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
         return -1;
     }
 
-    return apiDevice->device->GPIODirWrite(buffer, len);
+    return apiDevice->device->GPIODirWrite(reinterpret_cast<const std::byte*>(buffer), len);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
@@ -2297,7 +2297,8 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** sample
     config.txCount = chCount;
     config.format = dataFormat;
 
-    return apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
+    return apiDevice->device->UploadTxWaveform(
+        config, apiDevice->moduleIndex, reinterpret_cast<const std::byte**>(samples), sample_count);
 }
 
 API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
@@ -2362,7 +2363,8 @@ API_EXPORT int CALL_CONV LMS_Program(
 
         const auto& memoryDevice = apiDevice->device->GetDescriptor().memoryDevices.at(prog_mode);
 
-        return memoryDevice->ownerDevice->UploadMemory(memoryDevice->memoryDeviceType, 0, data, size, ProgrammingCallback);
+        return memoryDevice->ownerDevice->UploadMemory(
+            memoryDevice->memoryDeviceType, 0, reinterpret_cast<const std::byte*>(data), size, ProgrammingCallback);
     } catch (std::out_of_range& e)
     {
         lime::error("Mode not found.");
@@ -2392,7 +2394,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
         {
             const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
 
-            return apiDevice->device->MemoryWrite(dataStorage, region, &val);
+            return apiDevice->device->MemoryWrite(dataStorage, region, reinterpret_cast<std::byte*>(&val));
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");
@@ -2443,7 +2445,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
         {
             const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
 
-            return apiDevice->device->MemoryRead(dataStorage, region, val);
+            return apiDevice->device->MemoryRead(dataStorage, region, reinterpret_cast<std::byte*>(val));
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");

@@ -3,9 +3,11 @@
 #include "FPGA_common.h"
 #include "samplesConversion.h"
 
+#include <cstddef>
+
 namespace lime {
 
-template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const uint8_t* buffer, int bufLen, DestType** samples)
+template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const std::byte* buffer, int bufLen, DestType** samples)
 {
     if (compressed) //compressed samples
     {
@@ -15,23 +17,23 @@ template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const ui
         {
             //I sample
             sample = buffer[b++];
-            sample |= (buffer[b] << 8);
+            sample |= static_cast<int16_t>(buffer[b]) << 8;
             sample <<= 4;
             samples[0][collected].i = sample >> 4;
             //Q sample
             sample = buffer[b++];
-            sample |= buffer[b++] << 8;
+            sample |= static_cast<int16_t>(buffer[b++]) << 8;
             samples[0][collected].q = sample >> 4;
             if (mimo)
             {
                 //I sample
                 sample = buffer[b++];
-                sample |= (buffer[b] << 8);
+                sample |= static_cast<int16_t>(buffer[b]) << 8;
                 sample <<= 4;
                 samples[1][collected].i = sample >> 4;
                 //Q sample
                 sample = buffer[b++];
-                sample |= buffer[b++] << 8;
+                sample |= static_cast<int16_t>(buffer[b++]) << 8;
                 samples[1][collected].q = sample >> 4;
             }
         }
@@ -50,11 +52,14 @@ template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const ui
         return collected;
     }
     else
+    {
         memcpy(samples[0], buffer, bufLen);
+    }
+
     return bufLen / sizeof(complex16_t);
 }
 
-int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t length, TRXLooper::SamplesPacketType* output)
+int Deinterleave(const DataConversion& fmt, const std::byte* buffer, uint32_t length, TRXLooper::SamplesPacketType* output)
 {
     const bool mimo = fmt.channelCount > 1;
     const bool compressed = fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::I12;
@@ -66,10 +71,11 @@ int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t leng
         {
             samplesProduced = length / sizeof(complex16_t);
             if (!mimo)
-                complex16_to_complex32f(dest[0], (const complex16_t*)buffer, length / sizeof(complex16_t));
+                complex16_to_complex32f(dest[0], reinterpret_cast<const complex16_t*>(buffer), length / sizeof(complex16_t));
             else
             {
-                complex16_to_complex32f_unzip(dest[0], dest[1], (const complex16_t*)buffer, length / sizeof(complex16_t));
+                complex16_to_complex32f_unzip(
+                    dest[0], dest[1], reinterpret_cast<const complex16_t*>(buffer), length / sizeof(complex16_t));
                 samplesProduced /= 2;
             }
         }
@@ -85,7 +91,7 @@ int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t leng
     return samplesProduced;
 }
 
-int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataConversion& fmt, uint8_t* buffer)
+int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataConversion& fmt, std::byte* buffer)
 {
     const bool mimo = fmt.channelCount > 1;
     const bool compressed = fmt.destFormat == SDRDevice::StreamConfig::DataFormat::I12;
@@ -97,10 +103,10 @@ int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataCo
         {
             bytesProduced = count * sizeof(complex16_t);
             if (!mimo)
-                complex32f_to_complex16((complex16_t*)buffer, src[0], count);
+                complex32f_to_complex16(reinterpret_cast<complex16_t*>(buffer), src[0], count);
             else
             {
-                complex32f_to_complex16_zip((complex16_t*)buffer, src[0], src[1], count);
+                complex32f_to_complex16_zip(reinterpret_cast<complex16_t*>(buffer), src[0], src[1], count);
                 bytesProduced *= 2;
             }
         }

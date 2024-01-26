@@ -52,13 +52,13 @@ class FPGA
     virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0);
     double DetectRefClk(double fx3Clk = 100e6);
 
-    static int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
+    static int FPGAPacketPayload2Samples(const std::byte* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
     static int FPGAPacketPayload2SamplesFloat(
-        const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples);
+        const std::byte* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples);
     static int Samples2FPGAPacketPayload(
-        const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
+        const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, std::byte* buffer);
     static int Samples2FPGAPacketPayloadFloat(
-        const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
+        const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, std::byte* buffer);
     virtual void EnableValuesCache(bool enabled);
     virtual int WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt);
     virtual int ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);

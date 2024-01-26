@@ -22,7 +22,7 @@ class dlgViewSFR : public wxDialog
     virtual ~dlgViewSFR();
 
     wxGrid* Grid1;
-    void InitGridData(const unsigned char* data);
+    void InitGridData(const std::byte* data);
 
   protected:
     static const long ID_GRID1;

@@ -51,17 +51,15 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamTx(
-        uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(
-        uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, complex32f_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, complex16_t** samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
     virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
-    virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) override;
+    virtual int I2CWrite(int address, const std::byte* data, uint32_t length) override;
+    virtual int I2CRead(int addres, std::byte* dest, uint32_t length) override;
 
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
@@ -72,10 +70,11 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void* GetInternalChip(uint32_t index) override;
 
     virtual bool UploadMemory(
-        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
-    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
+        eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const std::byte* data) override;
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, std::byte* data) override;
+    virtual int UploadTxWaveform(
+        const StreamConfig& config, uint8_t moduleIndex, const std::byte** samples, uint32_t count) override;
 
   private:
     std::shared_ptr<IComms> mMainFPGAcomms;

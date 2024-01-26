@@ -468,13 +468,13 @@ int LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO,
 
         // flush packet
         //printPacket(pkt, 4, "Wr:");
-        int sent = mSerialPort->Write(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int sent = mSerialPort->Write(reinterpret_cast<std::byte*>(&pkt), sizeof(pkt), 100);
         if (sent != sizeof(pkt))
         {
             throw std::runtime_error("SPI failed");
         }
 
-        int recv = mSerialPort->Read(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt), 100);
+        int recv = mSerialPort->Read(reinterpret_cast<std::byte*>(&pkt), sizeof(pkt), 100);
         //printPacket(pkt, 4, "Rd:");
 
         if (recv >= pkt.headerSize + 4 * pkt.blockCount && pkt.status == LMS64CProtocol::STATUS_COMPLETED_CMD)
@@ -664,7 +664,7 @@ void* LimeSDR_Mini::GetInternalChip(uint32_t index)
     return mLMSChips.at(index);
 }
 
-int LimeSDR_Mini::GPIODirRead(uint8_t* buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIODirRead(std::byte* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -675,17 +675,17 @@ int LimeSDR_Mini::GPIODirRead(uint8_t* buffer, const size_t bufLength)
     uint32_t value;
 
     int ret = mFPGA->ReadRegisters(&addr, &value, 1);
-    buffer[0] = value;
+    buffer[0] = static_cast<std::byte>(value);
 
     if (bufLength > 1)
     {
-        buffer[1] = (value >> 8);
+        buffer[1] = static_cast<std::byte>(value >> 8);
     }
 
     return ret;
 }
 
-int LimeSDR_Mini::GPIORead(uint8_t* buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIORead(std::byte* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -696,17 +696,17 @@ int LimeSDR_Mini::GPIORead(uint8_t* buffer, const size_t bufLength)
     uint32_t value;
 
     int ret = mFPGA->ReadRegisters(&addr, &value, 1);
-    buffer[0] = value;
+    buffer[0] = static_cast<std::byte>(value);
 
     if (bufLength > 1)
     {
-        buffer[1] = (value >> 8);
+        buffer[1] = static_cast<std::byte>(value >> 8);
     }
 
     return ret;
 }
 
-int LimeSDR_Mini::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIODirWrite(const std::byte* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -714,12 +714,13 @@ int LimeSDR_Mini::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
     }
 
     const uint32_t addr = 0xC4;
-    const uint32_t value = (bufLength == 1) ? buffer[0] : buffer[0] | (buffer[1] << 8);
+    const uint32_t value = (bufLength == 1) ? std::to_integer<uint32_t>(buffer[0])
+                                            : std::to_integer<uint32_t>(buffer[0]) | (std::to_integer<uint32_t>(buffer[1]) << 8);
 
     return mFPGA->WriteRegisters(&addr, &value, 1);
 }
 
-int LimeSDR_Mini::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
+int LimeSDR_Mini::GPIOWrite(const std::byte* buffer, const size_t bufLength)
 {
     if (!buffer || bufLength == 0)
     {
@@ -727,7 +728,8 @@ int LimeSDR_Mini::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
     }
 
     const uint32_t addr = 0xC6;
-    const uint32_t value = (bufLength == 1) ? buffer[0] : buffer[0] | (buffer[1] << 8);
+    const uint32_t value = (bufLength == 1) ? std::to_integer<uint32_t>(buffer[0])
+                                            : std::to_integer<uint32_t>(buffer[0]) | (std::to_integer<uint32_t>(buffer[1]) << 8);
 
     return mFPGA->WriteRegisters(&addr, &value, 1);
 }

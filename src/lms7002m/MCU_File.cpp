@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <cstddef>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ void MCU_File::ReadBin(unsigned long limit)
 
     cout << "Reading binary file\n";
 
-    int tmp = fgetc(m_file);
+    std::byte tmp = static_cast<std::byte>(fgetc(m_file));
 
     while (!feof(m_file))
     {
@@ -56,7 +57,7 @@ void MCU_File::ReadBin(unsigned long limit)
             return;
         }
 
-        tmp = fgetc(m_file);
+        tmp = static_cast<std::byte>(fgetc(m_file));
     }
 
     m_top = m_chunks.back().m_bytes.size() - 1;
@@ -206,7 +207,7 @@ void MCU_File::ReadHex(unsigned long limit)
                             }
                             continue;
                         }
-                        m_chunks.back().m_bytes.push_back((unsigned char)tmp);
+                        m_chunks.back().m_bytes.push_back(static_cast<std::byte>(tmp));
                     }
                 }
                 break;
@@ -390,7 +391,7 @@ void MCU_File::ReadHex(unsigned long limit)
                             }
                             continue;
                         }
-                        m_chunks.back().m_bytes.push_back((unsigned char)tmp);
+                        m_chunks.back().m_bytes.push_back(static_cast<std::byte>(tmp));
                     }
                 }
                 break;
@@ -436,7 +437,7 @@ void MCU_File::ReadHex(unsigned long limit)
 }
 
 // Rather inefficient this one, fix sometime
-bool MCU_File::GetByte(const unsigned long address, unsigned char& chr)
+bool MCU_File::GetByte(const unsigned long address, std::byte& chr)
 {
     vector<MemBlock>::iterator vi;
 
@@ -458,14 +459,13 @@ bool MCU_File::GetByte(const unsigned long address, unsigned char& chr)
 bool MCU_File::BitString(const unsigned long address, const unsigned char bits, const bool lEndian, string& str)
 {
     bool ok = false;
-    long i;
-    unsigned char chr = 0;
-    unsigned long data = 0;
-    unsigned long tmp;
+    std::byte chr{ 0 };
+    std::byte tmp{ 0 };
+    std::byte data{ 0 };
 
     if (lEndian)
     {
-        for (i = 0; i < (bits + 7) / 8; ++i)
+        for (uint8_t i = 0; i < (bits + 7) / 8; ++i)
         {
             ok |= GetByte(address + i, chr);
             tmp = chr;
@@ -474,7 +474,7 @@ bool MCU_File::BitString(const unsigned long address, const unsigned char bits, 
     }
     else
     {
-        for (i = 0; i < (bits + 7) / 8; ++i)
+        for (uint8_t i = 0; i < (bits + 7) / 8; ++i)
         {
             ok |= GetByte(address + i, chr);
             tmp = chr;
@@ -487,12 +487,12 @@ bool MCU_File::BitString(const unsigned long address, const unsigned char bits, 
         return false;
     }
 
-    unsigned long mask = 1;
+    std::byte mask{ 1 };
 
     str = "";
-    for (i = 0; i < bits; i++)
+    for (uint8_t i = 0; i < bits; i++)
     {
-        if (data & mask)
+        if (std::to_integer<bool>(data & mask))
         {
             str.insert(0, "1");
         }

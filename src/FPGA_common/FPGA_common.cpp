@@ -1,12 +1,13 @@
 #include "FPGA_common.h"
 #include "limesuite/IComms.h"
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <thread>
 #include "Logger.h"
 #include <algorithm>
 #include <unordered_set>
-#include <assert.h>
+#include <cassert>
+#include <cstddef>
 #include "LMSBoards.h"
 using namespace std;
 
@@ -643,7 +644,7 @@ int FPGA::SetDirectClocking(int clockIndex)
 
 /** @brief Parses FPGA packet payload into samples
 */
-int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples)
+int FPGA::FPGAPacketPayload2Samples(const std::byte* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples)
 {
     if (compressed) //compressed samples
     {
@@ -652,24 +653,24 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
         for (int b = 0; b < bufLen; collected++)
         {
             //I sample
-            sample = buffer[b++];
-            sample |= (buffer[b] << 8);
+            sample = std::to_integer<int16_t>(buffer[b++]);
+            sample |= std::to_integer<int16_t>(buffer[b]) << 8;
             sample <<= 4;
             samples[0][collected].i = sample >> 4;
             //Q sample
-            sample = buffer[b++];
-            sample |= buffer[b++] << 8;
+            sample = std::to_integer<int16_t>(buffer[b++]);
+            sample |= std::to_integer<int16_t>(buffer[b++]) << 8;
             samples[0][collected].q = sample >> 4;
             if (mimo)
             {
                 //I sample
-                sample = buffer[b++];
-                sample |= (buffer[b] << 8);
+                sample = std::to_integer<int16_t>(buffer[b++]);
+                sample |= std::to_integer<int16_t>(buffer[b]) << 8;
                 sample <<= 4;
                 samples[1][collected].i = sample >> 4;
                 //Q sample
-                sample = buffer[b++];
-                sample |= buffer[b++] << 8;
+                sample = std::to_integer<int16_t>(buffer[b++]);
+                sample |= std::to_integer<int16_t>(buffer[b++]) << 8;
                 samples[1][collected].q = sample >> 4;
             }
         }
@@ -694,7 +695,7 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
 
 /** @brief Parses FPGA packet payload into samples
 */
-int FPGA::FPGAPacketPayload2SamplesFloat(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples)
+int FPGA::FPGAPacketPayload2SamplesFloat(const std::byte* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples)
 {
     const float normalizationAmplitude = compressed ? 2048 : 32768;
     if (compressed) //compressed samples
@@ -704,31 +705,31 @@ int FPGA::FPGAPacketPayload2SamplesFloat(const uint8_t* buffer, int bufLen, bool
         for (int b = 0; b < bufLen; collected++)
         {
             //I sample
-            sample = buffer[b++];
-            sample |= (buffer[b] << 8);
+            sample = std::to_integer<int16_t>(buffer[b++]);
+            sample |= std::to_integer<int16_t>(buffer[b]) << 8;
             sample <<= 4;
             samples[0][collected].i = (sample >> 4) / normalizationAmplitude;
             //Q sample
-            sample = buffer[b++];
-            sample |= buffer[b++] << 8;
+            sample = std::to_integer<int16_t>(buffer[b++]);
+            sample |= std::to_integer<int16_t>(buffer[b++]) << 8;
             samples[0][collected].q = (sample >> 4) / normalizationAmplitude;
             if (mimo)
             {
                 //I sample
-                sample = buffer[b++];
-                sample |= (buffer[b] << 8);
+                sample = std::to_integer<int16_t>(buffer[b++]);
+                sample |= std::to_integer<int16_t>(buffer[b]) << 8;
                 sample <<= 4;
                 samples[1][collected].i = (sample >> 4) / normalizationAmplitude;
                 //Q sample
-                sample = buffer[b++];
-                sample |= buffer[b++] << 8;
+                sample = std::to_integer<int16_t>(buffer[b++]);
+                sample |= std::to_integer<int16_t>(buffer[b++]) << 8;
                 samples[1][collected].q = (sample >> 4) / normalizationAmplitude;
             }
         }
         return collected;
     }
 
-    complex16_t* src = (complex16_t*)buffer;
+    const complex16_t* src = reinterpret_cast<const complex16_t*>(buffer);
     if (mimo) //uncompressed samples
     {
         const int collected = bufLen / sizeof(complex16_t) / 2;
@@ -757,7 +758,7 @@ int FPGA::FPGAPacketPayload2SamplesFloat(const uint8_t* buffer, int bufLen, bool
 }
 
 int FPGA::Samples2FPGAPacketPayloadFloat(
-    const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer)
+    const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, std::byte* buffer)
 {
     const float amplitude = compressed ? 2047 : 32767;
     if (compressed)
@@ -767,22 +768,22 @@ int FPGA::Samples2FPGAPacketPayloadFloat(
         {
             int16_t i = samples[0][src].i * amplitude;
             int16_t q = samples[0][src].q * amplitude;
-            buffer[b++] = i;
-            buffer[b++] = ((i >> 8) & 0x0F) | (q << 4);
-            buffer[b++] = q >> 4;
+            buffer[b++] = static_cast<std::byte>(i);
+            buffer[b++] = static_cast<std::byte>(((i >> 8) & 0x0F) | (q << 4));
+            buffer[b++] = static_cast<std::byte>(q >> 4);
             if (mimo)
             {
                 int16_t i = samples[1][src].i * amplitude;
                 int16_t q = samples[1][src].q * amplitude;
-                buffer[b++] = i;
-                buffer[b++] = ((i >> 8) & 0x0F) | (q << 4);
-                buffer[b++] = q >> 4;
+                buffer[b++] = static_cast<std::byte>(i);
+                buffer[b++] = static_cast<std::byte>(((i >> 8) & 0x0F) | (q << 4));
+                buffer[b++] = static_cast<std::byte>(q >> 4);
             }
         }
         return b;
     }
 
-    complex16_t* dest = (complex16_t*)buffer;
+    complex16_t* dest = reinterpret_cast<complex16_t*>(buffer);
     if (mimo)
     {
         for (int src = 0; src < samplesCount; ++src)
@@ -809,21 +810,21 @@ int FPGA::Samples2FPGAPacketPayloadFloat(
 }
 
 int FPGA::Samples2FPGAPacketPayload(
-    const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer)
+    const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, std::byte* buffer)
 {
     if (compressed)
     {
         int b = 0;
         for (int src = 0; src < samplesCount; ++src)
         {
-            buffer[b++] = samples[0][src].i;
-            buffer[b++] = ((samples[0][src].i >> 8) & 0x0F) | (samples[0][src].q << 4);
-            buffer[b++] = samples[0][src].q >> 4;
+            buffer[b++] = static_cast<std::byte>(samples[0][src].i);
+            buffer[b++] = static_cast<std::byte>(((samples[0][src].i >> 8) & 0x0F) | (samples[0][src].q << 4));
+            buffer[b++] = static_cast<std::byte>(samples[0][src].q >> 4);
             if (mimo)
             {
-                buffer[b++] = samples[1][src].i;
-                buffer[b++] = ((samples[1][src].i >> 8) & 0x0F) | (samples[1][src].q << 4);
-                buffer[b++] = samples[1][src].q >> 4;
+                buffer[b++] = static_cast<std::byte>(samples[1][src].i);
+                buffer[b++] = static_cast<std::byte>(((samples[1][src].i >> 8) & 0x0F) | (samples[1][src].q << 4));
+                buffer[b++] = static_cast<std::byte>(samples[1][src].q >> 4);
             }
         }
         return b;
@@ -831,7 +832,7 @@ int FPGA::Samples2FPGAPacketPayload(
 
     if (mimo)
     {
-        complex16_t* ptr = (complex16_t*)buffer;
+        complex16_t* ptr = reinterpret_cast<complex16_t*>(buffer);
         for (int src = 0; src < samplesCount; ++src)
         {
             *ptr++ = samples[0][src];

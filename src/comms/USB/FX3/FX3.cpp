@@ -41,7 +41,7 @@ void FX3::Disconnect()
 }
 
 #ifndef __unix__
-int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
+int FX3::BeginDataXfer(std::byte* buffer, uint32_t length, uint8_t endPointAddr)
 {
     int index = GetUSBContextIndex();
 
@@ -71,7 +71,7 @@ bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     return true; //there is nothing to wait for (signal wait finished)
 }
 
-int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
+int FX3::FinishDataXfer(std::byte* buffer, uint32_t length, int contextHandle)
 {
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {

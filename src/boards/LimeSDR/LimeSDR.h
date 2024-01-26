@@ -41,10 +41,10 @@ class LimeSDR : public LMS7002M_SDRDevice
 
     virtual void* GetInternalChip(uint32_t index) override;
 
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual int GPIODirRead(std::byte* buffer, const size_t bufLength) override;
+    virtual int GPIORead(std::byte* buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const std::byte* buffer, const size_t bufLength) override;
+    virtual int GPIOWrite(const std::byte* buffer, const size_t bufLength) override;
 
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;

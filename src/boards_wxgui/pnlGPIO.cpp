@@ -8,6 +8,7 @@
 #include <wx/statbox.h>
 
 #include "limesuite/SDRDevice.h"
+#include <cstddef>
 
 using namespace lime;
 using namespace std;
@@ -98,44 +99,52 @@ pnlGPIO::~pnlGPIO()
 
 void pnlGPIO::OnUsrGPIODirChange(wxCommandEvent& event)
 {
-    uint8_t value[2] = { 0 };
+    std::array<std::byte, 2> value{ std::byte{ 0 } };
 
     for (int i = 0; i < gpioCount; i++)
     {
         bool check = gpioDir[i]->GetValue();
         if (check)
-            value[i / 8] |= 1 << (i % 8);
+        {
+            value[i / 8] |= static_cast<std::byte>(1 << (i % 8));
+        }
         gpioOut[i]->Enable(check);
     }
 
-    if (device && device->GPIODirWrite(value, gpioCount > 8 ? 2 : 1))
+    if (device && device->GPIODirWrite(value.data(), gpioCount > 8 ? 2 : 1))
+    {
         lime::error("GPIO direction change failed");
+    }
 }
 
 void pnlGPIO::OnUsrGPIOChange(wxCommandEvent& event)
 {
-    uint8_t value[2] = { 0 };
+    std::array<std::byte, 2> value{ std::byte{ 0 } };
     for (int i = 0; i < gpioCount; i++)
     {
         if (gpioOut[i]->GetValue())
-            value[i / 8] |= 1 << (i % 8);
+        {
+            value[i / 8] |= static_cast<std::byte>(1 << (i % 8));
+        }
     }
 
-    if (device && device->GPIOWrite(value, gpioCount > 8 ? 2 : 1))
+    if (device && device->GPIOWrite(value.data(), std::ceil(gpioCount / 8.0)))
+    {
         lime::error("GPIO write failed");
+    }
 }
 
 void pnlGPIO::UpdatePanel()
 {
-    uint8_t gpio[2] = { 0 };
-    uint8_t dir[2] = { 0 };
+    std::array<std::byte, 2> gpio{ std::byte{ 0 } };
+    std::array<std::byte, 2> dir{ std::byte{ 0 } };
 
-    if (device && device->GPIODirRead(dir, gpioCount > 8 ? 2 : 1) == 0)
+    if (device && device->GPIODirRead(dir.data(), std::ceil(gpioCount / 8.0)) == 0)
     {
         for (int i = 0; i < gpioCount; i++)
         {
-            gpioDir[i]->SetValue(dir[i / 8] & 1);
-            gpioOut[i]->Enable(dir[i / 8] & 1);
+            gpioDir[i]->SetValue(std::to_integer<bool>(dir[i / 8] & std::byte{ 1 }));
+            gpioOut[i]->Enable(std::to_integer<bool>(dir[i / 8] & std::byte{ 1 }));
             dir[i / 8] >>= 1;
         }
     }
@@ -144,11 +153,11 @@ void pnlGPIO::UpdatePanel()
         lime::error("GPIO direction read failed");
     }
 
-    if (device && device->GPIORead(gpio, gpioCount > 8 ? 2 : 1) == 0)
+    if (device && device->GPIORead(gpio.data(), std::ceil(gpioCount / 8.0)) == 0)
     {
         for (int i = 0; i < gpioCount; i++)
         {
-            gpioIn[i]->SetLabel(gpio[i / 8] & 1 ? _("1") : _("0"));
+            gpioIn[i]->SetLabel(std::to_integer<bool>(gpio[i / 8] & std::byte{ 1 }) ? _("1") : _("0"));
             gpio[i / 8] >>= 1;
         }
     }

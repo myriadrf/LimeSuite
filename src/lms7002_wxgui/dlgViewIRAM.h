@@ -20,7 +20,7 @@ class dlgViewIRAM : public wxDialog
     virtual ~dlgViewIRAM();
 
     wxGrid* Grid1;
-    void InitGridData(const unsigned char* data);
+    void InitGridData(const std::byte* data);
 
   protected:
     static const long ID_GRID1;

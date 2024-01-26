@@ -18,8 +18,8 @@ TEST(PCIE_CSR_Pipe, Write)
     int length = sizeof(LMS64CPacket);
     int timeout = 100;
 
-    EXPECT_CALL(*mockConnection, WriteControl(Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout)).Times(1);
-    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    EXPECT_CALL(*mockConnection, WriteControl(Pointer(reinterpret_cast<std::byte*>(&pkt)), length, timeout)).Times(1);
+    pipe.Write(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }
 
 TEST(PCIE_CSR_Pipe, Read)
@@ -31,6 +31,6 @@ TEST(PCIE_CSR_Pipe, Read)
     int length = sizeof(LMS64CPacket);
     int timeout = 100;
 
-    EXPECT_CALL(*mockConnection, ReadControl(Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout)).Times(1);
-    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    EXPECT_CALL(*mockConnection, ReadControl(Pointer(reinterpret_cast<std::byte*>(&pkt)), length, timeout)).Times(1);
+    pipe.Read(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }

@@ -64,7 +64,7 @@ TEST(LimeSDR, Constructor)
 
     ON_CALL(*usbPipeMock, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     // Sink uninteresting calls so that any new changes don't immediately break tests
     EXPECT_CALL(*usbPipeMock, Write(_, PACKET_SIZE, _)).Times(AnyNumber());

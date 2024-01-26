@@ -42,7 +42,7 @@ class LIME_API II2C
       @param length Output data length.
       @return 0 on success.
      */
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
+    virtual int I2CWrite(int address, const std::byte* data, uint32_t length) = 0;
 
     /**
       @brief Read from an available Inter-Integrated Circuit slave.
@@ -55,7 +55,7 @@ class LIME_API II2C
       @param length Number of bytes to read.
       @return 0 on success.
      */
-    virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
+    virtual int I2CRead(int address, std::byte* dest, uint32_t length) = 0;
 };
 
 struct CustomParameterIO {
@@ -71,13 +71,13 @@ class IComms : public ISPI
     /** @brief Destroys the interfaced object. */
     virtual ~IComms(){};
 
-    /**    
+    /**
       @brief Writes general-purpose input/output (GPIO) values to device.
       @param buffer For source of GPIO values. Least significant bit first, each bit sets GPIO state.
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIOWrite(const std::byte* buffer, const size_t bufLength) { return -1; };
 
     /**
       @brief Reads general-purpose input/output (GPIO) values from device
@@ -85,7 +85,7 @@ class IComms : public ISPI
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIORead(std::byte* buffer, const size_t bufLength) { return -1; };
 
     /**
       @brief Write general-purpose input/output (GPIO) direction control values to device.
@@ -93,15 +93,15 @@ class IComms : public ISPI
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIODirWrite(const std::byte* buffer, const size_t bufLength) { return -1; };
 
-    /**    
+    /**
       @brief Read general-purpose input/output (GPIO) direction control configuration from device.
       @param[out] buffer A buffer of data with GPIO direction configuration (0 - input, 1 - output).
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual int GPIODirRead(std::byte* buffer, const size_t bufLength) { return -1; };
 
     /**
       @brief Writes a given list of custom parameters to the device.
@@ -135,7 +135,7 @@ class IComms : public ISPI
       @param callback The progress callback to call when writing data.
       @return The operation success state.
      */
-    virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)
+    virtual int ProgramWrite(const std::byte* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)
     {
         return -1;
     }
@@ -154,7 +154,7 @@ class IComms : public ISPI
       @param dataLength The length of the data to write.
       @return The operation success state.
      */
-    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return -1; };
+    virtual int MemoryWrite(uint32_t address, const std::byte* data, uint32_t dataLength) { return -1; };
 
     /**
       @brief Reads memory from a given memory address in EEPROM memory.
@@ -163,7 +163,7 @@ class IComms : public ISPI
       @param dataLength The length of the destination buffer (the amount of bytes to read).
       @return The operation success state.
      */
-    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return -1; };
+    virtual int MemoryRead(uint32_t address, std::byte* data, uint32_t dataLength) { return -1; };
 };
 
 } // namespace lime

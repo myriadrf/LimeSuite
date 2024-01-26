@@ -2,7 +2,6 @@
 #define LIME_ISERIALPORT_H
 
 #include <cstddef>
-#include <cstdint>
 
 namespace lime {
 
@@ -10,8 +9,8 @@ namespace lime {
 class ISerialPort
 {
   public:
-    virtual int Write(const uint8_t* data, std::size_t length, int timeout_ms) = 0;
-    virtual int Read(uint8_t* data, std::size_t length, int timeout_ms) = 0;
+    virtual int Write(const std::byte* data, std::size_t length, int timeout_ms) = 0;
+    virtual int Read(std::byte* data, std::size_t length, int timeout_ms) = 0;
 };
 
 } // namespace lime

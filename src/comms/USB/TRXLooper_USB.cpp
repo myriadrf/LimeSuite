@@ -91,7 +91,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
     const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_TxDataPacket);
 
     std::vector<int> handles(batchCount, -1);
-    std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
+    std::vector<std::byte> buffers(batchCount * bufferSize, std::byte{ 0 });
     int bufferIndex = 0;
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -123,7 +123,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
     }
 
     StreamHeader* header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize]);
-    uint8_t* payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
+    std::byte* payloadPtr = reinterpret_cast<std::byte*>(header) + sizeof(StreamHeader);
 
     while (!mTx.terminate.load(std::memory_order_relaxed))
     {
@@ -158,7 +158,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 bytesUsed + sizeof(StreamHeader) <= bufferSize)
             {
                 header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize + bytesUsed]);
-                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
+                payloadPtr = reinterpret_cast<std::byte*>(header) + sizeof(StreamHeader);
                 payloadSize = 0;
             }
 
@@ -211,7 +211,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 mTx.stats.timestamp = srcPkt->timestamp;
 
                 header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize]);
-                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
+                payloadPtr = reinterpret_cast<std::byte*>(header) + sizeof(StreamHeader);
 
                 break;
             }
@@ -271,7 +271,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
     const uint32_t bufferSize = packetsToBatch * sizeof(FPGA_RxDataPacket);
 
     std::vector<int> handles(batchCount, -1);
-    std::vector<uint8_t> buffers(batchCount * bufferSize, 0);
+    std::vector<std::byte> buffers(batchCount * bufferSize, std::byte{ 0 });
     int bufferIndex = 0;
 
     const int samplesInPkt =
@@ -366,7 +366,8 @@ void TRXLooper_USB::ReceivePacketsLoop()
                 payloadSize = 4080;
             }
 
-            const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
+            const int samplesProduced =
+                Deinterleave(conversion, reinterpret_cast<const std::byte*>(pkt->data), payloadSize, outputPkt);
             expectedTS = pkt->counter + samplesProduced;
             mRx.lastTimestamp.store(expectedTS, std::memory_order_relaxed);
             stats.timestamp = expectedTS;

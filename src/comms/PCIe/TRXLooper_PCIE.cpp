@@ -181,7 +181,7 @@ int TRXLooper_PCIE::TxSetup()
 
     mTx.packetsToBatch = clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
 
-    std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
+    std::vector<std::byte*> dmaBuffers(dma.bufferCount);
     for (uint32_t i = 0; i < dmaBuffers.size(); ++i)
         dmaBuffers[i] = dma.txMemory + dma.bufferSize * i;
 
@@ -240,7 +240,7 @@ template<class T> class TxBufferManager
         maxPayloadSize = std::min(4080u, bytesForFrame * maxSamplesInPkt);
     }
 
-    void Reset(uint8_t* memPtr, uint32_t capacity)
+    void Reset(std::byte* memPtr, uint32_t capacity)
     {
         packetsCreated = 0;
         bytesUsed = 0;
@@ -250,7 +250,7 @@ template<class T> class TxBufferManager
         header = reinterpret_cast<StreamHeader*>(mData);
         header->Clear();
         payloadSize = 0;
-        payloadPtr = (uint8_t*)header + sizeof(StreamHeader);
+        payloadPtr = reinterpret_cast<std::byte*>(header) + sizeof(StreamHeader);
     }
 
     inline bool hasSpace() const
@@ -269,7 +269,7 @@ template<class T> class TxBufferManager
             {
                 header = reinterpret_cast<StreamHeader*>(mData + bytesUsed);
                 header->Clear();
-                payloadPtr = (uint8_t*)header + sizeof(StreamHeader);
+                payloadPtr = reinterpret_cast<std::byte*>(header) + sizeof(StreamHeader);
                 payloadSize = 0;
             }
 
@@ -328,14 +328,14 @@ template<class T> class TxBufferManager
     }
 
     inline int size() const { return bytesUsed; };
-    inline uint8_t* data() const { return mData; };
+    inline std::byte* data() const { return mData; };
     inline int packetCount() const { return packetsCreated; };
 
   private:
     DataConversion conversion;
     StreamHeader* header;
-    uint8_t* payloadPtr;
-    uint8_t* mData;
+    std::byte* payloadPtr;
+    std::byte* mData;
     uint32_t bytesUsed;
     uint32_t mCapacity;
     uint32_t maxPacketsInBatch;
@@ -376,7 +376,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
     const int32_t bufferCount = mTxArgs.buffers.size();
     const uint32_t overflowLimit = bufferCount - irqPeriod;
-    const std::vector<uint8_t*>& dmaBuffers = mTxArgs.buffers;
+    const std::vector<std::byte*>& dmaBuffers = mTxArgs.buffers;
 
     SDRDevice::StreamStats& stats = mTx.stats;
 
@@ -390,7 +390,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
 
     struct PendingWrite {
         uint32_t id;
-        uint8_t* data;
+        std::byte* data;
         int32_t offset;
         int32_t size;
     };
@@ -735,7 +735,7 @@ int TRXLooper_PCIE::RxSetup()
     // if (mConfig.hintSampleRate != 0)
     //     expectedDataRateBps = (mConfig.hintSampleRate/samplesInPkt) * (16 + samplesInPkt * sampleSize * chCount);
 
-    std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
+    std::vector<std::byte*> dmaBuffers(dma.bufferCount);
     for (uint32_t i = 0; i < dmaBuffers.size(); ++i)
         dmaBuffers[i] = dma.rxMemory + dma.bufferSize * i;
 
@@ -769,7 +769,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     const int32_t readSize = mRxArgs.packetSize * mRxArgs.packetsToBatch;
     const int32_t packetSize = mRxArgs.packetSize;
     const int32_t samplesInPkt = mRxArgs.samplesInPacket;
-    const std::vector<uint8_t*>& dmaBuffers = mRxArgs.buffers;
+    const std::vector<std::byte*>& dmaBuffers = mRxArgs.buffers;
     SDRDevice::StreamStats& stats = mRx.stats;
     auto fifo = mRx.fifo;
 
@@ -883,7 +883,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         }
 
         mRxArgs.port->CacheFlush(false, false, dma.swIndex % bufferCount);
-        uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
+        std::byte* buffer = dmaBuffers[dma.swIndex % bufferCount];
         const FPGA_RxDataPacket* pkt = reinterpret_cast<const FPGA_RxDataPacket*>(buffer);
         if (outputPkt)
             outputPkt->timestamp = pkt->counter;
@@ -902,7 +902,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 ++mTx.stats.loss;
 
             const int payloadSize = packetSize - 16;
-            const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
+            const int samplesProduced =
+                Deinterleave(conversion, reinterpret_cast<const std::byte*>(pkt->data), payloadSize, outputPkt);
             expectedTS = pkt->counter + samplesProduced;
         }
         stats.packets += srcPktCount;
@@ -968,7 +969,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
     std::shared_ptr<LitePCIe> port,
     const lime::SDRDevice::StreamConfig& config,
     uint8_t moduleIndex,
-    const void** samples,
+    const std::byte** samples,
     uint32_t count)
 {
     const int samplesInPkt = 256;
@@ -985,7 +986,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
     fpga->WriteRegister(0x000D, 0x4); // WFM_LOAD
 
     LitePCIe::DMAInfo dma = port->GetDMAInfo();
-    std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
+    std::vector<std::byte*> dmaBuffers(dma.bufferCount);
     for (uint32_t i = 0; i < dmaBuffers.size(); ++i)
         dmaBuffers[i] = dma.txMemory + dma.bufferSize * i;
 
@@ -1011,15 +1012,17 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
 
         if (config.format == SDRDevice::StreamConfig::DataFormat::I16)
         {
-            const lime::complex16_t* src[2] = { &static_cast<const lime::complex16_t*>(samples[0])[count - samplesRemaining],
-                useChannelB ? &static_cast<const lime::complex16_t*>(samples[1])[count - samplesRemaining] : nullptr };
-            samplesDataSize = FPGA::Samples2FPGAPacketPayload(src, samplesToSend, mimo, compressed, pkt->data);
+            const complex16_t* src[2] = { &reinterpret_cast<const complex16_t*>(samples[0])[count - samplesRemaining],
+                useChannelB ? &reinterpret_cast<const complex16_t*>(samples[1])[count - samplesRemaining] : nullptr };
+            samplesDataSize =
+                FPGA::Samples2FPGAPacketPayload(src, samplesToSend, mimo, compressed, reinterpret_cast<std::byte*>(pkt->data));
         }
         else if (config.format == SDRDevice::StreamConfig::DataFormat::F32)
         {
-            const lime::complex32f_t* src[2] = { &static_cast<const lime::complex32f_t*>(samples[0])[count - samplesRemaining],
-                useChannelB ? &static_cast<const lime::complex32f_t*>(samples[1])[count - samplesRemaining] : nullptr };
-            samplesDataSize = FPGA::Samples2FPGAPacketPayloadFloat(src, samplesToSend, mimo, compressed, pkt->data);
+            const complex32f_t* src[2] = { &reinterpret_cast<const complex32f_t*>(samples[0])[count - samplesRemaining],
+                useChannelB ? &reinterpret_cast<const complex32f_t*>(samples[1])[count - samplesRemaining] : nullptr };
+            samplesDataSize =
+                FPGA::Samples2FPGAPacketPayloadFloat(src, samplesToSend, mimo, compressed, reinterpret_cast<std::byte*>(pkt->data));
         }
 
         int payloadSize = (samplesDataSize / 4) * 4;

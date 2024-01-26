@@ -23,9 +23,9 @@ TEST(USB_CSR_Pipe_Mini, Write)
     int length = sizeof(LMS64CPacket);
 
     EXPECT_CALL(
-        mockConnection, BulkTransfer(CONTROL_BULK_WRITE_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+        mockConnection, BulkTransfer(CONTROL_BULK_WRITE_ADDRESS, Pointer(reinterpret_cast<std::byte*>(&pkt)), length, timeout))
         .Times(1);
-    pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    pipe.Write(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }
 
 TEST(USB_CSR_Pipe_Mini, Read)
@@ -38,7 +38,8 @@ TEST(USB_CSR_Pipe_Mini, Read)
     int timeout = 100;
     int length = sizeof(LMS64CPacket);
 
-    EXPECT_CALL(mockConnection, BulkTransfer(CONTROL_BULK_READ_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+    EXPECT_CALL(
+        mockConnection, BulkTransfer(CONTROL_BULK_READ_ADDRESS, Pointer(reinterpret_cast<std::byte*>(&pkt)), length, timeout))
         .Times(1);
-    pipe.Read(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
+    pipe.Read(reinterpret_cast<std::byte*>(&pkt), length, timeout);
 }

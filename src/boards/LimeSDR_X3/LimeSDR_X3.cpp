@@ -1212,7 +1212,7 @@ int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 }
 
 bool LimeSDR_X3::UploadMemory(
-    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+    eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback)
 {
     int progMode;
     LMS64CProtocol::ProgramWriteTarget target = LMS64CProtocol::ProgramWriteTarget::FPGA;
@@ -1232,7 +1232,7 @@ bool LimeSDR_X3::UploadMemory(
     return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const std::byte* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
@@ -1242,7 +1242,7 @@ int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region,
     return mfpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, std::byte* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
@@ -1252,7 +1252,7 @@ int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, 
     return mfpgaPort->MemoryRead(region.address, data, region.size);
 }
 
-int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const std::byte** samples, uint32_t count)
 {
     return TRXLooper_PCIE::UploadTxWaveform(mFPGA, mTRXStreamPorts[moduleIndex], config, moduleIndex, samples, count);
 }

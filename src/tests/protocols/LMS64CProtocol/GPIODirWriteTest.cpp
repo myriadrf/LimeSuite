@@ -34,7 +34,7 @@ MATCHER_P2(IsPayloadByteCorrect, index, byte, "Checks if the packet has the corr
 {
     auto packet = reinterpret_cast<const LMS64CPacket*>(arg);
 
-    return packet->payload[index] == byte;
+    return packet->payload[index] == std::to_integer<uint8_t>(byte);
 }
 
 TEST(LMS64CProtocol, GPIODirWriteTestOneBlock)
@@ -43,11 +43,11 @@ TEST(LMS64CProtocol, GPIODirWriteTestOneBlock)
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
 
-    const uint8_t value = 0b01010101;
+    const std::byte value{ 0b01010101 };
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GPIO_DIR_WR), IsBlockCountCorrect(1), IsPayloadByteCorrect(0, value)),
@@ -67,11 +67,11 @@ TEST(LMS64CProtocol, GPIODirWriteTestTwoBlocks)
     LMS64CPacket packet{};
     packet.status = LMS64CProtocol::STATUS_COMPLETED_CMD;
 
-    const std::array<uint8_t, 2> values{ 0b01010101, 0b10101010 };
+    const std::array<std::byte, 2> values{ std::byte{ 0b01010101 }, std::byte{ 0b10101010 } };
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort,
         Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GPIO_DIR_WR),
@@ -83,7 +83,7 @@ TEST(LMS64CProtocol, GPIODirWriteTestTwoBlocks)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::GPIODirWrite(mockPort, values.data(), 2);
+    int returnValue = LMS64CProtocol::GPIODirWrite(mockPort, values.data(), values.size());
 
     EXPECT_EQ(returnValue, 0);
 }
@@ -98,7 +98,7 @@ TEST(LMS64CProtocol, GPIODirWriteTestNotFullyWritten)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIODirWrite(mockPort, &actual, 1);, std::runtime_error);
 }
 
@@ -112,7 +112,7 @@ TEST(LMS64CProtocol, GPIODirWriteTestNotFullyRead)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIODirWrite(mockPort, &actual, 1);, std::runtime_error);
 }
 
@@ -124,13 +124,13 @@ TEST(LMS64CProtocol, GPIODirWriteTestWrongStatus)
 
     ON_CALL(mockPort, Read(_, PACKET_SIZE, _))
         .WillByDefault(DoAll(
-            SetArrayArgument<0>(reinterpret_cast<uint8_t*>(&packet), reinterpret_cast<uint8_t*>(&packet + 1)), ReturnArg<1>()));
+            SetArrayArgument<0>(reinterpret_cast<std::byte*>(&packet), reinterpret_cast<std::byte*>(&packet + 1)), ReturnArg<1>()));
 
     EXPECT_CALL(mockPort, Write(AllOf(IsCommandCorrect(LMS64CProtocol::CMD_GPIO_DIR_WR), IsBlockCountCorrect(1)), PACKET_SIZE, _))
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIODirWrite(mockPort, &actual, 1);, std::runtime_error);
 }
 
@@ -141,6 +141,6 @@ TEST(LMS64CProtocol, GPIODirWriteTestBufferSizeTooBig)
     EXPECT_CALL(mockPort, Write(_, PACKET_SIZE, _)).Times(0);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
-    uint8_t actual = 0U;
+    std::byte actual{ 0 };
     EXPECT_THROW(LMS64CProtocol::GPIODirWrite(mockPort, &actual, 64);, std::invalid_argument);
 }

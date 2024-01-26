@@ -427,7 +427,7 @@ void pnlBoardControls::OnMemoryWrite(wxCommandEvent& event)
     long val = 0;
     gui->txtValue->GetValue().ToLong(&val);
     assert(size_t(gui->memoryRegion.size) <= sizeof(val));
-    int rez = mDevice->MemoryWrite(gui->dataStorage, gui->memoryRegion, &val);
+    int rez = mDevice->MemoryWrite(gui->dataStorage, gui->memoryRegion, reinterpret_cast<std::byte*>(&val));
     if (rez != 0)
         wxMessageBox(_("Memory write failed"), _("Error"));
 }
@@ -436,7 +436,7 @@ int pnlBoardControls::ReadMemory(MemoryParamGUI* gui)
 {
     long val = 0;
     assert(sizeof(val) >= size_t(gui->memoryRegion.size));
-    int rez = mDevice->MemoryRead(gui->dataStorage, gui->memoryRegion, &val);
+    int rez = mDevice->MemoryRead(gui->dataStorage, gui->memoryRegion, reinterpret_cast<std::byte*>(&val));
     if (rez == 0)
         gui->txtValue->SetValue(std::to_string(val));
     return rez;

@@ -2,7 +2,8 @@
 #define LMS7_MCU_PROGRAMS_H
 
 #include "limesuite/config.h"
-#include <stdint.h>
+#include <array>
+#include <cstddef>
 
 #define MCU_PROGRAM_SIZE 16384
 
@@ -21,6 +22,6 @@
 #define MCU_FUNCTION_AGC 10
 #define MCU_FUNCTION_GET_PROGRAM_ID 255
 
-LIME_API extern const uint8_t mcu_program_lms7_dc_iq_calibration_bin[16384];
+LIME_API extern const std::array<std::byte, MCU_PROGRAM_SIZE> mcu_program_lms7_dc_iq_calibration_bin;
 
 #endif

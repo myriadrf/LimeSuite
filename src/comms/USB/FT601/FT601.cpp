@@ -89,7 +89,7 @@ void FT601::Disconnect()
 }
 
 #ifndef __unix__
-int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
+int32_t FT601::BulkTransfer(uint8_t endPointAddr, std::byte* data, int length, int32_t timeout_ms)
 {
     ULONG ulBytesTransferred = 0;
     FT_STATUS ftStatus = FT_OK;
@@ -132,13 +132,14 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int
 }
 #endif
 
-int32_t FT601::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout)
+int32_t FT601::ControlTransfer(
+    int requestType, int request, int value, int index, std::byte* data, uint32_t length, int32_t timeout)
 {
     throw(OperationNotSupported("ControlTransfer not supported on FT601 connections."));
 }
 
 #ifndef __unix__
-int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
+int FT601::BeginDataXfer(std::byte* buffer, uint32_t length, uint8_t endPointAddr)
 {
     int index = GetUSBContextIndex();
 
@@ -187,7 +188,7 @@ bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
     return true; //there is nothing to wait for (signal wait finished)
 }
 
-int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
+int FT601::FinishDataXfer(std::byte* buffer, uint32_t length, int contextHandle)
 {
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -301,30 +302,30 @@ int FT601::ReinitPipe(unsigned char ep)
 #ifdef __unix__
 int FT601::FT_FlushPipe(unsigned char ep)
 {
-    unsigned char wbuffer[20]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    std::array<std::byte, 20> wbuffer{ std::byte{ 0 } };
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter)&0xFF;
-    wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
-    wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
-    wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
-    wbuffer[4] = ep;
+    wbuffer[0] = static_cast<std::byte>((mUsbCounter) & 0xFF);
+    wbuffer[1] = static_cast<std::byte>((mUsbCounter >> 8) & 0xFF);
+    wbuffer[2] = static_cast<std::byte>((mUsbCounter >> 16) & 0xFF);
+    wbuffer[3] = static_cast<std::byte>((mUsbCounter >> 24) & 0xFF);
+    wbuffer[4] = std::byte{ ep };
 
-    int actual = BulkTransfer(0x01, wbuffer, 20, 1000);
+    int actual = BulkTransfer(0x01, wbuffer.data(), wbuffer.size(), 1000);
     if (actual != 20)
     {
         return -1;
     }
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter)&0xFF;
-    wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
-    wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
-    wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
-    wbuffer[4] = ep;
-    wbuffer[5] = 0x03;
+    wbuffer[0] = static_cast<std::byte>((mUsbCounter) & 0xFF);
+    wbuffer[1] = static_cast<std::byte>((mUsbCounter >> 8) & 0xFF);
+    wbuffer[2] = static_cast<std::byte>((mUsbCounter >> 16) & 0xFF);
+    wbuffer[3] = static_cast<std::byte>((mUsbCounter >> 24) & 0xFF);
+    wbuffer[4] = std::byte{ ep };
+    wbuffer[5] = std::byte{ 0x03 };
 
-    actual = BulkTransfer(0x01, wbuffer, 20, 1000);
+    actual = BulkTransfer(0x01, wbuffer.data(), wbuffer.size(), 1000);
     if (actual != 20)
     {
         return -1;
@@ -335,33 +336,33 @@ int FT601::FT_FlushPipe(unsigned char ep)
 
 int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
-    unsigned char wbuffer[20] = { 0 };
+    std::array<std::byte, 20> wbuffer{std::byte{ 0 }};
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter)&0xFF;
-    wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
-    wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
-    wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
-    wbuffer[4] = ep;
+    wbuffer[0] = static_cast<std::byte>((mUsbCounter) & 0xFF);
+    wbuffer[1] = static_cast<std::byte>((mUsbCounter >> 8) & 0xFF);
+    wbuffer[2] = static_cast<std::byte>((mUsbCounter >> 16) & 0xFF);
+    wbuffer[3] = static_cast<std::byte>((mUsbCounter >> 24) & 0xFF);
+    wbuffer[4] = std::byte{ ep };
 
-    int actual = BulkTransfer(0x01, wbuffer, 20, 1000);
+    int actual = BulkTransfer(0x01, wbuffer.data(), wbuffer.size(), 1000);
     if (actual != 20)
     {
         return -1;
     }
 
     mUsbCounter++;
-    wbuffer[0] = (mUsbCounter)&0xFF;
-    wbuffer[1] = (mUsbCounter >> 8) & 0xFF;
-    wbuffer[2] = (mUsbCounter >> 16) & 0xFF;
-    wbuffer[3] = (mUsbCounter >> 24) & 0xFF;
-    wbuffer[5] = 0x02;
-    wbuffer[8] = (size)&0xFF;
-    wbuffer[9] = (size >> 8) & 0xFF;
-    wbuffer[10] = (size >> 16) & 0xFF;
-    wbuffer[11] = (size >> 24) & 0xFF;
+    wbuffer[0] = static_cast<std::byte>((mUsbCounter) & 0xFF);
+    wbuffer[1] = static_cast<std::byte>((mUsbCounter >> 8) & 0xFF);
+    wbuffer[2] = static_cast<std::byte>((mUsbCounter >> 16) & 0xFF);
+    wbuffer[3] = static_cast<std::byte>((mUsbCounter >> 24) & 0xFF);
+    wbuffer[5] = std::byte{ 0x02 };
+    wbuffer[8] = static_cast<std::byte>((size) & 0xFF);
+    wbuffer[9] = static_cast<std::byte>((size >> 8) & 0xFF);
+    wbuffer[10] = static_cast<std::byte>((size >> 16) & 0xFF);
+    wbuffer[11] = static_cast<std::byte>((size >> 24) & 0xFF);
 
-    actual = BulkTransfer(0x01, wbuffer, 20, 1000);
+    actual = BulkTransfer(0x01, wbuffer.data(), wbuffer.size(), 1000);
 
     if (actual != 20)
     {

@@ -25,7 +25,7 @@ class TRXLooper_PCIE : public TRXLooper
         std::shared_ptr<LitePCIe> port,
         const SDRDevice::StreamConfig& config,
         uint8_t moduleIndex,
-        const void** samples,
+        const std::byte** samples,
         uint32_t count);
 
     typedef SamplesPacket<2> SamplesPacketType;
@@ -33,7 +33,7 @@ class TRXLooper_PCIE : public TRXLooper
     /** @brief The transfer arguments for the PCIe transfer. */
     struct TransferArgs {
         std::shared_ptr<LitePCIe> port;
-        std::vector<uint8_t*> buffers;
+        std::vector<std::byte*> buffers;
         int32_t bufferSize;
         int16_t packetSize;
         uint8_t packetsToBatch;

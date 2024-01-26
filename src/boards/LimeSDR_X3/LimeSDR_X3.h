@@ -44,10 +44,11 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
     virtual bool UploadMemory(
-        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
-    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
+        eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback) override;
+    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const std::byte* data) override;
+    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, std::byte* data) override;
+    virtual int UploadTxWaveform(
+        const StreamConfig& config, uint8_t moduleIndex, const std::byte** samples, uint32_t count) override;
 
   protected:
     int InitLMS1(bool skipTune = false);

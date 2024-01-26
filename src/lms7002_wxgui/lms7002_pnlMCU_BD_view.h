@@ -40,20 +40,16 @@ class lms7002_pnlMCU_BD_view : public ILMS7002MTab
     void DebugModeSet_MCU(int m_iMode1, int m_iMode0);
     void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
     int ResetPC_MCU();
-    int Change_MCUFrequency(unsigned char data);
-    int One_byte_command(unsigned short data1, unsigned char* rdata1);
-    int Three_byte_command(unsigned char data1,
-        unsigned char data2,
-        unsigned char data3,
-        unsigned char* rdata1,
-        unsigned char* rdata2,
-        unsigned char* rdata3);
+    int Change_MCUFrequency(std::byte data);
+    int One_byte_command(unsigned short data1, std::byte& rdata1);
+    int Three_byte_command(
+        std::byte data1, std::byte data2, std::byte data3, std::byte& rdata1, std::byte& rdata2, std::byte& rdata3);
     static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
     void OnProgramingStatusUpdate(wxCommandEvent& event);
     int WaitUntilWritten();
     int RunProductionTest_MCU();
     int Read_IRAM();
-    int ReadOneByte(unsigned char* data);
+    int ReadOneByte(std::byte& data);
     int Read_SFR();
     int Erase_IRAM();
     int RunInstr_MCU(unsigned short* pPCVAL);
@@ -83,10 +79,10 @@ class lms7002_pnlMCU_BD_view : public ILMS7002MTab
     int m_bLoadedProd;
     int m_bLoadedDebug;
     std::string mLoadedProgramFilename;
-    unsigned char byte_array[max_array_size];
+    std::array<std::byte, max_array_size> byte_array;
     int m_iLoopTries;
-    unsigned char m_IRAM[256];
-    unsigned char m_SFR[256];
+    std::array<std::byte, 256> m_IRAM;
+    std::array<std::byte, 256> m_SFR;
     static lms7002_pnlMCU_BD_view* obj_ptr;
     static const long ID_PROGRAMING_STATUS_EVENT;
     static const long ID_PROGRAMING_FINISH_EVENT;

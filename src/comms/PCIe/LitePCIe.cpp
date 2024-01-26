@@ -6,7 +6,7 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <string.h>
+#include <cstring>
 #include <thread>
 
 #include "Logger.h"
@@ -74,8 +74,12 @@ int LitePCIe::Open(const std::string& deviceFilename, uint32_t flags)
                 const std::string msg = mFilePath + ": DMA writer request denied";
                 throw std::runtime_error(msg);
             }
-            uint8_t* buf = (uint8_t*)mmap(
-                NULL, info.dma_rx_buf_size * info.dma_rx_buf_count, PROT_READ, MAP_SHARED, mFileDescriptor, info.dma_rx_buf_offset);
+            std::byte* buf = reinterpret_cast<std::byte*>(mmap(NULL,
+                info.dma_rx_buf_size * info.dma_rx_buf_count,
+                PROT_READ,
+                MAP_SHARED,
+                mFileDescriptor,
+                info.dma_rx_buf_offset));
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 const std::string msg = mFilePath + ": failed to MMAP Rx DMA buffer";
@@ -94,12 +98,12 @@ int LitePCIe::Open(const std::string& deviceFilename, uint32_t flags)
                 const std::string msg = mFilePath + ": DMA reader request denied";
                 throw std::runtime_error(msg);
             }
-            uint8_t* buf = (uint8_t*)mmap(NULL,
+            std::byte* buf = reinterpret_cast<std::byte*>(mmap(NULL,
                 info.dma_tx_buf_size * info.dma_tx_buf_count,
                 PROT_WRITE,
                 MAP_SHARED,
                 mFileDescriptor,
-                info.dma_tx_buf_offset);
+                info.dma_tx_buf_offset));
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 const std::string msg = mFilePath + ": failed to MMAP Tx DMA buffer";
@@ -139,14 +143,14 @@ void LitePCIe::Close()
     mFileDescriptor = -1;
 }
 
-int LitePCIe::WriteControl(const uint8_t* buffer, const int length, int timeout_ms)
+int LitePCIe::WriteControl(const std::byte* buffer, const int length, int timeout_ms)
 {
     return write(mFileDescriptor, buffer, length);
 }
 
-int LitePCIe::ReadControl(uint8_t* buffer, const int length, int timeout_ms)
+int LitePCIe::ReadControl(std::byte* buffer, const int length, int timeout_ms)
 {
-    memset(buffer, 0, length);
+    std::memset(buffer, 0, length);
     uint32_t status = 0;
     auto t1 = chrono::high_resolution_clock::now();
     do
@@ -167,7 +171,7 @@ int LitePCIe::ReadControl(uint8_t* buffer, const int length, int timeout_ms)
     return read(mFileDescriptor, buffer, length);
 }
 
-int LitePCIe::WriteRaw(const uint8_t* buffer, const int length, int timeout_ms)
+int LitePCIe::WriteRaw(const std::byte* buffer, const int length, int timeout_ms)
 {
     if (mFileDescriptor < 0)
         throw std::runtime_error("LitePCIe port not opened");
@@ -226,14 +230,14 @@ int LitePCIe::WriteRaw(const uint8_t* buffer, const int length, int timeout_ms)
     return length - bytesRemaining;
 }
 
-int LitePCIe::ReadRaw(uint8_t* buffer, const int length, int timeout_ms)
+int LitePCIe::ReadRaw(std::byte* buffer, const int length, int timeout_ms)
 {
     if (mFileDescriptor < 0)
         throw std::runtime_error("LitePCIe port not opened");
 
     int bytesRemaining = length;
-    uint8_t* dest = buffer;
-    auto t1 = chrono::high_resolution_clock::now();
+    std::byte* dest = buffer;
+    auto t1 = std::chrono::high_resolution_clock::now();
     do
     {
         int bytesIn = read(mFileDescriptor, dest, bytesRemaining);

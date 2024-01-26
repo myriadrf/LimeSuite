@@ -22,9 +22,9 @@ class FX3 : public USBGeneric
     virtual void Disconnect() override;
 
 #ifndef __unix__
-    virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr) override;
+    virtual int BeginDataXfer(std::byte* buffer, uint32_t length, uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
-    virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
+    virtual int FinishDataXfer(std::byte* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
 };

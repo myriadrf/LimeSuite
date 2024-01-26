@@ -613,7 +613,7 @@ int LimeSDR_XTRX::CustomParameterRead(std::vector<CustomParameterIO>& parameters
 }
 
 bool LimeSDR_XTRX::UploadMemory(
-    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+    eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback)
 {
     int progMode;
     LMS64CProtocol::ProgramWriteTarget target = LMS64CProtocol::ProgramWriteTarget::FPGA;
@@ -633,7 +633,7 @@ bool LimeSDR_XTRX::UploadMemory(
     return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_XTRX::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+int LimeSDR_XTRX::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const std::byte* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
@@ -643,7 +643,7 @@ int LimeSDR_XTRX::MemoryWrite(std::shared_ptr<DataStorage> storage, Region regio
     return fpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_XTRX::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+int LimeSDR_XTRX::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, std::byte* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {

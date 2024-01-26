@@ -21,21 +21,21 @@ class FT601 : public USBGeneric
 
 #ifndef __unix__
     virtual int32_t BulkTransfer(
-        uint8_t endPoint, uint8_t* data, int length, int32_t timeout = USBGeneric::defaultTimeout) override;
+        uint8_t endPoint, std::byte* data, int length, int32_t timeout = USBGeneric::defaultTimeout) override;
 #endif
 
     virtual int32_t ControlTransfer(int requestType,
         int request,
         int value,
         int index,
-        uint8_t* data,
+        std::byte* data,
         uint32_t length,
         int32_t timeout = USBGeneric::defaultTimeout) override;
 
 #ifndef __unix__
-    virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr) override;
+    virtual int BeginDataXfer(std::byte* buffer, uint32_t length, uint8_t endPointAddr) override;
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
-    virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
+    virtual int FinishDataXfer(std::byte* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
 

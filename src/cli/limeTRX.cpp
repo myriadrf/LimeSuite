@@ -559,7 +559,7 @@ int main(int argc, char** argv)
         inputFile.seekg(0, std::ios_base::beg);
         cerr << "File size : " << cnt << " bytes." << endl;
         txData.resize(cnt / sizeof(complex16_t));
-        inputFile.read((char*)txData.data(), cnt);
+        inputFile.read(reinterpret_cast<char*>(txData.data()), cnt);
         inputFile.close();
     }
 
@@ -665,7 +665,7 @@ int main(int argc, char** argv)
         totalSamplesReceived += samplesRead;
         if (rxFilename)
         {
-            rxFile.write((char*)rxSamples[0], samplesRead * sizeof(lime::complex16_t));
+            rxFile.write(reinterpret_cast<char*>(rxSamples[0]), samplesRead * sizeof(lime::complex16_t));
         }
 
         t2 = std::chrono::high_resolution_clock::now();

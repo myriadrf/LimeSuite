@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <mutex>
 #include <string>
 #include <thread>
-#include "USBTransferContext.h"
 
 #ifdef __unix__
     #ifdef __GNUC__
@@ -17,6 +17,8 @@
 #endif
 
 namespace lime {
+
+class USBTransferContext;
 
 /** @brief A generic class to communicate with a USB device. */
 class USBGeneric
@@ -32,15 +34,15 @@ class USBGeneric
     virtual void Disconnect();
 
     // return actual number of bytes transferred
-    virtual int32_t BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t timeout_ms = defaultTimeout);
+    virtual int32_t BulkTransfer(uint8_t endPoint, std::byte* data, int length, int32_t timeout_ms = defaultTimeout);
 
     // return actual number of bytes transferred
     virtual int32_t ControlTransfer(
-        int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms = defaultTimeout);
+        int requestType, int request, int value, int index, std::byte* data, uint32_t length, int32_t timeout_ms = defaultTimeout);
 
-    virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr);
+    virtual int BeginDataXfer(std::byte* buffer, uint32_t length, uint8_t endPointAddr);
     virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms);
-    virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle);
+    virtual int FinishDataXfer(std::byte* buffer, uint32_t length, int contextHandle);
     virtual void AbortEndpointXfers(uint8_t endPointAddr);
 
   protected:

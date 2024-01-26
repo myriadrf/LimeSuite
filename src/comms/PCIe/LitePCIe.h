@@ -21,12 +21,12 @@ class LitePCIe
     bool IsOpen();
 
     // Write/Read for communicating to control end points (SPI, I2C...)
-    virtual int WriteControl(const uint8_t* buffer, int length, int timeout_ms = 100);
-    virtual int ReadControl(uint8_t* buffer, int length, int timeout_ms = 100);
+    virtual int WriteControl(const std::byte* buffer, int length, int timeout_ms = 100);
+    virtual int ReadControl(std::byte* buffer, int length, int timeout_ms = 100);
 
     // Write/Read for samples streaming
-    int WriteRaw(const uint8_t* buffer, int length, int timeout_ms = 100);
-    int ReadRaw(uint8_t* buffer, int length, int timeout_ms = 100);
+    int WriteRaw(const std::byte* buffer, int length, int timeout_ms = 100);
+    int ReadRaw(std::byte* buffer, int length, int timeout_ms = 100);
 
     const std::string& GetPathName() const { return mFilePath; };
     void SetPathName(const std::string& filePath) { mFilePath = filePath; };
@@ -45,8 +45,8 @@ class LitePCIe
             , bufferCount(0)
         {
         }
-        uint8_t* rxMemory;
-        uint8_t* txMemory;
+        std::byte* rxMemory;
+        std::byte* txMemory;
         int bufferSize;
         int bufferCount;
     };

@@ -45,12 +45,12 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) override;
-    virtual int I2CRead(int addr, uint8_t* dest, uint32_t length) override;
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
+    virtual int I2CWrite(int address, const std::byte* data, uint32_t length) override;
+    virtual int I2CRead(int addr, std::byte* dest, uint32_t length) override;
+    virtual int GPIOWrite(const std::byte* buffer, const size_t bufLength) override;
+    virtual int GPIORead(std::byte* buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const std::byte* buffer, const size_t bufLength) override;
+    virtual int GPIODirRead(std::byte* buffer, const size_t bufLength) override;
     virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
@@ -60,7 +60,7 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void* GetInternalChip(uint32_t index) override;
 
     virtual bool UploadMemory(
-        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
+        eMemoryDevice device, uint8_t moduleIndex, const std::byte* data, size_t length, UploadMemoryCallback callback) override;
 
     virtual int ReadFPGARegister(uint32_t address);
     virtual int WriteFPGARegister(uint32_t address, uint32_t value);

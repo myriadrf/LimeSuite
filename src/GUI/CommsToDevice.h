@@ -5,7 +5,7 @@
 
 /**
   @brief Helper class to initialize communications for UI modules that use I2C communication
-    of a specific system-on-chip that is not aware of the whole SDRDevice.  
+    of a specific system-on-chip that is not aware of the whole SDRDevice.
  */
 class SPIToSDR : public lime::ISPI
 {
@@ -27,8 +27,8 @@ class I2CToSDR : public lime::II2C
 {
   public:
     I2CToSDR(lime::SDRDevice& sdr);
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length);
-    virtual int I2CRead(int address, uint8_t* dest, uint32_t length);
+    virtual int I2CWrite(int address, const std::byte* data, uint32_t length);
+    virtual int I2CRead(int address, std::byte* dest, uint32_t length);
 
   private:
     lime::SDRDevice& device;
