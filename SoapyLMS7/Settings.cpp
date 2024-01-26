@@ -391,7 +391,6 @@ void SoapyLMS7::setFrequency(
         const auto clkId = dir == TRXDir::Tx ? 2 : 1;
         try
         {
-            sdrDevice->SetClockFreq(clkId, frequency, channel);
             sdrDevice->SetFrequency(0, dir, channel, frequency);
 
             // TODO:
