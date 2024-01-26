@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cmath>
+#include <complex>
 
 namespace lime {
 
@@ -643,7 +644,7 @@ void LMS7002M_SDRDevice::SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_
     lms->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), isAutomatic == 0, channel);
 }
 
-std::complex<double> LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+complex64f_t LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     double I = 0.0;
     double Q = 0.0;
@@ -651,29 +652,31 @@ std::complex<double> LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir
     auto lms = mLMSChips.at(channel / 2);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
     lms->GetDCOffset(trx, I, Q);
-    return std::complex<double>(I, Q);
+    return { I, Q };
 }
 
-void LMS7002M_SDRDevice::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset)
+void LMS7002M_SDRDevice::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset)
 {
     auto lms = mLMSChips.at(channel / 2);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
-    lms->SetDCOffset(trx, offset.real(), offset.imag());
+    lms->SetDCOffset(trx, offset.i, offset.q);
 }
 
-std::complex<double> LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+complex64f_t LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     auto lms = mLMSChips.at(channel / 2);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
 
     double phase = 0.0, gainI = 0.0, gainQ = 0.0;
     lms->GetIQBalance(trx, phase, gainI, gainQ);
-    return (gainI / gainQ) * std::polar(1.0, phase);
+    auto balance = (gainI / gainQ) * std::polar(1.0, phase);
+    return { balance.real(), balance.imag() };
 }
 
-void LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance)
+void LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance)
 {
-    double gain = std::abs(balance);
+    std::complex<double> bal{ balance.i, balance.q };
+    double gain = std::abs(bal);
 
     double gainI = 1.0;
     if (gain < 1.0)
@@ -689,7 +692,7 @@ void LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t c
 
     auto lms = mLMSChips.at(channel / 2);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
-    lms->SetIQBalance(trx, std::arg(balance), gainI, gainQ);
+    lms->SetIQBalance(trx, std::arg(bal), gainI, gainQ);
 }
 
 bool LMS7002M_SDRDevice::GetCGENLocked(uint8_t moduleIndex)

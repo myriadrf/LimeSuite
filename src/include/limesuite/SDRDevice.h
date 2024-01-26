@@ -1,7 +1,6 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
-#include <complex>
 #include <cstring>
 #include <map>
 #include <memory>
@@ -335,11 +334,11 @@ class LIME_API SDRDevice
     virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
     virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
 
-    virtual std::complex<double> GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset) = 0;
+    virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
 
-    virtual std::complex<double> GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance) = 0;
+    virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
 
     virtual bool GetCGENLocked(uint8_t moduleIndex) = 0;
     virtual double GetTemperature(uint8_t moduleIndex) = 0;

@@ -302,7 +302,7 @@ void LimeSDR_MMX8::SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t chan
     return mSubDevices[moduleIndex]->SetDCOffsetMode(0, trx, channel, isAutomatic);
 }
 
-std::complex<double> LimeSDR_MMX8::GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+complex64f_t LimeSDR_MMX8::GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     if (moduleIndex >= 8)
     {
@@ -312,7 +312,7 @@ std::complex<double> LimeSDR_MMX8::GetDCOffset(uint8_t moduleIndex, TRXDir trx, 
     return mSubDevices[moduleIndex]->GetDCOffset(0, trx, channel);
 }
 
-void LimeSDR_MMX8::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset)
+void LimeSDR_MMX8::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset)
 {
     if (moduleIndex >= 8)
     {
@@ -322,7 +322,7 @@ void LimeSDR_MMX8::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel,
     return mSubDevices[moduleIndex]->SetDCOffset(0, trx, channel, offset);
 }
 
-std::complex<double> LimeSDR_MMX8::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+complex64f_t LimeSDR_MMX8::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     if (moduleIndex >= 8)
     {
@@ -332,7 +332,7 @@ std::complex<double> LimeSDR_MMX8::GetIQBalance(uint8_t moduleIndex, TRXDir trx,
     return mSubDevices[moduleIndex]->GetIQBalance(0, trx, channel);
 }
 
-void LimeSDR_MMX8::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance)
+void LimeSDR_MMX8::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance)
 {
     if (moduleIndex >= 8)
     {

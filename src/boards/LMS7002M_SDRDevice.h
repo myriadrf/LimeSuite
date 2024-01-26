@@ -1,7 +1,6 @@
 #ifndef LIME_LMS7002M_SDRDevice_H
 #define LIME_LMS7002M_SDRDevice_H
 
-#include <complex>
 #include <cstdint>
 #include <vector>
 
@@ -58,11 +57,11 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) override;
 
-    virtual std::complex<double> GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
-    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset) override;
+    virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) override;
 
-    virtual std::complex<double> GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
-    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance) override;
+    virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) override;
 
     virtual bool GetCGENLocked(uint8_t moduleIndex) override;
     virtual double GetTemperature(uint8_t moduleIndex) override;

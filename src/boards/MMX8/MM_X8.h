@@ -8,7 +8,6 @@
 #include "PacketsFIFO.h"
 #include "protocols/LMS64CProtocol.h"
 
-#include <complex>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -74,11 +73,11 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) override;
 
-    virtual std::complex<double> GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
-    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& offset) override;
+    virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) override;
 
-    virtual std::complex<double> GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
-    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const std::complex<double>& balance) override;
+    virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) override;
 
     virtual bool GetCGENLocked(uint8_t moduleIndex) override;
     virtual double GetTemperature(uint8_t moduleIndex) override;
