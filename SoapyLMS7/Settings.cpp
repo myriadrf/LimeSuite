@@ -480,25 +480,22 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    // TODO: check if it's valid logic
-    // auto streams = activeStreams;
-    // for (auto s : streams)
-    // {
-    //     deactivateStream(s);
-    // }
+
+    if (!activeStreams.empty())
+    {
+        SoapySDR::logf(SOAPY_SDR_ERROR,
+            "setSampleRate(%s, %ld, %g MHz) setting the sample rate while the stream is running is not allowed.",
+            dirName,
+            channel,
+            rate / 1e6);
+        throw std::runtime_error("SoapyLMS7::setSampleRate(): setting the sample rate while the stream is running is not allowed.");
+    }
 
     SoapySDR::logf(SOAPY_SDR_DEBUG, "setSampleRate(%s, %ld, %g MHz)", dirName, channel, rate / 1e6);
 
     try
     {
         sdrDevice->SetSampleRate(0, direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx, channel, rate, oversampling);
-
-        // TODO: check if it's valid logic
-        // for (auto s : streams)
-        // {
-        //     activateStream(s);
-        // }
-
     } catch (const std::exception& e)
     {
         SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(%s, %ld, %g MHz) Failed", dirName, channel, rate / 1e6);
