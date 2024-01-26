@@ -35,7 +35,7 @@ struct StatsDeltas {
 };
 
 struct StreamBuffer {
-    void* buffer;
+    std::byte* buffer;
     lime::MemoryPool* ownerMemoryPool;
     lime::TRXDir direction;
     uint8_t channel;
@@ -1201,8 +1201,11 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         {
             sampleBuffer[i] = reinterpret_cast<T*>(handle->memoryPool.Allocate(sample_count * sampleSize));
 
-            handle->parent->streamBuffers.push_back(
-                { sampleBuffer[i], &handle->memoryPool, direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
+            handle->parent->streamBuffers.push_back({ reinterpret_cast<std::byte*>(sampleBuffer[i]),
+                &handle->memoryPool,
+                direction,
+                handle->parent->lastSavedStreamConfig.rxChannels[i],
+                0 });
         }
     }
 
@@ -1305,7 +1308,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
         auto buffer = reinterpret_cast<T*>(handle->memoryPool.Allocate(sample_count * sampleSize));
         std::memcpy(buffer, samples, sample_count * sampleSize);
         handle->parent->streamBuffers.push_back(
-            { reinterpret_cast<void*>(buffer), &handle->memoryPool, direction, static_cast<uint8_t>(streamChannel), 0 });
+            { reinterpret_cast<std::byte*>(buffer), &handle->memoryPool, direction, static_cast<uint8_t>(streamChannel), 0 });
 
         // Can't really know what to return here just yet, so just returning that all of them have passed through.
         return sample_count;
