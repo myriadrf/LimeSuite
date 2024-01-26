@@ -24,6 +24,7 @@ enum class LogLevel : uint8_t {
     DEBUG, //!< A debugging message, only shown in Debug configuration.
 };
 
+// C-string versions
 //! Log a critical error message with formatting
 static inline void critical(const char* format, ...);
 
@@ -41,6 +42,25 @@ static inline void debug(const char* format, ...);
 
 //! Log a message with formatting and specified logging level
 static inline void log(const LogLevel level, const char* format, ...);
+
+// C++ std::string versions
+//! Log a critical error message
+static inline void critical(const std::string& text);
+
+//! Log an error message
+static inline int error(const std::string& text);
+
+//! Log a warning message
+static inline void warning(const std::string& text);
+
+//! Log an information message
+static inline void info(const std::string& text);
+
+//! Log a debug message
+static inline void debug(const std::string& text);
+
+//! Log a message with specified logging level
+static inline void log(const LogLevel level, const std::string& text);
 
 /*!
  * Send a message to the registered logger.
@@ -63,6 +83,44 @@ LIME_API void registerLogHandler(const LogHandler handler);
 
 //! Convert log level to a string name for printing
 LIME_API const char* logLevelToName(const LogLevel level);
+
+/*!
+ * Get the error code to string + any optional message reported.
+ */
+LIME_API const char* GetLastErrorMessage(void);
+
+/*!
+ * Report a typical errno style error.
+ * The resulting error message comes from strerror().
+ * \param errnum a recognized error code
+ * \return a non-zero status code to return
+ */
+LIME_API int ReportError(const int errnum);
+
+/*!
+ * Report an error as an integer code and a formatted message string.
+ * \param errnum a recognized error code
+ * \param format a format string followed by args
+ * \return a non-zero status code to return
+ */
+inline int ReportError(const int errnum, const char* format, ...);
+
+/*!
+ * Report an error as a formatted message string.
+ * The reported errnum is 0 - no relevant error code.
+ * \param format a format string followed by args
+ * \return a non-zero status code to return
+ */
+inline int ReportError(const char* format, ...);
+
+/*!
+ * Report an error as an integer code and message format arguments
+ * \param errnum a recognized error code
+ * \param format a printf-style format string
+ * \param argList the format string args as a va_list
+ * \return a non-zero status code to return
+ */
+LIME_API int ReportError(const int errnum, const char* format, va_list argList);
 
 } // namespace lime
 
@@ -115,47 +173,37 @@ static inline void lime::debug(const char* format, ...)
     va_end(args);
 }
 
-namespace lime {
+static inline void lime::critical(const std::string& text)
+{
+    lime::log(lime::LogLevel::CRITICAL, text);
+}
 
-/*!
- * Get the error code to string + any optional message reported.
- */
-LIME_API const char* GetLastErrorMessage(void);
+static inline int lime::error(const std::string& text)
+{
+    lime::log(lime::LogLevel::ERROR, text);
+    return -1;
+}
 
-/*!
- * Report a typical errno style error.
- * The resulting error message comes from strerror().
- * \param errnum a recognized error code
- * \return a non-zero status code to return
- */
-LIME_API int ReportError(const int errnum);
+static inline void lime::warning(const std::string& text)
+{
+    lime::log(lime::LogLevel::WARNING, text);
+}
 
-/*!
- * Report an error as an integer code and a formatted message string.
- * \param errnum a recognized error code
- * \param format a format string followed by args
- * \return a non-zero status code to return
- */
-inline int ReportError(const int errnum, const char* format, ...);
+static inline void lime::info(const std::string& text)
+{
+    lime::log(lime::LogLevel::INFO, text);
+}
 
-/*!
- * Report an error as a formatted message string.
- * The reported errnum is 0 - no relevant error code.
- * \param format a format string followed by args
- * \return a non-zero status code to return
- */
-inline int ReportError(const char* format, ...);
+static inline void lime::debug(const std::string& text)
+{
+    lime::log(lime::LogLevel::DEBUG, text);
+}
 
-/*!
- * Report an error as an integer code and message format arguments
- * \param errnum a recognized error code
- * \param format a printf-style format string
- * \param argList the format string args as a va_list
- * \return a non-zero status code to return
- */
-LIME_API int ReportError(const int errnum, const char* format, va_list argList);
-
-} // namespace lime
+//! Log a message with formatting and specified logging level
+static inline void lime::log(const LogLevel level, const std::string& text)
+{
+    lime::log(level, "%s", text.c_str());
+}
 
 inline int lime::ReportError(const int errnum, const char* format, ...)
 {
