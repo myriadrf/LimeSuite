@@ -191,6 +191,8 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
     Disconnect(idMenuQuit, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnQuit));
     Disconnect(idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnAbout));
     Disconnect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
+
+    obj_ptr = nullptr;
 }
 
 void LMS7SuiteAppFrame::OnClose(wxCloseEvent& event)
