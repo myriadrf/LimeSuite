@@ -492,10 +492,9 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
 
     string type = "";
     type = parser.get("type", "undefined");
-    stringstream ss;
+
     if (type.find("LMS7002 configuration") == string::npos)
     {
-        ss << "File " << filename << " not recognized" << endl;
         return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename.c_str());
     }
 
@@ -682,10 +681,9 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
     }
     string type = "";
     type = parser.get("type", "undefined");
-    stringstream ss;
+
     if (type.find("lms7002m_minimal_config") == string::npos)
     {
-        ss << "File " << filename << " not recognized" << endl;
         return ReportError(EINVAL, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename.c_str());
     }
 
