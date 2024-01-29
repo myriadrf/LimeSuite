@@ -4,9 +4,11 @@
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include "lms7suiteAppFrame.h"
 #include "limesuite/LMS7002M.h"
+#include "Logger.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;
+using namespace std::literals::string_literals;
 
 indexValueMap hbi_ovr_txtsp_IndexValuePairs;
 indexValueMap tsgfcw_txtsp_IndexValuePairs;
@@ -1495,7 +1497,7 @@ void lms7002_pnlTXTSP_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter.\n"s);
         return;
     }
     long value = event.GetInt();

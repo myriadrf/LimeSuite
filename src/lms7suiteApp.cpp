@@ -27,8 +27,11 @@ IMPLEMENT_APP_CONSOLE(lms7suiteApp)
 IMPLEMENT_APP(lms7suiteApp)
 #endif
 
+#include "Logger.h"
 #include "resources/splash.h"
 #include "resources/LMS_ICO.xpm"
+
+using namespace std::literals::string_literals;
 
 bool lms7suiteApp::OnInit()
 {
@@ -41,7 +44,7 @@ bool lms7suiteApp::OnInit()
     frame->SetIcon(wxICON(LMS_ICO));
 #ifndef NDEBUG
     wxLongLong t1 = wxGetUTCTimeMillis();
-    std::cout << "Create time " << (wxGetUTCTimeMillis() - t1).ToString() << " ms\n";
+    lime::debug( "Create time "s + (wxGetUTCTimeMillis() - t1).ToString() + " ms\n"s);
 #endif
     splash->Destroy();
     frame->Show();

@@ -2,8 +2,10 @@
 #include <vector>
 
 #include "limesuite/SDRDevice.h"
+#include "Logger.h"
 
 using namespace lime;
+using namespace std::literals::string_literals;
 
 void SPI_wxgui::InsertSPIControlsRow(wxWindow* parent, wxWindowID id, wxFlexGridSizer* row, SPI_wxgui::SPIFields* controls)
 {
@@ -165,7 +167,7 @@ void SPI_wxgui::onSPIwrite(wxCommandEvent& event)
         auto iter = desc.spiSlaveIds.find(std::string(strDevAddr.mb_str()));
         if (iter == desc.spiSlaveIds.end())
         {
-            printf("Connected device does not have SPI for %s", strDevAddr.mb_str().data());
+            lime::warning("Connected device does not have SPI for "s + strDevAddr.mb_str().data());
             return;
         }
         devAddr = iter->second;
@@ -182,7 +184,7 @@ void SPI_wxgui::onSPIwrite(wxCommandEvent& event)
         }
     } catch (...)
     {
-        printf("No spi controls created for event id: %i", event.GetId());
+        lime::error("No spi controls created for event id: %i", event.GetId());
     }
 }
 
@@ -214,7 +216,7 @@ void SPI_wxgui::onSPIread(wxCommandEvent& event)
         auto iter = desc.spiSlaveIds.find(std::string(strDevAddr.mb_str()));
         if (iter == desc.spiSlaveIds.end())
         {
-            printf("Connected device does not have SPI for %s", strDevAddr.mb_str().data());
+            lime::warning("Connected device does not have SPI for "s + strDevAddr.mb_str().data());
             return;
         }
         devAddr = iter->second;
@@ -233,6 +235,6 @@ void SPI_wxgui::onSPIread(wxCommandEvent& event)
         }
     } catch (...)
     {
-        printf("No spi controls created for event id: %i", event.GetId());
+        lime::error("No spi controls created for event id: %i", event.GetId());
     }
 }

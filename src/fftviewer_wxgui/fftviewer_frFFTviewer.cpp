@@ -455,10 +455,10 @@ void fftviewer_frFFTviewer::StreamingLoop(
         pthis->device->StreamStart(chipIndex);
     } catch (std::logic_error& e)
     {
-        printf("%s\n", e.what());
+        lime::error("%s\n", e.what());
     } catch (std::runtime_error& e)
     {
-        printf("%s\n", e.what());
+        lime::error("%s\n", e.what());
     }
 
     // uint16_t regVal = 0;

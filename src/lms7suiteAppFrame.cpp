@@ -39,6 +39,9 @@
 #include "limesuite/SDRDevice.h"
 #include "limesuite/DeviceNode.h"
 //#include "LimeSDR.h"
+
+#include "Logger.h"
+
 using namespace std;
 using namespace lime;
 
@@ -313,7 +316,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
         Fit();
     } catch (std::runtime_error& e)
     {
-        printf("Failed to connect %s\n", e.what());
+        lime::error("Failed to connect %s\n", e.what());
     }
 }
 
@@ -346,7 +349,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
         ss << " " << std::setw(2) << (unsigned short)data[i];
     if (repeatedZeros > 2)
         ss << " (00 x " << std::dec << repeatedZeros << " times)";
-    cout << ss.str() << endl;
+    lime::debug(ss.str() + '\n');
     wxCommandEvent* evt = new wxCommandEvent();
     evt->SetString(ss.str());
     evt->SetEventObject(obj_ptr);
@@ -358,7 +361,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
 void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const std::string& title)
 {
     wxWindowID moduleId = module->GetId();
-    printf("Add module %i\n", moduleId);
+    lime::debug("Add module %i\n", moduleId);
     wxMenuItem* item;
     item = new wxMenuItem(mnuModules, moduleId, title, wxEmptyString, wxITEM_NORMAL);
     mnuModules->Append(item);
@@ -374,7 +377,7 @@ void LMS7SuiteAppFrame::RemoveModule(IModuleFrame* module)
 
 void LMS7SuiteAppFrame::OnModuleClose(wxCloseEvent& event)
 {
-    printf("Close module %i\n", event.GetId());
+    lime::debug("Close module %i\n", event.GetId());
     IModuleFrame* module = mModules.at(event.GetId());
     if (module)
     {
@@ -384,7 +387,7 @@ void LMS7SuiteAppFrame::OnModuleClose(wxCloseEvent& event)
 
 void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent& event)
 {
-    printf("show module %i\n", event.GetId());
+    lime::debug("show module %i\n", event.GetId());
     IModuleFrame* module = mModules.at(event.GetId());
     if (module) //it's already opened
     {
@@ -422,7 +425,7 @@ ISOCPanel* CreateGUI(wxWindow* parent, eDeviceNodeClass deviceNodeClass, void* s
         return sdrPanel;
     }
     default:
-        printf("Unrecognized device class(%u)\n", static_cast<uint8_t>(deviceNodeClass));
+        lime::warning("Unrecognized device class(%u)\n", static_cast<uint8_t>(deviceNodeClass));
         return nullptr;
     }
 }

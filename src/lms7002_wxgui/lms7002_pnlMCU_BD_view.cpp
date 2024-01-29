@@ -5,6 +5,9 @@
 #include "dlgViewIRAM.h"
 #include "dlgViewSFR.h"
 #include "MCU_File.h"
+#include "Logger.h"
+
+using namespace std::literals::string_literals;
 
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_STATUS_EVENT = wxNewId();
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_FINISH_EVENT = wxNewId();
@@ -1393,13 +1396,10 @@ int lms7002_pnlMCU_BD_view::Read_IRAM()
             i = 256; // error, stop
         }
         OnProgrammingCallback(++stepsDone, 256, "");
-#ifndef NDEBUG
-        //printf("MCU reading IRAM: %2i/256\r", stepsDone.load());
-#endif
         Wait_CLK_Cycles(64);
     }
 #ifndef NDEBUG
-    printf("\nMCU reading IRAM finished\n");
+    lime::info("\nMCU reading IRAM finished\n"s);
 #endif
     return retval;
 }
@@ -1450,12 +1450,9 @@ int lms7002_pnlMCU_BD_view::Erase_IRAM()
             //aborted.store(true);
         }
         OnProgrammingCallback(++stepsDone, 256, "");
-#ifndef NDEBUG
-        //printf("MCU erasing IRAM: %2i/256\r", stepsDone.load());
-#endif
     }
 #ifndef NDEBUG
-    printf("\nMCU erasing IRAM finished\n");
+    lime::info("\nMCU erasing IRAM finished\n"s);
 #endif
     return retval;
 }
