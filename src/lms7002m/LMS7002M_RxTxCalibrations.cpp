@@ -11,12 +11,6 @@
     #define LMS_VERBOSE_OUTPUT
 #endif
 
-#ifdef LMS_VERBOSE_OUTPUT
-static const bool verboseEnabled = true;
-#else
-static const bool verboseEnabled = false;
-#endif
-
 using namespace std;
 using namespace lime;
 using namespace std::literals::string_literals;
