@@ -18,12 +18,6 @@ using namespace std;
     #define ASSERT_WARNING(cond, message)
 #endif
 
-#if 0
-    #define verbose_printf(...) lime::debug(__VA_ARGS__);
-#else
-    #define verbose_printf(...)
-#endif
-
 namespace lime {
 
 /** @brief A class for writing a batch of registers into the FPGA. */
@@ -119,7 +113,7 @@ FPGA::FPGA(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI)
 
 void FPGA::EnableValuesCache(bool enabled)
 {
-    verbose_printf("Enable FPGA registers cache: %s", enabled ? "true" : "false");
+    lime::debug("Enable FPGA registers cache: %s", enabled ? "true" : "false");
     useCache = enabled;
     if (!useCache)
         regsCache.clear();
@@ -309,7 +303,7 @@ int FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
 
 int FPGA::StartStreaming()
 {
-    verbose_printf("%s", __func__);
+    lime::debug("%s", __func__);
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
         return -1;
@@ -319,7 +313,7 @@ int FPGA::StartStreaming()
 
 int FPGA::StopStreaming()
 {
-    verbose_printf("%s", __func__);
+    lime::debug("%s", __func__);
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
         return -1;
@@ -329,7 +323,7 @@ int FPGA::StopStreaming()
 
 int FPGA::ResetTimestamp()
 {
-    verbose_printf("%s", __func__);
+    lime::debug("%s", __func__);
 #ifndef NDEBUG
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
@@ -356,7 +350,7 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
     uint16_t error = 0;
     if (!title.empty())
     {
-        verbose_printf("%s", title.c_str());
+        lime::debug("%s", title.c_str());
     }
     do
     {
@@ -382,7 +376,7 @@ int FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask,
     } while (!done);
     if (!title.empty())
     {
-        verbose_printf(title + " done"s);
+        lime::debug(title + " done"s);
     }
     return 0;
 }
@@ -445,7 +439,7 @@ int FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool doPhas
 */
 int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
 {
-    verbose_printf("FPGA SetPllFrequency: PLL[%i] input:%.3f MHz clockCount:%i", pllIndex, inputFreq / 1e6, clockCount);
+    lime::debug("FPGA SetPllFrequency: PLL[%i] input:%.3f MHz clockCount:%i", pllIndex, inputFreq / 1e6, clockCount);
     WriteRegistersBatch batch(this);
     const auto timeout = chrono::seconds(3);
     if (not fpgaPort)
@@ -463,7 +457,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         return ReportError(ERANGE, "FPGA SetPllFrequency: PLL[%i] input frequency must be >=%g MHz", pllIndex, PLLlowerLimit / 1e6);
     for (int i = 0; i < clockCount; ++i)
     {
-        verbose_printf("CLK[%i] Fout:%.3f MHz bypass:%i phase:%g findPhase: %i",
+        lime::debug("CLK[%i] Fout:%.3f MHz bypass:%i phase:%g findPhase: %i",
             clocks[i].index,
             clocks[i].outFrequency / 1e6,
             clocks[i].bypass,
@@ -938,7 +932,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 */
 int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
-    verbose_printf("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g ch:%i",
+    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g ch:%i",
         txRate_Hz / 1e6,
         rxRate_Hz / 1e6,
         txPhase,
@@ -985,7 +979,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
 */
 int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
 {
-    verbose_printf("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz chipIndex:%i", txRate_Hz / 1e6, rxRate_Hz / 1e6, chipIndex);
+    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz chipIndex:%i", txRate_Hz / 1e6, rxRate_Hz / 1e6, chipIndex);
     //PrintStackTrace();
     const int pll_ind = (chipIndex == 1) ? 2 : 0;
     int status = 0;
@@ -1083,7 +1077,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
         }
         else
         {
-            verbose_printf("Retry%i: SetPllFrequency", i);
+            lime::debug("Retry%i: SetPllFrequency", i);
             std::this_thread::sleep_for(busyPollPeriod);
         }
     }
@@ -1133,7 +1127,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
         }
         else
         {
-            verbose_printf("Retry%i: SetPllFrequency", i);
+            lime::debug("Retry%i: SetPllFrequency", i);
             std::this_thread::sleep_for(busyPollPeriod);
         }
     }
@@ -1188,7 +1182,7 @@ int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int time
 
 double FPGA::DetectRefClk(double fx3Clk)
 {
-    verbose_printf("FPGA::DetectRefClk fx3Clk:%g", fx3Clk);
+    lime::debug("FPGA::DetectRefClk fx3Clk:%g", fx3Clk);
     const double fx3Cnt = 16777210; //fixed fx3 counter in FPGA
     const double clkTbl[] = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };

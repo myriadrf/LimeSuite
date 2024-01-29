@@ -73,15 +73,6 @@ static inline int16_t signextIqCorr(const uint16_t regVal)
 const double TrxCalib_RF_LimitLow = 2.5e6;
 const double TrxCalib_RF_LimitHigh = 120e6;
 
-#define verbose_printf(...) \
-    do \
-    { \
-        if (verboseEnabled) \
-        { \
-            lime::debug(__VA_ARGS__); \
-        } \
-    } while (0)
-
 static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& param)
 {
     uint16_t mask = param.address < 0x05C7 ? 0x03FF : 0x003F;
@@ -215,8 +206,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     int band = Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF) ? 0 : 1;
 
     int dccorri(0), dccorrq(0), gcorri(0), gcorrq(0), phaseOffset(0);
-    verbose_printf("Tx calibration using MCU %s loopback", useExtLoopback ? "EXTERNAL" : "INTERNAL");
-    verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i",
+    lime::debug("Tx calibration using MCU %s loopback", useExtLoopback ? "EXTERNAL" : "INTERNAL");
+    lime::debug("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i",
         channel ? "B" : "A",
         txFreq / 1e6,
         bandwidth_Hz / 1e6,
@@ -224,11 +215,11 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         Get_SPI_Reg_bits(LMS7_CG_IAMP_TBB));
 
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
-    verbose_printf(
+    lime::debug(
         "Current MCU firmware: %i, %s", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
     if (mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
-        verbose_printf("Uploading DC/IQ calibration firmware"s);
+        lime::debug("Uploading DC/IQ calibration firmware"s);
         status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         if (status != 0)
             return status;
@@ -237,7 +228,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_REF_CLK, refClk);
-    verbose_printf("MCU Ref. clock: %g MHz", refClk / 1e6);
+    lime::debug("MCU Ref. clock: %g MHz", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_BW, bandwidth_Hz);
 
@@ -271,13 +262,13 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_TXTSP, true));
 
     Log("Tx calibration finished", LogType::LOG_INFO);
-    verbose_printf("Tx | DC  | GAIN | PHASE");
-    verbose_printf("---+-----+------+------");
-    verbose_printf("I: | %3i | %4i | %i", dccorri, gcorri, phaseOffset);
-    verbose_printf("Q: | %3i | %4i |", dccorrq, gcorrq);
+    lime::debug("Tx | DC  | GAIN | PHASE");
+    lime::debug("---+-----+------+------");
+    lime::debug("I: | %3i | %4i | %i", dccorri, gcorri, phaseOffset);
+    lime::debug("Q: | %3i | %4i |", dccorrq, gcorrq);
     int32_t duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - beginTime).count();
-    verbose_printf("Duration: %i ms", duration);
+    lime::debug("Duration: %i ms", duration);
     return 0;
 }
 
@@ -331,8 +322,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         lnaName = "none";
         break;
     }
-    verbose_printf("Rx calibration using %s loopback", (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
-    verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i",
+    lime::debug("Rx calibration using %s loopback", (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
+    lime::debug("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i",
         ch == static_cast<uint8_t>(Channel::ChA) ? "A" : "B",
         rxFreq / 1e6,
         bandwidth_Hz / 1e6,
@@ -344,11 +335,11 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     int dcoffi(0), dcoffq(0), gcorri(0), gcorrq(0), phaseOffset(0);
     //check if MCU has correct firmware
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
-    verbose_printf(
+    lime::debug(
         "Current MCU firmware: %i, %s", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
     if (mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
-        verbose_printf("Uploading DC/IQ calibration firmware");
+        lime::debug("Uploading DC/IQ calibration firmware");
         status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         if (status != 0)
             return status;
@@ -357,7 +348,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_REF_CLK, refClk);
-    verbose_printf("MCU Ref. clock: %g MHz", refClk / 1e6);
+    lime::debug("MCU Ref. clock: %g MHz", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_BW, bandwidth_Hz);
 
@@ -392,14 +383,14 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_RXTSP, true));
 
     Log("Rx calibration finished", LogType::LOG_INFO);
-    verbose_printf("RX | DC  | GAIN | PHASE");
-    verbose_printf("---+-----+------+------");
-    verbose_printf("I: | %3i | %4i | %i", dcoffi, gcorri, phaseOffset);
-    verbose_printf("Q: | %3i | %4i |", dcoffq, gcorrq);
+    lime::debug("RX | DC  | GAIN | PHASE");
+    lime::debug("---+-----+------+------");
+    lime::debug("I: | %3i | %4i | %i", dcoffi, gcorri, phaseOffset);
+    lime::debug("Q: | %3i | %4i |", dcoffq, gcorrq);
 #ifdef LMS_VERBOSE_OUTPUT
     int32_t duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - beginTime).count();
-    verbose_printf("Duration: %i ms", duration);
+    lime::debug("Duration: %i ms", duration);
 #endif //LMS_VERBOSE_OUTPUT
     return 0;
 }
