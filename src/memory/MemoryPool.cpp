@@ -72,7 +72,7 @@ void MemoryPool::Free(void* ptr)
         {
             char ctemp[1024];
             sprintf(ctemp,
-                "%s Double free?, allocs: %i , frees: %i, used: %li, free: %li\n ptr: %p",
+                "%s Double free?, allocs: %i , frees: %i, used: %li, free: %li, ptr: %p",
                 name.c_str(),
                 allocCnt,
                 freeCnt,
@@ -80,7 +80,7 @@ void MemoryPool::Free(void* ptr)
                 mFreeBlocks.size(),
                 ptr);
             for (auto adr : mUsedBlocks)
-                lime::error("addrs: %p\n", adr);
+                lime::error("addrs: %p", adr);
             throw std::runtime_error(ctemp);
         }
         else

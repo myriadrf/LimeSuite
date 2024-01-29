@@ -531,7 +531,7 @@ void lms7002_pnlRFE_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter.\n"s);
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
     long value = event.GetInt();

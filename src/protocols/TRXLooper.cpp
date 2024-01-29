@@ -600,7 +600,7 @@ void TRXLooper::Stop()
             mTx.thread.join();
     } catch (...)
     {
-        lime::error("Failed to join TRXLooper threads\n"s);
+        lime::error("Failed to join TRXLooper threads"s);
     }
     fpga->StopStreaming();
 

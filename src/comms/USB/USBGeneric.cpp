@@ -201,7 +201,7 @@ int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length
 
     if (status != 0)
     {
-        lime::error("USBGeneric::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
+        lime::error("USBGeneric::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i",
             endPointAddr,
             libusb_error_name(status),
             actualTransferred,
@@ -287,7 +287,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
 
     if (status != 0)
     {
-        lime::error("BEGIN DATA TRANSFER %s\n", libusb_error_name(status));
+        lime::error("BEGIN DATA TRANSFER %s", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -357,7 +357,7 @@ int USBGeneric::GetUSBContextIndex()
 
     if (!contextFound)
     {
-        lime::error("No contexts left for reading or sending data\n"s);
+        lime::error("No contexts left for reading or sending data"s);
         return -1;
     }
 

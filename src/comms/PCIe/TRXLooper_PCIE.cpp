@@ -111,9 +111,9 @@ TRXLooper_PCIE::~TRXLooper_PCIE()
 void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
 {
     if (config.rxCount > 0 && !mRxArgs.port->IsOpen())
-        throw std::runtime_error("Rx data port not open\n");
+        throw std::runtime_error("Rx data port not open");
     if (config.txCount > 0 && !mTxArgs.port->IsOpen())
-        throw std::runtime_error("Tx data port not open\n");
+        throw std::runtime_error("Tx data port not open");
 
     float combinedSampleRate = std::max(config.txCount, config.rxCount) * config.hintSampleRate;
     int batchSize = 7; // should be good enough for most cases
@@ -132,7 +132,7 @@ void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
         mRx.packetsToBatch = 4;
     mTx.packetsToBatch = 6;
     mRx.packetsToBatch = 6;
-    //lime::debug("Batch size %i\n", batchSize);
+    //lime::debug("Batch size %i", batchSize);
 
     fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
@@ -169,7 +169,7 @@ int TRXLooper_PCIE::TxSetup()
     if (mConfig.extraConfig && mConfig.extraConfig->txSamplesInPacket != 0)
     {
         samplesInPkt = mConfig.extraConfig->txSamplesInPacket;
-        lime::debug("Tx samples overide %i\n", samplesInPkt);
+        lime::debug("Tx samples overide %i", samplesInPkt);
     }
 
     mTx.samplesInPkt = samplesInPkt;
@@ -196,7 +196,7 @@ int TRXLooper_PCIE::TxSetup()
     {
         char msg[256];
         sprintf(msg,
-            "Stream%i samplesInTxPkt:%i maxTxPktInBatch:%i, batchSizeInTime:%gus\n",
+            "Stream%i samplesInTxPkt:%i maxTxPktInBatch:%i, batchSizeInTime:%gus",
             chipId,
             samplesInPkt,
             mTx.packetsToBatch,
@@ -310,14 +310,14 @@ template<class T> class TxBufferManager
                 int extraBytes = bytesUsed % busWidthBytes;
                 if (extraBytes != 0)
                 {
-                    //lime::debug("Patch buffer, bytes %i, extra: %i, last payload: %i\n", bytesUsed, extraBytes, payloadSize);
+                    //lime::debug("Patch buffer, bytes %i, extra: %i, last payload: %i", bytesUsed, extraBytes, payloadSize);
                     // patch last packet so that whole buffer size would be multiple of bus width
                     int padding = busWidthBytes - extraBytes;
                     memset(payloadPtr, 0, padding);
                     payloadSize += padding;
                     bytesUsed += padding;
                     header->SetPayloadSize(payloadSize);
-                    //lime::debug("Patch buffer, bytes %i, last payload: %i\n", bytesUsed, payloadSize);
+                    //lime::debug("Patch buffer, bytes %i, last payload: %i", bytesUsed, payloadSize);
                 }
                 break;
             }
@@ -359,13 +359,13 @@ void FPGATxState(FPGA* fpga)
         pendingTxTS |= (uint64_t)words[2] << 32;
         pendingTxTS |= (uint64_t)words[3] << 48;
         if (i < 4)
-            lime::debug("Buf%i: %08lX\n", i, pendingTxTS);
+            lime::debug("Buf%i: %08lX", i, pendingTxTS);
         else
-            lime::debug("Rx: %08lX\n", pendingTxTS);
+            lime::debug("Rx: %08lX", pendingTxTS);
     }
 
     uint16_t bufs = fpga->ReadRegister(0x0075);
-    lime::debug("currentIndex: %i, ready: %0X\n", bufs & 0xF, (bufs >> 4) & 0xF);
+    lime::debug("currentIndex: %i, ready: %0X", bufs & 0xF, (bufs >> 4) & 0xF);
 }
 
 void TRXLooper_PCIE::TransmitPacketsLoop()
@@ -566,7 +566,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             {
                 if (errno == EINVAL)
                 {
-                    lime::error("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
+                    lime::error("Failed to submit dma write (%i) %s", errno, strerror(errno));
                     return;
                 }
                 mTxArgs.port->WaitTx();
@@ -574,7 +574,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
             else
             {
-                //lime::debug("Sent sw: %li hw: %li, diff: %li\n", stagingBufferIndex, reader.hw_count, stagingBufferIndex-reader.hw_count);
+                //lime::debug("Sent sw: %li hw: %li, diff: %li", stagingBufferIndex, reader.hw_count, stagingBufferIndex-reader.hw_count);
                 outputReady = false;
                 pendingWrites.push(wrInfo);
                 transferSize.Add(wrInfo.size);
@@ -628,7 +628,7 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
                     (mConfig.hintSampleRate ? "us" : ""),
                     fifo->size());
                 if (showStats)
-                    lime::info("%s\n", msg);
+                    lime::info("%s", msg);
                 if (mCallback_logMessage)
                 {
                     bool showAsWarning = underrun.delta() || loss.delta();
@@ -661,7 +661,7 @@ void TRXLooper_PCIE::TxTeardown()
     {
         char msg[256];
         sprintf(msg,
-            "Tx Loop totals: packets sent: %li (0x%08lX) , FPGA packet counter: %i (0x%08X), diff: %li, FPGA tx drops: %i\n",
+            "Tx Loop totals: packets sent: %li (0x%08lX) , FPGA packet counter: %i (0x%08X), diff: %li, FPGA tx drops: %i",
             mTx.stats.packets,
             mTx.stats.packets,
             fpgaTxPktIngressCount,
@@ -721,7 +721,7 @@ int TRXLooper_PCIE::RxSetup()
     {
         char msg[256];
         sprintf(msg,
-            "Stream%i usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus\n",
+            "Stream%i usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus",
             chipId,
             usePoll ? 1 : 0,
             samplesInPkt,
@@ -846,7 +846,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 dma.hwIndex - dma.swIndex,
                 mRx.fifo->size());
             if (showStats)
-                lime::info("%s\n", msg);
+                lime::info("%s", msg);
             if (mCallback_logMessage)
             {
                 bool showAsWarning = overrun.delta() || loss.delta();
@@ -894,7 +894,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
             pkt = reinterpret_cast<const FPGA_RxDataPacket*>(&buffer[packetSize * i]);
             if (pkt->counter - expectedTS != 0)
             {
-                //lime::info("Loss: pkt:%i exp: %li, got: %li, diff: %li\n", stats.packets+i, expectedTS, pkt->counter, pkt->counter-expectedTS);
+                //lime::info("Loss: pkt:%i exp: %li, got: %li, diff: %li", stats.packets+i, expectedTS, pkt->counter, pkt->counter-expectedTS);
                 ++stats.loss;
                 loss.add(1);
             }
@@ -954,7 +954,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
     if (mCallback_logMessage)
     {
         char msg[256];
-        sprintf(msg, "Rx%i: packetsIn: %li\n", chipId, stats.packets);
+        sprintf(msg, "Rx%i: packetsIn: %li", chipId, stats.packets);
         mCallback_logMessage(SDRDevice::LogLevel::DEBUG, msg);
     }
 }
@@ -1042,7 +1042,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
             if (errno == EINVAL)
             {
                 port->TxDMAEnable(false);
-                lime::error("Failed to submit dma write (%i) %s\n", errno, strerror(errno));
+                lime::error("Failed to submit dma write (%i) %s", errno, strerror(errno));
                 return -1;
             }
         }

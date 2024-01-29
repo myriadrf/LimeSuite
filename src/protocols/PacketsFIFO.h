@@ -100,7 +100,7 @@ template<class T> class PacketsFIFO
             {
                 if (canWrite.wait_for(lk, std::chrono::milliseconds(timeout)) == std::cv_status::timeout)
                 {
-                    lime::error("write fifo timeout\n"s);
+                    lime::error("write fifo timeout"s);
                     return false;
                 }
             }
@@ -135,7 +135,7 @@ template<class T> class PacketsFIFO
                 //   return false;
                 if (canRead.wait_for(lk, std::chrono::milliseconds(timeout)) == std::cv_status::timeout)
                 {
-                    //lime::error("pop fifo timeout\n"s);
+                    //lime::error("pop fifo timeout"s);
                     return false;
                 }
             }

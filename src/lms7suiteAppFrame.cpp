@@ -44,6 +44,7 @@
 
 using namespace std;
 using namespace lime;
+using namespace std::literals::string_literals;
 
 static constexpr int controlColumn = 1;
 
@@ -316,7 +317,7 @@ void LMS7SuiteAppFrame::OnDeviceHandleChange(wxCommandEvent& event)
         Fit();
     } catch (std::runtime_error& e)
     {
-        lime::error("Failed to connect %s\n", e.what());
+        lime::error("Failed to connect "s + e.what());
     }
 }
 
@@ -349,7 +350,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
         ss << " " << std::setw(2) << (unsigned short)data[i];
     if (repeatedZeros > 2)
         ss << " (00 x " << std::dec << repeatedZeros << " times)";
-    lime::debug(ss.str() + '\n');
+    lime::debug(ss.str());
     wxCommandEvent* evt = new wxCommandEvent();
     evt->SetString(ss.str());
     evt->SetEventObject(obj_ptr);
@@ -361,7 +362,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
 void LMS7SuiteAppFrame::AddModule(IModuleFrame* module, const std::string& title)
 {
     wxWindowID moduleId = module->GetId();
-    lime::debug("Add module %i\n", moduleId);
+    lime::debug("Add module %i", moduleId);
     wxMenuItem* item;
     item = new wxMenuItem(mnuModules, moduleId, title, wxEmptyString, wxITEM_NORMAL);
     mnuModules->Append(item);
@@ -377,7 +378,7 @@ void LMS7SuiteAppFrame::RemoveModule(IModuleFrame* module)
 
 void LMS7SuiteAppFrame::OnModuleClose(wxCloseEvent& event)
 {
-    lime::debug("Close module %i\n", event.GetId());
+    lime::debug("Close module %i", event.GetId());
     IModuleFrame* module = mModules.at(event.GetId());
     if (module)
     {
@@ -387,7 +388,7 @@ void LMS7SuiteAppFrame::OnModuleClose(wxCloseEvent& event)
 
 void LMS7SuiteAppFrame::OnShowModule(wxCommandEvent& event)
 {
-    lime::debug("show module %i\n", event.GetId());
+    lime::debug("show module %i", event.GetId());
     IModuleFrame* module = mModules.at(event.GetId());
     if (module) //it's already opened
     {
@@ -425,7 +426,7 @@ ISOCPanel* CreateGUI(wxWindow* parent, eDeviceNodeClass deviceNodeClass, void* s
         return sdrPanel;
     }
     default:
-        lime::warning("Unrecognized device class(%u)\n", static_cast<uint8_t>(deviceNodeClass));
+        lime::warning("Unrecognized device class(%u)", static_cast<uint8_t>(deviceNodeClass));
         return nullptr;
     }
 }

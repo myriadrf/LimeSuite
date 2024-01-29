@@ -1399,7 +1399,7 @@ int lms7002_pnlMCU_BD_view::Read_IRAM()
         Wait_CLK_Cycles(64);
     }
 #ifndef NDEBUG
-    lime::info("\nMCU reading IRAM finished\n"s);
+    lime::info("MCU reading IRAM finished"s);
 #endif
     return retval;
 }
@@ -1452,7 +1452,7 @@ int lms7002_pnlMCU_BD_view::Erase_IRAM()
         OnProgrammingCallback(++stepsDone, 256, "");
     }
 #ifndef NDEBUG
-    lime::info("\nMCU erasing IRAM finished\n"s);
+    lime::info("MCU erasing IRAM finished"s);
 #endif
     return retval;
 }

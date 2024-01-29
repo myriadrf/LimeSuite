@@ -355,7 +355,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } //try
     catch (std::logic_error& e)
     {
-        lime::error("LimeSDR_XTRX config: %s\n", e.what());
+        lime::error("LimeSDR_XTRX config: %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
@@ -449,11 +449,11 @@ int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         return 0;
     } catch (std::logic_error& e)
     {
-        lime::error("LimeSDR_XTRX::StreamSetup logic_error %s\n", e.what());
+        lime::error("LimeSDR_XTRX::StreamSetup logic_error %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
-        lime::error("LimeSDR_XTRX::StreamSetup runtime_error %s\n", e.what());
+        lime::error("LimeSDR_XTRX::StreamSetup runtime_error %s", e.what());
         throw;
     }
 }

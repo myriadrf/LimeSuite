@@ -44,7 +44,7 @@ bool lms7suiteApp::OnInit()
     frame->SetIcon(wxICON(LMS_ICO));
 #ifndef NDEBUG
     wxLongLong t1 = wxGetUTCTimeMillis();
-    lime::debug( "Create time "s + (wxGetUTCTimeMillis() - t1).ToString() + " ms\n"s);
+    lime::debug( "Create time "s + (wxGetUTCTimeMillis() - t1).ToString() + " ms"s);
 #endif
     splash->Destroy();
     frame->Show();

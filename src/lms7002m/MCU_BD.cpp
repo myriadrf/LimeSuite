@@ -20,6 +20,7 @@ using namespace std;
 #include <functional>
 
 using namespace lime;
+using namespace std::literals::string_literals;
 
 MCU_BD::MCU_BD()
 {
@@ -297,7 +298,7 @@ int MCU_BD::Read_IRAM()
         Wait_CLK_Cycles(64);
     }
 #ifndef NDEBUG
-    lime::debug("\nMCU reading IRAM finished\n"s);
+    lime::debug("MCU reading IRAM finished"s);
 #endif
     return retval;
 }
@@ -331,7 +332,7 @@ int MCU_BD::Erase_IRAM()
 #endif
     }
 #ifndef NDEBUG
-    lime::debug("\nMCU erasing IRAM finished\n"s);
+    lime::debug("MCU erasing IRAM finished"s);
 #endif
     return retval;
 }
@@ -719,7 +720,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
 
 #ifndef NDEBUG
         auto timeEnd = std::chrono::high_resolution_clock::now();
-        lime::debug("\nMCU Programming finished, %li ms\n",
+        lime::debug("MCU Programming finished, %li ms",
             std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count());
 #endif
         if (!programmed)
@@ -1177,7 +1178,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
         mSPI_write(0x0002, x0002reg & ~interupt7);
         int status = WaitForMCU(10);
         if (status != 0)
-            lime::debug("MCU error status 0x%02X\n", status);
+            lime::debug("MCU error status 0x%02X", status);
         RunProcedure(9);
     }
     if (WaitForMCU(100) != 0)

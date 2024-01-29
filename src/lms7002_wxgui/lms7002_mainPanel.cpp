@@ -241,7 +241,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
         currentTab->second->UpdateGUI();
     t2 = wxGetUTCTimeMillis();
 #ifndef NDEBUG
-    lime::debug("Visible GUI update time: "s + (t2 - t1).ToString() + '\n');
+    lime::debug("Visible GUI update time: "s + (t2 - t1).ToString());
 #endif
 }
 

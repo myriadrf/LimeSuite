@@ -143,7 +143,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             else
             {
                 // TODO: callback for Rx timeout
-                lime::error("Tx WaitForXfer timeout\n"s);
+                lime::error("Tx WaitForXfer timeout"s);
                 continue;
             }
         }
@@ -227,7 +227,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             t1 = t2;
 
             float dataRate = 1000.0 * totalBytesSent / timePeriod.count();
-            lime::info("Tx: %.3f MB/s\n", dataRate / 1000000.0);
+            lime::info("Tx: %.3f MB/s", dataRate / 1000000.0);
             totalBytesSent = 0;
 
             mTx.stats.dataRate_Bps = dataRate;
@@ -321,13 +321,13 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
                 if (bytesReceived != bufferSize)
                 {
-                    lime::error("Recv %i, expected : %i\n", bytesReceived, bufferSize);
+                    lime::error("Recv %i, expected : %i", bytesReceived, bufferSize);
                 }
             }
             else
             {
                 // TODO: callback for Rx timeout
-                lime::error("Rx WaitForXfer timeout\n"s);
+                lime::error("Rx WaitForXfer timeout"s);
                 continue;
             }
         }
@@ -346,7 +346,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
             if (pkt->counter - expectedTS != 0)
             {
-                lime::warning("Loss: transfer:%li packet:%i, exp: %li, got: %li, diff: %li, handle: %i\n",
+                lime::warning("Loss: transfer:%li packet:%i, exp: %li, got: %li, diff: %li, handle: %i",
                     stats.packets,
                     j,
                     expectedTS,
@@ -401,7 +401,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             t1 = t2;
 
             float dataRate = 1000.0 * totalBytesReceived / timePeriod.count();
-            lime::info("Rx: %.3f MB/s\n", dataRate / 1000000.0);
+            lime::info("Rx: %.3f MB/s", dataRate / 1000000.0);
             mRx.stats.dataRate_Bps = dataRate;
 
             totalBytesReceived = 0;

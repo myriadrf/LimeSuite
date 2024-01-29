@@ -565,7 +565,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
         return Status::SUCCESS;
     } catch (std::runtime_error& e)
     {
-        lime::error("Si5351C configuration failed %s\n", e.what());
+        lime::error("Si5351C configuration failed %s", e.what());
         return Status::FAILED;
     }
 }
@@ -1087,7 +1087,7 @@ Si5351C::Status Si5351C::ClearStatus()
         return Status::SUCCESS;
     } catch (std::runtime_error& e)
     {
-        lime::error("Si5351C configuration failed %s\n", e.what());
+        lime::error("Si5351C configuration failed %s", e.what());
         return Status::FAILED;
     }
 }

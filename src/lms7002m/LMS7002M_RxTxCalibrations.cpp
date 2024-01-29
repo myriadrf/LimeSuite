@@ -19,6 +19,7 @@ static const bool verboseEnabled = false;
 
 using namespace std;
 using namespace lime;
+using namespace std::literals::string_literals;
 
 // class BoardLoopbackStore
 // {
@@ -214,8 +215,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     int band = Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF) ? 0 : 1;
 
     int dccorri(0), dccorrq(0), gcorri(0), gcorrq(0), phaseOffset(0);
-    verbose_printf("Tx calibration using MCU %s loopback\n", useExtLoopback ? "EXTERNAL" : "INTERNAL");
-    verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i\n",
+    verbose_printf("Tx calibration using MCU %s loopback", useExtLoopback ? "EXTERNAL" : "INTERNAL");
+    verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i",
         channel ? "B" : "A",
         txFreq / 1e6,
         bandwidth_Hz / 1e6,
@@ -224,10 +225,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     verbose_printf(
-        "Current MCU firmware: %i, %s\n", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
+        "Current MCU firmware: %i, %s", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
     if (mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
-        verbose_printf("Uploading DC/IQ calibration firmware\n");
+        verbose_printf("Uploading DC/IQ calibration firmware"s);
         status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         if (status != 0)
             return status;
@@ -236,7 +237,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_REF_CLK, refClk);
-    verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
+    verbose_printf("MCU Ref. clock: %g MHz", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_BW, bandwidth_Hz);
 
@@ -270,13 +271,13 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_TXTSP, true));
 
     Log("Tx calibration finished", LogType::LOG_INFO);
-    verbose_printf("Tx | DC  | GAIN | PHASE\n");
-    verbose_printf("---+-----+------+------\n");
-    verbose_printf("I: | %3i | %4i | %i\n", dccorri, gcorri, phaseOffset);
-    verbose_printf("Q: | %3i | %4i |\n", dccorrq, gcorrq);
+    verbose_printf("Tx | DC  | GAIN | PHASE");
+    verbose_printf("---+-----+------+------");
+    verbose_printf("I: | %3i | %4i | %i", dccorri, gcorri, phaseOffset);
+    verbose_printf("Q: | %3i | %4i |", dccorrq, gcorrq);
     int32_t duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - beginTime).count();
-    verbose_printf("Duration: %i ms\n", duration);
+    verbose_printf("Duration: %i ms", duration);
     return 0;
 }
 
@@ -330,8 +331,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         lnaName = "none";
         break;
     }
-    verbose_printf("Rx calibration using %s loopback\n", (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
-    verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
+    verbose_printf("Rx calibration using %s loopback", (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
+    verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i",
         ch == static_cast<uint8_t>(Channel::ChA) ? "A" : "B",
         rxFreq / 1e6,
         bandwidth_Hz / 1e6,
@@ -344,10 +345,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     //check if MCU has correct firmware
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     verbose_printf(
-        "Current MCU firmware: %i, %s\n", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
+        "Current MCU firmware: %i, %s", mcuID, mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
     if (mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
-        verbose_printf("Uploading DC/IQ calibration firmware\n");
+        verbose_printf("Uploading DC/IQ calibration firmware");
         status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::MCU_PROG_MODE::SRAM);
         if (status != 0)
             return status;
@@ -356,7 +357,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(TRXDir::Rx);
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_REF_CLK, refClk);
-    verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
+    verbose_printf("MCU Ref. clock: %g MHz", refClk / 1e6);
     //Tx Rx separation bandwidth while calibrating
     mcuControl->SetParameter(MCU_BD::MCU_Parameter::MCU_BW, bandwidth_Hz);
 
@@ -391,14 +392,14 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_RXTSP, true));
 
     Log("Rx calibration finished", LogType::LOG_INFO);
-    verbose_printf("RX | DC  | GAIN | PHASE\n");
-    verbose_printf("---+-----+------+------\n");
-    verbose_printf("I: | %3i | %4i | %i\n", dcoffi, gcorri, phaseOffset);
-    verbose_printf("Q: | %3i | %4i |\n", dcoffq, gcorrq);
+    verbose_printf("RX | DC  | GAIN | PHASE");
+    verbose_printf("---+-----+------+------");
+    verbose_printf("I: | %3i | %4i | %i", dcoffi, gcorri, phaseOffset);
+    verbose_printf("Q: | %3i | %4i |", dcoffq, gcorrq);
 #ifdef LMS_VERBOSE_OUTPUT
     int32_t duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - beginTime).count();
-    verbose_printf("Duration: %i ms\n", duration);
+    verbose_printf("Duration: %i ms", duration);
 #endif //LMS_VERBOSE_OUTPUT
     return 0;
 }
