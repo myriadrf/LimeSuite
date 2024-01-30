@@ -13,6 +13,8 @@
 #include <vector>
 
 using namespace lime;
+using namespace std::literals::string_literals;
+using namespace std::literals::string_view_literals;
 
 void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::string& token)
 {
@@ -21,7 +23,6 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
     {
         if (file.eof())
         {
-            token = "";
             return;
         }
 
@@ -32,8 +33,8 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
 
     while (commentLevelsDeep != 0) // Multiline comments can be nested
     {
-        std::size_t startCommentPos = token.find("/*");
-        std::size_t endCommentPos = token.find("*/");
+        std::size_t startCommentPos = token.find("/*"sv);
+        std::size_t endCommentPos = token.find("*/"sv);
 
         // While we're still finding comment starts and ends in this token.
         while ((startCommentPos != std::string::npos || endCommentPos != std::string::npos) && commentLevelsDeep > 0)
@@ -44,10 +45,10 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
 
                 token = token.substr(endCommentPos + 2);
 
-                endCommentPos = token.find("*/");
+                endCommentPos = token.find("*/"sv);
                 if (startCommentPos != std::string::npos)
                 {
-                    startCommentPos = token.find("/*");
+                    startCommentPos = token.find("/*"sv);
                 }
             }
             else if (startCommentPos < endCommentPos)
@@ -56,10 +57,10 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
 
                 token = token.substr(startCommentPos + 2);
 
-                startCommentPos = token.find("/*");
+                startCommentPos = token.find("/*"sv);
                 if (endCommentPos != std::string::npos)
                 {
-                    endCommentPos = token.find("*/");
+                    endCommentPos = token.find("*/"sv);
                 }
             }
         }
@@ -68,7 +69,7 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
         {
             if (file.eof())
             {
-                token = "";
+                token = ""s;
                 return;
             }
 
@@ -109,7 +110,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
         {
             token = token.substr(1);
         }
-        else if (token.find("//") == 0) // Standard single line comment
+        else if (token.find("//"sv) == 0) // Standard single line comment
         {
             file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -120,7 +121,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 
             file >> token;
         }
-        else if (token.find("/*") == 0) // Multiline comments
+        else if (token.find("/*"sv) == 0) // Multiline comments
         {
             parseMultilineComments(file, token);
         }
@@ -149,7 +150,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 
             if (stream.fail())
             {
-                token = "";
+                token = ""s;
             }
         }
     }
@@ -174,7 +175,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 // ***************************************************************
 int CoefficientFileParser::getCoefficients(const std::filesystem::path& filename, std::vector<double>& coefficients, int max)
 {
-    if (filename == "")
+    if (filename.empty())
     {
         return static_cast<int>(ErrorCodes::EMPTY_FILENAME);
     }
@@ -211,11 +212,11 @@ int CoefficientFileParser::getCoefficients(const std::filesystem::path& filename
             inputFile.close();
             return static_cast<int>(ErrorCodes::SYNTAX_ERROR);
         default:
-            throw std::logic_error("Unexpected return from getValue");
+            throw std::logic_error("Unexpected return from getValue"s);
         }
     }
 
-    throw std::logic_error("Unreachable; clearing a warning");
+    throw std::logic_error("Unreachable; clearing a warning"s);
 }
 
 // ***************************************************************
@@ -226,19 +227,19 @@ void CoefficientFileParser::saveToFile(const std::filesystem::path& filename, co
     std::ofstream fout;
     fout.open(filename, std::ios::out);
 
-    fout << "/* ******************************************************************" << std::endl;
-    fout << "   FILE:\t";
+    fout << "/* ******************************************************************"sv << std::endl;
+    fout << "   FILE:\t"sv;
     fout << filename.filename().c_str() << std::endl;
 
-    fout << "   DESCRIPTION:\t" << std::endl;
-    fout << "   DATE:\t" << std::endl;
-    fout << "   REVISIONS:\t" << std::endl;
-    fout << "   ****************************************************************** */" << std::endl << std::endl;
+    fout << "   DESCRIPTION:\t"sv << std::endl;
+    fout << "   DATE:\t"sv << std::endl;
+    fout << "   REVISIONS:\t"sv << std::endl;
+    fout << "   ****************************************************************** */"sv << std::endl << std::endl;
 
     const std::size_t coefficientCount = coefficients.size();
     for (std::size_t i = 0; i < coefficientCount; ++i)
     {
-        fout << "\t" << std::fixed << coefficients[i];
+        fout << '\t' << std::fixed << coefficients[i];
 
         if (i < coefficientCount - 1) // If not last
         {
