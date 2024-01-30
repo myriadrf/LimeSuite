@@ -10,6 +10,7 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using namespace lime;
@@ -18,63 +19,71 @@ using namespace std::literals::string_view_literals;
 
 void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::string& token)
 {
-    token = token.substr(2);
-    if (token.size() == 0)
+    std::string_view view = token;
+    view = view.substr(2);
+    if (view.empty())
     {
         if (file.eof())
         {
+            token = ""s;
             return;
         }
 
         file >> token;
+        view = token;
     }
 
     uint commentLevelsDeep = 1;
 
     while (commentLevelsDeep != 0) // Multiline comments can be nested
     {
-        std::size_t startCommentPos = token.find("/*"sv);
-        std::size_t endCommentPos = token.find("*/"sv);
+        std::size_t startCommentPos = view.find("/*"sv);
+        std::size_t endCommentPos = view.find("*/"sv);
 
         // While we're still finding comment starts and ends in this token.
-        while ((startCommentPos != std::string::npos || endCommentPos != std::string::npos) && commentLevelsDeep > 0)
+        while ((startCommentPos != std::string_view::npos || endCommentPos != std::string_view::npos) && commentLevelsDeep > 0)
         {
             if (endCommentPos < startCommentPos) // We're out of comment section.
             {
                 commentLevelsDeep--;
 
-                token = token.substr(endCommentPos + 2);
+                view = view.substr(endCommentPos + 2);
 
-                endCommentPos = token.find("*/"sv);
-                if (startCommentPos != std::string::npos)
+                endCommentPos = view.find("*/"sv);
+                if (startCommentPos != std::string_view::npos)
                 {
-                    startCommentPos = token.find("/*"sv);
+                    startCommentPos = view.find("/*"sv);
                 }
             }
             else if (startCommentPos < endCommentPos)
             {
                 commentLevelsDeep++;
 
-                token = token.substr(startCommentPos + 2);
+                view = view.substr(startCommentPos + 2);
 
-                startCommentPos = token.find("/*"sv);
-                if (endCommentPos != std::string::npos)
+                startCommentPos = view.find("/*"sv);
+                if (endCommentPos != std::string_view::npos)
                 {
-                    endCommentPos = token.find("*/"sv);
+                    endCommentPos = view.find("*/"sv);
                 }
             }
         }
 
-        if (commentLevelsDeep != 0) // Keep reading until the end of the comment(s)
+        if (commentLevelsDeep == 0)
         {
-            if (file.eof())
-            {
-                token = ""s;
-                return;
-            }
-
-            file >> token;
+            token = view;
+            return;
         }
+
+        // Keep reading until the end of the comment(s)
+        if (file.eof())
+        {
+            token = ""s;
+            return;
+        }
+
+        file >> token;
+        view = token;
     }
 }
 
