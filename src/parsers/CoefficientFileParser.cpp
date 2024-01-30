@@ -172,7 +172,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 //	-5	too many coefficients in the file
 //	>=0 	number of the coefficients read
 // ***************************************************************
-int CoefficientFileParser::getCoefficients(const std::string& filename, std::vector<double>& coefficients, int max)
+int CoefficientFileParser::getCoefficients(const std::filesystem::path& filename, std::vector<double>& coefficients, int max)
 {
     if (filename == "")
     {
@@ -221,28 +221,14 @@ int CoefficientFileParser::getCoefficients(const std::string& filename, std::vec
 // ***************************************************************
 // Saves given coefficients to fir file
 // ***************************************************************
-void CoefficientFileParser::saveToFile(const std::string& filename, const std::vector<double>& coefficients)
+void CoefficientFileParser::saveToFile(const std::filesystem::path& filename, const std::vector<double>& coefficients)
 {
     std::ofstream fout;
     fout.open(filename, std::ios::out);
 
-    std::size_t namePosition = filename.rfind('\\');
-
-    if (namePosition == std::string::npos)
-    {
-        namePosition = filename.rfind('/');
-    }
-
     fout << "/* ******************************************************************" << std::endl;
     fout << "   FILE:\t";
-    if (namePosition != std::string::npos)
-    {
-        fout << filename.substr(namePosition + 1) << std::endl;
-    }
-    else
-    {
-        fout << filename << std::endl;
-    }
+    fout << filename.filename().c_str() << std::endl;
 
     fout << "   DESCRIPTION:\t" << std::endl;
     fout << "   DATE:\t" << std::endl;

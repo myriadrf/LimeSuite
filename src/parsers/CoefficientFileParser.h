@@ -9,6 +9,7 @@
 
 #include "limesuite/config.h"
 
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -18,8 +19,8 @@ namespace lime {
 class LIME_API CoefficientFileParser
 {
   public:
-    static int getCoefficients(const std::string& filename, std::vector<double>& coefficients, int max);
-    static void saveToFile(const std::string& filename, const std::vector<double>& coefficients);
+    static int getCoefficients(const std::filesystem::path& filename, std::vector<double>& coefficients, int max);
+    static void saveToFile(const std::filesystem::path& filename, const std::vector<double>& coefficients);
 
   private:
     enum class ErrorCodes : int8_t {
