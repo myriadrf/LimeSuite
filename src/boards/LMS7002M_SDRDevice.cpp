@@ -942,11 +942,11 @@ std::vector<double> LMS7002M_SDRDevice::GetGFIRCoefficients(uint8_t moduleIndex,
     lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
     const uint8_t count = gfirID == 2 ? 120 : 40;
-    std::vector<int16_t> coefficientBuffer(count);
+    std::vector<double> coefficientBuffer(count);
 
-    lms->GetGFIRCoefficients(trx, gfirID, coefficientBuffer.data(), count);
+    lms->WriteGFIRCoefficients(trx, gfirID, coefficientBuffer.data(), count);
 
-    return std::vector<double>(coefficientBuffer.begin(), coefficientBuffer.end());
+    return coefficientBuffer;
 }
 
 void LMS7002M_SDRDevice::SetGFIRCoefficients(
@@ -954,9 +954,7 @@ void LMS7002M_SDRDevice::SetGFIRCoefficients(
 {
     lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
-    std::vector<int16_t> convertedCoefficients(coefficients.begin(), coefficients.end());
-
-    lms->SetGFIRCoefficients(trx, gfirID, convertedCoefficients.data(), convertedCoefficients.size());
+    lms->ReadGFIRCoefficients(trx, gfirID, coefficients.data(), coefficients.size());
 }
 
 void LMS7002M_SDRDevice::SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled)

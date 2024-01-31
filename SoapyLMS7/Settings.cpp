@@ -388,7 +388,6 @@ void SoapyLMS7::setFrequency(
     TRXDir dir = direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx;
     if (name == "RF")
     {
-        const auto clkId = dir == TRXDir::Tx ? 2 : 1;
         try
         {
             sdrDevice->SetFrequency(0, dir, channel, frequency);
