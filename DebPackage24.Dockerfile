@@ -1,4 +1,4 @@
-# Build .deb file for Debian 12, Ubuntu 23.04, Ubuntu 23.10, Ubuntu 24.04
+# Build .deb file for Debian 12, Ubuntu 23.10, Ubuntu 24.04
 FROM debian:bookworm AS build-stage
 
 WORKDIR /LimeSuite2/source
@@ -19,6 +19,7 @@ COPY debian/ debian/
 COPY Desktop/ Desktop/
 COPY external/ external/
 COPY udev-rules/ udev-rules/
+COPY SoapyLMS7/ SoapyLMS7/
 COPY Changelog.txt Changelog.txt
 COPY CMakeLists.txt CMakeLists.txt
 COPY README.md README.md

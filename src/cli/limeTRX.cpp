@@ -486,24 +486,26 @@ int main(int argc, char** argv)
     {
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = rx ? channelCount : 0; // rx channels count
-        for (int i = 0; i < channelCount; ++i)
-            stream.rxChannels[i] = i;
-        stream.txCount = tx ? channelCount : 0;
-        for (int i = 0; i < channelCount; ++i)
-            stream.txChannels[i] = i;
+        for (int i = 0; rx && i < channelCount; ++i)
+        {
+            stream.channels.at(TRXDir::Rx).push_back(i);
+        }
+
+        for (int i = 0; tx && i < channelCount; ++i)
+        {
+            stream.channels.at(TRXDir::Tx).push_back(i);
+        }
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = linkFormat;
 
         if (syncPPS || rxSamplesInPacket || rxPacketsInBatch || txSamplesInPacket || txPacketsInBatch)
         {
-            stream.extraConfig = new SDRDevice::StreamConfig::Extras();
-            stream.extraConfig->waitPPS = syncPPS;
-            stream.extraConfig->rxSamplesInPacket = rxSamplesInPacket;
-            stream.extraConfig->txSamplesInPacket = txSamplesInPacket;
-            stream.extraConfig->rxPacketsInBatch = rxPacketsInBatch;
-            stream.extraConfig->txMaxPacketsInBatch = txPacketsInBatch;
+            stream.extraConfig.waitPPS = syncPPS;
+            stream.extraConfig.rxSamplesInPacket = rxSamplesInPacket;
+            stream.extraConfig.txSamplesInPacket = txSamplesInPacket;
+            stream.extraConfig.rxPacketsInBatch = rxPacketsInBatch;
+            stream.extraConfig.txMaxPacketsInBatch = txPacketsInBatch;
         }
 
         useComposite = chipIndexes.size() > 1;
@@ -580,7 +582,7 @@ int main(int argc, char** argv)
 
     float peakAmplitude = 0;
     float peakFrequency = 0;
-    float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx);
+    float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx, 0);
     if (sampleRate <= 0)
         sampleRate = 1; // sample rate readback not available, assign default value
     float frequencyLO = 0;

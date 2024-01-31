@@ -116,6 +116,31 @@ std::string DeviceHandle::ToString(void) const
     return out;
 }
 
+bool DeviceHandle::IsEqualIgnoringEmpty(const DeviceHandle& other) const
+{
+    if (!other.media.empty() && media != other.media)
+    {
+        return false;
+    }
+
+    if (!other.name.empty() && name != other.name)
+    {
+        return false;
+    }
+
+    if (!other.addr.empty() && addr != other.addr)
+    {
+        return false;
+    }
+
+    if (!other.serial.empty() && serial != other.serial)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool operator==(const DeviceHandle& lhs, const DeviceHandle& rhs)
 {
     return lhs.Serialize() == rhs.Serialize();

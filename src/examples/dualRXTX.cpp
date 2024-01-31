@@ -79,12 +79,10 @@ int main(int argc, char** argv)
 
     // Samples data streaming configuration
     SDRDevice::StreamConfig stream;
-    stream.rxCount = 2; // rx channels count
-    stream.txCount = 2;
-    stream.rxChannels[0] = 0;
-    stream.rxChannels[1] = 1;
-    stream.txChannels[0] = 0;
-    stream.txChannels[1] = 1;
+
+    stream.channels[TRXDir::Rx] = { 0, 1 };
+    stream.channels[TRXDir::Tx] = { 0, 1 };
+
     stream.format = SDRDevice::StreamConfig::DataFormat::F32;
     stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
 
@@ -165,9 +163,9 @@ int main(int argc, char** argv)
 
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points title 'ch 0'");
-            for (int c = 1; c < stream.rxCount; ++c)
+            for (std::size_t c = 1; c < stream.channels.at(TRXDir::Rx).size(); ++c)
                 gp.writef(", '-' with points title 'ch %i'\n", c);
-            for (int c = 0; c < stream.rxCount; ++c)
+            for (std::size_t c = 0; c < stream.channels.at(TRXDir::Rx).size(); ++c)
             {
                 for (uint32_t n = 0; n < samplesInBuffer; ++n)
                     gp.writef("%f %f\n", rxSamples[c][n].i, rxSamples[c][n].q);

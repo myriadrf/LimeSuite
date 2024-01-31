@@ -68,6 +68,7 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
             {
                 ConnectionHandle handle;
                 handle.media = Flags & FT_FLAGS_SUPERSPEED ? "USB 3" : Flags & FT_FLAGS_HISPEED ? "USB 2" : "USB";
+                handle.module = "FT601";
                 handle.name = Description;
                 handle.index = i;
                 handle.serial = SerialNumber;
@@ -77,7 +78,6 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
             }
         }
     }
-
     return handles;
 }
 #endif

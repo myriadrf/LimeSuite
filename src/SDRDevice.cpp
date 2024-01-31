@@ -3,39 +3,28 @@
 using namespace lime;
 
 SDRDevice::StreamConfig::Extras::Extras()
+    : usePoll{ true }
+    , rxSamplesInPacket{ 0 }
+    , rxPacketsInBatch{ 0 }
+    , txMaxPacketsInBatch{ 0 }
+    , txSamplesInPacket{ 0 }
+    , negateQ{ false }
+    , waitPPS{ false }
 {
-    memset(this, 0, sizeof(Extras));
-    usePoll = true;
-};
+}
 
 SDRDevice::StreamConfig::StreamConfig()
+    : format{ DataFormat::I16 }
+    , linkFormat{ DataFormat::I16 }
+    , bufferSize{ 0 }
+    , hintSampleRate{ 0 }
+    , alignPhase{ false }
+    , statusCallback{ nullptr }
+    , userData{ nullptr }
+    , extraConfig{}
 {
-    memset(this, 0, sizeof(StreamConfig));
-}
-
-SDRDevice::StreamConfig::~StreamConfig()
-{
-    if (extraConfig)
-        delete extraConfig;
-}
-
-SDRDevice::StreamConfig& SDRDevice::StreamConfig::operator=(const SDRDevice::StreamConfig& src)
-{
-    if (this == &src)
-        return *this;
-
-    if (extraConfig)
-    {
-        delete extraConfig;
-        extraConfig = nullptr;
-    }
-    memcpy(this, &src, sizeof(SDRDevice::StreamConfig));
-    if (src.extraConfig)
-    {
-        this->extraConfig = new Extras();
-        *this->extraConfig = *src.extraConfig;
-    }
-    return *this;
+    channels[TRXDir::Rx] = {};
+    channels[TRXDir::Tx] = {};
 }
 
 const char SDRDevice::Descriptor::DEVICE_NUMBER_SEPARATOR_SYMBOL = '@';

@@ -17,9 +17,11 @@ RUN apt update && \
 COPY amarisoft-plugin/ amarisoft-plugin/
 COPY cmake/ cmake/
 COPY debian/ debian/
+COPY debian/control_soapy0.7 debian/control
 COPY Desktop/ Desktop/
 COPY external/ external/
 COPY udev-rules/ udev-rules/
+COPY SoapyLMS7/ SoapyLMS7/
 COPY Changelog.txt Changelog.txt
 COPY CMakeLists.txt CMakeLists.txt
 COPY README.md README.md
