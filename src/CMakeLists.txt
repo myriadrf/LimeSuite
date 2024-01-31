@@ -57,18 +57,12 @@ set(LIME_SUITE_SOURCES
     memory/MemoryPool.cpp
 
     mcu_program/spi.cpp
-    mcu_program/common_src/lms7002m_calibrations.c
-    mcu_program/common_src/lms7002m_controls.c
-    mcu_program/common_src/lms7002m_filters.c
+    mcu_program/common_src/lms7002m_calibrations.cpp
+    mcu_program/common_src/lms7002m_controls.cpp
+    mcu_program/common_src/lms7002m_filters.cpp
 
     API/LMS_APIWrapper.cpp
 )
-
-SET_SOURCE_FILES_PROPERTIES( 
-    mcu_program/common_src/lms7002m_calibrations.c
-    mcu_program/common_src/lms7002m_controls.c
-    mcu_program/common_src/lms7002m_filters.c
-    PROPERTIES LANGUAGE CXX)
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
