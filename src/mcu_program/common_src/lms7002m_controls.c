@@ -561,7 +561,7 @@ float_type GetFrequencyCGEN()
 {
     const float_type dMul = (RefClk / 2.0) / (Get_SPI_Reg_bits(DIV_OUTCH_CGEN) + 1); //DIV_OUTCH_CGEN
     const uint16_t gINT = Get_SPI_Reg_bits(0x0088, MSB_LSB(13, 0)); //read whole register to reduce SPI transfers
-    const uint32_t gFRAC = ((uint32_t)(gINT & 0xF) << 16) | Get_SPI_Reg_bits(0x0087, MSB_LSB(15, 0));
+    const uint32_t gFRAC = (static_cast<uint32_t>(gINT & 0xF) << 16) | Get_SPI_Reg_bits(0x0087, MSB_LSB(15, 0));
     return dMul * (((gINT >> 4) + 1 + gFRAC / 1048576.0));
 }
 
@@ -582,8 +582,8 @@ uint8_t SetFrequencyCGEN(float_type freq)
     Modify_SPI_Reg_bits(INT_SDM_CGEN, intpart - 1); //INT_SDM_CGEN
     //Fractional division
     {
-        const float_type dFrac = intpart - (uint32_t)(dFvco / RefClk);
-        const uint32_t gFRAC = (uint32_t)(dFrac * 1048576);
+        const float_type dFrac = intpart - static_cast<uint32_t>(dFvco / RefClk);
+        const uint32_t gFRAC = static_cast<uint32_t>(dFrac * 1048576);
         Modify_SPI_Reg_bits(0x0087, MSB_LSB(15, 0), gFRAC & 0xFFFF); //INT_SDM_CGEN[15:0]
         Modify_SPI_Reg_bits(0x0088, MSB_LSB(3, 0), gFRAC >> 16); //INT_SDM_CGEN[19:16]
     }
@@ -609,7 +609,7 @@ float_type GetReferenceClk_TSP_MHz(bool tx)
 void SetNCOFrequency(const bool tx, const float freq, uint8_t index)
 {
     const uint16_t addr = (tx ? 0x0242 : 0x0442) + index * 2;
-    const uint32_t fcw = (uint32_t)((freq / GetReferenceClk_TSP_MHz(tx)) * 4294967296.0);
+    const uint32_t fcw = static_cast<uint32_t>((freq / GetReferenceClk_TSP_MHz(tx)) * 4294967296.0);
     SPI_write(addr, (fcw >> 16)); //NCO frequency control word register MSB part.
     SPI_write(addr + 1, fcw); //NCO frequency control word register LSB part.
 }
@@ -620,7 +620,7 @@ float_type GetFrequencySX(const bool Tx)
     Modify_SPI_Reg_bits(MAC, Tx ? 2 : 1); // Rx mac = 1, Tx mac = 2
     {
         const uint16_t gINT = Get_SPI_Reg_bits(0x011E, MSB_LSB(13, 0)); // read whole register to reduce SPI transfers
-        const uint32_t gFRAC = ((uint32_t)(gINT & 0xF) << 16) | SPI_read(0x011D);
+        const uint32_t gFRAC = (static_cast<uint32_t>(gINT & 0xF) << 16) | SPI_read(0x011D);
         const uint8_t enDiv2 = Get_SPI_Reg_bits(EN_DIV2_DIVPROG) + 1;
         const uint8_t divLoch = Get_SPI_Reg_bits(DIV_LOCH) + 1;
         SPI_write(0x0020, ch);
@@ -655,9 +655,9 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
             const uint8_t enDiv2 = (VCOfreq > 5500e6) ? 1 : 0;
             Modify_SPI_Reg_bits(EN_DIV2_DIVPROG, enDiv2); //EN_DIV2_DIVPROG
             temp = VCOfreq / (RefClk * (1 + enDiv2));
-            fractionalPart = (uint32_t)((temp - (uint32_t)(temp)) * 1048576);
+            fractionalPart = static_cast<uint32_t>((temp - static_cast<uint32_t>(temp)) * 1048576);
 
-            Modify_SPI_Reg_bits(INT_SDM, (uint16_t)(temp - 4)); //INT_SDM
+            Modify_SPI_Reg_bits(INT_SDM, static_cast<uint16_t>(temp - 4)); //INT_SDM
             Modify_SPI_Reg_bits(0x011E, MSB_LSB(3, 0), (fractionalPart >> 16)); //FRAC_SDM[19:16]
             SPI_write(0x011D, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
         }
@@ -709,7 +709,7 @@ static uint8_t ReadCMP(const bool SX)
     while (!TF0)
         ; // wait for timer overflow
 #endif
-    return (uint8_t)Get_SPI_Reg_bits(SX ? 0x0123 : 0x008C, MSB_LSB(13, 12));
+    return static_cast<uint8_t>(Get_SPI_Reg_bits(SX ? 0x0123 : 0x008C, MSB_LSB(13, 12)));
 }
 
 uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT

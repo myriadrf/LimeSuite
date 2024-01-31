@@ -13,7 +13,14 @@
 #include <set>
 #include "limesuite/IComms.h"
 #include "limesuite/commonTypes.h"
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
 #include "cpp-feather-ini-parser/INI.h"
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -1182,7 +1189,7 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain, const Channel channel)
             return 0;
     }
 
-    int g_iamp = (float_type)opt_gain_tbb[ind] * pow(10.0, gain / 20.0) + 0.4;
+    int g_iamp = static_cast<float_type>(opt_gain_tbb[ind]) * pow(10.0, gain / 20.0) + 0.4;
     Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), std::clamp(g_iamp, 1, 63), true);
 
     return 0;
@@ -1201,7 +1208,7 @@ float_type LMS7002M::GetTBBIAMP_dB(const Channel channel)
             return 0.0;
         Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), g_current, true); //restore
     }
-    return 20.0 * log10((float_type)g_current / (float_type)opt_gain_tbb[ind]);
+    return 20.0 * log10(static_cast<float_type>(g_current) / static_cast<float_type>(opt_gain_tbb[ind]));
 }
 
 int LMS7002M::SetPathRFE(PathRFE path)
@@ -1385,18 +1392,18 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     if (dFvco <= gCGEN_VCO_frequencies[0] || dFvco >= gCGEN_VCO_frequencies[1])
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
     //Integer division
-    uint16_t gINT = (uint16_t)(dFvco / GetReferenceClk_SX(TRXDir::Rx) - 1);
+    uint16_t gINT = static_cast<uint16_t>(dFvco / GetReferenceClk_SX(TRXDir::Rx) - 1);
 
     //Fractional division
-    dFrac = dFvco / GetReferenceClk_SX(TRXDir::Rx) - (uint32_t)(dFvco / GetReferenceClk_SX(TRXDir::Rx));
-    uint32_t gFRAC = (uint32_t)(dFrac * 1048576);
+    dFrac = dFvco / GetReferenceClk_SX(TRXDir::Rx) - static_cast<uint32_t>(dFvco / GetReferenceClk_SX(TRXDir::Rx));
+    uint32_t gFRAC = static_cast<uint32_t>(dFrac * 1048576);
 
     Modify_SPI_Reg_bits(LMS7param(INT_SDM_CGEN), gINT); //INT_SDM_CGEN
     Modify_SPI_Reg_bits(0x0087, 15, 0, gFRAC & 0xFFFF); //INT_SDM_CGEN[15:0]
     Modify_SPI_Reg_bits(0x0088, 3, 0, gFRAC >> 16); //INT_SDM_CGEN[19:16]
     Modify_SPI_Reg_bits(LMS7param(DIV_OUTCH_CGEN), iHdiv); //DIV_OUTCH_CGEN
 
-    lime::debug("INT %d, FRAC %d, DIV_OUTCH_CGEN %d", gINT, gFRAC, (uint16_t)iHdiv);
+    lime::debug("INT %d, FRAC %d, DIV_OUTCH_CGEN %d", gINT, gFRAC, iHdiv);
     lime::debug("VCO %.2f MHz, RefClk %.2f MHz", dFvco / 1e6, GetReferenceClk_SX(TRXDir::Rx) / 1e6);
 
     if (output)
@@ -1548,7 +1555,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     {
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, 0);
         this_thread::sleep_for(settlingTime);
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
         if (cmphl == 3) //VCO too high
         {
             this->SetActiveChannel(ch); //restore previously used channel
@@ -1557,7 +1564,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         }
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, 255);
         this_thread::sleep_for(settlingTime);
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
         if (cmphl == 0) //VCO too low
         {
             this->SetActiveChannel(ch); //restore previously used channel
@@ -1582,8 +1589,8 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             cswSearch[t].high |= 1 << i; //CSW_VCO<i>=1
             Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswSearch[t].high);
             this_thread::sleep_for(settlingTime);
-            cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
-            lime::debug("csw=%d\tcmphl=%d", cswSearch[t].high, (int16_t)cmphl);
+            cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
+            lime::debug("csw=%d\tcmphl=%d", cswSearch[t].high, cmphl);
             if (cmphl & 0x01) // reduce CSW
                 cswSearch[t].high &= ~(1 << i); //CSW_VCO<i>=0
             if (cmphl == 2 && cswSearch[t].high < cswSearch[t].low)
@@ -1600,7 +1607,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswSearch[t].low);
             this_thread::sleep_for(settlingTime);
             const uint8_t tempCMPvalue = Get_SPI_Reg_bits(addrCMP, 13, 12, true);
-            lime::debug("csw=%d\tcmphl=%d", cswSearch[t].low, (int16_t)tempCMPvalue);
+            lime::debug("csw=%d\tcmphl=%d", cswSearch[t].low, tempCMPvalue);
             if (tempCMPvalue != 2)
             {
                 ++cswSearch[t].low;
@@ -1646,7 +1653,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         finalCSW = cswLow;
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow);
         this_thread::sleep_for(settlingTime);
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
         if (cmphl != 2)
         {
             finalCSW = cswHigh;
@@ -1659,7 +1666,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, finalCSW);
     }
     this_thread::sleep_for(settlingTime);
-    cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+    cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
     this->SetActiveChannel(ch); //restore previously used channel
     if (cmphl == 2)
     {
@@ -1800,10 +1807,9 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
 
     const float_type refClk_Hz = GetReferenceClk_SX(dir);
     assert(refClk_Hz > 0);
-    integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
-    fractionalPart = (uint32_t)((VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) -
-                                    (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) *
-                                1048576);
+    double divider = refClk_Hz * (1 + (VCOfreq > m_dThrF));
+    integerPart = static_cast<uint16_t>(VCOfreq / divider - 4);
+    fractionalPart = static_cast<uint32_t>((VCOfreq / divider - static_cast<uint32_t>(VCOfreq / divider)) * 1048576);
 
     Channel ch = this->GetActiveChannel();
     this->SetActiveChannel(dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
@@ -1819,7 +1825,7 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
         freq_Hz / 1e6,
         integerPart,
         fractionalPart,
-        (int16_t)div_loch,
+        div_loch,
         (VCOfreq > m_dThrF));
     lime::debug("Expected VCO %.2f MHz, RefClk %.2f MHz", VCOfreq / 1e6, refClk_Hz / 1e6);
 
@@ -1846,7 +1852,7 @@ int LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
         Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
         Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, csw_value);
         this_thread::sleep_for(chrono::microseconds(50)); // probably no need for this as the interface is already very slow..
-        auto cmphl = (uint8_t)Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true);
+        auto cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true));
         if (cmphl == 2)
         {
             lime::info("Fast Tune success; vco=%d value=%d", tuning_cache_sel_vco[freq_Hz], tuning_cache_csw_value[freq_Hz]);
@@ -1951,7 +1957,7 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, 
     float newFreq(0);
     if (needCancelation)
     {
-        newFreq = (int)(freq_Hz / refClk + 0.5) * refClk;
+        newFreq = std::round(freq_Hz / refClk) * refClk;
         TuneRxFilter(BW - BWOffset + 2 * abs(freq_Hz - newFreq));
         status = SetFrequencySX(dir, newFreq);
     }
@@ -2015,9 +2021,9 @@ float_type LMS7002M::GetFrequencySX(TRXDir dir)
     uint32_t gFRAC = ((gINT & 0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
 
     const float_type refClk_Hz = GetReferenceClk_SX(dir);
-    dMul = (float_type)refClk_Hz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
+    dMul = refClk_Hz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
     //Calculate real frequency according to the calculated parameters
-    dMul = dMul * ((gINT >> 4) + 4 + (float_type)gFRAC / 1048576.0) * (Get_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG)) + 1);
+    dMul = dMul * ((gINT >> 4) + 4 + gFRAC / 1048576.0) * (Get_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG)) + 1);
     return dMul;
 }
 
@@ -2071,7 +2077,7 @@ float_type LMS7002M::GetNCOFrequency(TRXDir dir, uint8_t index, bool fromChip)
 int LMS7002M::SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg)
 {
     uint16_t addr = dir == TRXDir::Tx ? 0x0241 : 0x0441;
-    uint16_t pho = (uint16_t)(65536 * (angle_deg / 360));
+    uint16_t pho = static_cast<uint16_t>(65536 * (angle_deg / 360));
     SPI_write(addr, pho);
     return 0;
 }
@@ -2087,7 +2093,7 @@ int LMS7002M::SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg)
     if (index > 15)
         return ReportError(ERANGE, "SetNCOPhaseOffset(index = %d) - index out of range [0, 15]", int(index));
     uint16_t addr = dir == TRXDir::Tx ? 0x0244 : 0x0444;
-    uint16_t pho = (uint16_t)(65536 * (angle_deg / 360));
+    uint16_t pho = static_cast<uint16_t>(65536 * (angle_deg / 360));
     SPI_write(addr + index, pho);
     return 0;
 }
@@ -2161,7 +2167,7 @@ int LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, const int16_t*
     vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
         addresses.push_back(startAddr + index + 24 * (index / 40));
-    SPI_write_batch(&addresses[0], (uint16_t*)coef, coefCount, true);
+    SPI_write_batch(&addresses[0], reinterpret_cast<const uint16_t*>(coef), coefCount, true);
     return 0;
 }
 
@@ -2185,7 +2191,7 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
     int16_t words[120];
     // actual used coefficients count is multiple of 'bankCount'
     // if coefCount is not multiple, extra '0' coefficients will be written
-    const uint8_t bankLength = ceil((float)coefCount / bankCount);
+    const uint8_t bankLength = std::ceil(static_cast<float>(coefCount) / bankCount);
     const int16_t actualCoefCount = bankLength * bankCount;
     assert(actualCoefCount <= maxCoefCount);
 
@@ -2204,7 +2210,7 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
     gfirL_param.address += gfirIndex + (dir == TRXDir::Tx ? 0 : 0x0200);
     Modify_SPI_Reg_bits(gfirL_param, bankLength - 1);
 
-    return SPI_write_batch(addrs, (const uint16_t*)words, actualCoefCount, true);
+    return SPI_write_batch(addrs, reinterpret_cast<const uint16_t*>(words), actualCoefCount, true);
 }
 
 /** @brief Returns currently loaded FIR coefficients
@@ -2428,7 +2434,7 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
     std::vector<uint32_t> dataRd(cnt);
     for (size_t i = 0; i < cnt; ++i)
     {
-        dataWr[i] = (uint32_t)(spiAddr[i]);
+        dataWr[i] = spiAddr[i];
     }
 
     controlPort->SPI(dataWr.data(), dataRd.data(), cnt);
@@ -2922,7 +2928,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     }
     else
     {
-        uint8_t divider = (uint8_t)pow(2.0, decimation + siso);
+        uint8_t divider = static_cast<uint8_t>(std::pow(2.0, decimation + siso));
         if (divider > 1)
             Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), (divider / 2) - 1);
         else
@@ -2948,7 +2954,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     }
     else
     {
-        uint8_t divider = (uint8_t)pow(2.0, interpolation + siso);
+        uint8_t divider = static_cast<uint8_t>(std::pow(2.0, interpolation + siso));
         if (divider > 1)
             Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), (divider / 2) - 1);
         else

@@ -176,7 +176,7 @@ int MCU_BD::ReadOneByte(unsigned char* data)
     { // Time out has not occured
         tempi = mSPI_read(0x0005); // REG5 read
             // return the read byte
-        (*data) = (unsigned char)(tempi);
+        (*data) = static_cast<unsigned char>(tempi);
     }
     else
         (*data) = 0;
@@ -224,17 +224,17 @@ int MCU_BD::Three_byte_command(unsigned char data1,
     *rdata2 = 0x00;
     *rdata3 = 0x00;
 
-    mSPI_write(0x8004, (unsigned short)(data1)); //REG4 write
+    mSPI_write(0x8004, static_cast<unsigned short>(data1)); //REG4 write
     retval = WaitUntilWritten();
     if (retval == -1)
         return -1;
 
-    mSPI_write(0x8004, (unsigned short)(data2)); //REG4 write
+    mSPI_write(0x8004, static_cast<unsigned short>(data2)); //REG4 write
     retval = WaitUntilWritten();
     if (retval == -1)
         return -1;
 
-    mSPI_write(0x8004, (unsigned short)(data3)); //REG4 write
+    mSPI_write(0x8004, static_cast<unsigned short>(data3)); //REG4 write
     retval = WaitUntilWritten();
     if (retval == -1)
         return -1;
@@ -282,7 +282,7 @@ int MCU_BD::Read_IRAM()
     for (i = 0; i <= 255; i++)
     {
         // code 0x78 is for reading the IRAM locations
-        retval = Three_byte_command(0x78, ((unsigned char)(i)), 0x00, &tempc1, &tempc2, &tempc3);
+        retval = Three_byte_command(0x78, static_cast<unsigned char>(i), 0x00, &tempc1, &tempc2, &tempc3);
         if (retval == 0)
             m_IRAM[i] = tempc3;
         else
@@ -319,7 +319,7 @@ int MCU_BD::Erase_IRAM()
     {
         m_IRAM[i] = 0x00;
         // code 0x7C is for writing the IRAM locations
-        retval = Three_byte_command(0x7C, ((unsigned char)(i)), 0x00, &tempc1, &tempc2, &tempc3);
+        retval = Three_byte_command(0x7C, static_cast<unsigned char>(i), 0x00, &tempc1, &tempc2, &tempc3);
         if (retval == -1)
         {
             i = 256;
@@ -1152,7 +1152,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
     {
         uint8_t inputRegs[3];
         value /= 1e6;
-        inputRegs[0] = (uint8_t)value; //frequency integer part
+        inputRegs[0] = static_cast<uint8_t>(value); //frequency integer part
 
         uint16_t fracPart = value * 1000.0 - inputRegs[0] * 1000.0;
         inputRegs[1] = (fracPart >> 8) & 0xFF;
@@ -1171,7 +1171,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
         RunProcedure(3);
     if (param == MCU_Parameter::MCU_EXT_LOOPBACK_PAIR)
     {
-        uint8_t intVal = (int)value;
+        uint8_t intVal = static_cast<uint8_t>(value);
         mSPI_write(0, intVal);
         mSPI_write(0x0002, x0002reg | interupt7);
         mSPI_write(0x0002, x0002reg & ~interupt7);

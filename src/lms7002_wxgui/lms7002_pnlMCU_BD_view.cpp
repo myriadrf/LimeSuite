@@ -558,8 +558,9 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick(wxCommandEvent& event)
     progressPooler->Start(200);
     Connect(
         ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnProgrammingfinished), NULL, this);
-    Connect(
-        ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Connect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_COMMAND_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     obj_ptr = this;
     mThreadWorking = true;
     mWorkerThread = std::thread(
@@ -631,9 +632,9 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent& event)
             //fscanf(inFile, "%d %d %d", &test_code, &address, &value);
             scanStatus = fscanf(inFile, "%d ", &address);
             scanStatus = fscanf(inFile, "%d\n", &value);
-            TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
-            TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
-            TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
+            TestResultArray_code[m_iTestResultFileLine] = static_cast<unsigned char>(test_code);
+            TestResultArray_address[m_iTestResultFileLine] = static_cast<unsigned char>(address);
+            TestResultArray_value[m_iTestResultFileLine] = static_cast<unsigned char>(value);
 
             m_iTestResultFileLine++;
             scanStatus = fscanf(inFile, "%d", &test_code);
@@ -819,7 +820,7 @@ int lms7002_pnlMCU_BD_view::ReadOneByte(unsigned char* data)
         LMS_ReadLMSReg(lmsControl, 0x0005, &tempi);
         ; // REG5 read
         // return the read byte
-        (*data) = (unsigned char)(tempi);
+        (*data) = static_cast<unsigned char>(tempi);
     }
     else
         (*data) = 0;
@@ -875,16 +876,16 @@ int lms7002_pnlMCU_BD_view::Three_byte_command(unsigned char data1,
     *rdata2 = 0x00;
     *rdata3 = 0x00;
 
-    LMS_WriteLMSReg(lmsControl, 0x8004, (unsigned short)data1);
+    LMS_WriteLMSReg(lmsControl, 0x8004, static_cast<unsigned short>(data1));
     retval = WaitUntilWritten();
     if (retval == -1)
         return -1;
-    LMS_WriteLMSReg(lmsControl, 0x8004, (unsigned short)data2); //REG4 write
+    LMS_WriteLMSReg(lmsControl, 0x8004, static_cast<unsigned short>(data2)); //REG4 write
     retval = WaitUntilWritten();
     if (retval == -1)
         return -1;
 
-    LMS_WriteLMSReg(lmsControl, 0x8004, (unsigned short)data3); //REG4 write
+    LMS_WriteLMSReg(lmsControl, 0x8004, static_cast<unsigned short>(data3)); //REG4 write
     retval = WaitUntilWritten();
     if (retval == -1)
         return -1;
@@ -944,9 +945,9 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
         {
             scanStatus = fscanf(inFile, "%d ", &address);
             scanStatus = fscanf(inFile, "%d\n", &value);
-            TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
-            TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
-            TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
+            TestResultArray_code[m_iTestResultFileLine] = static_cast<unsigned char>(test_code);
+            TestResultArray_address[m_iTestResultFileLine] = static_cast<unsigned char>(address);
+            TestResultArray_value[m_iTestResultFileLine] = static_cast<unsigned char>(value);
 
             m_iTestResultFileLine++;
             scanStatus = fscanf(inFile, "%d", &test_code);
@@ -984,7 +985,8 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
     {
         if (TestResultArray_code[i] == m_iTestNo)
         {
-            retval = Three_byte_command(0x78, (unsigned char)(TestResultArray_address[i]), 0x00, &tempc1, &tempc2, &tempc3);
+            retval =
+                Three_byte_command(0x78, static_cast<unsigned char>(TestResultArray_address[i]), 0x00, &tempc1, &tempc2, &tempc3);
             if ((retval == -1) || (tempc3 != TestResultArray_value[i]))
                 m_iError = 1;
             else
@@ -1353,8 +1355,9 @@ void lms7002_pnlMCU_BD_view::OnViewSFRsClick(wxCommandEvent& event)
     progressBar->SetValue(0);
     progressPooler->Start(200);
 
-    Connect(
-        ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Connect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_COMMAND_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     Connect(ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnReadSFRfinished), NULL, this);
 
     mThreadWorking = true;
@@ -1385,7 +1388,7 @@ int lms7002_pnlMCU_BD_view::Read_IRAM()
     for (i = 0; i <= 255; i++)
     {
         // code 0x78 is for reading the IRAM locations
-        retval = Three_byte_command(0x78, ((unsigned char)(i)), 0x00, &tempc1, &tempc2, &tempc3);
+        retval = Three_byte_command(0x78, static_cast<unsigned char>(i), 0x00, &tempc1, &tempc2, &tempc3);
         if (retval == 0)
             m_IRAM[i] = tempc3;
         else
@@ -1412,8 +1415,9 @@ void lms7002_pnlMCU_BD_view::OnViewIRAMClick(wxCommandEvent& event)
     progressBar->SetValue(0);
     progressPooler->Start(200);
     Connect(ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnReadIRAMfinished), NULL, this);
-    Connect(
-        ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Connect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_COMMAND_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
 
     mThreadWorking = true;
     mWorkerThread = std::thread(
@@ -1443,7 +1447,7 @@ int lms7002_pnlMCU_BD_view::Erase_IRAM()
     {
         m_IRAM[i] = 0x00;
         // code 0x7C is for writing the IRAM locations
-        retval = Three_byte_command(0x7C, ((unsigned char)(i)), 0x00, &tempc1, &tempc2, &tempc3);
+        retval = Three_byte_command(0x7C, static_cast<unsigned char>(i), 0x00, &tempc1, &tempc2, &tempc3);
         if (retval == -1)
         {
             i = 256;
@@ -1467,8 +1471,9 @@ void lms7002_pnlMCU_BD_view::OnEraseIRAMClick(wxCommandEvent& event)
     Disable();
     progressBar->SetValue(0);
     progressPooler->Start(200);
-    Connect(
-        ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Connect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_COMMAND_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     Connect(
         ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnEraseIRAMfinished), NULL, this);
 
@@ -1560,7 +1565,9 @@ void lms7002_pnlMCU_BD_view::OnReadIRAMfinished(wxThreadEvent& event)
         mWorkerThread.join();
     mThreadWorking = false;
     progressPooler->Stop();
-    Disconnect(ID_PROGRAMING_STATUS_EVENT, wxEVT_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Disconnect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     Disconnect(
         ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnReadIRAMfinished), NULL, this);
     progressBar->SetValue(100);
@@ -1581,7 +1588,9 @@ void lms7002_pnlMCU_BD_view::OnEraseIRAMfinished(wxThreadEvent& event)
         mWorkerThread.join();
     mThreadWorking = false;
     progressPooler->Stop();
-    Disconnect(ID_PROGRAMING_STATUS_EVENT, wxEVT_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Disconnect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     Disconnect(
         ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnEraseIRAMfinished), NULL, this);
     progressBar->SetValue(100);
@@ -1596,7 +1605,9 @@ void lms7002_pnlMCU_BD_view::OnReadSFRfinished(wxThreadEvent& event)
         mWorkerThread.join();
     mThreadWorking = false;
     progressPooler->Stop();
-    Disconnect(ID_PROGRAMING_STATUS_EVENT, wxEVT_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Disconnect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     Disconnect(
         ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnReadSFRfinished), NULL, this);
     progressBar->SetValue(100);
@@ -1617,7 +1628,9 @@ void lms7002_pnlMCU_BD_view::OnProgrammingfinished(wxThreadEvent& event)
         mWorkerThread.join();
     mThreadWorking = false;
     progressPooler->Stop();
-    Disconnect(ID_PROGRAMING_STATUS_EVENT, wxEVT_THREAD, (wxObjectEventFunction)&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate);
+    Disconnect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&lms7002_pnlMCU_BD_view::OnProgramingStatusUpdate));
     Disconnect(
         ID_PROGRAMING_FINISH_EVENT, wxEVT_THREAD, wxThreadEventHandler(lms7002_pnlMCU_BD_view::OnProgrammingfinished), NULL, this);
     progressBar->SetValue(100);

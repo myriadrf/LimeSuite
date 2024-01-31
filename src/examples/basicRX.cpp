@@ -145,7 +145,7 @@ int main(int argc, char** argv)
             m_fftCalcIn[i].r = rxSamples[0][i].i;
             m_fftCalcIn[i].i = rxSamples[0][i].q;
         }
-        kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
+        kiss_fft(m_fftCalcPlan, reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcIn), reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcOut));
         for (unsigned int i = 1; i < fftSize; ++i)
         {
             float output =

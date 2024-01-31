@@ -696,9 +696,9 @@ int MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size_t da
         progView.SetData(src, chunkSize);
         src += chunkSize;
 
-        if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
+        if (port.Write(reinterpret_cast<uint8_t*>(&packet), sizeof(packet), timeout_ms) != sizeof(packet))
             return -1;
-        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), timeout_ms) != sizeof(inPacket))
+        if (port.Read(reinterpret_cast<uint8_t*>(&inPacket), sizeof(inPacket), timeout_ms) != sizeof(inPacket))
             return -1;
 
         if (inPacket.status != STATUS_COMPLETED_CMD)
@@ -735,9 +735,9 @@ int MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, 
         writeView.SetAddress(address + bytesGot);
         writeView.SetChunkSize(std::min(dataLen - bytesGot, chunkSize));
 
-        if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
+        if (port.Write(reinterpret_cast<uint8_t*>(&packet), sizeof(packet), timeout_ms) != sizeof(packet))
             return -1;
-        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), timeout_ms) != sizeof(inPacket))
+        if (port.Read(reinterpret_cast<uint8_t*>(&inPacket), sizeof(inPacket), timeout_ms) != sizeof(inPacket))
             return -1;
 
         if (inPacket.status != STATUS_COMPLETED_CMD)

@@ -3,8 +3,9 @@
 #include "lms7002m_filters.h"
 #include "LMS7002M_parameters_compact.h"
 #include "spi.h"
-#include <math.h>
+#include <cmath>
 #include "mcu_defines.h"
+#include <algorithm>
 
 enum { SEARCH_SUCCESS = 0, SEARCH_NEED_TO_DECREASE, SEARCH_NEED_TO_INCREASE };
 
@@ -20,14 +21,14 @@ static ROM const float_type TxLPF_RF_LimitHigh = 130e6;
 
 static uint8_t ConfigCGEN_ForLPF_IF(float IF_Hz)
 {
-    uint8_t cgenMultiplier = clamp(IF_Hz * 20 / 46.08e6 + 0.5, 2, 13);
+    uint8_t cgenMultiplier = std::clamp<uint8_t>(std::round(IF_Hz * 20 / 46.08e6), 2, 13);
     return SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
 }
 
 static uint8_t RxFilterSearch(const uint16_t addr, const uint8_t msblsb, const uint16_t rssi_3dB, const uint16_t stepLimit)
 {
     const bool doDecrement = GetRSSI() < rssi_3dB;
-    int16_t value = Get_SPI_Reg_bits(addr, msblsb);
+    uint16_t value = Get_SPI_Reg_bits(addr, msblsb);
     const uint16_t maxValue = pow2((msblsb >> 4) - (msblsb & 0xF) + 1) - 1;
     uint16_t stepSize = 1;
     while (1)
@@ -37,7 +38,7 @@ static uint8_t RxFilterSearch(const uint16_t addr, const uint8_t msblsb, const u
             value -= stepSize;
         else
             value += stepSize;
-        value = clamp(value, 0, maxValue);
+        value = std::clamp<uint16_t>(value, 0, maxValue);
         Modify_SPI_Reg_bits(addr, msblsb, value);
         if (doDecrement != (GetRSSI() < rssi_3dB))
             break;
@@ -51,7 +52,7 @@ static uint8_t RxFilterSearch(const uint16_t addr, const uint8_t msblsb, const u
             value += stepSize;
         else
             value -= stepSize;
-        value = clamp(value, 0, maxValue);
+        value = std::clamp<uint16_t>(value, 0, maxValue);
         Modify_SPI_Reg_bits(addr, msblsb, value);
     }
     return 0;
@@ -302,19 +303,19 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         int8_t ccomp_tia_rfe;
         if (g_tia_rfe > 1)
         {
-            cfb_tia_rfe = (int16_t)(1680e6 / rx_lpf_IF - 10);
+            cfb_tia_rfe = static_cast<int16_t>(1680e6 / rx_lpf_IF - 10);
             ccomp_tia_rfe = cfb_tia_rfe / 100;
         }
         else if (g_tia_rfe == 1)
         {
-            cfb_tia_rfe = (int16_t)(5400e6 / rx_lpf_IF - 15);
+            cfb_tia_rfe = static_cast<int16_t>(5400e6 / rx_lpf_IF - 15);
             ccomp_tia_rfe = cfb_tia_rfe / 100 + 1;
         }
         else
             return MCU_RX_INVALID_TIA;
-        SPI_write(0x0112, (clamp(ccomp_tia_rfe, 0, 15) << 8) | clamp(cfb_tia_rfe, 0, 4095));
+        SPI_write(0x0112, (std::clamp<int8_t>(ccomp_tia_rfe, 0, 15) << 8) | std::clamp<int16_t>(cfb_tia_rfe, 0, 4095));
 
-        Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15 - cfb_tia_rfe / 100, 0, 15));
+        Modify_SPI_Reg_bits(RCOMP_TIA_RFE, std::clamp(15 - cfb_tia_rfe / 100, 0, 15));
     }
     {
         const int8_t rcc_ctl_pga_rbb = (430 * pow(0.65, g_pga_rbb / 10) - 110.35) / 20.45 + 16;
@@ -327,7 +328,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0);
         {
             const float freqIF = rx_lpf_IF * 1.3;
-            int16_t c_ctl_lpfl_rbb = clamp(2160e6 / freqIF - 103, 0, 2047);
+            int16_t c_ctl_lpfl_rbb = std::clamp<int16_t>(2160e6 / freqIF - 103, 0, 2047);
 
             uint8_t rcc_ctl_lpfl_rbb = 5;
             if (freqIF < 15e6)
@@ -349,8 +350,8 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 1);
         {
             const float lpfIF_adjusted = rx_lpf_IF * 1.3;
-            uint8_t c_ctl_lpfh_rbb = clamp(6000e6 / lpfIF_adjusted - 50, 0, 255);
-            uint8_t rcc_ctl_lpfh_rbb = clamp(lpfIF_adjusted / 10e6 - 3, 0, 7);
+            uint8_t c_ctl_lpfh_rbb = std::clamp<uint8_t>(6000e6 / lpfIF_adjusted - 50, 0, 255);
+            uint8_t rcc_ctl_lpfh_rbb = std::clamp<uint8_t>(lpfIF_adjusted / 10e6 - 3, 0, 7);
             Modify_SPI_Reg_bits(0x0116, MSB_LSB(10, 0), (rcc_ctl_lpfh_rbb << 8) | c_ctl_lpfh_rbb);
         }
     }
@@ -466,24 +467,24 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             uint16_t cfb_tia_rfe;
             uint8_t g_tia_rfe = Get_SPI_Reg_bits(G_TIA_RFE);
             if (g_tia_rfe == 3 || g_tia_rfe == 2)
-                cfb_tia_rfe = (int)(1680e6 / (rx_lpf_IF * 0.72) - 10);
+                cfb_tia_rfe = static_cast<int>(1680e6 / (rx_lpf_IF * 0.72) - 10);
             else if (g_tia_rfe == 1)
-                cfb_tia_rfe = (int)(5400e6 / (rx_lpf_IF * 0.72) - 15);
+                cfb_tia_rfe = static_cast<int>(5400e6 / (rx_lpf_IF * 0.72) - 15);
             else
             {
                 status = MCU_RX_INVALID_TIA;
                 goto RxFilterSearchEndStage;
             }
-            cfb_tia_rfe = clamp(cfb_tia_rfe, 0, 4095);
+            cfb_tia_rfe = std::clamp<uint16_t>(cfb_tia_rfe, 0, 4095);
             Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
 
             {
                 uint8_t ccomp_tia_rfe = cfb_tia_rfe / 100;
                 if (g_tia_rfe == 1)
                     ccomp_tia_rfe += 1;
-                Modify_SPI_Reg_bits(CCOMP_TIA_RFE, clamp(ccomp_tia_rfe, 0, 15));
+                Modify_SPI_Reg_bits(CCOMP_TIA_RFE, std::clamp<uint8_t>(ccomp_tia_rfe, 0, 15));
             }
-            Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15 - cfb_tia_rfe / 100, 0, 15));
+            Modify_SPI_Reg_bits(RCOMP_TIA_RFE, std::clamp<uint8_t>(15 - cfb_tia_rfe / 100, 0, 15));
         }
     }
     else //if(rx_lpf_IF > 54e6)
@@ -500,7 +501,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
         goto RxFilterSearchEndStage;
     }
     //END TIA
-RxFilterSearchEndStage : {
+RxFilterSearchEndStage: {
     //Restore settings
     uint16_t ccomp_cfb_tia_rfe = SPI_read(0x0112);
     uint16_t rcc_c_ctl_lpfl_rbb = SPI_read(0x0117);
@@ -717,14 +718,14 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
         const float_type freq = (16.0 / 20.0) * tx_lpf_IF / 1e6;
         int16_t rcal_lpflad_tbb = pow(freq, 4) * 1.29858903647958e-16 + pow(freq, 3) * (-0.000110746929967704) +
                                   pow(freq, 2) * 0.00277593485991029 + freq * 21.0384293169607 + (-48.4092606238297);
-        Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, clamp(rcal_lpflad_tbb, 0, 255));
+        Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, std::clamp<uint16_t>(rcal_lpflad_tbb, 0, 255));
     }
     else
     {
         const float_type freq = tx_lpf_IF / 1e6;
         int16_t rcal_lpfh_tbb = pow(freq, 4) * 1.10383261611112e-06 + pow(freq, 3) * (-0.000210800032517545) +
                                 pow(freq, 2) * 0.0190494874803309 + freq * 1.43317445923528 + (-47.6950779298333);
-        Modify_SPI_Reg_bits(RCAL_LPFH_TBB, clamp(rcal_lpfh_tbb, 0, 255));
+        Modify_SPI_Reg_bits(RCAL_LPFH_TBB, std::clamp<uint16_t>(rcal_lpfh_tbb, 0, 255));
     }
 
     //CGEN
@@ -799,13 +800,13 @@ static uint8_t SearchTxFilterCCAL_RCAL(uint16_t addr, uint8_t msblsb)
             uint8_t R = Get_SPI_Reg_bits(addr, msblsb);
             if (R == 0 || R == 255)
                 return MCU_NO_ERROR; // reached filter bandwidth limit
-            Modify_SPI_Reg_bits(addr, msblsb, clamp(R + rcal_step, 0, 255));
+            Modify_SPI_Reg_bits(addr, msblsb, std::clamp(R + rcal_step, 0, 255));
             Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
         }
         else if (needToChangeCCAL)
         {
             uint8_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
-            ccal_lpflad_tbb = clamp(++ccal_lpflad_tbb, 0, 31);
+            ccal_lpflad_tbb = std::clamp<uint8_t>(ccal_lpflad_tbb + 1, 0, 31);
             Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
         }
         --iterationsLeft;
@@ -845,7 +846,7 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         Modify_SPI_Reg_bits(C_CTL_PGA_RBB, 2);
         status = SearchTxFilterCCAL_RCAL(RCAL_LPFH_TBB);
     }
-TxFilterSearchEndStage : {
+TxFilterSearchEndStage: {
     uint16_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
     uint16_t rcal_lpfh_lpflad_tbb = SPI_read(0x0109);
 

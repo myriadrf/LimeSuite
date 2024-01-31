@@ -204,7 +204,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(EINVAL, "Tx Calibration: Device not connected");
     auto beginTime = std::chrono::high_resolution_clock::now();
     int status;
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
+    uint8_t ch = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7_MAC));
     if (ch == 0 || ch == 3)
         return ReportError(EINVAL, "Tx Calibration: Incorrect channel selection MAC %i", ch);
 
@@ -304,11 +304,11 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 #endif
 
     int status;
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
+    uint8_t ch = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7_MAC));
     if (ch == 0 || ch == 3)
         return ReportError(EINVAL, "Rx Calibration: Incorrect channel selection MAC %i", ch);
     uint8_t channel = ch == 1 ? 0 : 1;
-    uint8_t lna = (uint8_t)Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
+    uint8_t lna = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE));
     double rxFreq = GetFrequencySX(TRXDir::Rx);
 
     const char* lnaName;

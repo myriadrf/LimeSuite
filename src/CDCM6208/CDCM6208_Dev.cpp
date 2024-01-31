@@ -60,25 +60,27 @@ int CDCM_Dev::Reset(double primaryFreq, double secondaryFreq)
         uint16_t addr;
         uint16_t val;
     };
-    std::map<int, regVal> CDCM_Regs = { { 1, { (uint16_t)(SPI_BASE_ADDR + 1), 0x0000 } },
-        { 2, { (uint16_t)(SPI_BASE_ADDR + 2), 0x0018 } },
-        { 3, { (uint16_t)(SPI_BASE_ADDR + 3), 0x00F0 } },
-        { 4, { (uint16_t)(SPI_BASE_ADDR + 4), 0x20FF } },
-        { 6, { (uint16_t)(SPI_BASE_ADDR + 6), 0x0018 } },
-        { 8, { (uint16_t)(SPI_BASE_ADDR + 8), 0x0018 } },
-        { 9, { (uint16_t)(SPI_BASE_ADDR + 9), 0x0003 } },
-        { 10, { (uint16_t)(SPI_BASE_ADDR + 10), 0x0180 } },
-        { 11, { (uint16_t)(SPI_BASE_ADDR + 11), 0x0000 } },
-        { 12, { (uint16_t)(SPI_BASE_ADDR + 12), 0x0003 } },
-        { 13, { (uint16_t)(SPI_BASE_ADDR + 13), 0x0180 } },
-        { 14, { (uint16_t)(SPI_BASE_ADDR + 14), 0x0000 } },
-        { 15, { (uint16_t)(SPI_BASE_ADDR + 15), 0x0003 } },
-        { 16, { (uint16_t)(SPI_BASE_ADDR + 16), 0x0180 } },
-        { 17, { (uint16_t)(SPI_BASE_ADDR + 17), 0x0000 } },
-        { 18, { (uint16_t)(SPI_BASE_ADDR + 18), 0x0003 } },
-        { 19, { (uint16_t)(SPI_BASE_ADDR + 19), 0x0180 } },
-        { 20, { (uint16_t)(SPI_BASE_ADDR + 20), 0x0000 } },
-        { 23, { (uint16_t)(SPI_BASE_ADDR + 23), 0x010A } } };
+    std::map<int, regVal> CDCM_Regs = {
+        { 1, { static_cast<uint16_t>(SPI_BASE_ADDR + 1), 0x0000 } },
+        { 2, { static_cast<uint16_t>(SPI_BASE_ADDR + 2), 0x0018 } },
+        { 3, { static_cast<uint16_t>(SPI_BASE_ADDR + 3), 0x00F0 } },
+        { 4, { static_cast<uint16_t>(SPI_BASE_ADDR + 4), 0x20FF } },
+        { 6, { static_cast<uint16_t>(SPI_BASE_ADDR + 6), 0x0018 } },
+        { 8, { static_cast<uint16_t>(SPI_BASE_ADDR + 8), 0x0018 } },
+        { 9, { static_cast<uint16_t>(SPI_BASE_ADDR + 9), 0x0003 } },
+        { 10, { static_cast<uint16_t>(SPI_BASE_ADDR + 10), 0x0180 } },
+        { 11, { static_cast<uint16_t>(SPI_BASE_ADDR + 11), 0x0000 } },
+        { 12, { static_cast<uint16_t>(SPI_BASE_ADDR + 12), 0x0003 } },
+        { 13, { static_cast<uint16_t>(SPI_BASE_ADDR + 13), 0x0180 } },
+        { 14, { static_cast<uint16_t>(SPI_BASE_ADDR + 14), 0x0000 } },
+        { 15, { static_cast<uint16_t>(SPI_BASE_ADDR + 15), 0x0003 } },
+        { 16, { static_cast<uint16_t>(SPI_BASE_ADDR + 16), 0x0180 } },
+        { 17, { static_cast<uint16_t>(SPI_BASE_ADDR + 17), 0x0000 } },
+        { 18, { static_cast<uint16_t>(SPI_BASE_ADDR + 18), 0x0003 } },
+        { 19, { static_cast<uint16_t>(SPI_BASE_ADDR + 19), 0x0180 } },
+        { 20, { static_cast<uint16_t>(SPI_BASE_ADDR + 20), 0x0000 } },
+        { 23, { static_cast<uint16_t>(SPI_BASE_ADDR + 23), 0x010A } },
+    };
 
     for (auto reg : CDCM_Regs)
         if (WriteRegister(reg.second.addr, reg.second.val) != 0)
@@ -233,14 +235,14 @@ int CDCM_Dev::SetFrequency(cdcm_output_t output, double frequency, bool upload)
     }
 
     if (Outputs.Y0Y1.used)
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
+        Outputs.Y0Y1.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
     else
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
+        Outputs.Y0Y1.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
 
     if (Outputs.Y2Y3.used)
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
+        Outputs.Y2Y3.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
     else
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
+        Outputs.Y2Y3.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
 
     if (Outputs.Y4.used)
         Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.requested_freq;
@@ -303,14 +305,14 @@ int CDCM_Dev::RecalculateFrequencies()
     }
 
     if (Outputs.Y0Y1.used)
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
+        Outputs.Y0Y1.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.requested_freq);
     else
-        Outputs.Y0Y1.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
+        Outputs.Y0Y1.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y0Y1.output_freq);
 
     if (Outputs.Y2Y3.used)
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
+        Outputs.Y2Y3.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.requested_freq);
     else
-        Outputs.Y2Y3.divider_val = (int)round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
+        Outputs.Y2Y3.divider_val = std::round((VCO.output_freq / VCO.prescaler_A) / Outputs.Y2Y3.output_freq);
 
     if (Outputs.Y4.used)
         Outputs.Y4.divider_val = (VCO.output_freq / VCO.prescaler_A) / Outputs.Y4.requested_freq;
@@ -458,24 +460,26 @@ int CDCM_Dev::UploadConfiguration()
         uint16_t val;
     };
 
-    std::map<int, regVal> CDCM_Regs = { { 1, { (uint16_t)(SPI_BASE_ADDR + 1), 0 } },
-        { 2, { (uint16_t)(SPI_BASE_ADDR + 2), 0 } },
-        { 3, { (uint16_t)(SPI_BASE_ADDR + 3), 0 } },
-        { 4, { (uint16_t)(SPI_BASE_ADDR + 4), 0 } },
-        { 6, { (uint16_t)(SPI_BASE_ADDR + 6), 0 } },
-        { 8, { (uint16_t)(SPI_BASE_ADDR + 8), 0 } },
-        { 9, { (uint16_t)(SPI_BASE_ADDR + 9), 0 } },
-        { 10, { (uint16_t)(SPI_BASE_ADDR + 10), 0 } },
-        { 11, { (uint16_t)(SPI_BASE_ADDR + 11), 0 } },
-        { 12, { (uint16_t)(SPI_BASE_ADDR + 12), 0 } },
-        { 13, { (uint16_t)(SPI_BASE_ADDR + 13), 0 } },
-        { 14, { (uint16_t)(SPI_BASE_ADDR + 14), 0 } },
-        { 15, { (uint16_t)(SPI_BASE_ADDR + 15), 0 } },
-        { 16, { (uint16_t)(SPI_BASE_ADDR + 16), 0 } },
-        { 17, { (uint16_t)(SPI_BASE_ADDR + 17), 0 } },
-        { 18, { (uint16_t)(SPI_BASE_ADDR + 18), 0 } },
-        { 19, { (uint16_t)(SPI_BASE_ADDR + 19), 0 } },
-        { 20, { (uint16_t)(SPI_BASE_ADDR + 20), 0 } } };
+    std::map<int, regVal> CDCM_Regs = {
+        { 1, { static_cast<uint16_t>(SPI_BASE_ADDR + 1), 0 } },
+        { 2, { static_cast<uint16_t>(SPI_BASE_ADDR + 2), 0 } },
+        { 3, { static_cast<uint16_t>(SPI_BASE_ADDR + 3), 0 } },
+        { 4, { static_cast<uint16_t>(SPI_BASE_ADDR + 4), 0 } },
+        { 6, { static_cast<uint16_t>(SPI_BASE_ADDR + 6), 0 } },
+        { 8, { static_cast<uint16_t>(SPI_BASE_ADDR + 8), 0 } },
+        { 9, { static_cast<uint16_t>(SPI_BASE_ADDR + 9), 0 } },
+        { 10, { static_cast<uint16_t>(SPI_BASE_ADDR + 10), 0 } },
+        { 11, { static_cast<uint16_t>(SPI_BASE_ADDR + 11), 0 } },
+        { 12, { static_cast<uint16_t>(SPI_BASE_ADDR + 12), 0 } },
+        { 13, { static_cast<uint16_t>(SPI_BASE_ADDR + 13), 0 } },
+        { 14, { static_cast<uint16_t>(SPI_BASE_ADDR + 14), 0 } },
+        { 15, { static_cast<uint16_t>(SPI_BASE_ADDR + 15), 0 } },
+        { 16, { static_cast<uint16_t>(SPI_BASE_ADDR + 16), 0 } },
+        { 17, { static_cast<uint16_t>(SPI_BASE_ADDR + 17), 0 } },
+        { 18, { static_cast<uint16_t>(SPI_BASE_ADDR + 18), 0 } },
+        { 19, { static_cast<uint16_t>(SPI_BASE_ADDR + 19), 0 } },
+        { 20, { static_cast<uint16_t>(SPI_BASE_ADDR + 20), 0 } },
+    };
 
     for (int i = 3; i < 24; i += 3)
     {
@@ -497,12 +501,12 @@ int CDCM_Dev::UploadConfiguration()
     CDCM_Regs[4].val |= ((VCO.R_div - 1) & 0xF) << 8;
     CDCM_Regs[4].val |= ((VCO.input_mux - 1) & 1) << 12;
 
-    CDCM_Regs[6].val = 0 | ((uint16_t)(Outputs.Y0Y1.divider_val - 1) & 0xFF);
+    CDCM_Regs[6].val = 0 | (static_cast<uint16_t>(Outputs.Y0Y1.divider_val - 1) & 0xFF);
 
-    CDCM_Regs[8].val = 0 | ((uint16_t)(Outputs.Y2Y3.divider_val - 1) & 0xFF);
+    CDCM_Regs[8].val = 0 | (static_cast<uint16_t>(Outputs.Y2Y3.divider_val - 1) & 0xFF);
 
     CDCM_Regs[9].val &= ~0x1E00;
-    CDCM_Regs[9].val |= (((int)Outputs.Y4.isFrac) << 9);
+    CDCM_Regs[9].val |= (static_cast<int>(Outputs.Y4.isFrac)) << 9;
     CDCM_Regs[9].val |= ((Outputs.Y4.prescaler - 2) & 7) << 10;
 
     CDCM_Regs[10].val = 0 | (((Outputs.Y4.integer_part - 1) & 0xFF) << 4);
@@ -511,7 +515,7 @@ int CDCM_Dev::UploadConfiguration()
     CDCM_Regs[11].val = Outputs.Y4.fractional_part & 0xFFFF;
 
     CDCM_Regs[12].val &= ~0x1E00;
-    CDCM_Regs[12].val |= (((int)Outputs.Y5.isFrac) << 9);
+    CDCM_Regs[12].val |= (static_cast<int>(Outputs.Y5.isFrac)) << 9;
     CDCM_Regs[12].val |= ((Outputs.Y5.prescaler - 2) & 7) << 10;
 
     CDCM_Regs[13].val = 0 | (((Outputs.Y5.integer_part - 1) & 0xFF) << 4);
@@ -520,7 +524,7 @@ int CDCM_Dev::UploadConfiguration()
     CDCM_Regs[14].val = Outputs.Y5.fractional_part & 0xFFFF;
 
     CDCM_Regs[15].val &= ~0x1E00;
-    CDCM_Regs[15].val |= (((int)Outputs.Y6.isFrac) << 9);
+    CDCM_Regs[15].val |= (static_cast<int>(Outputs.Y6.isFrac)) << 9;
     CDCM_Regs[15].val |= ((Outputs.Y6.prescaler - 2) & 7) << 10;
 
     CDCM_Regs[16].val = 0 | (((Outputs.Y6.integer_part - 1) & 0xFF) << 4);
@@ -529,7 +533,7 @@ int CDCM_Dev::UploadConfiguration()
     CDCM_Regs[17].val = Outputs.Y6.fractional_part & 0xFFFF;
 
     CDCM_Regs[18].val &= ~0x1E00;
-    CDCM_Regs[18].val |= (((int)Outputs.Y7.isFrac) << 9);
+    CDCM_Regs[18].val |= (static_cast<int>(Outputs.Y7.isFrac)) << 9;
     CDCM_Regs[18].val |= ((Outputs.Y7.prescaler - 2) & 7) << 10;
 
     CDCM_Regs[19].val = 0 | (((Outputs.Y7.integer_part - 1) & 0xFF) << 4);
@@ -569,26 +573,28 @@ int CDCM_Dev::DownloadConfiguration()
         uint16_t val;
     };
 
-    std::map<int, regVal> CDCM_Regs = { { 1, { (uint16_t)(SPI_BASE_ADDR + 1), 0 } },
-        { 2, { (uint16_t)(SPI_BASE_ADDR + 2), 0 } },
-        { 3, { (uint16_t)(SPI_BASE_ADDR + 3), 0 } },
-        { 4, { (uint16_t)(SPI_BASE_ADDR + 4), 0 } },
-        { 6, { (uint16_t)(SPI_BASE_ADDR + 6), 0 } },
-        { 8, { (uint16_t)(SPI_BASE_ADDR + 8), 0 } },
-        { 9, { (uint16_t)(SPI_BASE_ADDR + 9), 0 } },
-        { 10, { (uint16_t)(SPI_BASE_ADDR + 10), 0 } },
-        { 11, { (uint16_t)(SPI_BASE_ADDR + 11), 0 } },
-        { 12, { (uint16_t)(SPI_BASE_ADDR + 12), 0 } },
-        { 13, { (uint16_t)(SPI_BASE_ADDR + 13), 0 } },
-        { 14, { (uint16_t)(SPI_BASE_ADDR + 14), 0 } },
-        { 15, { (uint16_t)(SPI_BASE_ADDR + 15), 0 } },
-        { 16, { (uint16_t)(SPI_BASE_ADDR + 16), 0 } },
-        { 17, { (uint16_t)(SPI_BASE_ADDR + 17), 0 } },
-        { 18, { (uint16_t)(SPI_BASE_ADDR + 18), 0 } },
-        { 19, { (uint16_t)(SPI_BASE_ADDR + 19), 0 } },
-        { 20, { (uint16_t)(SPI_BASE_ADDR + 20), 0 } },
-        { 22, { (uint16_t)(SPI_BASE_ADDR + 22), 0 } },
-        { 23, { (uint16_t)(SPI_BASE_ADDR + 23), 0 } } };
+    std::map<int, regVal> CDCM_Regs = {
+        { 1, { static_cast<uint16_t>(SPI_BASE_ADDR + 1), 0 } },
+        { 2, { static_cast<uint16_t>(SPI_BASE_ADDR + 2), 0 } },
+        { 3, { static_cast<uint16_t>(SPI_BASE_ADDR + 3), 0 } },
+        { 4, { static_cast<uint16_t>(SPI_BASE_ADDR + 4), 0 } },
+        { 6, { static_cast<uint16_t>(SPI_BASE_ADDR + 6), 0 } },
+        { 8, { static_cast<uint16_t>(SPI_BASE_ADDR + 8), 0 } },
+        { 9, { static_cast<uint16_t>(SPI_BASE_ADDR + 9), 0 } },
+        { 10, { static_cast<uint16_t>(SPI_BASE_ADDR + 10), 0 } },
+        { 11, { static_cast<uint16_t>(SPI_BASE_ADDR + 11), 0 } },
+        { 12, { static_cast<uint16_t>(SPI_BASE_ADDR + 12), 0 } },
+        { 13, { static_cast<uint16_t>(SPI_BASE_ADDR + 13), 0 } },
+        { 14, { static_cast<uint16_t>(SPI_BASE_ADDR + 14), 0 } },
+        { 15, { static_cast<uint16_t>(SPI_BASE_ADDR + 15), 0 } },
+        { 16, { static_cast<uint16_t>(SPI_BASE_ADDR + 16), 0 } },
+        { 17, { static_cast<uint16_t>(SPI_BASE_ADDR + 17), 0 } },
+        { 18, { static_cast<uint16_t>(SPI_BASE_ADDR + 18), 0 } },
+        { 19, { static_cast<uint16_t>(SPI_BASE_ADDR + 19), 0 } },
+        { 20, { static_cast<uint16_t>(SPI_BASE_ADDR + 20), 0 } },
+        { 22, { static_cast<uint16_t>(SPI_BASE_ADDR + 22), 0 } },
+        { 23, { static_cast<uint16_t>(SPI_BASE_ADDR + 23), 0 } },
+    };
 
     if (PrepareToReadRegs() != 0)
         return -1;
@@ -620,28 +626,28 @@ int CDCM_Dev::DownloadConfiguration()
     Outputs.Y0Y1.divider_val = (CDCM_Regs[6].val & 0xFF) + 1;
     Outputs.Y2Y3.divider_val = (CDCM_Regs[8].val & 0xFF) + 1;
 
-    Outputs.Y4.isFrac = (bool)((CDCM_Regs[9].val >> 9) & 1);
+    Outputs.Y4.isFrac = static_cast<bool>((CDCM_Regs[9].val >> 9) & 1);
     Outputs.Y4.prescaler = ((CDCM_Regs[9].val >> 10) & 7) + 2;
     Outputs.Y4.integer_part = ((CDCM_Regs[10].val >> 4) & 0xFF) + 1;
     Outputs.Y4.fractional_part = 0 | ((CDCM_Regs[10].val & 0xF) << 16);
     Outputs.Y4.fractional_part |= CDCM_Regs[11].val;
     CalculateFracDiv(&Outputs.Y4);
 
-    Outputs.Y5.isFrac = (bool)((CDCM_Regs[12].val >> 9) & 1);
+    Outputs.Y5.isFrac = static_cast<bool>((CDCM_Regs[12].val >> 9) & 1);
     Outputs.Y5.prescaler = ((CDCM_Regs[12].val >> 10) & 7) + 2;
     Outputs.Y5.integer_part = ((CDCM_Regs[13].val >> 4) & 0xFF) + 1;
     Outputs.Y5.fractional_part = 0 | ((CDCM_Regs[13].val & 0xF) << 16);
     Outputs.Y5.fractional_part |= CDCM_Regs[14].val;
     CalculateFracDiv(&Outputs.Y5);
 
-    Outputs.Y6.isFrac = (bool)((CDCM_Regs[15].val >> 9) & 1);
+    Outputs.Y6.isFrac = static_cast<bool>((CDCM_Regs[15].val >> 9) & 1);
     Outputs.Y6.prescaler = ((CDCM_Regs[15].val >> 10) & 7) + 2;
     Outputs.Y6.integer_part = ((CDCM_Regs[16].val >> 4) & 0xFF) + 1;
     Outputs.Y6.fractional_part = 0 | ((CDCM_Regs[16].val & 0xF) << 16);
     Outputs.Y6.fractional_part |= CDCM_Regs[17].val;
     CalculateFracDiv(&Outputs.Y6);
 
-    Outputs.Y7.isFrac = (bool)((CDCM_Regs[18].val >> 9) & 1);
+    Outputs.Y7.isFrac = static_cast<bool>((CDCM_Regs[18].val >> 9) & 1);
     Outputs.Y7.prescaler = ((CDCM_Regs[18].val >> 10) & 7) + 2;
     Outputs.Y7.integer_part = ((CDCM_Regs[19].val >> 4) & 0xFF) + 1;
     Outputs.Y7.fractional_part = 0 | ((CDCM_Regs[19].val & 0xF) << 16);
@@ -657,7 +663,7 @@ int CDCM_Dev::DownloadConfiguration()
     return 0;
 }
 
-/** 
+/**
     @brief Finds fractional dividers integer and fractional parts values.
     @param target The requested fractional divider target.
     @param[out] Output Output to which fractional divider the value is found.
@@ -673,7 +679,7 @@ double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
     // 1 0000 0000 1111 1111 1111 1111 1111
     // \  int    / \ fractional           /
 
-    double max_fractional_val = (((1 << 28) + ((1 << 20) - 1)) / (double)(1 << 20)) * 3;
+    double max_fractional_val = (((1 << 28) + ((1 << 20) - 1)) / static_cast<double>(1 << 20)) * 3;
 
     double result = target;
     // Check bounds
@@ -693,13 +699,13 @@ double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
     div3_result = result / 3;
 
     // Cast float into 8.20 fixed point integer
-    div2_fixed = (int)(div2_result * ((1 << 20) & ((1 << 28) - 1)));
+    div2_fixed = static_cast<int>(div2_result * ((1 << 20) & ((1 << 28) - 1)));
     // Recast back
-    div2_result = (float)div2_fixed / (1 << 20);
+    div2_result = static_cast<float>(div2_fixed) / (1 << 20);
     // Cast float into 8.20 fixed point integer
-    div3_fixed = (int)(div3_result * ((1 << 20) & ((1 << 28) - 1)));
+    div3_fixed = static_cast<int>(div3_result * ((1 << 20) & ((1 << 28) - 1)));
     // Recast back
-    div3_result = (float)div3_fixed / (1 << 20);
+    div3_result = static_cast<float>(div3_fixed) / (1 << 20);
     // Find best match
     double div2_difference = abs(result - (div2_result * 2.0));
     double div3_difference = abs(result - (div3_result * 3.0));
@@ -721,7 +727,7 @@ double CDCM_Dev::SolveFracDiv(double target, CDCM_Output* Output)
     return result;
 }
 
-/** 
+/**
     @brief Finds 8-bit and 10-bit multiplier values.
     @param Target The requested fractional divider target.
     @param[out] Mult8bit 8-bit multiplier value.
@@ -740,7 +746,7 @@ int CDCM_Dev::SolveN(int Target, int* Mult8bit, int* Mult10bit)
             // Check if res is integer
             if (IsInteger(res))
             {
-                *Mult8bit = (int)res;
+                *Mult8bit = static_cast<int>(res);
                 *Mult10bit = i10;
                 return 0;
             }
@@ -749,7 +755,7 @@ int CDCM_Dev::SolveN(int Target, int* Mult8bit, int* Mult10bit)
     return -1;
 }
 
-/** 
+/**
     @brief Calculates full divider value based on integer and fractional parts.
     @param[in] Output CDCM Output.
 */
@@ -768,7 +774,7 @@ void CDCM_Dev::CalculateFracDiv(CDCM_Output* Output)
     }
 }
 
-/** 
+/**
     @brief Calculates CDCM output frequencies based on current VCO configuration.
 */
 void CDCM_Dev::UpdateOutputFrequencies()
@@ -788,7 +794,7 @@ void CDCM_Dev::UpdateOutputFrequencies()
     Outputs.Y7.output_freq = (VCO.output_freq / VCO.prescaler_B) / Outputs.Y7.divider_val;
 }
 
-/** 
+/**
     @brief Prepare to read the FPGA registers.
     @return 0 on success; -1 on failure.
 */
@@ -813,7 +819,7 @@ int CDCM_Dev::PrepareToReadRegs()
     return 0;
 }
 
-/** 
+/**
     @brief Calculates numerator and denumenator values from decimal.
     @param decimal Decimal value.
     @param[out] num Numerator value.
@@ -834,7 +840,7 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
         l_den *= 10;
         decimal *= 10;
     }
-    l_num = (uint64_t)decimal;
+    l_num = static_cast<uint64_t>(decimal);
 
     uint64_t gcd = FindGCD(l_num, l_den);
     l_num /= gcd;
@@ -869,13 +875,13 @@ double CDCM_Dev::DecToFrac(double decimal, int* num, int* den)
         l_num = l_num >> 1;
     }
     // Return values
-    *num = (int)l_num;
-    *den = (int)l_den;
-    double result_freq = *num / (double)*den;
+    *num = static_cast<int>(l_num);
+    *den = static_cast<int>(l_den);
+    double result_freq = *num / static_cast<double>(*den);
     return (fabs(1 - (l_target / result_freq)));
 }
 
-/** 
+/**
     @brief Find all available VCO configurations based on @p lcm value.
     @param lcm The least common multiple value.
     @param version VCO version.
@@ -912,7 +918,7 @@ std::vector<CDCM_VCO> CDCM_Dev::FindValidVCOFreqs(double lcm, int version)
     return Config_vector;
 }
 
-/** 
+/**
     @brief Euclidean method to find greatest common divisor between two integers.
     @param a First integer.
     @param b Second integer.
@@ -925,7 +931,7 @@ uint64_t CDCM_Dev::FindGCD(uint64_t a, uint64_t b)
     return FindGCD(b, a % b);
 }
 
-/** 
+/**
     @brief Finds the index of VCO input vector which has lowest Prescaler A value.
     @param input Vector of VCO configurations.
     @return Index of lowest input.
@@ -947,7 +953,7 @@ int CDCM_Dev::FindLowestPSAOutput(std::vector<CDCM_VCO> input)
     return index;
 }
 
-/** 
+/**
     @brief Finds the index of VCO input vector which has lowest frequency error.
     @param input Vector of VCO configurations.
     @return Index of lowest input.
@@ -967,7 +973,7 @@ int CDCM_Dev::GetLowestFreqErr(std::vector<CDCM_VCO> input)
     return index;
 }
 
-/** 
+/**
     @brief Finds best VCO configuration index.
     @param input Vector of VCO configurations.
     @param num_errors How many errors there are in all configurations.
@@ -997,7 +1003,7 @@ int CDCM_Dev::FindBestVCOConfigIndex(std::vector<CDCM_VCO>& input, int num_error
     }
 }
 
-/** 
+/**
     @brief Finds VCO configuration based on requested output frequencies.
     @return VCO configuration.
 */
@@ -1019,7 +1025,7 @@ CDCM_VCO CDCM_Dev::FindVCOConfig()
     bool do_vco_calc = true;
 
     if (Outputs.Y0Y1.used && Outputs.Y2Y3.used)
-        int_lcm = (l_Y0Y1 * l_Y2Y3) / FindGCD((uint64_t)l_Y0Y1, (uint64_t)l_Y2Y3);
+        int_lcm = (l_Y0Y1 * l_Y2Y3) / FindGCD(static_cast<uint64_t>(l_Y0Y1), static_cast<uint64_t>(l_Y2Y3));
     else if (Outputs.Y0Y1.used)
         int_lcm = l_Y0Y1;
     else if (Outputs.Y2Y3.used)

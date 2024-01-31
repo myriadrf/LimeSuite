@@ -678,7 +678,7 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
 
     if (mimo) //uncompressed samples
     {
-        complex16_t* ptr = (complex16_t*)buffer;
+        const complex16_t* ptr = reinterpret_cast<const complex16_t*>(buffer);
         const int collected = bufLen / sizeof(complex16_t) / 2;
         for (int i = 0; i < collected; i++)
         {
@@ -728,7 +728,7 @@ int FPGA::FPGAPacketPayload2SamplesFloat(const uint8_t* buffer, int bufLen, bool
         return collected;
     }
 
-    complex16_t* src = (complex16_t*)buffer;
+    const complex16_t* src = reinterpret_cast<const complex16_t*>(buffer);
     if (mimo) //uncompressed samples
     {
         const int collected = bufLen / sizeof(complex16_t) / 2;
@@ -782,7 +782,7 @@ int FPGA::Samples2FPGAPacketPayloadFloat(
         return b;
     }
 
-    complex16_t* dest = (complex16_t*)buffer;
+    complex16_t* dest = reinterpret_cast<complex16_t*>(buffer);
     if (mimo)
     {
         for (int src = 0; src < samplesCount; ++src)
@@ -831,7 +831,7 @@ int FPGA::Samples2FPGAPacketPayload(
 
     if (mimo)
     {
-        complex16_t* ptr = (complex16_t*)buffer;
+        complex16_t* ptr = reinterpret_cast<complex16_t*>(buffer);
         for (int src = 0; src < samplesCount; ++src)
         {
             *ptr++ = samples[0][src];
@@ -1250,7 +1250,7 @@ FPGA::GatewareInfo FPGA::GetGatewareInfo()
         return info;
 
     info.boardID = data[0];
-    info.version = (int16_t)data[1];
+    info.version = static_cast<int>(data[1]);
     info.revision = data[2];
     info.hardwareVersion = data[3] & 0x7F;
     return info;

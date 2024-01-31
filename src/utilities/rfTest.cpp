@@ -96,7 +96,7 @@ bool OnStreamStatusChange(bool isTx, const SDRDevice::StreamStats* s, void* user
     // s->isTx, don't care now if it's comming from Rx or Tx
     bool streamIssues = s->late | s->loss | s->overrun;
     if (userData)
-        *(bool*)userData = streamIssues; // report that there were issues with stream
+        *static_cast<bool*>(userData) = streamIssues; // report that there were issues with stream
     return false;
 }
 
@@ -148,11 +148,11 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
     const int samplesInPkt = 256; //(stream.linkFormat == SDRDevice::StreamConfig::I12 ? 1360 : 1020)/channelCount;
 
     const float rxBufferTime = 0.002; // max buffer size in time (seconds)
-    const uint32_t samplesToBuffer = (int)(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;
+    const uint32_t samplesToBuffer = static_cast<int>(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;
     assert(samplesToBuffer > 0);
 
     const float txTimeOffset = 0.005; // tx packets delay in time (seconds), will be rounded to even packets count
-    const int64_t txDeltaTS = (int)(txTimeOffset * sampleRate / samplesInPkt) * samplesInPkt;
+    const int64_t txDeltaTS = static_cast<int>(txTimeOffset * sampleRate / samplesInPkt) * samplesInPkt;
     printf("TxDeltaTS +%li, (+%.3fms) %li packets\n", txDeltaTS, 1000.0 * txDeltaTS / sampleRate, txDeltaTS / samplesInPkt);
 
     // const int alignment = 4096;
@@ -335,15 +335,15 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / stream.rxCount;
 
     const float rxBufferTime = 0.005; // max buffer size in time (seconds)
-    const uint32_t samplesToBuffer = (int)(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;
+    const uint32_t samplesToBuffer = static_cast<int>(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;
     assert(samplesToBuffer > 0);
 
     const float txTimeOffset = 0.001 * tsDelay_ms; // tx packets delay in time (seconds)
-    const int64_t txDeltaTS = (int)(txTimeOffset * sampleRate);
+    const int64_t txDeltaTS = static_cast<int>(txTimeOffset * sampleRate);
     printf("\nusing TxOffsetTS +%li (%+.3fms) (%+.3f packets)\n",
         txDeltaTS,
         1000.0 * txDeltaTS / sampleRate,
-        (float)txDeltaTS / samplesInPkt);
+        static_cast<float>(txDeltaTS) / samplesInPkt);
 
     std::vector<std::vector<complex32f_t>> rxSamples(2); // allocate two channels for simplicity
     for (uint i = 0; i < rxSamples.size(); ++i)

@@ -526,11 +526,13 @@ void lms7002_pnlR3_view::MCU_RunProcedure(uint8_t id)
     const uint16_t x0002reg = temp & 0xFF;
     const uint16_t interupt6 = 0x0008;
     const uint16_t addrs[5] = { 0x0006, 0x0, 0x0002, 0x0002, 0x0002 };
-    const uint16_t values[5] = { (uint16_t)(id != 0),
-        (uint16_t)(id),
-        (uint16_t)(x0002reg & ~interupt6),
-        (uint16_t)(x0002reg | interupt6),
-        (uint16_t)(x0002reg & ~interupt6) };
+    const uint16_t values[5] = {
+        static_cast<uint16_t>(id != 0),
+        static_cast<uint16_t>(id),
+        static_cast<uint16_t>(x0002reg & ~interupt6),
+        static_cast<uint16_t>(x0002reg | interupt6),
+        static_cast<uint16_t>(x0002reg & ~interupt6),
+    };
     for (int i = 0; i < 5; ++i)
         lmsControl->SPI_write(addrs[i], values[i]);
 }
