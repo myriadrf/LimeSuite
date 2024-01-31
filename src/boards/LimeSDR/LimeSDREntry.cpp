@@ -42,7 +42,6 @@ LimeSDREntry::LimeSDREntry()
 std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
 {
     std::vector<DeviceHandle> handles;
-
     if (!hint.media.empty() && hint.media.find("USB") == std::string::npos)
     {
         return handles;
@@ -71,7 +70,6 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
             device.Close();
         }
     }
-
     return handles;
 }
 #endif

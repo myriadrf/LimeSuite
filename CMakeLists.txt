@@ -90,7 +90,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     #disable gcc caller-saves flag for O2-O3 optimizations
     #workaround fix for gcc 9.3+
     if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 9.3 OR 
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 9.3 OR
             CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 9.9)
             add_compile_options(-fno-caller-saves)
         endif()
@@ -109,7 +109,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     endif()
 
     SET(ENABLE_SIMD_FLAGS "${DEFAULT_SIMD_FLAGS}" CACHE STRING "Set compiler SIMD flags")
-    SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none native SSE3 SSE4.2 AVX AVX2) 
+    SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none native SSE3 SSE4.2 AVX AVX2)
 
     if(${ENABLE_SIMD_FLAGS} MATCHES "native")
         add_definitions(-march=native)
@@ -140,7 +140,7 @@ if (MSVC)
     set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
 
     SET(ENABLE_SIMD_FLAGS "SSE2" CACHE STRING "Set compiler SIMD flags")
-    SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none SSE2 AVX AVX2) 
+    SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none SSE2 AVX AVX2)
 
     if(${ENABLE_SIMD_FLAGS} MATCHES "AVX2")
         add_definitions(/arch:AVX2)
@@ -178,6 +178,9 @@ if(ENABLE_TESTING)
       GIT_REPOSITORY https://github.com/google/googletest.git
       GIT_TAG        dddb219c3eb96d7f9200f09b0a381f016e6b4562 # latest main at the time of writing this
     )
+
+    set(INSTALL_GMOCK OFF) # Don't install the GMock headers
+    set(INSTALL_GTEST OFF) # Don't install the GTest headers
 
     FetchContent_MakeAvailable(googletest)
 
@@ -219,7 +222,7 @@ add_subdirectory(src)
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver
 ########################################################################
-#add_subdirectory(SoapyLMS7)
+add_subdirectory(SoapyLMS7)
 
 ########################################################################
 ## udev rules for linux usb
@@ -241,7 +244,7 @@ add_feature_info(LimeSuiteDocAPI ENABLE_API_DOXYGEN "LMS API Doxygen documentati
 if (ENABLE_API_DOXYGEN)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/DoxyfileAPI.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
   add_custom_target(docAPI ALL
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile 
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Generating LMS API documentation with Doxygen" VERBATIM
     )
@@ -250,7 +253,7 @@ endif()
 if(DOXYGEN_FOUND)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
   add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile 
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Generating documentation with Doxygen" VERBATIM
     )

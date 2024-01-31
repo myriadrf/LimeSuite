@@ -20,18 +20,35 @@ TRXLooper_USB::TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002
 
 TRXLooper_USB::~TRXLooper_USB()
 {
+    Stop();
+    mRx.terminate.store(true, std::memory_order_relaxed);
+    mTx.terminate.store(true, std::memory_order_relaxed);
+
+    // Thread joining code has to be as high as possible,
+    // so that every variable and virtual function is still properly accessible when the thread is still executing.
+    // Otherwise, it can cause crashes when the destructor is being called before the thread is fully stopped and
+    // it is still trying to access variables, or, even worse, virtual functions of the class.
+    if (mTx.thread.joinable())
+    {
+        mTx.thread.join();
+    }
+
+    if (mRx.thread.joinable())
+    {
+        mRx.thread.join();
+    }
 }
 
 void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
 {
     mConfig = config;
 
-    if (config.rxCount > 0)
+    if (config.channels.at(TRXDir::Rx).size() > 0)
     {
         RxSetup();
     }
 
-    if (config.txCount > 0)
+    if (config.channels.at(TRXDir::Tx).size() > 0)
     {
         TxSetup();
     }
@@ -43,7 +60,7 @@ int TRXLooper_USB::TxSetup()
 {
     const std::string name = "MemPool_Tx" + std::to_string(chipId);
 
-    const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+    const int channelCount = std::max(mConfig.channels.at(TRXDir::Tx).size(), mConfig.channels.at(TRXDir::Rx).size());
     const int upperAllocationLimit =
         sizeof(complex32f_t) * mTx.packetsToBatch * mTx.samplesInPkt * channelCount + SamplesPacketType::headerSize;
 
@@ -84,7 +101,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
     DataConversion conversion;
     conversion.destFormat = mConfig.linkFormat;
     conversion.srcFormat = mConfig.format;
-    conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+    conversion.channelCount = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size());
 
     const uint8_t batchCount = 8; // how many async reads to schedule
     const uint8_t packetsToBatch = mTx.packetsToBatch;
@@ -108,7 +125,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
     const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
     uint samplesInPkt = (packed ? 1360 : 1020) / conversion.channelCount;
 
-    const bool mimo = std::max(mConfig.txCount, mConfig.rxCount) > 1;
+    const bool mimo = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size()) > 1;
     const int bytesForFrame = (packed ? 3 : 4) * (mimo ? 2 : 1);
     uint maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
 
@@ -240,7 +257,7 @@ int TRXLooper_USB::RxSetup()
 {
     const std::string name = "MemPool_Rx" + std::to_string(chipId);
 
-    const int channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+    const int channelCount = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size());
     const int samplesInPkt = (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / channelCount;
     const uint8_t packetsToBatch = mRx.packetsToBatch;
 
@@ -259,12 +276,13 @@ int TRXLooper_USB::RxSetup()
 */
 void TRXLooper_USB::ReceivePacketsLoop()
 {
+    const uint8_t safeRxEndPt = rxEndPt; // To make sure no undefined behaviour happens when killing the thread
     //at this point FPGA has to be already configured to output samples
 
     DataConversion conversion;
     conversion.srcFormat = mConfig.linkFormat;
     conversion.destFormat = mConfig.format;
-    conversion.channelCount = std::max(mConfig.txCount, mConfig.rxCount);
+    conversion.channelCount = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size());
 
     const uint8_t batchCount = 8; // how many async reads to schedule
     const uint8_t packetsToBatch = mRx.packetsToBatch;
@@ -282,7 +300,6 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     SamplesPacketType* outputPkt = nullptr;
     int64_t expectedTS = 0;
-    const uint8_t safeRxEndPt = rxEndPt; // To make sure no undefined behaviour happens when killing the thread
 
     SDRDevice::StreamStats& stats = mRx.stats;
 
@@ -412,12 +429,12 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
 void TRXLooper_USB::NegateQ(SamplesPacketType* packet, TRXDir direction)
 {
-    if (mConfig.extraConfig == nullptr || !mConfig.extraConfig->negateQ)
+    if (!mConfig.extraConfig.negateQ)
     {
         return;
     }
 
-    const int channelCount = direction == TRXDir::Rx ? mConfig.rxCount : mConfig.txCount;
+    const int channelCount = mConfig.channels.at(direction).size();
 
     switch (mConfig.format)
     {

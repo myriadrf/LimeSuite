@@ -10,20 +10,19 @@
 #include "limesuite/commonTypes.h"
 #include "limesuite/config.h"
 #include "limesuite/LMS7002M_parameters.h"
+
+#include <cstdarg>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <sstream>
-#include <stdarg.h>
-#include <functional>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace lime {
 class ISPI;
 class LMS7002M_RegistersMap;
 class MCU_BD;
-class BinSearchParam;
-class GridSearchParam;
 
 struct RSSI_measurements {
     void clear()
@@ -151,15 +150,13 @@ class LIME_API LMS7002M
     int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
     int RegistersTest(const std::string& fileName = "registersTest.txt");
-    static const LMS7Parameter* GetParam(const std::string& name);
+    static const LMS7Parameter& GetParam(const std::string& name);
 
     int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
     int CalibrateTx(float_type bandwidth, const bool useExtLoopback = false);
 
     int TuneTxFilter(const float_type bandwidth);
     int TuneRxFilter(const float_type rx_lpf_freq_RF);
-    int TuneTxFilterWithCaching(const float_type bandwidth);
-    int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
 
     int CalibrateInternalADC(int clkDiv = 32);
     int CalibrateRP_BIAS();
@@ -234,12 +231,12 @@ class LIME_API LMS7002M
     float_type GetTRFLoopbackPAD_dB(const Channel channel);
 
     enum class PathRFE : uint8_t {
-        PATH_RFE_NONE,
-        PATH_RFE_LNAH,
-        PATH_RFE_LNAL,
-        PATH_RFE_LNAW,
-        PATH_RFE_LB1,
-        PATH_RFE_LB2,
+        NONE,
+        LNAH,
+        LNAL,
+        LNAW,
+        LB1,
+        LB2,
     };
 
     //! Set the RFE input path.
@@ -259,6 +256,8 @@ class LIME_API LMS7002M
      * @return the band 1 or 2
      */
     int GetBandTRF(void);
+
+    int SetPath(TRXDir direction, uint8_t channel, uint8_t path);
 
     int SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
     float_type GetReferenceClk_SX(TRXDir dir);
@@ -297,6 +296,7 @@ class LIME_API LMS7002M
     int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
     float_type GetSampleRate(TRXDir dir, Channel ch);
+    float_type GetSampleRate(TRXDir dir);
 
     enum class LMLSampleSource : uint8_t {
         AI,
@@ -420,7 +420,6 @@ class LIME_API LMS7002M
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
 
-    double GetSampleRate(TRXDir dir, double* rf_rate_Hz = nullptr);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 
@@ -436,49 +435,19 @@ class LIME_API LMS7002M
     bool useCache;
     LMS7002M_RegistersMap* mRegistersMap;
 
-    static const uint16_t readOnlyRegisters[];
-    static const uint16_t readOnlyRegistersMasks[];
+    struct ReadOnlyRegister {
+        uint16_t address;
+        uint16_t mask;
+    };
 
-    uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
-    void BackupAllRegisters();
-    void RestoreAllRegisters();
+    static const std::vector<ReadOnlyRegister> readOnlyRegisters;
+
+    std::array<std::array<uint16_t, 2>, MEMORY_SECTIONS_COUNT> MemorySectionAddresses;
 
     uint32_t GetRSSI(RSSI_measurements* measurements = nullptr);
-    uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
-    void CalibrateRxDC();
-    void AdjustAutoDC(const uint16_t address, TRXDir dir);
-    void CalibrateRxDCAuto();
-    void CalibrateTxDCAuto();
-    void CalibrateTxDC(int16_t* dccorri, int16_t* dccorrq);
-    void CalibrateIQImbalance(const TRXDir dir, uint16_t* gainI = nullptr, uint16_t* gainQ = nullptr, int16_t* phase = nullptr);
-
-    int CalibrateTxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
-    int CalibrateRxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
-    int CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback);
-    int CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback);
 
     int CalibrateTxGainSetup();
-
-    void BinarySearch(BinSearchParam* args);
-    void TxDcBinarySearch(BinSearchParam* args);
-    void GridSearch(GridSearchParam* args);
-    void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t& value, const uint8_t maxIterations);
-    void FineSearch(const uint16_t addrI,
-        const uint8_t msbI,
-        const uint8_t lsbI,
-        int16_t& valueI,
-        const uint16_t addrQ,
-        const uint8_t msbQ,
-        const uint8_t lsbQ,
-        int16_t& valueQ,
-        const uint8_t fieldSize);
-    int RxFilterSearch(const LMS7Parameter& param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-    int TxFilterSearch(const LMS7Parameter& param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-    int TxFilterSearch_S5(const LMS7Parameter& param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-
-    int TuneRxFilterSetup(const float_type rx_lpf_IF);
-    int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream& ss);
 
@@ -498,8 +467,7 @@ class LIME_API LMS7002M
     void Log(LogType type, const char* format, va_list argList);
 
     std::shared_ptr<ISPI> controlPort;
-    size_t mSelfCalDepth;
-    int opt_gain_tbb[2];
+    std::array<int, 2> opt_gain_tbb;
     double _cachedRefClockRate;
     int LoadConfigLegacyFile(const std::string& filename);
 };

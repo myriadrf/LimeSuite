@@ -178,6 +178,16 @@ void USBGeneric::Disconnect()
         }
     }
 #endif
+    std::unique_lock<std::mutex> lock{ contextsLock };
+
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        if (contexts[i].used)
+        {
+            AbortEndpointXfers(contexts[i].transfer->endpoint);
+        }
+    }
+
     delete[] contexts;
     contexts = nullptr;
 }
@@ -325,6 +335,11 @@ int USBGeneric::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHand
 
 void USBGeneric::AbortEndpointXfers(uint8_t endPointAddr)
 {
+    if (contexts == nullptr)
+    {
+        return;
+    }
+
 #ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
@@ -340,6 +355,11 @@ void USBGeneric::AbortEndpointXfers(uint8_t endPointAddr)
 int USBGeneric::GetUSBContextIndex()
 {
     std::unique_lock<std::mutex> lock{ contextsLock };
+
+    if (contexts == nullptr)
+    {
+        return -1;
+    }
 
     int i = 0;
     bool contextFound = false;

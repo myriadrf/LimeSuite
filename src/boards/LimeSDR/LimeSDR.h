@@ -29,6 +29,8 @@ class LimeSDR : public LMS7002M_SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
+    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
+
     virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
@@ -53,7 +55,6 @@ class LimeSDR : public LMS7002M_SDRDevice
     int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
     SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
-    void SetSampleRate(double f_Hz, uint8_t oversample);
     static int UpdateFPGAInterface(void* userData);
 
   private:

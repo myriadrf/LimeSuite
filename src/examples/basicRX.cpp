@@ -69,14 +69,14 @@ int main(int argc, char** argv)
     config.channel[0].rx.lpf = 0;
     config.channel[0].rx.path = 2; // TODO: replace with string names
     config.channel[0].rx.calibrate = false;
-    config.channel[0].rx.testSignal = false;
+    config.channel[0].rx.testSignal.enabled = false;
 
     config.channel[0].tx.enabled = false;
     config.channel[0].tx.sampleRate = sampleRate;
     config.channel[0].tx.oversample = 2;
     config.channel[0].tx.path = 2; // TODO: replace with string names
     config.channel[0].tx.centerFrequency = frequencyLO - 1e6;
-    config.channel[0].tx.testSignal = false; // Tx will output sampleRate/4 signal
+    config.channel[0].tx.testSignal.enabled = false;
 
     std::cout << "Configuring device ...\n";
     try
@@ -88,9 +88,7 @@ int main(int argc, char** argv)
 
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = 1; // rx channels count
-        stream.rxChannels[0] = 0;
-        stream.txCount = 0;
+        stream.channels[TRXDir::Rx] = { 0 };
         stream.format = SDRDevice::StreamConfig::DataFormat::F32;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
 

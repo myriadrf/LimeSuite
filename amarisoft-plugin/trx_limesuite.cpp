@@ -233,7 +233,6 @@ struct LimeState {
     double rx_LO_override[TRX_MAX_RF_PORT];
     double tx_LO_override[TRX_MAX_RF_PORT];
     std::vector<uint32_t> writeRegisters[TRX_MAX_RF_PORT];
-    SDRDevice::StreamConfig::Extras* streamExtras[TRX_MAX_RF_PORT];
 
     LimeState()
     {
@@ -255,7 +254,6 @@ struct LimeState {
         memnull(gpga);
         memnull(rxOversample);
         memnull(txOversample);
-        memnull(streamExtras);
         memnull(rx_LO_override);
         memnull(tx_LO_override);
 #undef memnull
@@ -501,9 +499,9 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 {
     LimeState* lime = (LimeState*)s1->opaque;
     int txExpectedSamples = lime->samplesInPacket[0];
-    if (lime->streamExtras[0] && lime->streamExtras[0]->txSamplesInPacket > 0)
+    if (lime->streamCfg[0].extraConfig.txSamplesInPacket > 0)
     {
-        txExpectedSamples = lime->streamExtras[0]->txSamplesInPacket;
+        txExpectedSamples = lime->streamCfg[0].extraConfig.txSamplesInPacket;
     }
     Log(LogLevel::DEBUG, "Hardware expected samples count in Tx packet : %i\n", txExpectedSamples);
     return txExpectedSamples;
@@ -637,7 +635,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
 
             for (int ch = 0; ch < lime->rx_channel_count[p]; ++ch)
             {
-                auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].rxPathNames;
+                auto paths = portDevice->GetDescriptor().rfSOC.at(lime->chipIndex[p]).pathNames.at(lime::TRXDir::Rx);
                 double freq = hostState->rx_freq[rxChannelOffset + ch];
                 char loFreqStr[1024];
                 if (lime->rx_LO_override[p] > 0)
@@ -684,7 +682,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
 
             for (int ch = 0; ch < lime->tx_channel_count[p]; ++ch)
             {
-                auto paths = portDevice->GetDescriptor().rfSOC[lime->chipIndex[p]].txPathNames;
+                auto paths = portDevice->GetDescriptor().rfSOC.at(lime->chipIndex[p]).pathNames.at(lime::TRXDir::Tx);
                 double freq = hostState->tx_freq[txChannelOffset + ch];
                 char loFreqStr[1024];
                 if (lime->tx_LO_override[p] > 0)
@@ -776,22 +774,26 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
             }
 
             SDRDevice::StreamConfig& stream = lime->streamCfg[p];
-            stream.rxCount = lime->rx_channel_count[p];
-            stream.txCount = lime->tx_channel_count[p];
+
             stream.linkFormat = lime->linkFormat[p];
             stream.format = lime->samplesFormat;
 
             // Initialize streams and map channels
-            for (int ch = 0; ch < stream.rxCount; ++ch)
-                stream.rxChannels[ch] = ch;
-            for (int ch = 0; ch < stream.txCount; ++ch)
-                stream.txChannels[ch] = ch;
+            for (int ch = 0; ch < lime->rx_channel_count[p]; ++ch)
+            {
+                stream.channels.at(lime::TRXDir::Rx).push_back(ch);
+            }
+
+            for (int ch = 0; ch < lime->tx_channel_count[p]; ++ch)
+            {
+                stream.channels.at(lime::TRXDir::Tx).push_back(ch);
+            }
 
             stream.statusCallback = OnStreamStatusChange;
             stream.userData = (void*)&portStreamStates[p];
             stream.hintSampleRate = samplingRate;
 
-            stream.extraConfig = lime->streamExtras[p] ? lime->streamExtras[p] : nullptr;
+            stream.extraConfig = lime->streamCfg[p].extraConfig;
 
             lime->samplesInPacket[p] = 256;
             Log(LogLevel::DEBUG,
@@ -973,7 +975,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             if (rxPathString)
             {
                 bool match = false;
-                auto paths = desc.rfSOC[s->chipIndex[p]].rxPathNames;
+                auto paths = desc.rfSOC[s->chipIndex[p]].pathNames[lime::TRXDir::Rx];
                 for (uint j = 0; j < paths.size(); ++j)
                 {
                     if (strcasecmp(paths[j].c_str(), rxPathString) == 0)
@@ -1000,7 +1002,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             if (txPathString)
             {
                 bool match = false;
-                auto paths = desc.rfSOC[s->chipIndex[p]].txPathNames;
+                auto paths = desc.rfSOC[s->chipIndex[p]].pathNames[lime::TRXDir::Tx];
                 for (uint j = 0; j < paths.size(); ++j)
                 {
                     if (strcasecmp(paths[j].c_str(), txPathString) == 0)
@@ -1182,50 +1184,44 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                 free(writeRegisters);
             }
 
-            SDRDevice::StreamConfig::Extras* extra = new SDRDevice::StreamConfig::Extras();
+            SDRDevice::StreamConfig::Extras extra;
 
             sprintf(varname, "port%i_syncPPS", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->waitPPS = val != 0;
-                s->streamExtras[p] = extra;
+                extra.waitPPS = val != 0;
             }
             sprintf(varname, "port%i_usePoll", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->usePoll = val != 0;
-                s->streamExtras[p] = extra;
+                extra.usePoll = val != 0;
             }
             sprintf(varname, "port%i_rxSamplesInPacket", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->rxSamplesInPacket = val;
-                s->streamExtras[p] = extra;
+                extra.rxSamplesInPacket = val;
             }
             sprintf(varname, "port%i_rxPacketsInBatch", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->rxPacketsInBatch = val;
-                s->streamExtras[p] = extra;
+                extra.rxPacketsInBatch = val;
             }
             sprintf(varname, "port%i_txMaxPacketsInBatch", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->txMaxPacketsInBatch = val;
-                s->streamExtras[p] = extra;
+                extra.txMaxPacketsInBatch = val;
             }
             sprintf(varname, "port%i_txSamplesInPacket", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->txSamplesInPacket = val;
-                s->streamExtras[p] = extra;
+                extra.txSamplesInPacket = val;
             }
             sprintf(varname, "port%i_double_freq_conversion_to_lower_side", p);
             if (trx_get_param_double(hostState, &val, varname) == 0)
             {
-                extra->negateQ = val;
-                s->streamExtras[p] = extra;
+                extra.negateQ = val;
             }
+            s->streamCfg->extraConfig = extra;
         }
 
         // TODO: right now no need to specify samples format, as only floating point is supported by Amarisoft

@@ -5,7 +5,7 @@ namespace lime {
 enum class TRXDir : bool { Rx, Tx };
 
 struct Range {
-    constexpr Range(double min = 0, double max = 0, double step = 0)
+    constexpr Range(double min = 0.0, double max = 0.0, double step = 0.0)
         : min(min)
         , max(max)
         , step(step){};
