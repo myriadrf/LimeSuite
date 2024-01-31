@@ -29,7 +29,7 @@ MCU_BD::MCU_BD()
     stepsTotal = 0;
     stepsDone = 0;
     aborted = false;
-    callback = nullptr;
+    m_callback = nullptr;
     //ctor
     int i = 0;
     m_serPort = NULL;
@@ -59,6 +59,33 @@ void MCU_BD::Initialize(std::shared_ptr<ISPI> pSerPort, unsigned size)
     m_serPort = pSerPort;
     if (size > 0)
         byte_array_size = size;
+}
+
+void MCU_BD::SetCallback(ProgrammingCallback callback)
+{
+    m_callback = callback;
+}
+
+void MCU_BD::IncrementStepsDone(unsigned short amount, const char* message)
+{
+    assert(message);
+    stepsDone += amount;
+
+    if (m_callback != nullptr)
+    {
+        m_callback(stepsDone.load(), stepsTotal.load(), message);
+    }
+}
+
+void MCU_BD::SetStepsDone(unsigned short amount, const char* message)
+{
+    assert(message);
+    stepsDone.store(amount);
+
+    if (m_callback != nullptr)
+    {
+        m_callback(stepsDone.load(), stepsTotal.load(), message);
+    }
 }
 
 /** @brief Read program code from file into memory
@@ -277,7 +304,7 @@ int MCU_BD::Read_IRAM()
         m_IRAM[i] = 0x00;
 
     stepsTotal.store(256);
-    stepsDone.store(0);
+    SetStepsDone(0);
     aborted.store(false);
     for (i = 0; i <= 255; i++)
     {
@@ -290,7 +317,7 @@ int MCU_BD::Read_IRAM()
             i = 256; // error, stop
             aborted.store(true);
         }
-        ++stepsDone;
+        IncrementStepsDone(0);
 #ifndef NDEBUG
         printf("MCU reading IRAM: %2i/256\r", stepsDone.load());
 #endif
@@ -313,7 +340,7 @@ int MCU_BD::Erase_IRAM()
         m_IRAM[i] = 0x00;
 
     stepsTotal.store(256);
-    stepsDone.store(0);
+    SetStepsDone(0);
     aborted.store(false);
     for (i = 0; i <= 255; i++)
     {
@@ -325,7 +352,7 @@ int MCU_BD::Erase_IRAM()
             i = 256;
             aborted.store(true);
         }
-        ++stepsDone;
+        IncrementStepsDone();
 #ifndef NDEBUG
         printf("MCU erasing IRAM: %2i/256\r", stepsDone.load());
 #endif
@@ -342,270 +369,88 @@ int MCU_BD::Read_SFR()
     unsigned char tempc1, tempc2, tempc3 = 0x00;
     int retval = 0;
 
-    stepsTotal.store(48);
+    const std::vector<unsigned char> addressesToRead{
+        0x80, // P0
+        0x81, // SP
+        0x82, // DPL0
+        0x83, // DPH0
+        0x84, // DPL1
+        0x85, // DPH1
+        0x86, // DPS
+        0x87, // PCON
+        0x88, // TCON
+        0x89, // TMOD
+        0x8A, // TL0
+        0x8B, // TL1
+        0x8C, // TH0
+        0x8D, // TH1
+        0x8E, // PMSR
+        0x90, // P1
+        0x91, // DIR1
+        0x98, // SCON
+        0x99, // SBUF
+        0xA0, // P2
+        0xA1, // DIR2
+        0xA2, // DIR0
+        0xA8, // IEN0
+        0xA9, // IEN1
+        0xB0, // EECTRL
+        0xB1, // EEDATA
+        0xB8, // IP0
+        0xB9, // IP1
+        0xBF, // USR2
+        0xC0, // IRCON
+        0xC8, // T2CON
+        0xCA, // RCAP2L
+        0xCB, // RCAP2H
+        0xCC, // TL2
+        0xCD, // TH2
+        0xD0, // PSW
+        0xE0, // ACC
+        0xF0, // B
+        0xEC, // REG0
+        0xED, // REG1
+        0xEE, // REG2
+        0xEF, // REG3
+        0xF4, // REG4
+        0xF5, // REG5
+        0xF6, // REG6
+        0xF7, // REG7
+        0xFC, // REG8
+        0xFD, // REG9
+    };
+
+    stepsTotal.store(addressesToRead.size());
     stepsDone.store(0);
     aborted.store(false);
 
     //default m_SFR array initialization
     for (i = 0; i <= 255; i++)
+    {
         m_SFR[i] = 0x00;
+    }
 
-    // code 0x7A is for reading the SFR registers
-    retval = Three_byte_command(0x7A, 0x80, 0x00, &tempc1, &tempc2, &tempc3); // P0
-    if (retval == -1)
-        return -1;
-    m_SFR[0x80] = tempc3;
+    int counter = 0;
+    const int callCallbackEveryNCalls = 6;
+    for (const auto& address : addressesToRead)
+    {
+        // code 0x7A is for reading the SFR registers
+        retval = Three_byte_command(0x7A, address, 0x00, &tempc1, &tempc2, &tempc3);
+        if (retval == -1)
+        {
+            return -1;
+        }
 
-    retval = Three_byte_command(0x7A, 0x81, 0x00, &tempc1, &tempc2, &tempc3); // SP
-    if (retval == -1)
-        return -1;
-    m_SFR[0x81] = tempc3;
+        m_SFR[address] = tempc3;
 
-    retval = Three_byte_command(0x7A, 0x82, 0x00, &tempc1, &tempc2, &tempc3); // DPL0
-    if (retval == -1)
-        return -1;
-    m_SFR[0x82] = tempc3;
+        counter++;
 
-    retval = Three_byte_command(0x7A, 0x83, 0x00, &tempc1, &tempc2, &tempc3); // DPH0
-    if (retval == -1)
-        return -1;
-    m_SFR[0x83] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x84, 0x00, &tempc1, &tempc2, &tempc3); // DPL1
-    if (retval == -1)
-        return -1;
-    m_SFR[0x84] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x85, 0x00, &tempc1, &tempc2, &tempc3); // DPH1
-    if (retval == -1)
-        return -1;
-    m_SFR[0x85] = tempc3;
-
-    stepsDone.store(6);
-
-    retval = Three_byte_command(0x7A, 0x86, 0x00, &tempc1, &tempc2, &tempc3); // DPS
-    if (retval == -1)
-        return -1;
-    m_SFR[0x86] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x87, 0x00, &tempc1, &tempc2, &tempc3); // PCON
-    if (retval == -1)
-        return -1;
-    m_SFR[0x87] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x88, 0x00, &tempc1, &tempc2, &tempc3); // TCON
-    if (retval == -1)
-        return -1;
-    m_SFR[0x88] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x89, 0x00, &tempc1, &tempc2, &tempc3); // TMOD
-    if (retval == -1)
-        return -1;
-    m_SFR[0x89] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x8A, 0x00, &tempc1, &tempc2, &tempc3); // TL0
-    if (retval == -1)
-        return -1;
-    m_SFR[0x8A] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x8B, 0x00, &tempc1, &tempc2, &tempc3); // TL1
-    if (retval == -1)
-        return -1;
-    m_SFR[0x8B] = tempc3;
-
-    stepsDone.store(12);
-
-    retval = Three_byte_command(0x7A, 0x8C, 0x00, &tempc1, &tempc2, &tempc3); // TH0
-    if (retval == -1)
-        return -1;
-    m_SFR[0x8C] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x8D, 0x00, &tempc1, &tempc2, &tempc3); // TH1
-    if (retval == -1)
-        return -1;
-    m_SFR[0x8D] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x8E, 0x00, &tempc1, &tempc2, &tempc3); // PMSR
-    if (retval == -1)
-        return -1;
-    m_SFR[0x8E] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x90, 0x00, &tempc1, &tempc2, &tempc3); // P1
-    if (retval == -1)
-        return -1;
-    m_SFR[0x90] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x91, 0x00, &tempc1, &tempc2, &tempc3); // DIR1
-    if (retval == -1)
-        return -1;
-    m_SFR[0x91] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0x98, 0x00, &tempc1, &tempc2, &tempc3); // SCON
-    if (retval == -1)
-        return -1;
-    m_SFR[0x98] = tempc3;
-
-    stepsDone.store(18);
-
-    retval = Three_byte_command(0x7A, 0x99, 0x00, &tempc1, &tempc2, &tempc3); // SBUF
-    if (retval == -1)
-        return -1;
-    m_SFR[0x99] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xA0, 0x00, &tempc1, &tempc2, &tempc3); // P2
-    if (retval == -1)
-        return -1;
-    m_SFR[0xA0] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xA1, 0x00, &tempc1, &tempc2, &tempc3); // DIR2
-    if (retval == -1)
-        return -1;
-    m_SFR[0xA1] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xA2, 0x00, &tempc1, &tempc2, &tempc3); // DIR0
-    if (retval == -1)
-        return -1;
-    m_SFR[0xA2] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xA8, 0x00, &tempc1, &tempc2, &tempc3); // IEN0
-    if (retval == -1)
-        return -1;
-    m_SFR[0xA8] = tempc3;
-
-    stepsDone.store(24);
-
-    retval = Three_byte_command(0x7A, 0xA9, 0x00, &tempc1, &tempc2, &tempc3); // IEN1
-    if (retval == -1)
-        return -1;
-    m_SFR[0xA9] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xB0, 0x00, &tempc1, &tempc2, &tempc3); // EECTRL
-    if (retval == -1)
-        return -1;
-    m_SFR[0xB0] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xB1, 0x00, &tempc1, &tempc2, &tempc3); // EEDATA
-    if (retval == -1)
-        return -1;
-    m_SFR[0xB1] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xB8, 0x00, &tempc1, &tempc2, &tempc3); // IP0
-    if (retval == -1)
-        return -1;
-    m_SFR[0xB8] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xB9, 0x00, &tempc1, &tempc2, &tempc3); // IP1
-    if (retval == -1)
-        return -1;
-    m_SFR[0xB9] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xBF, 0x00, &tempc1, &tempc2, &tempc3); // USR2
-    if (retval == -1)
-        return -1;
-    m_SFR[0xBF] = tempc3;
-
-    stepsDone.store(30);
-
-    retval = Three_byte_command(0x7A, 0xC0, 0x00, &tempc1, &tempc2, &tempc3); // IRCON
-    if (retval == -1)
-        return -1;
-    m_SFR[0xC0] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xC8, 0x00, &tempc1, &tempc2, &tempc3); // T2CON
-    if (retval == -1)
-        return -1;
-    m_SFR[0xC8] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xCA, 0x00, &tempc1, &tempc2, &tempc3); // RCAP2L
-    if (retval == -1)
-        return -1;
-    m_SFR[0xCA] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xCB, 0x00, &tempc1, &tempc2, &tempc3); // RCAP2H
-    if (retval == -1)
-        return -1;
-    m_SFR[0xCB] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xCC, 0x00, &tempc1, &tempc2, &tempc3); // TL2
-    if (retval == -1)
-        return -1;
-    m_SFR[0xCC] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xCD, 0x00, &tempc1, &tempc2, &tempc3); // TH2
-    if (retval == -1)
-        return -1;
-    m_SFR[0xCD] = tempc3;
-
-    stepsDone.store(36);
-
-    retval = Three_byte_command(0x7A, 0xD0, 0x00, &tempc1, &tempc2, &tempc3); // PSW
-    if (retval == -1)
-        return -1;
-    m_SFR[0xD0] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xE0, 0x00, &tempc1, &tempc2, &tempc3); // ACC
-    if (retval == -1)
-        return -1;
-    m_SFR[0xE0] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xF0, 0x00, &tempc1, &tempc2, &tempc3); // B
-    if (retval == -1)
-        return -1;
-    m_SFR[0xF0] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xEC, 0x00, &tempc1, &tempc2, &tempc3); // REG0
-    if (retval == -1)
-        return -1;
-    m_SFR[0xEC] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xED, 0x00, &tempc1, &tempc2, &tempc3); // REG1
-    if (retval == -1)
-        return -1;
-    m_SFR[0xED] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xEE, 0x00, &tempc1, &tempc2, &tempc3); // REG2
-    if (retval == -1)
-        return -1;
-    m_SFR[0xEE] = tempc3;
-
-    stepsDone.store(42);
-
-    retval = Three_byte_command(0x7A, 0xEF, 0x00, &tempc1, &tempc2, &tempc3); // REG3
-    if (retval == -1)
-        return -1;
-    m_SFR[0xEF] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xF4, 0x00, &tempc1, &tempc2, &tempc3); // REG4
-    if (retval == -1)
-        return -1;
-    m_SFR[0xF4] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xF5, 0x00, &tempc1, &tempc2, &tempc3); // REG5
-    if (retval == -1)
-        return -1;
-    m_SFR[0xF5] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xF6, 0x00, &tempc1, &tempc2, &tempc3); // REG6
-    if (retval == -1)
-        return -1;
-    m_SFR[0xF6] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xF7, 0x00, &tempc1, &tempc2, &tempc3); // REG7
-    if (retval == -1)
-        return -1;
-    m_SFR[0xF7] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xFC, 0x00, &tempc1, &tempc2, &tempc3); // REG8
-    if (retval == -1)
-        return -1;
-    m_SFR[0xFC] = tempc3;
-
-    retval = Three_byte_command(0x7A, 0xFD, 0x00, &tempc1, &tempc2, &tempc3); // REG9
-    if (retval == -1)
-        return -1;
-    m_SFR[0xFD] = tempc3;
-
-    stepsDone.store(48);
+        if (counter == callCallbackEveryNCalls)
+        {
+            counter = 0;
+            IncrementStepsDone(callCallbackEveryNCalls);
+        }
+    }
 
     return 0;
 }
@@ -671,8 +516,8 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
 
         m_serPort->SPI(wrdata, nullptr, 2);
 
-        if (callback)
-            abort = callback(0, byte_array_size, "");
+        if (m_callback)
+            abort = m_callback(0, byte_array_size, "");
 
         for (uint16_t i = 0; i < byte_array_size && !abort; i += fifoLen)
         {
@@ -696,8 +541,8 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const MCU_BD::MCU_PROG_MODE mode)
                 wrdata[j] = (1 << 31) | addrDTM << 16 | buffer[i + j];
 
             m_serPort->SPI(wrdata, nullptr, fifoLen);
-            if (callback)
-                abort = callback(i + fifoLen, byte_array_size, "");
+            if (m_callback)
+                abort = m_callback(i + fifoLen, byte_array_size, "");
 #ifndef NDEBUG
             printf("MCU programming : %4i/%4li\r", i + fifoLen, long(byte_array_size));
 #endif

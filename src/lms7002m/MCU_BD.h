@@ -12,11 +12,13 @@
 #include <functional>
 #include <memory>
 
+#include "limesuite/config.h"
+
 namespace lime {
 
 class ISPI;
 
-class MCU_BD
+class LIME_API MCU_BD
 {
   public:
     enum class MCU_PROG_MODE : uint8_t { RESET, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM };
@@ -79,6 +81,7 @@ class MCU_BD
      * @return 0-continue programming, 1-abort operation
      */
     typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
+    void SetCallback(ProgrammingCallback callback);
 
   protected:
     std::string mLoadedProgramFilename;
@@ -93,6 +96,9 @@ class MCU_BD
     int m_bLoadedDebug;
     int m_bLoadedProd;
     int byte_array_size;
+
+    void IncrementStepsDone(unsigned short amount = 1, const char* message = "");
+    void SetStepsDone(unsigned short amount, const char* message = "");
 
   public:
     uint8_t ReadMCUProgramID();
@@ -133,7 +139,7 @@ class MCU_BD
     int ResetPC_MCU();
     int RunInstr_MCU(unsigned short* pPCVAL);
     void Initialize(std::shared_ptr<ISPI> pSerPort, unsigned rom_size = 0);
-    ProgrammingCallback callback;
+    ProgrammingCallback m_callback;
 };
 } // namespace lime
 #endif // MCU_BD_H
