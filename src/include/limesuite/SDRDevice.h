@@ -42,16 +42,17 @@ class LIME_API SDRDevice
     struct RFSOCDescriptor {
         std::string name;
         uint8_t channelCount;
-        std::vector<std::string> rxPathNames;
-        std::vector<std::string> txPathNames;
+        std::unordered_map<TRXDir, std::vector<std::string>> pathNames;
 
-        Range samplingRateRange;
         Range frequencyRange;
-        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
-        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange;
+        Range samplingRateRange;
 
-        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues;
+        std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange;
+        std::unordered_map<TRXDir, Range> lowPassFilterRange;
+
         std::unordered_map<TRXDir, std::set<eGainTypes>> gains;
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange;
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues;
     };
 
     struct CustomParameter {
@@ -156,13 +157,8 @@ class LIME_API SDRDevice
         };
 
         StreamConfig();
-        ~StreamConfig();
-        StreamConfig& operator=(const StreamConfig& srd);
 
-        uint8_t rxCount;
-        uint8_t rxChannels[MAX_CHANNEL_COUNT];
-        uint8_t txCount;
-        uint8_t txChannels[MAX_CHANNEL_COUNT];
+        std::unordered_map<TRXDir, std::vector<uint8_t>> channels;
 
         DataFormat format; // samples format used for Read/Write functions
         DataFormat linkFormat; // samples format used in transport layer Host<->FPGA
@@ -180,18 +176,13 @@ class LIME_API SDRDevice
         void* userData; // will be supplied to statusCallback
         // TODO: callback for drops and errors
 
-        Extras* extraConfig;
+        Extras extraConfig;
     };
 
     struct StreamMeta {
-        int64_t timestamp;
-        bool useTimestamp;
-        bool flush; // submit data to hardware without waiting for full buffer
-    };
-
-    struct GFIRFilter {
-        double bandwidth;
-        bool enabled;
+        int64_t timestamp = 0;
+        bool useTimestamp = false;
+        bool flush = false; // submit data to hardware without waiting for full buffer
     };
 
     struct ChannelConfig {
@@ -200,6 +191,7 @@ class LIME_API SDRDevice
             , tx()
         {
         }
+
         struct Direction {
             Direction()
                 : centerFrequency(0)
@@ -211,9 +203,39 @@ class LIME_API SDRDevice
                 , gfir()
                 , enabled(false)
                 , calibrate(false)
-                , testSignal(false)
+                , testSignal{ false, false, TestSignal::Divide::Div8, TestSignal::Scale::Half }
             {
             }
+
+            struct GFIRFilter {
+                bool enabled;
+                double bandwidth;
+            };
+
+            struct TestSignal {
+                enum class Divide : uint8_t {
+                    Div8 = 1U,
+                    Div4 = 2U,
+                };
+
+                enum class Scale : uint8_t {
+                    Half = 0U,
+                    Full = 1U,
+                };
+
+                bool enabled;
+                bool dcMode;
+                Divide divide;
+                Scale scale;
+
+                TestSignal(bool enabled = false, bool dcMode = false, Divide divide = Divide::Div8, Scale scale = Scale::Half)
+                    : enabled(enabled)
+                    , dcMode(dcMode)
+                    , divide(divide)
+                    , scale(scale)
+                {
+                }
+            };
 
             double centerFrequency;
             double NCOoffset;
@@ -225,8 +247,30 @@ class LIME_API SDRDevice
             GFIRFilter gfir;
             bool enabled;
             bool calibrate;
-            bool testSignal;
+            TestSignal testSignal;
         };
+
+        Direction& GetDirection(TRXDir direction)
+        {
+            switch (direction)
+            {
+            case TRXDir::Rx:
+                return rx;
+            case TRXDir::Tx:
+                return tx;
+            }
+        }
+
+        const Direction& GetDirection(TRXDir direction) const
+        {
+            switch (direction)
+            {
+            case TRXDir::Rx:
+                return rx;
+            case TRXDir::Tx:
+                return tx;
+            }
+        }
 
         Direction rx;
         Direction tx;
@@ -247,29 +291,92 @@ class LIME_API SDRDevice
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
-    virtual const Descriptor& GetDescriptor() = 0;
+    virtual const Descriptor& GetDescriptor() const = 0;
 
     virtual int Init() = 0;
     virtual void Reset() = 0;
     virtual void GetGPSLock(GPS_Lock* status) = 0;
 
-    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) = 0;
+    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
+    virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
+
+    virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index) = 0;
+    virtual void SetNCOFrequency(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) = 0;
+
+    virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
+
     virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
     virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
+    virtual double GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
+
+    virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
+
+    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) = 0;
+    virtual void SetTestSignal(uint8_t moduleIndex,
+        TRXDir direction,
+        uint8_t channel,
+        ChannelConfig::Direction::TestSignal signalConfiguration,
+        int16_t dc_i = 0,
+        int16_t dc_q = 0) = 0;
+
+    virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
+
+    virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
+
+    virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
+
+    virtual bool GetCGENLocked(uint8_t moduleIndex) = 0;
+    virtual double GetTemperature(uint8_t moduleIndex) = 0;
+
+    virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) = 0;
+
+    virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) = 0;
+    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
+
+    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) = 0;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb) = 0;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
+
+    virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
+    virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
+
+    virtual std::vector<double> GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID) = 0;
+    virtual void SetGFIRCoefficients(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients) = 0;
+    virtual void SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
+
     virtual void Synchronize(bool toChip) = 0;
     virtual void EnableCache(bool enable) = 0;
+
+    virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) = 0;
+    virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
 
     virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
     virtual void StreamStart(uint8_t moduleIndex) = 0;
     virtual void StreamStop(uint8_t moduleIndex) = 0;
 
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) = 0;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) = 0;
+    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
+    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
@@ -319,7 +426,7 @@ class LIME_API SDRDevice
     virtual void SetDataLogCallback(DataCallbackType callback){};
     virtual void SetMessageLogCallback(LogCallbackType callback){};
 
-    virtual void* GetInternalChip(uint32_t index) { return nullptr; };
+    virtual void* GetInternalChip(uint32_t index) = 0;
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
     virtual bool UploadMemory(

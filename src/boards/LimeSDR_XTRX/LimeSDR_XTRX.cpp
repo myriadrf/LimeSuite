@@ -28,7 +28,8 @@ static const uint8_t SPI_FPGA = 1;
 
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 
-static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides = { { 0x0022, 0x0FFF },
+static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides = {
+    { 0x0022, 0x0FFF },
     { 0x0023, 0x5550 },
     { 0x002B, 0x0038 },
     { 0x002C, 0x0000 },
@@ -80,7 +81,8 @@ static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides
     { 0x0093, 0x01B1 },
     { 0x00A6, 0x000F },
     // XBUF
-    { 0x0085, 0x0019 } };
+    { 0x0085, 0x0019 },
+};
 
 static inline void ValidateChannel(uint8_t channel)
 {
@@ -137,11 +139,14 @@ LimeSDR_XTRX::LimeSDR_XTRX(
     // LMS#1
     soc.name = "LMS7002M";
     soc.channelCount = 2;
-    soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
-    soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "LNAL", "LNAW" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1", "Band2" };
 
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
 
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
@@ -258,15 +263,15 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->EnableChannel(TRXDir::Rx, i, ch.rx.enabled);
             chip->EnableChannel(TRXDir::Tx, i, ch.tx.enabled);
 
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rx.testSignal ? 1 : 0);
-            if (ch.rx.testSignal)
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rx.testSignal.enabled ? 1 : 0);
+            if (ch.rx.testSignal.enabled)
             {
-                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 0);
+                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, static_cast<uint8_t>(ch.rx.testSignal.scale));
+                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, ch.rx.testSignal.dcMode ? 1 : 0);
                 chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal ? 1 : 0);
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal.enabled ? 1 : 0);
 
             for (const auto& gain : ch.rx.gain)
             {
@@ -285,11 +290,8 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
         chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
         chip->SetActiveChannel(LMS7002M::Channel::ChA);
 
-        double sampleRate;
-        if (rxUsed)
-            sampleRate = cfg.channel[0].rx.sampleRate;
-        else
-            sampleRate = cfg.channel[0].tx.sampleRate;
+        double sampleRate = cfg.channel[0].GetDirection(rxUsed ? TRXDir::Rx : TRXDir::Tx).sampleRate;
+
         if (sampleRate > 0)
             LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
 
@@ -388,6 +390,11 @@ int LimeSDR_XTRX::Init()
     return 0;
 }
 
+void LimeSDR_XTRX::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+{
+    LMS1_SetSampleRate(sampleRate, oversample, oversample);
+}
+
 double LimeSDR_XTRX::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
     ValidateChannel(channel);
@@ -432,11 +439,11 @@ int LimeSDR_XTRX::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         if (!trxPort->IsOpen())
         {
             int dirFlag = 0;
-            if (config.rxCount > 0 && config.txCount > 0)
+            if (config.channels.at(lime::TRXDir::Rx).size() > 0 && config.channels.at(lime::TRXDir::Tx).size() > 0)
                 dirFlag = O_RDWR;
-            else if (config.rxCount > 0)
+            else if (config.channels.at(lime::TRXDir::Rx).size() > 0)
                 dirFlag = O_RDONLY;
-            else if (config.txCount > 0)
+            else if (config.channels.at(lime::TRXDir::Tx).size() > 0)
                 dirFlag = O_WRONLY;
             if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
             {
@@ -573,16 +580,16 @@ void LimeSDR_XTRX::LMS1SetPath(bool tx, uint8_t chan, uint8_t pathId)
         switch (ePathLMS1_Rx(pathId))
         {
         case ePathLMS1_Rx::NONE:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_NONE);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::NONE);
             break;
         case ePathLMS1_Rx::LNAH:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAH);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAH);
             break;
         case ePathLMS1_Rx::LNAL:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAL);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAL);
             break;
         case ePathLMS1_Rx::LNAW:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAW);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAW);
             break;
         default:
             throw std::logic_error("Invalid LMS1 Rx path");

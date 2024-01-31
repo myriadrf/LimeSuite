@@ -14,7 +14,7 @@ RUN git clone https://github.com/doxygen/doxygen.git
 WORKDIR /doxygen/doxygen
 RUN git checkout Release_1_8_17
 
-RUN cmake -G "Unix Makefiles" -B build . 
+RUN cmake -G "Unix Makefiles" -B build .
 RUN make -C build --no-print-directory -j$(nproc) install
 
 FROM python:3.8-bookworm AS build-stage
@@ -35,6 +35,7 @@ COPY Desktop/ Desktop/
 COPY external/ external/
 COPY cmake/ cmake/
 COPY amarisoft-plugin/ amarisoft-plugin/
+COPY SoapyLMS7/ SoapyLMS7/
 COPY Changelog.txt Changelog.txt
 COPY CMakeLists.txt CMakeLists.txt
 COPY src/ src/
