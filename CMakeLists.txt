@@ -81,11 +81,14 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     #enable warnings in Debug configurations
-    add_compile_options(-Wall -Wpedantic -Wold-style-cast)
+    add_compile_options(-Wall -Wpedantic)
 
     #symbols are only exported from libraries/modules explicitly
     add_compile_options(-fvisibility=hidden)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
+
+    # enable C-style cast warnings in C++
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast")
 
     #disable gcc caller-saves flag for O2-O3 optimizations
     #workaround fix for gcc 9.3+
