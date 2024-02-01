@@ -2152,7 +2152,7 @@ float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
 /** @brief Uploads given FIR coefficients to chip
     @param dir Transmitter or receiver selection
     @param gfirIndex GIR index from 0 to 2
-    @param coef array of coefficients
+    @param coef array of coefficients (normalized from -1 to 1)
     @param coefCount number of coefficients
     @return 0-success, other-failure
 
@@ -2197,6 +2197,11 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
         if (i < coefCount)
         {
             words[i] = coef[i] * 32767;
+
+            if (coef[i] < -1 || coef[i] > 1)
+            {
+                lime::warning("Coefficient %f is outside of range [-1:1], incorrect value will be written.", coef[i]);
+            }
         }
         else
         {
@@ -2213,7 +2218,7 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
 /** @brief Returns currently loaded FIR coefficients.
     @param dir Transmitter or receiver selection.
     @param GFIR_index GFIR index from 0 to 2.
-    @param coef Array of returned coefficients.
+    @param coef Array of returned coefficients (normalized from -1 to 1)
     @param coefCount Number of coefficients to read.
     @return 0-success, other-failure.
 */
@@ -2241,11 +2246,11 @@ int LMS7002M::ReadGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* co
         addresses.push_back(startAddr + index + 24 * (index / 40));
     }
 
-    uint16_t spiData[120];
-    memset(spiData, 0, 120 * sizeof(uint16_t));
+    int16_t spiData[120];
+    std::memset(spiData, 0, 120 * sizeof(int16_t));
     if (controlPort)
     {
-        status = SPI_read_batch(&addresses[0], spiData, coefCount);
+        status = SPI_read_batch(&addresses[0], reinterpret_cast<uint16_t*>(spiData), coefCount);
         for (uint8_t index = 0; index < coefCount; ++index)
         {
             coef[index] = spiData[index] / 32767.0;
@@ -2256,7 +2261,8 @@ int LMS7002M::ReadGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* co
         const int channel = Get_SPI_Reg_bits(LMS7param(MAC), false) > 1 ? 1 : 0;
         for (uint8_t index = 0; index < coefCount; ++index)
         {
-            coef[index] = mRegistersMap->GetValue(channel, addresses[index]);
+            uint16_t value = mRegistersMap->GetValue(channel, addresses[index]);
+            coef[index] = *reinterpret_cast<int16_t*>(&value) / 32767.0;
         }
         status = 0;
     }
