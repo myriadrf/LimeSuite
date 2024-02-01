@@ -9,6 +9,7 @@
 #include <SoapySDR/Time.hpp>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -1128,7 +1129,7 @@ std::vector<std::string> SoapyLMS7::listGPIOBanks(void) const
 
 void SoapyLMS7::writeGPIO(const std::string&, const unsigned value)
 {
-    int r = sdrDevice->GPIOWrite(reinterpret_cast<const uint8_t*>(&value), sizeof(value));
+    int r = sdrDevice->GPIOWrite(reinterpret_cast<const std::byte*>(&value), sizeof(value));
     if (r != 0)
     {
         throw std::runtime_error("SoapyLMS7::writeGPIO() " + std::string(GetLastErrorMessage()));
@@ -1138,7 +1139,7 @@ void SoapyLMS7::writeGPIO(const std::string&, const unsigned value)
 unsigned SoapyLMS7::readGPIO(const std::string&) const
 {
     unsigned buffer(0);
-    int r = sdrDevice->GPIORead(reinterpret_cast<uint8_t*>(&buffer), sizeof(buffer));
+    int r = sdrDevice->GPIORead(reinterpret_cast<std::byte*>(&buffer), sizeof(buffer));
     if (r != 0)
     {
         throw std::runtime_error("SoapyLMS7::readGPIO() " + std::string(GetLastErrorMessage()));
@@ -1148,7 +1149,7 @@ unsigned SoapyLMS7::readGPIO(const std::string&) const
 
 void SoapyLMS7::writeGPIODir(const std::string&, const unsigned dir)
 {
-    int r = sdrDevice->GPIODirWrite(reinterpret_cast<const uint8_t*>(&dir), sizeof(dir));
+    int r = sdrDevice->GPIODirWrite(reinterpret_cast<const std::byte*>(&dir), sizeof(dir));
     if (r != 0)
     {
         throw std::runtime_error("SoapyLMS7::writeGPIODir() " + std::string(GetLastErrorMessage()));
@@ -1158,7 +1159,7 @@ void SoapyLMS7::writeGPIODir(const std::string&, const unsigned dir)
 unsigned SoapyLMS7::readGPIODir(const std::string&) const
 {
     unsigned buffer(0);
-    int r = sdrDevice->GPIODirRead(reinterpret_cast<uint8_t*>(&buffer), sizeof(buffer));
+    int r = sdrDevice->GPIODirRead(reinterpret_cast<std::byte*>(&buffer), sizeof(buffer));
     if (r != 0)
     {
         throw std::runtime_error("SoapyLMS7::readGPIODir() " + std::string(GetLastErrorMessage()));

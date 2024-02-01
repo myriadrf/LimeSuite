@@ -1,6 +1,7 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
+#include <cstddef>
 #include <cstring>
 #include <map>
 #include <memory>

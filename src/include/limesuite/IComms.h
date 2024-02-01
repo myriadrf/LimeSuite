@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include "limesuite/config.h"
