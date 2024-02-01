@@ -1570,28 +1570,40 @@ void lms7002_pnlTXTSP_view::OnbtnLoadDCQClick(wxCommandEvent& event)
 
 void lms7002_pnlTXTSP_view::onbtnGFIR1Coef(wxCommandEvent& event)
 {
-    lms7002_dlgGFIR_Coefficients* dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR1 Coefficients"));
-    dlg->ReadCoefficients(TRXDir::Tx, 0, lmsControl);
-    dlg->WriteCoefficients(TRXDir::Tx, 0, lmsControl);
-    dlg->Destroy();
+    lms7002_dlgGFIR_Coefficients dlg(this, wxID_ANY, wxT("GFIR1 Coefficients"));
+    int status = dlg.ReadCoefficients(TRXDir::Tx, 0, lmsControl);
+
+    if (status >= 0 && dlg.ShowModal() == wxID_OK)
+    {
+        dlg.WriteCoefficients(TRXDir::Tx, 0, lmsControl);
+    }
+
     UpdateGUI();
 }
 
 void lms7002_pnlTXTSP_view::onbtnGFIR2Coef(wxCommandEvent& event)
 {
-    lms7002_dlgGFIR_Coefficients* dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR2 Coefficients"));
-    dlg->ReadCoefficients(TRXDir::Tx, 1, lmsControl);
-    dlg->WriteCoefficients(TRXDir::Tx, 1, lmsControl);
-    dlg->Destroy();
+    lms7002_dlgGFIR_Coefficients dlg(this, wxID_ANY, wxT("GFIR2 Coefficients"));
+    int status = dlg.ReadCoefficients(TRXDir::Tx, 1, lmsControl);
+
+    if (status >= 0 && dlg.ShowModal() == wxID_OK)
+    {
+        dlg.WriteCoefficients(TRXDir::Tx, 1, lmsControl);
+    }
+
     UpdateGUI();
 }
 
 void lms7002_pnlTXTSP_view::onbtnGFIR3Coef(wxCommandEvent& event)
 {
-    lms7002_dlgGFIR_Coefficients* dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR3 Coefficients"));
-    dlg->ReadCoefficients(TRXDir::Tx, 2, lmsControl);
-    dlg->WriteCoefficients(TRXDir::Tx, 2, lmsControl);
-    dlg->Destroy();
+    lms7002_dlgGFIR_Coefficients dlg(this, wxID_ANY, wxT("GFIR3 Coefficients"));
+    int status = dlg.ReadCoefficients(TRXDir::Tx, 2, lmsControl);
+
+    if (status >= 0 && dlg.ShowModal() == wxID_OK)
+    {
+        dlg.WriteCoefficients(TRXDir::Tx, 2, lmsControl);
+    }
+
     UpdateGUI();
 }
 

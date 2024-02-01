@@ -24,7 +24,7 @@ class lms7002_dlgGFIR_Coefficients : public wxDialog
     void SetCoefficients(const std::vector<double>& coefficients);
     std::vector<double> GetCoefficients();
 
-    void ReadCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl);
+    int ReadCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl);
     void WriteCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl);
 
     wxButton* btnLoadFromFile;
