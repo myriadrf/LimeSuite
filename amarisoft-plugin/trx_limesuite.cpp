@@ -1044,7 +1044,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             {
                 if (val < 0 || val > 1)
                 {
-                    val = std::min(std::max(0.0, val), 1.0);
+                    val = std::clamp(val, 0.0, 1.0);
                     Log(LogLevel::WARNING, "%s out of range, clamping to %g", varname, val);
                 }
                 s->rxGainNorm[p] = val;
@@ -1056,7 +1056,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
             {
                 if (val < 0 || val > 1)
                 {
-                    val = std::min(std::max(0.0, val), 1.0);
+                    val = std::clamp(val, 0.0, 1.0);
                     Log(LogLevel::WARNING, "%s out of range, clamping to %g", varname, val);
                 }
                 s->txGainNorm[p] = val;
