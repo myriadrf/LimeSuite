@@ -2158,7 +2158,7 @@ float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
 
     This function does not change GFIR*_L or GFIR*_N parameters, they have to be set manually
 */
-int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount)
+int LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount)
 {
     if (gfirIndex > 2)
     {
@@ -2222,13 +2222,13 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
     @param coefCount Number of coefficients to read.
     @return 0-success, other-failure.
 */
-int LMS7002M::ReadGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount)
+int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount)
 {
     int status = -1;
 
     if (gfirIndex > 2)
     {
-        lime::warning("ReadGFIRCoefficients: Invalid GFIR index(%i). Will read GFIR[2].", gfirIndex);
+        lime::warning("GetGFIRCoefficients: Invalid GFIR index(%i). Will read GFIR[2].", gfirIndex);
         gfirIndex = 2;
     }
 
@@ -3409,8 +3409,8 @@ int LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwi
         Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), div);
     }
 
-    if ((WriteGFIRCoefficients(dir, 0, coef2, L * 5) != 0) || (WriteGFIRCoefficients(dir, 1, coef2, L * 5) != 0) ||
-        (WriteGFIRCoefficients(dir, 2, coef, L * 15) != 0))
+    if ((SetGFIRCoefficients(dir, 0, coef2, L * 5) != 0) || (SetGFIRCoefficients(dir, 1, coef2, L * 5) != 0) ||
+        (SetGFIRCoefficients(dir, 2, coef, L * 15) != 0))
         return -1;
 
     std::stringstream ss;

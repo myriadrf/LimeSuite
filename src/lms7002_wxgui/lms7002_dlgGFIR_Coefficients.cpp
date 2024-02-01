@@ -231,7 +231,7 @@ int lms7002_dlgGFIR_Coefficients::ReadCoefficients(lime::TRXDir direction, uint8
     const int maxCoefCount = gfirIndex == 2 ? 120 : 40;
     coefficients.resize(maxCoefCount, 0);
 
-    int status = lmsControl->ReadGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    int status = lmsControl->GetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
     if (status < 0)
     {
         wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
@@ -245,7 +245,7 @@ int lms7002_dlgGFIR_Coefficients::ReadCoefficients(lime::TRXDir direction, uint8
 void lms7002_dlgGFIR_Coefficients::WriteCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl)
 {
     std::vector<double> coefficients = GetCoefficients();
-    int status = lmsControl->WriteGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    int status = lmsControl->SetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
 
     if (status < 0)
     {

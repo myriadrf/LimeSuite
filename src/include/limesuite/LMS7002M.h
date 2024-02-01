@@ -282,8 +282,8 @@ class LIME_API LMS7002M
     float_type GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index);
     float_type GetReferenceClk_TSP(TRXDir dir);
 
-    int ReadGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount);
-    int WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
+    int GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount);
+    int SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
     int SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwidth);
 
     int SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
