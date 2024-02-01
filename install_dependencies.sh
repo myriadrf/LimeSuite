@@ -46,4 +46,5 @@ apt-get install $yes --no-install-recommends \
   libusb-1.0-0-dev \
   build-essential \
   $libwx \
+  libsoapysdr-dev \
   cmake

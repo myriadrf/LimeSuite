@@ -331,7 +331,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
         return Status::SUCCESS;
     } catch (std::runtime_error& e)
     {
-        printf("Si5351C configuration failed %s\n", e.what());
+        lime::error("Si5351C configuration failed %s", e.what());
         return Status::FAILED;
     }
 }
@@ -512,9 +512,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
             bestVCOA = it->first;
         }
     }
-    //scores calculated
-    //cout << "PLLA stage: " << endl;
-    //cout << "best score: " << bestScore << "     best VCO: " << bestVCOA << endl;
+
     plls[0].VCO_Hz = bestVCOA;
     plls[0].feedbackDivider = (double)bestVCOA / plls[0].inputFreqHz;
 
@@ -581,9 +579,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
             bestVCOB = it->first;
         }
     }
-    //scores calculated
-    //    cout << "PLLB stage: " << endl;
-    //    cout << "best score: " << bestScore << "     best VCO: " << bestVCOB << endl;
+
     if (bestVCOB == 0) //just in case if pllb is not used make it the same frequency as plla
         bestVCOB = bestVCOA;
     plls[1].VCO_Hz = bestVCOB;
@@ -856,7 +852,7 @@ Si5351C::Status Si5351C::ClearStatus()
         return Status::SUCCESS;
     } catch (std::runtime_error& e)
     {
-        printf("Si5351C configuration failed %s\n", e.what());
+        lime::error("Si5351C configuration failed %s", e.what());
         return Status::FAILED;
     }
 }

@@ -409,15 +409,16 @@ void fftviewer_frFFTviewer::StreamingLoop(
         pthis->cmbFmt->GetSelection() == 1 ? SDRDevice::StreamConfig::DataFormat::I16 : SDRDevice::StreamConfig::DataFormat::I12;
 
     SDRDevice::StreamConfig config;
-    config.rxCount = channelsCount;
-    if (runTx)
-        config.txCount = channelsCount;
+
     config.format = SDRDevice::StreamConfig::DataFormat::F32;
     config.linkFormat = fmt;
     for (int i = 0; i < channelsCount; ++i)
     {
-        config.rxChannels[i] = i;
-        config.txChannels[i] = i;
+        config.channels.at(TRXDir::Rx).push_back(i);
+        if (runTx)
+        {
+            config.channels.at(TRXDir::Tx).push_back(i);
+        }
     }
 
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
@@ -455,10 +456,10 @@ void fftviewer_frFFTviewer::StreamingLoop(
         pthis->device->StreamStart(chipIndex);
     } catch (std::logic_error& e)
     {
-        printf("%s\n", e.what());
+        lime::error("%s", e.what());
     } catch (std::runtime_error& e)
     {
-        printf("%s\n", e.what());
+        lime::error("%s", e.what());
     }
 
     // uint16_t regVal = 0;
@@ -656,7 +657,7 @@ void fftviewer_frFFTviewer::SetNyquistFrequency()
     if (index < 0)
         return;
     if (device)
-        freqHz = device->GetSampleRate(index, TRXDir::Rx);
+        freqHz = device->GetSampleRate(index, TRXDir::Rx, 0);
     if (freqHz <= 0)
         return;
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));

@@ -177,10 +177,13 @@ LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     RFSOCDescriptor soc;
     soc.name = "LMS";
     soc.channelCount = 1;
-    soc.rxPathNames = { "NONE", "LNAH", "LNAL_NC", "LNAW", "Auto" };
-    soc.txPathNames = { "NONE", "Band1", "Band2", "Auto" };
+    soc.pathNames[TRXDir::Rx] = { "NONE", "LNAH", "LNAL_NC", "LNAW", "Auto" };
+    soc.pathNames[TRXDir::Tx] = { "NONE", "Band1", "Band2", "Auto" };
     soc.samplingRateRange = { 100e3, 30.72e6, 0 };
     soc.frequencyRange = { 10e6, 3.5e9, 0 };
+
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
 
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAW"] = { 700e6, 900e6 };
@@ -284,22 +287,14 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
         // sampling rate
-        double sampleRate;
+        TRXDir direction = rxUsed ? TRXDir::Rx : TRXDir::Tx;
+        double sampleRate = cfg.channel[0].GetDirection(direction).sampleRate;
 
-        if (rxUsed)
-        {
-            sampleRate = cfg.channel[0].rx.sampleRate;
-        }
-        else
-        {
-            sampleRate = cfg.channel[0].tx.sampleRate;
-        }
-
-        SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+        SetSampleRate(0, direction, 0, sampleRate, cfg.channel[0].GetDirection(direction).oversample);
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR_Mini config: %s\n", e.what());
+        lime::error("LimeSDR_Mini config: %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
@@ -507,12 +502,22 @@ int LimeSDR_Mini::UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
+double LimeSDR_Mini::GetTemperature(uint8_t moduleIndex)
+{
+    if (mDeviceDescriptor.name == GetDeviceName(LMS_DEV_LIMESDRMINI))
+    {
+        throw std::logic_error("LimeSDR-Mini v1 doesn't have a temperature sensor");
+    }
+
+    return LMS7002M_SDRDevice::GetTemperature(moduleIndex);
+}
+
+void LimeSDR_Mini::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
     const bool bypass = (oversample <= 1);
     uint8_t decimation = 7; // HBD_OVR_RXTSP=7 - bypass
     uint8_t interpolation = 7; // HBI_OVR_TXTSP=7 - bypass
-    double cgenFreq = f_Hz * 4; // AI AQ BI BQ
+    double cgenFreq = sampleRate * 4; // AI AQ BI BQ
     // TODO:
     // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
     // {
@@ -533,8 +538,8 @@ void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
         decimation = 4;
         if (oversample <= 16)
         {
-            const int decTbl[] = { 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
-            decimation = decTbl[oversample];
+            constexpr std::array<int, 17> decimationTable{ 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
+            decimation = decimationTable.at(oversample);
         }
         interpolation = decimation;
         cgenFreq *= 2 << decimation;
@@ -542,31 +547,35 @@ void LimeSDR_Mini::SetSampleRate(double f_Hz, uint8_t oversample)
 
     if (bypass)
     {
-        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", f_Hz / 1e6, cgenFreq / 1e6);
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", sampleRate / 1e6, cgenFreq / 1e6);
     }
     else
     {
         lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i",
-            f_Hz / 1e6,
+            sampleRate / 1e6,
             cgenFreq / 1e6,
             decimation + 1,
             interpolation + 1); // dec/inter ratio is 2^(value+1)
     }
 
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR, 1);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR, 1);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML, !bypass);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR, 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR, 1);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML, !bypass);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    mLMSChips.at(moduleIndex)->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     if (bypass)
-        mLMSChips[0]->SetInterfaceFrequency(f_Hz * 4, 7, 7);
+    {
+        mLMSChips.at(moduleIndex)->SetInterfaceFrequency(sampleRate * 4, 7, 7);
+    }
     else
-        mLMSChips[0]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
+    {
+        mLMSChips.at(moduleIndex)->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
+    }
 }
 
 SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
@@ -587,9 +596,9 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
 
     deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
     deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
-    deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
-    deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
-    deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+    deviceDescriptor.firmwareVersion = std::to_string(info.firmware);
+    deviceDescriptor.hardwareVersion = std::to_string(info.hardware);
+    deviceDescriptor.protocolVersion = std::to_string(info.protocol);
     deviceDescriptor.serialNumber = info.boardSerialNumber;
 
     const uint32_t addrs[] = { 0x0000, 0x0001, 0x0002, 0x0003 };
@@ -601,9 +610,9 @@ SDRDevice::Descriptor LimeSDR_Mini::GetDeviceInfo(void)
     auto hwVersion = data[3] & 0x7F; //pkt.inBuffer[15]&0x7F;
 
     deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
-    deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
-    deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
-    deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+    deviceDescriptor.gatewareVersion = std::to_string(gatewareVersion);
+    deviceDescriptor.gatewareRevision = std::to_string(gatewareRevision);
+    deviceDescriptor.hardwareVersion = std::to_string(hwVersion);
 
     return deviceDescriptor;
 }

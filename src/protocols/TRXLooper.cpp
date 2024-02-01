@@ -10,6 +10,7 @@
 #include "TRXLooper.h"
 
 using namespace std;
+using namespace std::literals::string_literals;
 
 namespace lime {
 
@@ -39,13 +40,6 @@ TRXLooper::TRXLooper(FPGA* f, LMS7002M* chip, int id)
 
 TRXLooper::~TRXLooper()
 {
-    Stop();
-    mRx.terminate.store(true, std::memory_order_relaxed);
-    mTx.terminate.store(true, std::memory_order_relaxed);
-    if (mTx.thread.joinable())
-        mTx.thread.join();
-    if (mRx.thread.joinable())
-        mRx.thread.join();
 }
 
 uint64_t TRXLooper::GetHardwareTimestamp(void)
@@ -446,28 +440,41 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     if (mRx.thread.joinable() || mTx.thread.joinable())
         throw std::logic_error("Samples streaming already running");
 
-    bool needTx = cfg.txCount > 0;
-    bool needRx = cfg.rxCount > 0; // always need Rx to know current timestamps, cfg.rxCount > 0;
+    bool needTx = cfg.channels.at(TRXDir::Tx).size() > 0;
+    bool needRx = cfg.channels.at(TRXDir::Rx).size() > 0; // always need Rx to know current timestamps, cfg.rxCount > 0;
     //bool needMIMO = cfg.rxCount > 1 || cfg.txCount > 1; // TODO: what if using only B channel, does it need MIMO configuration?
     uint8_t channelEnables = 0;
 
-    for (int i = 0; i < cfg.rxCount; ++i)
+    for (std::size_t i = 0; i < cfg.channels.at(TRXDir::Rx).size(); ++i)
     {
-        if (cfg.rxChannels[i] > 1)
+        if (cfg.channels.at(TRXDir::Rx).at(i) > 1)
+        {
             throw std::logic_error("Invalid Rx channel, only [0,1] channels supported");
+        }
         else
-            channelEnables |= (1 << cfg.rxChannels[i]);
+        {
+            channelEnables |= (1 << cfg.channels.at(TRXDir::Rx).at(i));
+        }
     }
-    for (int i = 0; i < cfg.txCount; ++i)
+
+    for (std::size_t i = 0; i < cfg.channels.at(TRXDir::Tx).size(); ++i)
     {
-        if (cfg.txChannels[i] > 1)
+        if (cfg.channels.at(TRXDir::Tx).at(i) > 1)
+        {
             throw std::logic_error("Invalid Tx channel, only [0,1] channels supported");
+        }
         else
-            channelEnables |= (1 << cfg.txChannels[i]); // << 8;
+        {
+            channelEnables |= (1 << cfg.channels.at(TRXDir::Tx).at(i)); // << 8;
+        }
     }
+
     if ((cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I12) &&
         (cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I16))
+    {
         throw std::logic_error("Unsupported stream link format");
+    }
+
     mConfig = cfg;
 
     //configure FPGA on first start, or disable FPGA when not streaming
@@ -507,8 +514,10 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         constexpr uint16_t waitGPS_PPS = 1 << 2;
         int interface_ctrl_000A = fpga->ReadRegister(0x000A);
         interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
-        if (cfg.extraConfig && cfg.extraConfig->waitPPS)
+        if (cfg.extraConfig.waitPPS)
+        {
             interface_ctrl_000A |= waitGPS_PPS;
+        }
         fpga->WriteRegister(0x000A, interface_ctrl_000A);
     }
 
@@ -599,7 +608,7 @@ void TRXLooper::Stop()
             mTx.thread.join();
     } catch (...)
     {
-        printf("Failed to join TRXLooper threads\n");
+        lime::error("Failed to join TRXLooper threads"s);
     }
     fpga->StopStreaming();
 
@@ -617,11 +626,11 @@ bool TRXLooper::IsStreamRunning()
     return mStreamEnabled;
 }
 
-int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+int TRXLooper::StreamRx(lime::complex32f_t* const* dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     bool timestampSet = false;
     uint32_t samplesProduced = 0;
-    const bool useChannelB = mConfig.rxCount > 1;
+    const bool useChannelB = mConfig.channels.at(TRXDir::Rx).size() > 1;
 
     lime::complex32f_t* f32_dest[2] = { static_cast<lime::complex32f_t*>(dest[0]),
         useChannelB ? static_cast<lime::complex32f_t*>(dest[1]) : nullptr };
@@ -663,11 +672,11 @@ int TRXLooper::StreamRx(lime::complex32f_t** dest, uint32_t count, SDRDevice::St
     return samplesProduced;
 }
 
-int TRXLooper::StreamRx(lime::complex16_t** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+int TRXLooper::StreamRx(lime::complex16_t* const* dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     bool timestampSet = false;
     uint32_t samplesProduced = 0;
-    const bool useChannelB = mConfig.rxCount > 1;
+    const bool useChannelB = mConfig.channels.at(lime::TRXDir::Rx).size() > 1;
     bool firstIteration = true;
 
     //auto start = high_resolution_clock::now();
@@ -707,7 +716,7 @@ int TRXLooper::StreamRx(lime::complex16_t** dest, uint32_t count, SDRDevice::Str
 
 int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
-    const bool useChannelB = mConfig.txCount > 1;
+    const bool useChannelB = mConfig.channels.at(lime::TRXDir::Tx).size() > 1;
     const bool useTimestamp = meta ? meta->useTimestamp : false;
     const bool flush = meta && meta->flush;
     int64_t ts = meta ? meta->timestamp : 0;
@@ -762,7 +771,7 @@ int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count
 
 int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
-    const bool useChannelB = mConfig.txCount > 1;
+    const bool useChannelB = mConfig.channels.at(lime::TRXDir::Tx).size() > 1;
     const bool useTimestamp = meta ? meta->useTimestamp : false;
     const bool flush = meta && meta->flush;
     int64_t ts = meta ? meta->timestamp : 0;

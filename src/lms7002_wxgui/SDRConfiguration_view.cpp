@@ -148,13 +148,13 @@ void SOCConfig_view::Setup(SDRDevice* device, int index)
     gui.titledBox->SetLabel(descriptor.name);
 
     wxArrayString rxPathNames;
-    for (const auto& name : descriptor.rxPathNames)
+    for (const auto& name : descriptor.pathNames.at(TRXDir::Rx))
     {
         rxPathNames.Add(name);
     }
 
     wxArrayString txPathNames;
-    for (const auto& name : descriptor.txPathNames)
+    for (const auto& name : descriptor.pathNames.at(TRXDir::Tx))
     {
         txPathNames.Add(name);
     }

@@ -11,6 +11,8 @@ namespace lime {
 class LIME_API ISPI
 {
   public:
+    /** @brief Destroys the interfaced object. */
+    virtual ~ISPI() {}
     /**
       @brief Default path for writing/reading registers.
       @param MOSI Main Out Sub In (data output from main).
@@ -35,6 +37,8 @@ class LIME_API ISPI
 class LIME_API II2C
 {
   public:
+    /** @brief Destroys the interfaced object. */
+    virtual ~II2C() {}
     /**
       @brief Write to an available Inter-Integrated Circuit slave.
       @param address Inter-Integrated Circuit slave address.

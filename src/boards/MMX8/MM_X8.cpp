@@ -108,7 +108,7 @@ LimeSDR_MMX8::~LimeSDR_MMX8()
         delete mSubDevices[i];
 }
 
-const SDRDevice::Descriptor& LimeSDR_MMX8::GetDescriptor()
+const SDRDevice::Descriptor& LimeSDR_MMX8::GetDescriptor() const
 {
     return mDeviceDescriptor;
 }
@@ -122,7 +122,7 @@ void LimeSDR_MMX8::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR_MMX8 config: %s\n", e.what());
+        lime::error("LimeSDR_MMX8 config: %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
@@ -148,11 +148,116 @@ void LimeSDR_MMX8::GetGPSLock(GPS_Lock* status)
     // TODO: implement
 }
 
-double LimeSDR_MMX8::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
+// TODO: clean up all the functions to use the exact same device selection code (maybe even extract it out into a function)
+double LimeSDR_MMX8::GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    if (moduleIndex < 8)
-        return mSubDevices[moduleIndex]->GetSampleRate(0, trx);
-    return mSubDevices[0]->GetSampleRate(0, trx);
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetFrequency(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetFrequency(0, trx, channel, frequency);
+}
+
+double LimeSDR_MMX8::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetNCOFrequency(0, trx, channel, index);
+}
+
+void LimeSDR_MMX8::SetNCOFrequency(
+    uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetNCOFrequency(0, trx, channel, index, frequency, phaseOffset);
+}
+
+double LimeSDR_MMX8::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetNCOOffset(0, trx, channel);
+}
+
+double LimeSDR_MMX8::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetSampleRate(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    mSubDevices[moduleIndex]->SetSampleRate(0, trx, channel, sampleRate, oversample);
+}
+
+double LimeSDR_MMX8::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetLowPassFilter(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetLowPassFilter(0, trx, channel, lpf);
+}
+
+uint8_t LimeSDR_MMX8::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetAntenna(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetAntenna(0, trx, channel, path);
 }
 
 double LimeSDR_MMX8::GetClockFreq(uint8_t clk_id, uint8_t channel)
@@ -177,6 +282,176 @@ int LimeSDR_MMX8::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel
     return device->GetGain(0, direction, channel, gain, value);
 }
 
+bool LimeSDR_MMX8::GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetDCOffsetMode(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetDCOffsetMode(0, trx, channel, isAutomatic);
+}
+
+complex64f_t LimeSDR_MMX8::GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetDCOffset(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetDCOffset(0, trx, channel, offset);
+}
+
+complex64f_t LimeSDR_MMX8::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetIQBalance(0, trx, channel);
+}
+
+void LimeSDR_MMX8::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetIQBalance(0, trx, channel, balance);
+}
+
+bool LimeSDR_MMX8::GetCGENLocked(uint8_t moduleIndex)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetCGENLocked(0);
+}
+
+double LimeSDR_MMX8::GetTemperature(uint8_t moduleIndex)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetTemperature(0);
+}
+
+bool LimeSDR_MMX8::GetSXLocked(uint8_t moduleIndex, TRXDir trx)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetSXLocked(0, trx);
+}
+
+unsigned int LimeSDR_MMX8::ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->ReadRegister(0, address, useFPGA);
+}
+
+void LimeSDR_MMX8::WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->WriteRegister(0, address, value, useFPGA);
+}
+
+void LimeSDR_MMX8::LoadConfig(uint8_t moduleIndex, const std::string& filename)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->LoadConfig(0, filename);
+}
+
+void LimeSDR_MMX8::SaveConfig(uint8_t moduleIndex, const std::string& filename)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SaveConfig(0, filename);
+}
+
+uint16_t LimeSDR_MMX8::GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetParameter(0, channel, parameterKey);
+}
+
+void LimeSDR_MMX8::SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetParameter(0, channel, parameterKey, value);
+}
+
+uint16_t LimeSDR_MMX8::GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetParameter(0, channel, address, msb, lsb);
+}
+
+void LimeSDR_MMX8::SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetParameter(0, channel, address, msb, lsb, value);
+}
+
 void LimeSDR_MMX8::Synchronize(bool toChip)
 {
     for (auto& d : mSubDevices)
@@ -187,6 +462,112 @@ void LimeSDR_MMX8::EnableCache(bool enable)
 {
     for (auto& d : mSubDevices)
         d->EnableCache(enable);
+}
+
+void LimeSDR_MMX8::EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->EnableChannel(0, trx, channel, enable);
+}
+
+void LimeSDR_MMX8::Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->Calibrate(0, trx, channel, bandwidth);
+}
+
+void LimeSDR_MMX8::ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->ConfigureGFIR(0, trx, channel, settings);
+}
+
+std::vector<double> LimeSDR_MMX8::GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetGFIRCoefficients(0, trx, channel, gfirID);
+}
+
+void LimeSDR_MMX8::SetGFIRCoefficients(
+    uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetGFIRCoefficients(0, trx, channel, gfirID, coefficients);
+}
+
+void LimeSDR_MMX8::SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetGFIR(0, trx, channel, gfirID, enabled);
+}
+
+uint64_t LimeSDR_MMX8::GetHardwareTimestamp(uint8_t moduleIndex)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetHardwareTimestamp(0);
+}
+
+void LimeSDR_MMX8::SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetHardwareTimestamp(0, now);
+}
+
+void LimeSDR_MMX8::SetTestSignal(uint8_t moduleIndex,
+    TRXDir direction,
+    uint8_t channel,
+    SDRDevice::ChannelConfig::Direction::TestSignal signalConfiguration,
+    int16_t dc_i,
+    int16_t dc_q)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->SetTestSignal(0, direction, channel, signalConfiguration, dc_i, dc_q);
+}
+
+SDRDevice::ChannelConfig::Direction::TestSignal LimeSDR_MMX8::GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel)
+{
+    if (moduleIndex >= 8)
+    {
+        moduleIndex = 0;
+    }
+
+    return mSubDevices[moduleIndex]->GetTestSignal(0, direction, channel);
 }
 
 int LimeSDR_MMX8::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
@@ -210,12 +591,12 @@ void LimeSDR_MMX8::StreamStop(uint8_t moduleIndex)
     tempFPGA.StopStreaming();
 }
 
-int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex32f_t** dest, uint32_t count, StreamMeta* meta)
+int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
 }
 
-int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex16_t** dest, uint32_t count, StreamMeta* meta)
+int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex16_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
 }

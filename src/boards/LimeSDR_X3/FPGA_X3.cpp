@@ -8,6 +8,8 @@
 
 #include "Register.h"
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 FPGA_X3::FPGA_X3(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI)
@@ -19,8 +21,8 @@ int FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase
 {
     FPGA::FPGA_PLL_clock clocks[2];
 
-    std::cerr << "FPGA_X3" << std::endl;
-    printf("Phases : tx phase %f rx phase %f \n", txPhase, rxPhase);
+    lime::debug("FPGA_X3"s);
+    lime::info("Phases : tx phase %f rx phase %f", txPhase, rxPhase);
 
     clocks[0].index = 0;
     clocks[0].outFrequency = rxRate_Hz;
