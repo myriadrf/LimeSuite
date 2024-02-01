@@ -176,7 +176,7 @@ if(ENABLE_TESTING)
     FetchContent_Declare(
       googletest
       GIT_REPOSITORY https://github.com/google/googletest.git
-      GIT_TAG        b10fad38c4026a29ea6561ab15fc4818170d1c10 # latest main at the time of writing this
+      GIT_TAG        dddb219c3eb96d7f9200f09b0a381f016e6b4562 # latest main at the time of writing this
     )
 
     set(INSTALL_GMOCK OFF) # Don't install the GMock headers

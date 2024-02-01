@@ -2149,55 +2149,33 @@ float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
 
 /** @brief Uploads given FIR coefficients to chip
     @param dir Transmitter or receiver selection
-    @param GFIR_index GIR index from 0 to 2
-    @param coef array of coefficients
+    @param gfirIndex GIR index from 0 to 2
+    @param coef array of coefficients (normalized from -1 to 1)
     @param coefCount number of coefficients
     @return 0-success, other-failure
 
     This function does not change GFIR*_L or GFIR*_N parameters, they have to be set manually
 */
-int LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, const int16_t* coef, uint8_t coefCount)
-{
-    uint8_t index;
-    uint8_t coefLimit;
-    uint16_t startAddr;
-    if (GFIR_index == 0)
-        startAddr = 0x0280;
-    else if (GFIR_index == 1)
-        startAddr = 0x02C0;
-    else
-        startAddr = 0x0300;
-
-    if (dir == TRXDir::Rx)
-        startAddr += 0x0200;
-    if (GFIR_index < 2)
-        coefLimit = 40;
-    else
-        coefLimit = 120;
-    if (coefCount > coefLimit)
-        return ReportError(ERANGE, "SetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
-    std::vector<uint16_t> addresses;
-    for (index = 0; index < coefCount; ++index)
-        addresses.push_back(startAddr + index + 24 * (index / 40));
-    SPI_write_batch(&addresses[0], (uint16_t*)coef, coefCount, true);
-    return 0;
-}
-
-int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount)
+int LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount)
 {
     if (gfirIndex > 2)
     {
-        lime::warning("SetGFIRCoefficients: Invalid GFIR index(%i). Will configure GFIR[2].");
+        lime::warning("SetGFIRCoefficients: Invalid GFIR index(%i). Will configure GFIR[2].", gfirIndex);
         gfirIndex = 2;
     }
 
-    const uint16_t startAddr = 0x0280 + (gfirIndex * 64) + (dir == TRXDir::Tx ? 0 : 0x0200);
+    const uint16_t startAddr = 0x0280 + (gfirIndex * 0x40) + (dir == TRXDir::Tx ? 0 : 0x0200);
     const uint8_t maxCoefCount = gfirIndex < 2 ? 40 : 120;
     const uint8_t bankCount = gfirIndex < 2 ? 5 : 15;
 
     if (coefCount > maxCoefCount)
-        return ReportError(
-            ERANGE, "SetGFIRCoefficients: too many coefficients(%i), GFIR[%i] can have only %i", coefCount, maxCoefCount);
+    {
+        return ReportError(ERANGE,
+            "SetGFIRCoefficients: too many coefficients(%i), GFIR[%i] can have only %i",
+            coefCount,
+            gfirIndex,
+            maxCoefCount);
+    }
 
     uint16_t addrs[120];
     int16_t words[120];
@@ -2213,10 +2191,20 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
         uint8_t bankRow = i % bankLength;
         addrs[i] = startAddr + (bank * 8) + bankRow;
         addrs[i] += 24 * (bank / 5);
+
         if (i < coefCount)
+        {
             words[i] = coef[i] * 32767;
+
+            if (coef[i] < -1 || coef[i] > 1)
+            {
+                lime::warning("Coefficient %f is outside of range [-1:1], incorrect value will be written.", coef[i]);
+            }
+        }
         else
+        {
             words[i] = 0;
+        }
     }
     LMS7Parameter gfirL_param = LMS7param(GFIR1_L_TXTSP);
     gfirL_param.address += gfirIndex + (dir == TRXDir::Tx ? 0 : 0x0200);
@@ -2225,56 +2213,61 @@ int LMS7002M::WriteGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_t
     return SPI_write_batch(addrs, (const uint16_t*)words, actualCoefCount, true);
 }
 
-/** @brief Returns currently loaded FIR coefficients
-    @param dir Transmitter or receiver selection
-    @param GFIR_index GIR index from 0 to 2
-    @param coef array of returned coefficients
-    @param coefCount number of coefficients to read
-    @return 0-success, other-failure
+/** @brief Returns currently loaded FIR coefficients.
+    @param dir Transmitter or receiver selection.
+    @param GFIR_index GFIR index from 0 to 2.
+    @param coef Array of returned coefficients (normalized from -1 to 1)
+    @param coefCount Number of coefficients to read.
+    @return 0-success, other-failure.
 */
-int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t GFIR_index, int16_t* coef, uint8_t coefCount)
+int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount)
 {
     int status = -1;
-    uint8_t index;
-    uint8_t coefLimit;
-    uint16_t startAddr;
-    if (GFIR_index == 0)
-        startAddr = 0x0280;
-    else if (GFIR_index == 1)
-        startAddr = 0x02C0;
-    else
-        startAddr = 0x0300;
 
-    if (dir == TRXDir::Rx)
-        startAddr += 0x0200;
-    if (GFIR_index < 2)
-        coefLimit = 40;
-    else
-        coefLimit = 120;
+    if (gfirIndex > 2)
+    {
+        lime::warning("GetGFIRCoefficients: Invalid GFIR index(%i). Will read GFIR[2].", gfirIndex);
+        gfirIndex = 2;
+    }
+
+    const uint16_t startAddr = 0x0280 + (gfirIndex * 0x40) + (dir == TRXDir::Tx ? 0 : 0x0200);
+    const uint8_t coefLimit = gfirIndex < 2 ? 40 : 120;
+
     if (coefCount > coefLimit)
-        return ReportError(ERANGE, "GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
+    {
+        return ReportError(ERANGE, "GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", coefCount, coefLimit);
+    }
 
     std::vector<uint16_t> addresses;
-    for (index = 0; index < coefCount; ++index)
+    for (uint8_t index = 0; index < coefCount; ++index)
+    {
         addresses.push_back(startAddr + index + 24 * (index / 40));
-    uint16_t spiData[120];
-    memset(spiData, 0, 120 * sizeof(uint16_t));
+    }
+
+    int16_t spiData[120];
+    std::memset(spiData, 0, 120 * sizeof(int16_t));
     if (controlPort)
     {
-        status = SPI_read_batch(&addresses[0], spiData, coefCount);
-        for (index = 0; index < coefCount; ++index)
-            coef[index] = spiData[index];
+        status = SPI_read_batch(&addresses[0], reinterpret_cast<uint16_t*>(spiData), coefCount);
+        for (uint8_t index = 0; index < coefCount; ++index)
+        {
+            coef[index] = spiData[index] / 32767.0;
+        }
     }
     else
     {
         const int channel = Get_SPI_Reg_bits(LMS7param(MAC), false) > 1 ? 1 : 0;
-        for (index = 0; index < coefCount; ++index)
-            coef[index] = mRegistersMap->GetValue(channel, addresses[index]);
+        for (uint8_t index = 0; index < coefCount; ++index)
+        {
+            uint16_t value = mRegistersMap->GetValue(channel, addresses[index]);
+            coef[index] = *reinterpret_cast<int16_t*>(&value) / 32767.0;
+        }
         status = 0;
     }
 
     return status;
 }
+
 /** @brief Write given data value to whole register
     @param address SPI address
     @param data new register value
@@ -3414,8 +3407,8 @@ int LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwi
         Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), div);
     }
 
-    if ((WriteGFIRCoefficients(dir, 0, coef2, L * 5) != 0) || (WriteGFIRCoefficients(dir, 1, coef2, L * 5) != 0) ||
-        (WriteGFIRCoefficients(dir, 2, coef, L * 15) != 0))
+    if ((SetGFIRCoefficients(dir, 0, coef2, L * 5) != 0) || (SetGFIRCoefficients(dir, 1, coef2, L * 5) != 0) ||
+        (SetGFIRCoefficients(dir, 2, coef, L * 15) != 0))
         return -1;
 
     std::stringstream ss;

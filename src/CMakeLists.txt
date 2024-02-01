@@ -50,6 +50,7 @@ set(LIME_SUITE_SOURCES
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp
     gnuPlotPipe.h
+    parsers/CoefficientFileParser.cpp
 
     EnumToString.cpp
 
@@ -196,7 +197,6 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/lms7002_pnlLDO_view.cpp
     lms7002_wxgui/lms7002_pnlAFE_view.cpp
     lms7002_wxgui/lms7002_pnlGains_view.cpp
-    lms7002_wxgui/CoefficientFileParser.cpp
     lms7002_wxgui/lms7002_pnlRxTSP_view.cpp
     lms7002_wxgui/lms7002_mainPanel.cpp
     # lms7002_wxgui/dlgViewSFR.cpp
