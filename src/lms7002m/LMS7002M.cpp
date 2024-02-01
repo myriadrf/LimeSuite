@@ -494,10 +494,9 @@ int LMS7002M::LoadConfigLegacyFile(const std::string& filename)
 
     std::string type = "";
     type = parser.get("type", "undefined");
-    std::stringstream ss;
+
     if (type.find("LMS7002 configuration") == std::string::npos)
     {
-        ss << "File " << filename << " not recognized" << std::endl;
         return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename.c_str());
     }
 
@@ -684,10 +683,9 @@ int LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
     }
     std::string type = "";
     type = parser.get("type", "undefined");
-    std::stringstream ss;
+
     if (type.find("lms7002m_minimal_config") == std::string::npos)
     {
-        ss << "File " << filename << " not recognized" << std::endl;
         return ReportError(EINVAL, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename.c_str());
     }
 
@@ -3392,7 +3390,7 @@ int LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwi
         w2 = w * 1.05;
         if (w2 > 0.495)
         {
-            printf("GFIR LPF cannot be set to the requested bandwidth (%f)", bandwidth);
+            lime::error("GFIR LPF cannot be set to the requested bandwidth (%f)", bandwidth);
             return -1;
         }
     }
@@ -3430,8 +3428,7 @@ int LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwi
     for (int i = 0; i < L * 15; ++i)
         ss << " " << coef[i];
     ss << std::endl;
-
-    std::cout << ss.str();
+    lime::info(ss.str());
 
     return ResetLogicregisters();
 }

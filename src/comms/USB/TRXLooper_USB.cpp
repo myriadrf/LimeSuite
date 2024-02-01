@@ -8,6 +8,8 @@
 #include "TRXLooper_USB.h"
 #include "USBGeneric.h"
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 TRXLooper_USB::TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt)
@@ -158,7 +160,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             else
             {
                 // TODO: callback for Rx timeout
-                printf("Tx WaitForXfer timeout\n");
+                lime::error("Tx WaitForXfer timeout"s);
                 continue;
             }
         }
@@ -242,7 +244,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             t1 = t2;
 
             float dataRate = 1000.0 * totalBytesSent / timePeriod.count();
-            printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
+            lime::info("Tx: %.3f MB/s", dataRate / 1000000.0);
             totalBytesSent = 0;
 
             mTx.stats.dataRate_Bps = dataRate;
@@ -336,13 +338,13 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
                 if (bytesReceived != bufferSize)
                 {
-                    printf("Recv %i, expected : %i\n", bytesReceived, bufferSize);
+                    lime::error("Recv %i, expected : %i", bytesReceived, bufferSize);
                 }
             }
             else
             {
                 // TODO: callback for Rx timeout
-                printf("Rx WaitForXfer timeout\n");
+                lime::error("Rx WaitForXfer timeout"s);
                 continue;
             }
         }
@@ -361,7 +363,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
             if (pkt->counter - expectedTS != 0)
             {
-                printf("Loss: transfer:%li packet:%i, exp: %li, got: %li, diff: %li, handle: %i\n",
+                lime::warning("Loss: transfer:%li packet:%i, exp: %li, got: %li, diff: %li, handle: %i",
                     stats.packets,
                     j,
                     expectedTS,
@@ -416,7 +418,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             t1 = t2;
 
             float dataRate = 1000.0 * totalBytesReceived / timePeriod.count();
-            printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
+            lime::info("Rx: %.3f MB/s", dataRate / 1000000.0);
             mRx.stats.dataRate_Bps = dataRate;
 
             totalBytesReceived = 0;

@@ -8,6 +8,8 @@
 
 #include "Register.h"
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 FPGA_XTRX::FPGA_XTRX(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI)
@@ -19,8 +21,8 @@ int FPGA_XTRX::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
 {
     lime::FPGA::FPGA_PLL_clock clocks[2];
 
-    std::cerr << "FPGA_XTRX" << std::endl;
-    printf("Phases : tx phase %f rx phase %f \n", txPhase, rxPhase);
+    lime::debug("FPGA_XTRX"s);
+    lime::info("Phases: tx phase %f rx phase %f", txPhase, rxPhase);
 
     clocks[0].index = 0;
     clocks[0].outFrequency = rxRate_Hz;
