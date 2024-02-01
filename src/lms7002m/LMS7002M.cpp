@@ -2251,7 +2251,7 @@ int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coe
         status = SPI_read_batch(&addresses[0], reinterpret_cast<uint16_t*>(spiData), coefCount);
         for (uint8_t index = 0; index < coefCount; ++index)
         {
-            coef[index] = spiData[index] / 32767.0;
+            coef[index] = spiData[index] / 32768.0;
         }
     }
     else
@@ -2260,7 +2260,7 @@ int LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coe
         for (uint8_t index = 0; index < coefCount; ++index)
         {
             uint16_t value = mRegistersMap->GetValue(channel, addresses[index]);
-            coef[index] = *reinterpret_cast<int16_t*>(&value) / 32767.0;
+            coef[index] = *reinterpret_cast<int16_t*>(&value) / 32768.0;
         }
         status = 0;
     }
