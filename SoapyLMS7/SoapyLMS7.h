@@ -6,19 +6,6 @@
 
 #include <SoapySDR/Device.hpp>
 
-/*
-Workaround to introduce std::byte into SoapySDR code for support with other classes,
-as in SoapySDR's 0.7 CMake file there exists a line
-set(CMAKE_CXX_STANDARD 11)
-which forces the SoapySDR compilation to use C++11 no matter what.
-This issue is fixed in SoapySDR 0.8.
-*/
-#if __cplusplus < 201703L
-namespace std {
-enum class byte : unsigned char {};
-}
-#endif
-
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
 

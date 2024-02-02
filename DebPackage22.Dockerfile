@@ -27,7 +27,14 @@ COPY CMakeLists.txt CMakeLists.txt
 COPY README.md README.md
 COPY src/ src/
 
-RUN dpkg-buildpackage --build=binary --no-sign -d
+# Workaround to compile SoapySDR using C++17,
+# as in SoapySDR's 0.7 CMake file there exists a line
+# set(CMAKE_CXX_STANDARD 11)
+# which forces the SoapySDR compilation to use C++11 no matter what.
+# This issue is fixed in SoapySDR 0.8.
+# As far as I can see this is not causing any issues with linking to the SoapySDR library.
+RUN sed -i "s/set(CMAKE_CXX_STANDARD 11)/set(CMAKE_CXX_STANDARD 17)/g" /usr/share/cmake/SoapySDR/SoapySDRConfig.cmake && \
+    dpkg-buildpackage --build=binary --no-sign -d
 
 FROM scratch AS export-stage
 COPY --from=build-stage /LimeSuite2/*.* /
