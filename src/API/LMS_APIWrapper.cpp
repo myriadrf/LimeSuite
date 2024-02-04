@@ -1,3 +1,4 @@
+#include "CommonFunctions.h"
 #include "lime/LimeSuite.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/DeviceHandle.h"
@@ -10,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -78,6 +80,12 @@ struct LMS_APIDevice {
             delete deviceInfo;
         }
     }
+
+    const lime::SDRDevice::RFSOCDescriptor& GetRFSOCDescriptor() const
+    {
+        assert(device);
+        return device->GetDescriptor().rfSOC.at(moduleIndex);
+    }
 };
 
 struct StreamHandle {
@@ -119,8 +127,7 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
         return nullptr;
     }
 
-    const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
-    if (chan >= descriptor.rfSOC.at(apiDevice->moduleIndex).channelCount)
+    if (chan >= apiDevice->GetRFSOCDescriptor().channelCount)
     {
         lime::error("Invalid channel number.");
         return nullptr;
@@ -302,7 +309,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
         apiDevice->device->SetSampleRate(apiDevice->moduleIndex, lime::TRXDir::Rx, 0, rate, oversample);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set sampling rate.");
 
         return -1;
     }
@@ -326,7 +333,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx,
 
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s sampling rate.", ToString(direction).c_str());
 
         return -1;
     }
@@ -345,8 +352,10 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, si
     lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     auto rate = apiDevice->device->GetSampleRate(apiDevice->moduleIndex, direction, 0);
 
-    *host_Hz = rate;
-    *rf_Hz = rate;
+    if (host_Hz)
+        *host_Hz = rate;
+    if (rf_Hz)
+        *rf_Hz = rate;
 
     return 0;
 }
@@ -359,7 +368,8 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_t
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).samplingRateRange);
+    if (range)
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().samplingRateRange);
 
     return 0;
 }
@@ -372,7 +382,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t* device, bool dir_tx)
         return -1;
     }
 
-    return apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).channelCount;
+    return apiDevice->GetRFSOCDescriptor().channelCount;
 }
 
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type frequency)
@@ -390,7 +400,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
         apiDevice->device->SetFrequency(apiDevice->moduleIndex, direction, chan, frequency);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s LO frequency.", ToString(direction).c_str());
 
         return -1;
     }
@@ -406,7 +416,8 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    *frequency = apiDevice->device->GetFrequency(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan);
+    if (frequency)
+        *frequency = apiDevice->device->GetFrequency(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan);
 
     return 0;
 }
@@ -419,7 +430,8 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).frequencyRange);
+    if (range)
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().frequencyRange);
 
     return 0;
 }
@@ -432,8 +444,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    auto rfSOC = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex);
-
+    const auto& rfSOC = apiDevice->GetRFSOCDescriptor();
     const auto& strings = rfSOC.pathNames.at(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
     for (std::size_t i = 0; i < strings.size(); ++i)
     {
@@ -458,7 +469,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
         apiDevice->device->SetAntenna(apiDevice->moduleIndex, direction, chan, path);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s antenna.", ToString(direction).c_str());
 
         return -1;
     }
@@ -488,10 +499,12 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, siz
     }
 
     lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
-    std::string pathName = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).pathNames.at(direction).at(path);
+    std::string pathName = apiDevice->GetRFSOCDescriptor().pathNames.at(direction).at(path);
 
-    *range = RangeToLMS_Range(
-        apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).antennaRange.at(direction).at(pathName));
+    if (range)
+    {
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().antennaRange.at(direction).at(pathName));
+    }
 
     return 0;
 }
@@ -512,7 +525,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
         apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s LPF bandwidth.", ToString(direction).c_str());
 
         return -1;
     }
@@ -530,7 +543,8 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lm
 
     lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).lowPassFilterRange.at(direction));
+    if (range)
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().lowPassFilterRange.at(direction));
 
     return 0;
 }
@@ -548,7 +562,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
 
-    auto range = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).gainRange.at(direction).at(gainToUse);
+    auto range = apiDevice->GetRFSOCDescriptor().gainRange.at(direction).at(gainToUse);
 
     gain = range.min + gain * (range.max - range.min);
 
@@ -557,7 +571,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
         apiDevice->device->SetGain(apiDevice->moduleIndex, direction, chan, gainToUse, gain);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s normalized gain.", ToString(direction).c_str());
 
         return -1;
     }
@@ -581,7 +595,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
         apiDevice->device->SetGain(apiDevice->moduleIndex, direction, chan, gainToUse, gain);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s gain.", ToString(direction).c_str());
 
         return -1;
     }
@@ -600,12 +614,13 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
 
-    auto range = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).gainRange.at(direction).at(gainToUse);
+    auto range = apiDevice->GetRFSOCDescriptor().gainRange.at(direction).at(gainToUse);
 
     double deviceGain = 0.0;
     int returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
 
-    *gain = (deviceGain - range.min) / (range.max - range.min);
+    if (gain)
+        *gain = (deviceGain - range.min) / (range.max - range.min);
 
     return returnValue;
 }
@@ -624,7 +639,8 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t
 
     int returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
 
-    *gain = std::lround(deviceGain) + 12;
+    if (gain)
+        *gain = std::lround(deviceGain) + 12;
 
     return returnValue;
 }
@@ -644,7 +660,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t
         apiDevice->device->Calibrate(apiDevice->moduleIndex, direction, chan, bw);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to calibrate %s channel %i.", ToString(direction).c_str(), chan);
 
         return -1;
     }
@@ -701,7 +717,13 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
         }
     };
 
-    apiDevice->device->SetTestSignal(apiDevice->moduleIndex, direction, chan, enumToTestStruct(sig), dc_i, dc_q);
+    try {
+        apiDevice->device->SetTestSignal(apiDevice->moduleIndex, direction, chan, enumToTestStruct(sig), dc_i, dc_q);
+    }
+    catch (...)
+    {
+        lime::error("Failed to set %s channel %i test signal.", ToString(direction).c_str(), chan);
+    }
 
     return 0;
 }
@@ -1198,7 +1220,8 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
         return -1;
     }
 
-    *val = parameter[0].value;
+    if (val)
+        *val = parameter[0].value;
     if (units != nullptr)
     {
         CopyString(parameter[0].units, units, sizeof(lms_name_t));
@@ -1228,7 +1251,7 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* devic
         return nullptr;
     }
 
-    auto descriptor = apiDevice->device->GetDescriptor();
+    const auto& descriptor = apiDevice->device->GetDescriptor();
 
     if (apiDevice->deviceInfo == nullptr)
     {
@@ -1266,7 +1289,8 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, f
         return -1;
     }
 
-    *freq = apiDevice->device->GetClockFreq(clk_id, apiDevice->moduleIndex * 2);
+    if (freq)
+        *freq = apiDevice->device->GetClockFreq(clk_id, apiDevice->moduleIndex * 2);
     return *freq > 0 ? 0 : -1;
 }
 
@@ -1283,7 +1307,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
         apiDevice->device->SetClockFreq(clk_id, freq, apiDevice->moduleIndex * 2);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set clock%li.", clk_id);
 
         return -1;
     }
@@ -1293,15 +1317,14 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
 
 API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
 {
-    *temp = 0;
-
     LMS_APIDevice* apiDevice = CheckDevice(dev);
     if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    *temp = apiDevice->device->GetTemperature(apiDevice->moduleIndex);
+    if (temp)
+        *temp = apiDevice->device->GetTemperature(apiDevice->moduleIndex);
     return 0;
 }
 
@@ -1353,7 +1376,8 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t 
 
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    *bandwidth = apiDevice->device->GetLowPassFilter(apiDevice->moduleIndex, direction, chan);
+    if (bandwidth)
+        *bandwidth = apiDevice->device->GetLowPassFilter(apiDevice->moduleIndex, direction, chan);
 
     return 0;
 }
@@ -1374,7 +1398,7 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t ch
             apiDevice->moduleIndex, direction, chan, apiDevice->lastSavedLPFValue[chan][dir_tx]); // TODO: fix
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s channel %li LPF.", ToString(direction).c_str(), chan);
 
         return -1;
     }
@@ -1445,6 +1469,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filena
         return -1;
     }
 
+    // TODO: check status
     apiDevice->device->LoadConfig(apiDevice->moduleIndex, filename);
 
     return 0;
@@ -1458,6 +1483,7 @@ API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filena
         return -1;
     }
 
+    // TODO: check status
     apiDevice->device->SaveConfig(apiDevice->moduleIndex, filename);
 
     return 0;
@@ -1470,8 +1496,8 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
         lime::registerLogHandler(APIMsgHandler);
         api_msg_handler = handler;
     }
-
-    lime::registerLogHandler(nullptr);
+    else
+        lime::registerLogHandler(nullptr);
 }
 
 API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
@@ -1488,6 +1514,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_
     }
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
+    // TODO: check status
     apiDevice->device->ConfigureGFIR(apiDevice->moduleIndex, direction, chan & 1, { enabled, bandwidth });
 
     return 0;
@@ -1504,6 +1531,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
 
     std::vector<double> coefficients(coef, coef + count);
 
+    // TODO: check status
     apiDevice->device->SetGFIRCoefficients(
         apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, static_cast<uint8_t>(filt), coefficients);
 
@@ -1520,6 +1548,7 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, siz
 
     const uint8_t count = filt == LMS_GFIR3 ? 120 : 40;
 
+    // TODO: check status
     auto coefficients = apiDevice->device->GetGFIRCoefficients(
         apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, static_cast<uint8_t>(filt));
 
@@ -1540,6 +1569,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t c
     }
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
+    // TODO: check status
     apiDevice->device->SetGFIR(apiDevice->moduleIndex, direction, chan, filt, enabled);
     return 0;
 }
@@ -1552,7 +1582,8 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t* device, struct LMS7Paramete
         return -1;
     }
 
-    *val = apiDevice->device->GetParameter(apiDevice->moduleIndex, 0, param.address, param.msb, param.lsb);
+    if (val)
+        *val = apiDevice->device->GetParameter(apiDevice->moduleIndex, 0, param.address, param.msb, param.lsb);
 
     return 0;
 }
@@ -1564,6 +1595,8 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Paramet
     {
         return -1;
     }
+
+    // TODO: check status
     apiDevice->device->SetParameter(apiDevice->moduleIndex, 0, param.address, param.msb, param.lsb, val);
 
     return 0;
@@ -1580,6 +1613,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, 
 
     for (int i = 0; i < LMS_NCO_VAL_COUNT; ++i)
     {
+        // TODO: check status
         apiDevice->device->SetNCOFrequency(apiDevice->moduleIndex, direction, ch, i, freq[i], pho);
     }
 
@@ -1597,6 +1631,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, 
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     for (int i = 0; i < LMS_NCO_VAL_COUNT; ++i)
     {
+        // TODO: check status
         freq[i] = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, chan, i);
     }
 
@@ -1618,6 +1653,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size
     }
 
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    // TODO: check status
     apiDevice->device->SetNCOFrequency(apiDevice->moduleIndex, direction, ch, 0, fcw);
 
     if (phase != nullptr)
@@ -1740,7 +1776,13 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address,
         return -1;
     }
 
-    apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val);
+    try {
+        apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val);
+    }
+    catch(...)
+    {
+        return lime::error("Failed to write register at %04X.", address);
+    }
 
     return 0;
 }
@@ -1753,7 +1795,14 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, 
         return -1;
     }
 
-    *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address);
+    try {
+        if (val)
+            *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address);
+    }
+    catch (...)
+    {
+        return lime::error("Failed to read register at %04X.", address);
+    }
 
     return 0;
 }
@@ -1766,7 +1815,13 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address
         return -1;
     }
 
-    apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val, true);
+    try {
+        apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val, true);
+    }
+    catch (...)
+    {
+        return lime::error("Failed to write register at %04X.", address);
+    }
 
     return 0;
 }
@@ -1779,7 +1834,14 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address,
         return -1;
     }
 
-    *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address, true);
+    try {
+        if (val)
+            *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address, true);
+    }
+    catch (...)
+    {
+        return lime::error("Failed to read register at %04X.", address);
+    }
 
     return 0;
 }
@@ -1881,7 +1943,7 @@ API_EXPORT int CALL_CONV LMS_Program(
         return memoryDevice->ownerDevice->UploadMemory(memoryDevice->memoryDeviceType, 0, data, size, ProgrammingCallback);
     } catch (std::out_of_range& e)
     {
-        lime::error("Mode not found.");
+        lime::error("Invalid programming mode.");
 
         return -1;
     }
@@ -1937,7 +1999,8 @@ static int VCTCXOReadFallbackPath(LMS_APIDevice* apiDevice, uint16_t* val)
         return -1;
     }
 
-    *val = parameters.at(0).value;
+    if (val)
+        *val = parameters.at(0).value;
     return 0;
 }
 
