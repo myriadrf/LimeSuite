@@ -790,14 +790,14 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
 
     auto returnValue = apiDevice->device->StreamSetup(config, apiDevice->moduleIndex);
 
-    if (returnValue == 0)
+    if (returnValue == OpStatus::SUCCESS)
     {
         apiDevice->lastSavedStreamConfig = config;
     }
 
     stream->handle = GetStreamHandle(apiDevice);
 
-    return returnValue;
+    return returnValue == OpStatus::SUCCESS ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* stream)
@@ -1171,7 +1171,8 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t
         return -1;
     }
 
-    return apiDevice->device->GPIORead(buffer, len);
+    OpStatus status = apiDevice->device->GPIORead(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
@@ -1182,7 +1183,8 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer,
         return -1;
     }
 
-    return apiDevice->device->GPIOWrite(buffer, len);
+    OpStatus status = apiDevice->device->GPIOWrite(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
@@ -1193,7 +1195,8 @@ API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, siz
         return -1;
     }
 
-    return apiDevice->device->GPIODirRead(buffer, len);
+    OpStatus status = apiDevice->device->GPIODirRead(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
@@ -1204,7 +1207,8 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
         return -1;
     }
 
-    return apiDevice->device->GPIODirWrite(buffer, len);
+    OpStatus status = apiDevice->device->GPIODirWrite(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
@@ -1216,9 +1220,9 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
     }
 
     std::vector<lime::CustomParameterIO> parameter{ { param_id, *val, units } };
-    int returnValue = apiDevice->device->CustomParameterRead(parameter);
+    OpStatus returnValue = apiDevice->device->CustomParameterRead(parameter);
 
-    if (returnValue < 0)
+    if (returnValue != OpStatus::SUCCESS)
     {
         return -1;
     }
@@ -1230,7 +1234,7 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
         CopyString(parameter[0].units, units, sizeof(lms_name_t));
     }
 
-    return returnValue;
+    return OpStatusToReturnCode(returnValue);
 }
 
 API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
@@ -1243,7 +1247,8 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t
 
     std::vector<lime::CustomParameterIO> parameter{ { param_id, val, units } };
 
-    return apiDevice->device->CustomParameterWrite(parameter);
+    OpStatus status = apiDevice->device->CustomParameterWrite(parameter);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
@@ -1878,7 +1883,8 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** sample
 
     config.format = dataFormat;
 
-    return apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
+    OpStatus status = apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
@@ -1943,7 +1949,9 @@ API_EXPORT int CALL_CONV LMS_Program(
 
         const auto& memoryDevice = apiDevice->device->GetDescriptor().memoryDevices.at(prog_mode);
 
-        return memoryDevice->ownerDevice->UploadMemory(memoryDevice->memoryDeviceType, 0, data, size, ProgrammingCallback);
+        OpStatus status =
+            memoryDevice->ownerDevice->UploadMemory(memoryDevice->memoryDeviceType, 0, data, size, ProgrammingCallback);
+        return OpStatusToReturnCode(status);
     } catch (std::out_of_range& e)
     {
         lime::error("Invalid programming mode.");
@@ -1972,8 +1980,8 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
         try
         {
             const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
-
-            return apiDevice->device->MemoryWrite(dataStorage, region, &val);
+            OpStatus status = apiDevice->device->MemoryWrite(dataStorage, region, &val);
+            return OpStatusToReturnCode(status);
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");
@@ -1997,10 +2005,9 @@ static int VCTCXOReadFallbackPath(LMS_APIDevice* apiDevice, uint16_t* val)
 {
     std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
 
-    if (apiDevice->device->CustomParameterRead(parameters) != 0)
-    {
-        return -1;
-    }
+    OpStatus status = apiDevice->device->CustomParameterRead(parameters);
+    if (status != OpStatus::SUCCESS)
+        return OpStatusToReturnCode(status);
 
     if (val)
         *val = parameters.at(0).value;
@@ -2025,7 +2032,8 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
         {
             const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
 
-            return apiDevice->device->MemoryRead(dataStorage, region, val);
+            OpStatus status = apiDevice->device->MemoryRead(dataStorage, region, val);
+            return OpStatusToReturnCode(status);
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");

@@ -25,9 +25,9 @@ class FPGA
     FPGA(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI);
     virtual ~FPGA(){};
 
-    int StartStreaming();
-    int StopStreaming();
-    int ResetTimestamp();
+    OpStatus StartStreaming();
+    OpStatus StopStreaming();
+    OpStatus ResetTimestamp();
 
     /** @brief Structure for holding FPGA's Phase-Locked Loop (PLL) clock information. */
     struct FPGA_PLL_clock {
@@ -60,9 +60,9 @@ class FPGA
     static int Samples2FPGAPacketPayloadFloat(
         const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
     virtual void EnableValuesCache(bool enabled);
-    virtual int WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt);
-    virtual int ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);
-    int WriteRegister(uint32_t addr, uint32_t val);
+    virtual OpStatus WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt);
+    virtual OpStatus ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);
+    OpStatus WriteRegister(uint32_t addr, uint32_t val);
     int ReadRegister(uint32_t addr);
     int WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
     int ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);

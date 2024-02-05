@@ -125,12 +125,12 @@ TRXLooper_PCIE::~TRXLooper_PCIE()
     }
 }
 
-void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
+OpStatus TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
 {
     if (config.channels.at(lime::TRXDir::Rx).size() > 0 && !mRxArgs.port->IsOpen())
-        throw std::runtime_error("Rx data port not open");
+        return ReportError(OpStatus::IO_FAILURE, "Rx data port not open");
     if (config.channels.at(lime::TRXDir::Tx).size() > 0 && !mTxArgs.port->IsOpen())
-        throw std::runtime_error("Tx data port not open");
+        return ReportError(OpStatus::IO_FAILURE, "Tx data port not open");
 
     float combinedSampleRate =
         std::max(config.channels.at(lime::TRXDir::Tx).size(), config.channels.at(lime::TRXDir::Rx).size()) * config.hintSampleRate;
@@ -165,7 +165,7 @@ void TRXLooper_PCIE::Setup(const SDRDevice::StreamConfig& config)
     if (config.channels.at(lime::TRXDir::Tx).size() > 0)
         TxSetup();
 
-    TRXLooper::Setup(config);
+    return TRXLooper::Setup(config);
 }
 
 void TRXLooper_PCIE::Start()
@@ -996,7 +996,7 @@ void TRXLooper_PCIE::RxTeardown()
     mRxArgs.port->RxDMAEnable(false, mRxArgs.bufferSize, 1);
 }
 
-int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
+OpStatus TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
     std::shared_ptr<LitePCIe> port,
     const lime::SDRDevice::StreamConfig& config,
     uint8_t moduleIndex,
@@ -1074,8 +1074,7 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
             if (errno == EINVAL)
             {
                 port->TxDMAEnable(false);
-                lime::error("Failed to submit dma write (%i) %s", errno, strerror(errno));
-                return -1;
+                return ReportError(OpStatus::IO_FAILURE, "Failed to submit dma write (%i) %s", errno, strerror(errno));
             }
         }
         else
@@ -1091,9 +1090,9 @@ int TRXLooper_PCIE::UploadTxWaveform(FPGA* fpga,
 
     fpga->WriteRegister(0x000D, 0); // WFM_LOAD off
     if (samplesRemaining == 0)
-        return 0;
+        return OpStatus::SUCCESS;
     else
-        return ReportError(-1, "Failed to upload waveform");
+        return ReportError(OpStatus::ERROR, "Failed to upload waveform");
 }
 
 } // namespace lime

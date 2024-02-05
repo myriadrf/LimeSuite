@@ -366,7 +366,7 @@ class LIME_API LMS7002M
     void GetIQBalance(const TRXDir dir, float_type& phase, float_type& gainI, float_type& gainQ);
 
     double GetClockFreq(ClockID clk_id, uint8_t channel);
-    void SetClockFreq(ClockID clk_id, double freq, uint8_t channel);
+    OpStatus SetClockFreq(ClockID clk_id, double freq, uint8_t channel);
 
     ///enumeration to indicate module registers intervals
     enum MemorySection {

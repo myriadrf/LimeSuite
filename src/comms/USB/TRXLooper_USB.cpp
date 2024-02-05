@@ -41,7 +41,7 @@ TRXLooper_USB::~TRXLooper_USB()
     }
 }
 
-void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
+OpStatus TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
 {
     mConfig = config;
 
@@ -55,7 +55,7 @@ void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
         TxSetup();
     }
 
-    TRXLooper::Setup(config);
+    return TRXLooper::Setup(config);
 }
 
 int TRXLooper_USB::TxSetup()

@@ -141,26 +141,27 @@ struct FirmwareInfo {
     int protocol;
     uint64_t boardSerialNumber;
 };
-int GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice = 0);
+OpStatus GetFirmwareInfo(ISerialPort& port, FirmwareInfo& info, uint32_t subDevice = 0);
 void FirmwareToDescriptor(const FirmwareInfo& info, SDRDevice::Descriptor& descriptor);
 
-int LMS7002M_SPI(ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t* miso, size_t count, uint32_t subDevice = 0);
-int FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t* miso, size_t count, uint32_t subDevice = 0);
-int ADF4002_SPI(ISerialPort& port, const uint32_t* mosi, size_t count, uint32_t subDevice = 0);
+OpStatus LMS7002M_SPI(
+    ISerialPort& port, uint8_t chipSelect, const uint32_t* mosi, uint32_t* miso, size_t count, uint32_t subDevice = 0);
+OpStatus FPGA_SPI(ISerialPort& port, const uint32_t* mosi, uint32_t* miso, size_t count, uint32_t subDevice = 0);
+OpStatus ADF4002_SPI(ISerialPort& port, const uint32_t* mosi, size_t count, uint32_t subDevice = 0);
 
-int I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
-int I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
+OpStatus I2C_Write(ISerialPort& port, uint32_t address, const uint8_t* data, size_t count);
+OpStatus I2C_Read(ISerialPort& port, uint32_t address, uint8_t* data, size_t count);
 
-int GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
-int GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
-int GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
-int GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
+OpStatus GPIODirRead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
+OpStatus GPIORead(ISerialPort& port, uint8_t* buffer, const size_t bufLength);
+OpStatus GPIODirWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
+OpStatus GPIOWrite(ISerialPort& port, const uint8_t* buffer, const size_t bufLength);
 
-int CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
-int CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
+OpStatus CustomParameterWrite(ISerialPort& port, const std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
+OpStatus CustomParameterRead(ISerialPort& port, std::vector<CustomParameterIO>& parameters, uint32_t subDevice = 0);
 
 typedef bool (*ProgressCallback)(size_t bytesSent, size_t bytesTotal, const char* progressMsg); // return true to stop progress
-int ProgramWrite(ISerialPort& port,
+OpStatus ProgramWrite(ISerialPort& port,
     const char* data,
     size_t length,
     int prog_mode,
@@ -168,9 +169,9 @@ int ProgramWrite(ISerialPort& port,
     ProgressCallback callback = nullptr,
     uint32_t subDevice = 0);
 
-int DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice = 0);
-int MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size_t dataLen, uint32_t subDevice = 0);
-int MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, uint32_t subDevice = 0);
+OpStatus DeviceReset(ISerialPort& port, uint32_t socIndex, uint32_t subDevice = 0);
+OpStatus MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size_t dataLen, uint32_t subDevice = 0);
+OpStatus MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, uint32_t subDevice = 0);
 
 } // namespace LMS64CProtocol
 

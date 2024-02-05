@@ -3,8 +3,7 @@
 
 namespace lime {
 
-enum class OpStatus
-{
+enum class OpStatus {
     SUCCESS = 0,
     ERROR = -1,
     NOT_IMPLEMENTED = -2,
@@ -15,6 +14,7 @@ enum class OpStatus
     NOT_SUPPORTED = -7,
     TIMEOUT = -8,
     BUSY = -9,
+    ABORTED = -10,
 };
 
 const char* ToCString(OpStatus value);

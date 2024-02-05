@@ -13,18 +13,18 @@ class LMS64C_FPGA_Over_USB : public IComms
   public:
     LMS64C_FPGA_Over_USB(std::shared_ptr<USB_CSR_Pipe> dataPort);
 
-    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
-    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual OpStatus SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual OpStatus SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIORead(uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
 
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
-    virtual int ProgramWrite(
+    virtual OpStatus ProgramWrite(
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;
 
   private:

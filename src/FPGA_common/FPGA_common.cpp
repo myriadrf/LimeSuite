@@ -27,9 +27,9 @@ class WriteRegistersBatch
     WriteRegistersBatch(FPGA* fpga)
         : owner(fpga){};
     ~WriteRegistersBatch() { ASSERT_WARNING(addrs.size() == 0, "FPGA WriteRegistersBatch not flushed"); }
-    int Flush()
+    OpStatus Flush()
     {
-        int status = owner->WriteRegisters(addrs.data(), values.data(), addrs.size());
+        OpStatus status = owner->WriteRegisters(addrs.data(), values.data(), addrs.size());
         addrs.clear();
         values.clear();
         return status;
@@ -119,7 +119,7 @@ void FPGA::EnableValuesCache(bool enabled)
         regsCache.clear();
 }
 
-int FPGA::WriteRegister(uint32_t addr, uint32_t val)
+OpStatus FPGA::WriteRegister(uint32_t addr, uint32_t val)
 {
     return WriteRegisters(&addr, &val, 1);
 }
@@ -127,10 +127,10 @@ int FPGA::WriteRegister(uint32_t addr, uint32_t val)
 int FPGA::ReadRegister(uint32_t addr)
 {
     uint32_t val;
-    return ReadRegisters(&addr, &val, 1) != 0 ? -1 : val;
+    return ReadRegisters(&addr, &val, 1) != OpStatus::SUCCESS ? -1 : val;
 }
 
-int FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt)
+OpStatus FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt)
 {
     std::vector<uint32_t> spiBuffer;
     if (useCache)
@@ -194,14 +194,13 @@ int FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned c
             regsCache[addrs[i]] = data[i];
         }
         if (spiBuffer.size())
-            fpgaPort->SPI(spiBuffer.data(), nullptr, spiBuffer.size());
-        return 0;
+            return fpgaPort->SPI(spiBuffer.data(), nullptr, spiBuffer.size());
     }
     for (unsigned i = 0; i < cnt; i++)
         spiBuffer.push_back((1 << 31) | (addrs[i]) << 16 | data[i]);
     if (spiBuffer.size())
-        fpgaPort->SPI(spiBuffer.data(), nullptr, spiBuffer.size());
-    return 0;
+        return fpgaPort->SPI(spiBuffer.data(), nullptr, spiBuffer.size());
+    return OpStatus::SUCCESS;
 }
 
 int FPGA::WriteLMS7002MSPI(const uint32_t* data, uint32_t length)
@@ -220,7 +219,7 @@ int FPGA::ReadLMS7002MSPI(const uint32_t* writeData, uint32_t* readData, uint32_
     return 0;
 }
 
-int FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
+OpStatus FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
 {
     std::vector<uint32_t> spiBuffer;
     if (useCache)
@@ -290,52 +289,52 @@ int FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
         }
         for (unsigned i = 0; i < cnt; i++)
             data[i] = regsCache[addrs[i]];
-        return 0;
+        return OpStatus::SUCCESS;
     }
     for (unsigned i = 0; i < cnt; i++)
         spiBuffer.push_back(addrs[i]);
     std::vector<uint32_t> reg_val(spiBuffer.size());
-    fpgaPort->SPI(spiBuffer.data(), reg_val.data(), spiBuffer.size());
+    OpStatus status = fpgaPort->SPI(spiBuffer.data(), reg_val.data(), spiBuffer.size());
     for (unsigned i = 0; i < cnt; i++)
         data[i] = reg_val[i] & 0xFFFF;
-    return 0;
+    return status;
 }
 
-int FPGA::StartStreaming()
+OpStatus FPGA::StartStreaming()
 {
     lime::debug("%s", __func__);
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
-        return -1;
+        return OpStatus::IO_FAILURE;
     ASSERT_WARNING((interface_ctrl_000A & RX_EN) == 0, "FPGA stream is already started");
     return WriteRegister(0x000A, interface_ctrl_000A | RX_EN);
 }
 
-int FPGA::StopStreaming()
+OpStatus FPGA::StopStreaming()
 {
     lime::debug("%s", __func__);
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
-        return -1;
+        return OpStatus::IO_FAILURE;
     const uint16_t flags = ~(RX_EN | TX_EN);
     return WriteRegister(0x000A, interface_ctrl_000A & flags);
 }
 
-int FPGA::ResetTimestamp()
+OpStatus FPGA::ResetTimestamp()
 {
     lime::debug("%s", __func__);
 #ifndef NDEBUG
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
-        return 0;
+        return OpStatus::SUCCESS;
 
     if (interface_ctrl_000A & RX_EN)
-        return ReportError(EPERM, "FPGA samples streaming must be stopped to reset timestamp");
+        return ReportError(OpStatus::BUSY, "FPGA samples streaming must be stopped to reset timestamp");
 #endif // NDEBUG
     //reset hardware timestamp to 0
     int interface_ctrl_0009 = ReadRegister(0x0009);
     if (interface_ctrl_0009 < 0)
-        return 0;
+        return OpStatus::SUCCESS;
     const uint32_t flags = (TXPCT_LOSS_CLR | SMPL_NR_CLR);
     uint32_t addrs[] = { 0x0009, 0x0009, 0x0009 };
     uint32_t values[] = { interface_ctrl_0009 & (~flags), interface_ctrl_0009 | flags, interface_ctrl_0009 & (~flags) };
@@ -409,7 +408,7 @@ OpStatus FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool d
     batch.WriteRegister(0x0024, abs(nSteps)); //CNT_PHASE
     batch.Flush();
     // TODO: could possibly write this in the same batch?
-    if (WriteRegister(0x0023, reg23val | PHCFG_START) != 0)
+    if (WriteRegister(0x0023, reg23val | PHCFG_START) != OpStatus::SUCCESS)
         lime::error("FPGA SetPllFrequency: find phase, failed to write registers");
 
     const uint16_t doneMask = doPhaseSearch ? 0x4 : 0x1;
@@ -425,7 +424,7 @@ OpStatus FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool d
     else
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    if (WriteRegister(0x0023, reg23val & ~PHCFG_START) != 0) // redundant clear
+    if (WriteRegister(0x0023, reg23val & ~PHCFG_START) != OpStatus::SUCCESS) // redundant clear
         ReportError(OpStatus::IO_FAILURE, "FPGA SetPllClock: failed to write registers");
     return OpStatus::SUCCESS;
 }
@@ -630,7 +629,7 @@ OpStatus FPGA::SetDirectClocking(int clockIndex)
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
     //enable direct clocking
-    if (WriteRegister(0x0005, drct_clk_ctrl_0005 | (1 << clockIndex)) != 0)
+    if (WriteRegister(0x0005, drct_clk_ctrl_0005 | (1 << clockIndex)) != OpStatus::SUCCESS)
         return ReportError(OpStatus::IO_FAILURE, "SetDirectClocking: failed to write registers");
     return OpStatus::SUCCESS;
 }
@@ -1190,11 +1189,11 @@ double FPGA::DetectRefClk(double fx3Clk)
     const double clkTbl[] = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
-    if (WriteRegisters(addr, vals, 2) != 0)
+    if (WriteRegisters(addr, vals, 2) != OpStatus::SUCCESS)
         return -1;
 
     auto start = std::chrono::steady_clock::now();
-    if (WriteRegister(0x61, 0x4) != 0)
+    if (WriteRegister(0x61, 0x4) != OpStatus::SUCCESS)
         return -1;
 
     while (1) //wait for test to finish
@@ -1213,7 +1212,7 @@ double FPGA::DetectRefClk(double fx3Clk)
 
     const uint32_t addr2[] = { 0x72, 0x73 };
     uint32_t vals2[2];
-    if (ReadRegisters(addr2, vals2, 2) != 0)
+    if (ReadRegisters(addr2, vals2, 2) != OpStatus::SUCCESS)
         return -1;
 
     double count = (vals2[0] | (vals2[1] << 16)); //cock counter
@@ -1243,7 +1242,7 @@ FPGA::GatewareInfo FPGA::GetGatewareInfo()
 
     const uint32_t addrs[4] = { 0x0000, 0x0001, 0x0002, 0x0003 };
     uint32_t data[4];
-    if (ReadRegisters(addrs, data, 4) != 0)
+    if (ReadRegisters(addrs, data, 4) != OpStatus::SUCCESS)
         return info;
 
     info.boardID = data[0];

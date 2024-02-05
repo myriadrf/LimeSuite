@@ -21,7 +21,6 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
-    SDRDevice.cpp
     StreamComposite.cpp
     CommonFunctions.cpp
     boards/DeviceRegistry.cpp
@@ -64,7 +63,9 @@ set(LIME_SUITE_SOURCES
 
     API/LMS_APIWrapper.cpp
 
+    include/limesuite/commonTypes.cpp
     include/limesuite/OpStatus.cpp
+    include/limesuite/SDRDevice.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES( 

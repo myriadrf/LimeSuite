@@ -3270,7 +3270,7 @@ double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
     }
 }
 
-void LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
+OpStatus LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
 {
     switch (clk_id)
     {
@@ -3278,20 +3278,21 @@ void LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
         // TODO: recalculate CGEN,SXR/T
         break;
     case ClockID::CLK_CGEN:
-        SetFrequencyCGEN(freq, true, nullptr);
+        return SetFrequencyCGEN(freq, true, nullptr);
         break;
     case ClockID::CLK_SXR:
-        SetFrequencySX(TRXDir::Rx, freq, nullptr);
+        return SetFrequencySX(TRXDir::Rx, freq, nullptr);
         break;
     case ClockID::CLK_SXT:
-        SetFrequencySX(TRXDir::Rx, freq, nullptr);
+        return SetFrequencySX(TRXDir::Rx, freq, nullptr);
         break;
     case ClockID::CLK_RXTSP:
     case ClockID::CLK_TXTSP:
-        throw std::logic_error("RxTSP/TxTSP Clocks are read only");
+        return ReportError(OpStatus::INVALID_VALUE, "RxTSP/TxTSP Clocks are read only");
     default:
-        throw std::logic_error("LMS7002M::SetClockFreq Unknown clock id");
+        return ReportError(OpStatus::INVALID_VALUE, "LMS7002M::SetClockFreq Unknown clock id");
     }
+    return OpStatus::SUCCESS;
 }
 
 float_type LMS7002M::GetSampleRate(TRXDir dir, Channel ch)

@@ -4,6 +4,8 @@ namespace lime {
 
 enum class TRXDir : bool { Rx, Tx };
 
+const char* ToCString(TRXDir dir);
+
 struct Range {
     constexpr Range(double min = 0.0, double max = 0.0, double step = 0.0)
         : min(min)

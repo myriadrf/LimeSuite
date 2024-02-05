@@ -16,7 +16,10 @@ const char* ToCString(OpStatus value)
     case OpStatus::NOT_SUPPORTED: return "not supported";
     case OpStatus::TIMEOUT: return "timeout";
     case OpStatus::BUSY: return "busy";
+    case OpStatus::ABORTED:
+        return "aborted";
     }
+    return "";
 }
 
 } // namespace lime

@@ -47,9 +47,10 @@ uint64_t TRXLooper::GetHardwareTimestamp(void)
     return mRx.lastTimestamp.load(std::memory_order_relaxed) + mTimestampOffset;
 }
 
-void TRXLooper::SetHardwareTimestamp(const uint64_t now)
+OpStatus TRXLooper::SetHardwareTimestamp(const uint64_t now)
 {
     mTimestampOffset = now - mRx.lastTimestamp.load(std::memory_order_relaxed);
+    return OpStatus::SUCCESS;
 }
 /*
 void TRXLooper::RstRxIQGen()
@@ -435,10 +436,10 @@ int TRXLooper::UpdateThreads(bool stopAll)
 //     return mConfig;
 // }
 
-void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
+OpStatus TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
 {
     if (mRx.thread.joinable() || mTx.thread.joinable())
-        throw std::logic_error("Samples streaming already running");
+        return ReportError(OpStatus::BUSY, "Samples streaming already running");
 
     bool needTx = cfg.channels.at(TRXDir::Tx).size() > 0;
     bool needRx = cfg.channels.at(TRXDir::Rx).size() > 0; // always need Rx to know current timestamps, cfg.rxCount > 0;
@@ -449,7 +450,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     {
         if (cfg.channels.at(TRXDir::Rx).at(i) > 1)
         {
-            throw std::logic_error("Invalid Rx channel, only [0,1] channels supported");
+            return ReportError(OpStatus::INVALID_VALUE, "Invalid Rx channel, only [0,1] channels supported");
         }
         else
         {
@@ -461,7 +462,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     {
         if (cfg.channels.at(TRXDir::Tx).at(i) > 1)
         {
-            throw std::logic_error("Invalid Tx channel, only [0,1] channels supported");
+            return ReportError(OpStatus::INVALID_VALUE, "Invalid Tx channel, only [0,1] channels supported");
         }
         else
         {
@@ -472,14 +473,14 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     if ((cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I12) &&
         (cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I16))
     {
-        throw std::logic_error("Unsupported stream link format");
+        return ReportError(OpStatus::INVALID_VALUE, "Unsupported stream link format");
     }
 
     mConfig = cfg;
 
     //configure FPGA on first start, or disable FPGA when not streaming
     if (!needTx && !needRx)
-        return;
+        return OpStatus::SUCCESS;
 
     assert(fpga);
     fpga->WriteRegister(0xFFFF, 1 << chipId);
@@ -568,6 +569,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     // if (cfg.alignPhase)
     //     TODO: AlignRxRF(true);
     //enable FPGA streaming
+    return OpStatus::SUCCESS;
 }
 
 void TRXLooper::Start()
