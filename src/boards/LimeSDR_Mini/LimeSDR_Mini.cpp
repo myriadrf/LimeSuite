@@ -302,16 +302,18 @@ void LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
     }
 }
 
-int LimeSDR_Mini::Init()
+OpStatus LimeSDR_Mini::Init()
 {
     lime::LMS7002M* lms = mLMSChips[0];
-    if (lms->ResetChip() != 0)
-        return -1;
+    OpStatus status;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-    if (lms->CalibrateTxGain(0, nullptr) != 0)
-        return -1;
+    if (lms->CalibrateTxGain(0, nullptr) != OpStatus::SUCCESS)
+        return OpStatus::ERROR;
 
     lms->EnableChannel(TRXDir::Tx, 0, false);
 
@@ -346,7 +348,7 @@ int LimeSDR_Mini::Init()
         return -1;
     }*/
 
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_Mini::Reset()
@@ -368,7 +370,7 @@ void LimeSDR_Mini::Synchronize(bool toChip)
 {
     if (toChip)
     {
-        if (mLMSChips[0]->UploadAll() == 0)
+        if (mLMSChips[0]->UploadAll() == OpStatus::SUCCESS)
         {
             mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
             //ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000); // TODO: implement
@@ -493,7 +495,7 @@ int LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO,
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-int LimeSDR_Mini::UpdateFPGAInterface(void* userData)
+OpStatus LimeSDR_Mini::UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);

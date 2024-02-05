@@ -247,10 +247,10 @@ int main(int argc, char** argv)
                 cerr << "Failed to get internal chip: " << moduleId << endl;
                 return EXIT_FAILURE;
             }
-            if (chip->LoadConfig(configFilepath) != 0)
+            if (chip->LoadConfig(configFilepath) != OpStatus::SUCCESS)
             {
                 cerr << "Error loading file: " << configFilepath << endl;
-                return -1;
+                return EXIT_FAILURE;
             }
 
             for (int i = 0; i < device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)

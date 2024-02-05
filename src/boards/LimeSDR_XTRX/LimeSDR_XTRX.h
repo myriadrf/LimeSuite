@@ -28,7 +28,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
 
-    virtual int Init() override;
+    virtual OpStatus Init() override;
 
     virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
 
@@ -51,7 +51,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
   protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
     void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
-    static int LMS1_UpdateFPGAInterface(void* userData);
+    static OpStatus LMS1_UpdateFPGAInterface(void* userData);
 
     enum class ePathLMS1_Rx : uint8_t { NONE, LNAH, LNAL, LNAW };
     enum class ePathLMS1_Tx : uint8_t { NONE, BAND1, BAND2 };

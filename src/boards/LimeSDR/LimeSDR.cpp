@@ -285,7 +285,7 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-int LimeSDR::UpdateFPGAInterface(void* userData)
+OpStatus LimeSDR::UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);
@@ -350,12 +350,14 @@ void LimeSDR::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, do
     lms->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
 
-int LimeSDR::Init()
+OpStatus LimeSDR::Init()
 {
+    OpStatus status;
     lime::LMS7002M* lms = mLMSChips[0];
     // TODO: write GPIO to hard reset the chip
-    if (lms->ResetChip() != 0)
-        return -1;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
@@ -382,7 +384,7 @@ int LimeSDR::Init()
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return status;
 }
 
 SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
@@ -429,12 +431,12 @@ void LimeSDR::Reset()
     LMS64CProtocol::DeviceReset(*mSerialPort, 0);
 }
 
-int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)
+OpStatus LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)
 {
-    int ret = mLMSChips[0]->EnableChannel(dir, channel, enabled);
+    OpStatus status = mLMSChips[0]->EnableChannel(dir, channel, enabled);
     if (dir == TRXDir::Tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
         mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
-    return ret;
+    return status;
 }
 /*
 uint8_t LimeSDR::GetPath(SDRDevice::Dir dir, uint8_t channel) const
@@ -461,7 +463,7 @@ void LimeSDR::Synchronize(bool toChip)
 {
     if (toChip)
     {
-        if (mLMSChips[0]->UploadAll() == 0)
+        if (mLMSChips[0]->UploadAll() == OpStatus::SUCCESS)
         {
             mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
             //ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000); // TODO: implement

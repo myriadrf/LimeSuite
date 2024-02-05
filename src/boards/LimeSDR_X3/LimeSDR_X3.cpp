@@ -142,14 +142,14 @@ static inline void ValidateChannel(uint8_t channel)
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
+OpStatus LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);
     LimeSDR_X3* pthis = static_cast<LimeSDR_X3*>(userData);
     // don't care about cgen changes while doing Config(), to avoid unnecessary fpga updates
     if (pthis->mConfigInProgress)
-        return 0;
+        return OpStatus::SUCCESS;
     LMS7002M* soc = pthis->mLMSChips[chipIndex];
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
@@ -277,7 +277,7 @@ LimeSDR_X3::~LimeSDR_X3()
 }
 
 // Setup default register values specifically for onboard LMS1 chip
-int LimeSDR_X3::InitLMS1(bool skipTune)
+OpStatus LimeSDR_X3::InitLMS1(bool skipTune)
 {
     LMS1_PA_Enable(0, false);
     LMS1_PA_Enable(1, false);
@@ -286,9 +286,11 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     const std::vector<CustomParameterIO> params{ { cp_lms1_tx1dac.id, dacVal, "" }, { cp_lms1_tx2dac.id, dacVal, "" } };
     CustomParameterWrite(params);
 
+    OpStatus status;
     LMS7002M* lms = mLMSChips[0];
-    if (lms->ResetChip() != 0)
-        return -1;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
@@ -303,16 +305,19 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     // EnableChannel(true, 2*i+1, false);
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel, const bool enable)
@@ -425,7 +430,7 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
 }
 
 // Setup default register values specifically for onboard LMS2 chip
-int LimeSDR_X3::InitLMS2(bool skipTune)
+OpStatus LimeSDR_X3::InitLMS2(bool skipTune)
 {
     LMS2_PA_LNA_Enable(0, false, false);
     LMS2_PA_LNA_Enable(1, false, false);
@@ -435,9 +440,11 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
         uint16_t val;
     };
 
+    OpStatus status;
     LMS7002M* lms = mLMSChips[1];
-    if (lms->ResetChip() != 0)
-        return -1;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
@@ -446,33 +453,42 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
     // EnableChannel(true, 2*i+1, false);
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 // TODO: Setup default register values specifically for onboard LMS3 chip
-int LimeSDR_X3::InitLMS3(bool skipTune)
+OpStatus LimeSDR_X3::InitLMS3(bool skipTune)
 {
     LMS7002M* lms = mLMSChips[2];
-    if (lms->ResetChip() != 0)
-        return -1;
+    OpStatus status;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
-    return 0;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_X3::PreConfigure(const SDRConfig& cfg, uint8_t socIndex)
@@ -660,7 +676,7 @@ void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig&
 
     if (socIndex == 0)
     {
-        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
+        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != OpStatus::SUCCESS)
         {
             throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
         }
@@ -738,7 +754,7 @@ void LimeSDR_X3::SetLMSPath(const TRXDir dir, const SDRDevice::ChannelConfig::Di
     }
 }
 
-int LimeSDR_X3::Init()
+OpStatus LimeSDR_X3::Init()
 {
     struct regVal {
         uint16_t adr;
@@ -758,7 +774,7 @@ int LimeSDR_X3::Init()
     InitLMS1(skipTune);
     InitLMS2(skipTune);
     InitLMS3(skipTune);
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_X3::Reset()

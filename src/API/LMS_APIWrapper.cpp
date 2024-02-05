@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+using namespace lime;
+
 namespace {
 
 struct StatsDeltas {
@@ -107,6 +109,11 @@ struct StreamHandle {
 };
 
 static std::vector<StreamHandle*> streamHandles;
+
+static inline int OpStatusToReturnCode(OpStatus value)
+{
+    return value == OpStatus::SUCCESS ? 0 : -1;
+}
 
 inline LMS_APIDevice* CheckDevice(lms_device_t* device)
 {
@@ -246,9 +253,8 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 
     try
     {
-        int returnCode = apiDevice->device->Init();
-
-        return returnCode;
+        OpStatus status = apiDevice->device->Init();
+        return OpStatusToReturnCode(status);
     } catch (...)
     {
         return -1;
@@ -617,12 +623,12 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
     auto range = apiDevice->GetRFSOCDescriptor().gainRange.at(direction).at(gainToUse);
 
     double deviceGain = 0.0;
-    int returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
+    OpStatus returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
 
     if (gain)
         *gain = (deviceGain - range.min) / (range.max - range.min);
 
-    return returnValue;
+    return returnValue == OpStatus::SUCCESS ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
@@ -637,12 +643,12 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t
     auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
     auto deviceGain = 0.0;
 
-    int returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
+    OpStatus returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
 
     if (gain)
         *gain = std::lround(deviceGain) + 12;
 
-    return returnValue;
+    return returnValue == OpStatus::SUCCESS ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t chan, double bw, unsigned flags)

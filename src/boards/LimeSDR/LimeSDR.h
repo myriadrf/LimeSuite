@@ -23,7 +23,7 @@ class LimeSDR : public LMS7002M_SDRDevice
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
-    virtual int Init() override;
+    virtual OpStatus Init() override;
     virtual void Reset() override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
@@ -52,10 +52,10 @@ class LimeSDR : public LMS7002M_SDRDevice
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
   protected:
-    int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
+    OpStatus EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
     SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
-    static int UpdateFPGAInterface(void* userData);
+    static OpStatus UpdateFPGAInterface(void* userData);
 
   private:
     std::shared_ptr<USBGeneric> mStreamPort;

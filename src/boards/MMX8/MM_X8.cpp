@@ -130,11 +130,17 @@ void LimeSDR_MMX8::Configure(const SDRConfig& cfg, uint8_t socIndex)
     }
 }
 
-int LimeSDR_MMX8::Init()
+OpStatus LimeSDR_MMX8::Init()
 {
+    OpStatus status = OpStatus::SUCCESS;
     for (size_t i = 0; i < mSubDevices.size(); ++i)
-        mSubDevices[i]->Init();
-    return 0;
+    {
+        // TODO: check if the XTRX board slot is populated
+        status = mSubDevices[i]->Init();
+        if (status != OpStatus::SUCCESS)
+            return status;
+    }
+    return status;
 }
 
 void LimeSDR_MMX8::Reset()
@@ -270,13 +276,13 @@ void LimeSDR_MMX8::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
     mSubDevices[channel / 2]->SetClockFreq(clk_id, freq, channel & 1);
 }
 
-int LimeSDR_MMX8::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
+OpStatus LimeSDR_MMX8::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
 {
     auto device = mSubDevices.at(moduleIndex);
     return device->SetGain(0, direction, channel, gain, value);
 }
 
-int LimeSDR_MMX8::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
+OpStatus LimeSDR_MMX8::GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value)
 {
     auto device = mSubDevices.at(moduleIndex);
     return device->GetGain(0, direction, channel, gain, value);
@@ -392,7 +398,7 @@ void LimeSDR_MMX8::WriteRegister(uint8_t moduleIndex, unsigned int address, unsi
     return mSubDevices[moduleIndex]->WriteRegister(0, address, value, useFPGA);
 }
 
-void LimeSDR_MMX8::LoadConfig(uint8_t moduleIndex, const std::string& filename)
+OpStatus LimeSDR_MMX8::LoadConfig(uint8_t moduleIndex, const std::string& filename)
 {
     if (moduleIndex >= 8)
     {
@@ -402,7 +408,7 @@ void LimeSDR_MMX8::LoadConfig(uint8_t moduleIndex, const std::string& filename)
     return mSubDevices[moduleIndex]->LoadConfig(0, filename);
 }
 
-void LimeSDR_MMX8::SaveConfig(uint8_t moduleIndex, const std::string& filename)
+OpStatus LimeSDR_MMX8::SaveConfig(uint8_t moduleIndex, const std::string& filename)
 {
     if (moduleIndex >= 8)
     {

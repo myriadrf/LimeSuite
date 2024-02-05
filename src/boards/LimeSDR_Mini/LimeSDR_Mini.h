@@ -23,7 +23,7 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
 
     virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
-    virtual int Init() override;
+    virtual OpStatus Init() override;
     virtual void Reset() override;
 
     virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
@@ -55,7 +55,7 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
 
   protected:
     SDRDevice::Descriptor GetDeviceInfo();
-    static int UpdateFPGAInterface(void* userData);
+    static OpStatus UpdateFPGAInterface(void* userData);
 
   private:
     std::shared_ptr<USBGeneric> mStreamPort;

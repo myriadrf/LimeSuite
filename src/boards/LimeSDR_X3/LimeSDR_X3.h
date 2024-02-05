@@ -27,7 +27,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
 
-    virtual int Init() override;
+    virtual OpStatus Init() override;
     virtual void Reset() override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
@@ -51,9 +51,9 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count) override;
 
   protected:
-    int InitLMS1(bool skipTune = false);
-    int InitLMS2(bool skipTune = false);
-    int InitLMS3(bool skipTune = false);
+    OpStatus InitLMS1(bool skipTune = false);
+    OpStatus InitLMS2(bool skipTune = false);
+    OpStatus InitLMS3(bool skipTune = false);
     void PreConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void PostConfigure(const SDRConfig& cfg, uint8_t socIndex);
     void LMS1_PA_Enable(uint8_t chan, bool enabled);
@@ -63,7 +63,7 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     void LMS2_PA_LNA_Enable(uint8_t chan, bool PAenabled, bool LNAenabled);
     void LMS3SetPath(TRXDir dir, uint8_t chan, uint8_t path);
     void LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz);
-    static int LMS1_UpdateFPGAInterface(void* userData);
+    static OpStatus LMS1_UpdateFPGAInterface(void* userData);
 
     void LMS2_SetSampleRate(double f_Hz, uint8_t oversample);
 

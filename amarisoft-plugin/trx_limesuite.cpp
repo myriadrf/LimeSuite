@@ -959,7 +959,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                 else
                     sprintf(configFilepath, "%s", filename);
 
-                if (chip->LoadConfig(configFilepath, false) != 0)
+                if (chip->LoadConfig(configFilepath, false) != OpStatus::SUCCESS)
                 {
                     Log(LogLevel::ERROR, "Error loading file: %s\n", filename);
                     return -1;

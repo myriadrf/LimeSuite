@@ -32,7 +32,7 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
     virtual const Descriptor& GetDescriptor() const override;
 
-    virtual int Init() override;
+    virtual OpStatus Init() override;
     virtual void Reset() override;
     virtual void GetGPSLock(GPS_Lock* status) override;
 
@@ -67,8 +67,8 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) override;
-    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) override;
+    virtual OpStatus SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) override;
+    virtual OpStatus GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) override;
 
     virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
     virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) override;
@@ -87,8 +87,8 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) override;
     virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) override;
 
-    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) override;
-    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) override;
+    virtual OpStatus LoadConfig(uint8_t moduleIndex, const std::string& filename) override;
+    virtual OpStatus SaveConfig(uint8_t moduleIndex, const std::string& filename) override;
 
     virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) override;
     virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) override;

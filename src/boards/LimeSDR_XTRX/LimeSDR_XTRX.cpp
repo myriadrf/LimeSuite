@@ -91,14 +91,14 @@ static inline void ValidateChannel(uint8_t channel)
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-int LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
+OpStatus LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);
     LimeSDR_XTRX* pthis = static_cast<LimeSDR_XTRX*>(userData);
     // don't care about cgen changes while doing Config(), to avoid unnecessary fpga updates
     if (pthis->mConfigInProgress)
-        return 0;
+        return OpStatus::SUCCESS;
     LMS7002M* soc = pthis->mLMSChips[chipIndex];
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
@@ -181,10 +181,12 @@ LimeSDR_XTRX::~LimeSDR_XTRX()
 {
 }
 
-static int InitLMS1(LMS7002M* lms, bool skipTune = false)
+static OpStatus InitLMS1(LMS7002M* lms, bool skipTune = false)
 {
-    if (lms->ResetChip() != 0)
-        return -1;
+    OpStatus status;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
     // lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
@@ -200,16 +202,19 @@ static int InitLMS1(LMS7002M* lms, bool skipTune = false)
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
@@ -302,9 +307,9 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
             if (socIndex == 0)
             {
-                if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, i, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != 0)
+                if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, i, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != OpStatus::SUCCESS)
                     throw std::logic_error(strFormat("Rx ch%i GFIR config failed", i));
-                if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, i, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != 0)
+                if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, i, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != OpStatus::SUCCESS)
                     throw std::logic_error(strFormat("Tx ch%i GFIR config failed", i));
             }
 
@@ -365,7 +370,7 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
     }
 }
 
-int LimeSDR_XTRX::Init()
+OpStatus LimeSDR_XTRX::Init()
 {
     struct regVal {
         uint16_t adr;
@@ -386,8 +391,7 @@ int LimeSDR_XTRX::Init()
     // CustomParameterWrite(&paramId,&dacVal,1,"");
 
     const bool skipTune = true;
-    InitLMS1(mLMSChips.at(0), skipTune);
-    return 0;
+    return InitLMS1(mLMSChips.at(0), skipTune);
 }
 
 void LimeSDR_XTRX::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)

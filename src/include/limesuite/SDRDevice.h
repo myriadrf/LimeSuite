@@ -12,6 +12,7 @@
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/OpStatus.h"
 #include "limesuite/GainTypes.h"
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
@@ -293,7 +294,7 @@ class LIME_API SDRDevice
     /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
     virtual const Descriptor& GetDescriptor() const = 0;
 
-    virtual int Init() = 0;
+    virtual OpStatus Init() = 0;
     virtual void Reset() = 0;
     virtual void GetGPSLock(GPS_Lock* status) = 0;
 
@@ -314,8 +315,8 @@ class LIME_API SDRDevice
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
     virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
 
-    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
-    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
+    virtual OpStatus SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    virtual OpStatus GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
     virtual double GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
     virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
@@ -348,8 +349,8 @@ class LIME_API SDRDevice
     virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) = 0;
     virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
 
-    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
-    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual OpStatus LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual OpStatus SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
 
     virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) = 0;
     virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
