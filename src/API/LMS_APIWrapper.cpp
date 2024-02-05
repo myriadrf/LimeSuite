@@ -755,32 +755,29 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     {
     case lms_stream_t::LMS_FMT_F32:
         config.format = lime::SDRDevice::StreamConfig::DataFormat::F32;
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
         break;
     case lms_stream_t::LMS_FMT_I16:
         config.format = lime::SDRDevice::StreamConfig::DataFormat::I16;
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
         break;
     case lms_stream_t::LMS_FMT_I12:
         config.format = lime::SDRDevice::StreamConfig::DataFormat::I12;
+        break;
+    default:
+        return lime::error("Setup stream failed: invalid data format.");
+    }
+
+    switch (stream->linkFmt)
+    {
+    case lms_stream_t::LMS_LINK_FMT_I16:
+        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
+        break;
+    case lms_stream_t::LMS_LINK_FMT_I12:
+    case lms_stream_t::LMS_LINK_FMT_DEFAULT:
         config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
         break;
     default:
-        config.format = lime::SDRDevice::StreamConfig::DataFormat::F32;
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
+        return lime::error("Setup stream failed: invalid link data format.");
     }
-
-    // TODO: check functionality
-    // switch (stream->linkFmt)
-    // {
-    // case lms_stream_t::LMS_LINK_FMT_I16:
-    //     config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
-    //     break;
-    // case lms_stream_t::LMS_LINK_FMT_I12:
-    //     config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
-    // case lms_stream_t::LMS_LINK_FMT_DEFAULT: // do nothing
-    //     break;
-    // }
 
     // TODO: check functionality
     // config.performanceLatency = stream->throughputVsLatency;
