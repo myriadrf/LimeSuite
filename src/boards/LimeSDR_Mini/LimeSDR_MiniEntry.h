@@ -11,9 +11,11 @@ class LimeSDR_MiniEntry : public USBEntry
 {
   public:
     LimeSDR_MiniEntry();
+
 #ifndef __unix__
     virtual std::vector<DeviceHandle> enumerate(const DeviceHandle& hint) override;
 #endif
+
     virtual SDRDevice* make(const DeviceHandle& handle) override;
 };
 

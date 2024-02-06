@@ -10,6 +10,7 @@ COPY Desktop/ Desktop/
 COPY external/ external/
 COPY cmake/ cmake/
 COPY amarisoft-plugin/ amarisoft-plugin/
+COPY SoapyLMS7/ SoapyLMS7/
 COPY Changelog.txt Changelog.txt
 COPY CMakeLists.txt CMakeLists.txt
 COPY src/ src/

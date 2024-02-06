@@ -11,6 +11,8 @@ namespace lime {
 class LIME_API ISPI
 {
   public:
+    /** @brief Destroys the interfaced object. */
+    virtual ~ISPI() {}
     /**
       @brief Default path for writing/reading registers.
       @param MOSI Main Out Sub In (data output from main).
@@ -35,6 +37,8 @@ class LIME_API ISPI
 class LIME_API II2C
 {
   public:
+    /** @brief Destroys the interfaced object. */
+    virtual ~II2C() {}
     /**
       @brief Write to an available Inter-Integrated Circuit slave.
       @param address Inter-Integrated Circuit slave address.
@@ -71,7 +75,7 @@ class IComms : public ISPI
     /** @brief Destroys the interfaced object. */
     virtual ~IComms(){};
 
-    /**    
+    /**
       @brief Writes general-purpose input/output (GPIO) values to device.
       @param buffer For source of GPIO values. Least significant bit first, each bit sets GPIO state.
       @param bufLength The length of @p buffer.
@@ -95,7 +99,7 @@ class IComms : public ISPI
      */
     virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
 
-    /**    
+    /**
       @brief Read general-purpose input/output (GPIO) direction control configuration from device.
       @param[out] buffer A buffer of data with GPIO direction configuration (0 - input, 1 - output).
       @param bufLength The length of @p buffer.

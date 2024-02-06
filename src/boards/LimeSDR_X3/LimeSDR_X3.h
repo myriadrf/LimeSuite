@@ -31,7 +31,8 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
     virtual int Init() override;
     virtual void Reset() override;
 
-    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) override;
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;

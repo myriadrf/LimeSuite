@@ -9,12 +9,12 @@ struct FPGA_RxDataPacket {
     FPGA_RxDataPacket()
     {
         assert(sizeof(FPGA_RxDataPacket) - sizeof(data) == 16);
-        memset(this, 0, sizeof(FPGA_RxDataPacket));
+        std::memset(this, 0, sizeof(FPGA_RxDataPacket));
     }
 
     inline bool txWasDropped() const { return header0 & (1 << 3); }
 
-    inline float RxFIFOFill() { return (header0 & 0x7) * 0.125; }
+    inline float RxFIFOFill() const { return (header0 & 0x7) * 0.125; }
 
     inline uint16_t GetPayloadSize() const
     {
@@ -38,7 +38,7 @@ struct FPGA_TxDataPacket {
     FPGA_TxDataPacket()
     {
         assert(sizeof(FPGA_TxDataPacket) - sizeof(data) == 16);
-        memset(this, 0, sizeof(FPGA_TxDataPacket));
+        std::memset(this, 0, sizeof(FPGA_TxDataPacket));
     }
 
     inline void ignoreTimestamp(bool enabled)
@@ -48,13 +48,13 @@ struct FPGA_TxDataPacket {
         header0 |= enabled ? mask : 0; //ignore timestamp
     }
 
-    inline bool getIgnoreTimestamp()
+    inline bool getIgnoreTimestamp() const
     {
         constexpr uint8_t mask = 1 << 4;
         return header0 & mask; //ignore timestamp
     }
 
-    inline void ClearHeader() { memset(this, 0, 16); }
+    inline void ClearHeader() { std::memset(this, 0, 16); }
 
     inline void SetPayloadSize(uint16_t size)
     {
@@ -86,7 +86,7 @@ struct StreamHeader {
         header0 |= enabled ? mask : 0; //ignore timestamp
     }
 
-    inline bool getIgnoreTimestamp()
+    inline bool getIgnoreTimestamp() const
     {
         constexpr uint8_t mask = 1 << 4;
         return header0 & mask; //ignore timestamp
@@ -95,7 +95,7 @@ struct StreamHeader {
     inline void Clear()
     {
         assert(sizeof(StreamHeader) == 16);
-        memset(this, 0, sizeof(StreamHeader));
+        std::memset(this, 0, sizeof(StreamHeader));
     }
 
     inline void SetPayloadSize(uint16_t size)

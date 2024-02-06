@@ -91,7 +91,7 @@ std::vector<DeviceHandle> USBEntry::enumerate(const DeviceHandle& hint)
         libusb_close(tempDev_handle);
 
         // Add handle conditionally, filter by serial number
-        if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
+        if (handle.IsEqualIgnoringEmpty(hint))
         {
             handles.push_back(handle);
         }

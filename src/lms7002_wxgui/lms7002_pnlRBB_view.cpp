@@ -5,7 +5,10 @@
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
 #include "lms7suiteAppFrame.h"
+#include "Logger.h"
+
 using namespace lime;
+using namespace std::literals::string_literals;
 
 lms7002_pnlRBB_view::lms7002_pnlRBB_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : ILMS7002MTab(parent, id, pos, size, style)
@@ -434,7 +437,7 @@ void lms7002_pnlRBB_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
     WriteParam(parameter, event.GetInt());

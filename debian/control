@@ -70,3 +70,22 @@ Description: Lime Suite - Install firmware and gateware images
  .
  This is an empty dependency package that pulls in the images
  for the default version of Lime Suite.
+
+Package: soapysdr-module-lms7
+Section: libs
+Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
+Depends: soapysdr0.8-module-lms7, ${misc:Depends}
+Description: Lime Suite - SoapySDR bindings metapackage
+ Lime Suite application software.
+
+Package: soapysdr0.8-module-lms7
+Section: comm
+Architecture: any
+Multi-Arch: same
+Depends:
+    liblimesuite24.0-1 (= ${binary:Version}),
+    ${shlibs:Depends},
+    ${misc:Depends}
+Description: Lime Suite - SoapySDR bindings
+ Lime Suite application software.

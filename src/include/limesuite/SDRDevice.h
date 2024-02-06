@@ -1,16 +1,18 @@
 #ifndef LIME_SDRDevice_H
 #define LIME_SDRDevice_H
 
-#include <vector>
-#include <unordered_map>
-#include <map>
 #include <cstring>
-#include <string>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/GainTypes.h"
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
 #include "limesuite/MemoryRegions.h"
@@ -30,16 +32,26 @@ class LIME_API SDRDevice
     /// @brief Enumerator to define the log level of a log message.
     enum class LogLevel : uint8_t { CRITICAL, ERROR, WARNING, INFO, VERBOSE, DEBUG };
 
+    struct GainValue {
+        uint16_t hardwareRegisterValue;
+        float actualGainValue;
+    };
+
     /// @brief General information about the Radio-Frequency System-on-Chip (RFSoC).
     struct RFSOCDescriptor {
-        std::string name; ///< The name of the chip
-        uint8_t channelCount; ///< The channel amount the chip has
-        std::vector<std::string> rxPathNames; ///< The names of receive paths
-        std::vector<std::string> txPathNames; ///< The names of transmit paths
+        std::string name;
+        uint8_t channelCount;
+        std::unordered_map<TRXDir, std::vector<std::string>> pathNames;
 
-        Range samplingRateRange; ///< Sampling rate capabilities of the device
         Range frequencyRange; ///< Deliverable frequency capabilities of the device
+        Range samplingRateRange; ///< Sampling rate capabilities of the device
+
         std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange; ///< Antenna recommended bandwidths
+        std::unordered_map<TRXDir, Range> lowPassFilterRange;
+
+        std::unordered_map<TRXDir, std::set<eGainTypes>> gains;
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange;
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues;
     };
 
     /// @brief Structure for the information of a custom parameter.
@@ -143,6 +155,8 @@ class LIME_API SDRDevice
         /// @brief Extra configuration settings for a stream.
         struct Extras {
             struct PacketTransmission {
+                PacketTransmission();
+
                 uint16_t samplesInPacket; ///< The amount of samples to transfer in a single packet.
                 uint32_t packetsInBatch; ///< The amount of packets to send in a single transfer.
             };
@@ -168,17 +182,8 @@ class LIME_API SDRDevice
         };
 
         StreamConfig();
-        ~StreamConfig();
 
-        /// @brief The copy operator of of the class.
-        /// @param srd The
-        /// @return
-        StreamConfig& operator=(const StreamConfig& srd);
-
-        uint8_t rxCount; ///< The amount of Receive channels being used.
-        uint8_t rxChannels[MAX_CHANNEL_COUNT]; ///< The list of Receive channels being used.
-        uint8_t txCount; ///< The amount of Transmit channels being used.
-        uint8_t txChannels[MAX_CHANNEL_COUNT]; ///< The list of Transmit channels being used.
+        std::unordered_map<TRXDir, std::vector<uint8_t>> channels;
 
         DataFormat format; ///< Samples format used for Read/Write functions
         DataFormat linkFormat; ///< Samples format used in transport layer Host<->FPGA
@@ -196,7 +201,7 @@ class LIME_API SDRDevice
         void* userData; ///<  Data that will be supplied to statusCallback
         // TODO: callback for drops and errors
 
-        Extras* extraConfig; ///< A pointer to some extra stream configuration settings.
+        Extras extraConfig; ///< Extra stream configuration settings.
     };
 
     /// @brief The metadata of a stream packet.
@@ -221,30 +226,95 @@ class LIME_API SDRDevice
         bool flushPartialPacket;
     };
 
-    /// @brief Configuration of a general finite impulse response (FIR) filter.
-    struct GFIRFilter {
-        double bandwidth; ///< The bandwidth of the filter.
-        bool enabled; ///< Whether the filter is enabled or not.
-    };
-
     /// @brief Configuration of a single channel.
     struct ChannelConfig {
-        ChannelConfig() { memset(this, 0, sizeof(ChannelConfig)); }
+        ChannelConfig()
+            : rx()
+            , tx()
+        {
+        }
 
         /// @brief Configuration for a direction in a channel.
         struct Direction {
+            Direction()
+                : centerFrequency(0)
+                , NCOoffset(0)
+                , sampleRate(0)
+                , lpf(0)
+                , path(0)
+                , oversample(0)
+                , gfir()
+                , enabled(false)
+                , calibrate(false)
+                , testSignal{ false, false, TestSignal::Divide::Div8, TestSignal::Scale::Half }
+            {
+            }
+
+            /// @brief Configuration of a general finite impulse response (FIR) filter.
+            struct GFIRFilter {
+                bool enabled; ///< Whether the filter is enabled or not.
+                double bandwidth; ///< The bandwidth of the filter.
+            };
+
+            struct TestSignal {
+                enum class Divide : uint8_t {
+                    Div8 = 1U,
+                    Div4 = 2U,
+                };
+
+                enum class Scale : uint8_t {
+                    Half = 0U,
+                    Full = 1U,
+                };
+
+                bool enabled;
+                bool dcMode;
+                Divide divide;
+                Scale scale;
+
+                TestSignal(bool enabled = false, bool dcMode = false, Divide divide = Divide::Div8, Scale scale = Scale::Half)
+                    : enabled(enabled)
+                    , dcMode(dcMode)
+                    , divide(divide)
+                    , scale(scale)
+                {
+                }
+            };
+
             double centerFrequency; ///< The center frequency of the direction of this channel.
             double NCOoffset; ///< The offset from the channel's numerically controlled oscillator (NCO).
             double sampleRate; ///< The sample rate of this direction of a channel.
-            double gain; ///< TODO: Not fully implemented yet
+            std::unordered_map<eGainTypes, double> gain; ///< The gains and their current values for this direction.
             double lpf; ///< The bandwidth of the Low Pass Filter (LPF).
             uint8_t path; ///< The antenna being used for this direction.
             uint8_t oversample; ///< The oversample ratio of this direction.
             GFIRFilter gfir; ///< The general finite impulse response (FIR) filter settings of this direction.
             bool enabled; ///< Denotes whether this direction of a channel is enabled or not.
             bool calibrate; ///< Denotes whether the device will be calibrated or not.
-            bool testSignal; ///< Denotes whether the signal being sent is a test signal or not.
+            TestSignal testSignal; ///< Denotes whether the signal being sent is a test signal or not.
         };
+
+        Direction& GetDirection(TRXDir direction)
+        {
+            switch (direction)
+            {
+            case TRXDir::Rx:
+                return rx;
+            case TRXDir::Tx:
+                return tx;
+            }
+        }
+
+        const Direction& GetDirection(TRXDir direction) const
+        {
+            switch (direction)
+            {
+            case TRXDir::Rx:
+                return rx;
+            case TRXDir::Tx:
+                return tx;
+            }
+        }
 
         Direction rx; ///< Configuration settings for the Receive channel.
         Direction tx; ///< Configuration settings for the Transmit channel.
@@ -270,7 +340,7 @@ class LIME_API SDRDevice
 
     /// @brief Gets the Descriptor of the SDR Device.
     /// @return The Descriptor of the device.
-    virtual const Descriptor& GetDescriptor() = 0;
+    virtual const Descriptor& GetDescriptor() const = 0;
 
     /// @brief Initializes the device with initial settings.
     /// @return The success status of the initialization (0 on success).
@@ -287,7 +357,7 @@ class LIME_API SDRDevice
     /// @param moduleIndex The device index to get the sample rate of.
     /// @param trx The direction of the sample rate to get.
     /// @return The sample rate of the specified device and direction.
-    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx) = 0;
+    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
 
     /// @brief Gets the frequency of a specified clock.
     /// @param clk_id The clock ID to get the frequency of.
@@ -301,6 +371,69 @@ class LIME_API SDRDevice
     /// @param channel The channel to set the frequency of.
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
+    virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
+
+    virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index) = 0;
+    virtual void SetNCOFrequency(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) = 0;
+
+    virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
+
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
+
+    virtual double GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
+
+    virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
+
+    virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) = 0;
+    virtual void SetTestSignal(uint8_t moduleIndex,
+        TRXDir direction,
+        uint8_t channel,
+        ChannelConfig::Direction::TestSignal signalConfiguration,
+        int16_t dc_i = 0,
+        int16_t dc_q = 0) = 0;
+
+    virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
+
+    virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
+
+    virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
+
+    virtual bool GetCGENLocked(uint8_t moduleIndex) = 0;
+    virtual double GetTemperature(uint8_t moduleIndex) = 0;
+
+    virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) = 0;
+
+    virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) = 0;
+    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
+
+    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) = 0;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
+
+    virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb) = 0;
+    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
+
+    virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
+    virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
+
+    virtual std::vector<double> GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID) = 0;
+    virtual void SetGFIRCoefficients(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients) = 0;
+    virtual void SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
+
     /// @brief Synchronizes the cached changed register values on the host with the real values on the device.
     /// @param toChip The direction in which to synchronize (true = uploads to the device).
     virtual void Synchronize(bool toChip) = 0;
@@ -308,6 +441,9 @@ class LIME_API SDRDevice
     /// @brief Enable or disable register value caching on the host side.
     /// @param enable Whether to enable or disable the register value caching (true = enabled).
     virtual void EnableCache(bool enable) = 0;
+
+    virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) = 0;
+    virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
 
     /// @brief Sets up all the streams on a device.
     /// @param config The configuration to use for setting the streams up.
@@ -329,9 +465,9 @@ class LIME_API SDRDevice
     /// @param count The amount of samples to reveive.
     /// @param meta The metadata of the packets of the stream.
     /// @return The amount of samples received.
-    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex32f_t** samples, uint32_t count, StreamMeta* meta) = 0;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
     /// @copydoc SDRDevice::StreamRx()
-    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex16_t** samples, uint32_t count, StreamMeta* meta) = 0;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
 
     /// @brief Transmits packets from all the active streams in the device.
     /// @param moduleIndex The index of the device to transmit the samples with.
@@ -415,7 +551,7 @@ class LIME_API SDRDevice
     /// @brief Gets the pointer to an internal chip of the device.
     /// @param index The index of the device to retreive.
     /// @return The pointer to the internal device.
-    virtual void* GetInternalChip(uint32_t index) { return nullptr; };
+    virtual void* GetInternalChip(uint32_t index) = 0;
 
     /// @brief The definition of a function to call whenever memory is being uploaded.
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);

@@ -19,6 +19,8 @@ const int LMS_RST_DEACTIVATE = 0;
 const int LMS_RST_ACTIVATE = 1;
 const int LMS_RST_PULSE = 2;
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 LMS64CPacket::LMS64CPacket()
@@ -85,13 +87,13 @@ constexpr size_t LMS64CPacketMemoryWriteView::GetMaxDataSize()
 
 namespace LMS64CProtocol {
 
-static const std::array<std::string, eCMD_STATUS::STATUS_COUNT> COMMAND_STATUS_TEXT = {
+static const std::array<const std::string, eCMD_STATUS::STATUS_COUNT> COMMAND_STATUS_TEXT = {
     "Undefined/Failure", "Completed", "Unknown command", "Busy", "Too many blocks", "Error", "Wrong order", "Resource denied"
 };
 
 static const std::string UNKNOWN{ "Unknown status" };
 
-static inline const std::string& status2string(const int status)
+static constexpr const std::string& status2string(const int status)
 {
     if (status >= 0 && status < eCMD_STATUS::STATUS_COUNT)
     {
@@ -101,7 +103,9 @@ static inline const std::string& status2string(const int status)
     return UNKNOWN;
 }
 
-static const char ADC_UNITS_PREFIX[] = { ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm' };
+static constexpr std::array<char, 16> ADC_UNITS_PREFIX = {
+    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'
+};
 
 static int SPI16(ISerialPort& port,
     uint8_t chipSelect,
@@ -512,11 +516,11 @@ int ProgramWrite(ISerialPort& port,
     auto t2 = std::chrono::high_resolution_clock::now();
     if ((device == 2 && prog_mode == 2) == false)
         lime::log(LogLevel::INFO,
-            "Programming finished, %li bytes sent! %li ms\n",
+            "Programming finished, %li bytes sent! %li ms",
             length,
             std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     else
-        lime::log(LogLevel::INFO, "FPGA configuring initiated\n");
+        lime::log(LogLevel::INFO, "FPGA configuring initiated"s);
 #endif
     return 0;
 }

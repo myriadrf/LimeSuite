@@ -208,16 +208,21 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     // LMS#1
     soc.name = "LMS 1";
     soc.channelCount = 2;
-    soc.rxPathNames = { "None", "LNAH", "LNAL" };
-    soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "LNAL" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1", "Band2" };
 
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
 
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
     soc.antennaRange[TRXDir::Tx]["Band1"] = { 30e6, 1.9e9 };
     soc.antennaRange[TRXDir::Tx]["Band2"] = { 2e9, 2.6e9 };
+
+    SetGainInformationInDescriptor(soc);
 
     desc.rfSOC.push_back(soc);
 
@@ -228,8 +233,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
 
     // LMS#2
     soc.name = "LMS 2";
-    soc.rxPathNames = { "None", "TDD", "FDD", "Calibration (LMS3)" };
-    soc.txPathNames = { "None", "TDD", "FDD" };
+    soc.pathNames[TRXDir::Rx] = { "None", "TDD", "FDD", "Calibration (LMS3)" };
+    soc.pathNames[TRXDir::Tx] = { "None", "TDD", "FDD" };
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[1] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_2);
     LMS7002M* lms2 = new LMS7002M(mLMS7002Mcomms[1]);
@@ -238,8 +243,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
 
     // LMS#3
     soc.name = "LMS 3";
-    soc.rxPathNames = { "None", "LNAH", "Calibration (LMS2)" };
-    soc.txPathNames = { "None", "Band1" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "Calibration (LMS2)" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1" };
     desc.rfSOC.push_back(soc);
     mLMS7002Mcomms[2] = std::make_shared<SlaveSelectShim>(spiLMS7002M, SPI_LMS7002M_3);
     LMS7002M* lms3 = new LMS7002M(mLMS7002Mcomms[2]);
@@ -571,11 +576,9 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0); // enabled DAC is required for FPGA to work
 
         chip->SetActiveChannel(LMS7002M::Channel::ChA);
-        double sampleRate;
-        if (rxUsed)
-            sampleRate = cfg.channel[0].rx.sampleRate;
-        else
-            sampleRate = cfg.channel[0].tx.sampleRate;
+
+        double sampleRate = cfg.channel[0].GetDirection(rxUsed ? TRXDir::Rx : TRXDir::Tx).sampleRate;
+
         if (socIndex == 0 && sampleRate > 0)
         {
             LMS1_SetSampleRate(sampleRate, cfg.channel[0].rx.oversample, cfg.channel[0].tx.oversample);
@@ -606,14 +609,14 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         {
             chip->SetActiveChannel((ch & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
 
-            if (cfg.channel[ch].rx.testSignal)
+            if (cfg.channel[ch].rx.testSignal.enabled)
             {
-                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, 1);
-                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, 0);
+                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, static_cast<uint8_t>(cfg.channel[ch].rx.testSignal.scale));
+                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, cfg.channel[ch].rx.testSignal.dcMode ? 1 : 0);
                 chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
                 // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
             }
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal ? 1 : 0);
+            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal.enabled ? 1 : 0);
 
             ConfigureDirection(TRXDir::Rx, chip, cfg, ch, socIndex);
             ConfigureDirection(TRXDir::Tx, chip, cfg, ch, socIndex);
@@ -637,7 +640,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR_X3 config: %s\n", e.what());
+        lime::error("LimeSDR_X3 config: %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
@@ -647,19 +650,8 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
 void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex)
 {
-    std::string dirName;
-    SDRDevice::ChannelConfig::Direction trx;
-
-    if (dir == TRXDir::Rx)
-    {
-        dirName = "Rx";
-        trx = cfg.channel[ch].rx;
-    }
-    else
-    {
-        dirName = "Tx";
-        trx = cfg.channel[ch].tx;
-    }
+    std::string dirName = dir == TRXDir::Rx ? "Rx" : "Tx";
+    SDRDevice::ChannelConfig::Direction trx = cfg.channel[ch].GetDirection(dir);
 
     if (socIndex == 1) // LMS2 uses external ADC/DAC
     {
@@ -781,27 +773,61 @@ void LimeSDR_X3::Reset()
         mLMS7002Mcomms[i]->ResetDevice();
 }
 
-double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx)
+double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    if (moduleIndex == 1)
+    switch (moduleIndex)
     {
+    case 1:
         if (trx == TRXDir::Rx)
+        {
             return mClockGeneratorCDCM->GetFrequency(CDCM_Y4); // Rx Ch. A
+        }
         else
         {
             const int oversample = mEqualizer->GetOversample();
             return mClockGeneratorCDCM->GetFrequency(CDCM_Y0Y1) / oversample; // Tx Ch. A&B
         }
-    }
-    if (moduleIndex == 2)
-    {
+    case 2:
         if (trx == TRXDir::Rx) // LMS3 Rx uses external ADC
+        {
             return mClockGeneratorCDCM->GetFrequency(CDCM_Y6); // Rx Ch. A
+        }
         else // LMS3 Tx uses internal ADC
-            return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, TRXDir::Tx);
+        {
+            return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, TRXDir::Tx, channel);
+        }
+    default:
+        return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, trx, channel);
     }
-    else
-        return LMS7002M_SDRDevice::GetSampleRate(moduleIndex, trx);
+}
+
+void LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+{
+    if (moduleIndex == 0 && sampleRate > 0)
+    {
+        LMS1_SetSampleRate(sampleRate, oversample, oversample);
+    }
+    else if (moduleIndex == 1 && sampleRate > 0)
+    {
+        Equalizer::Config eqCfg;
+        for (int i = 0; i < 2; ++i)
+        {
+            eqCfg.bypassRxEqualizer[i] = true;
+            eqCfg.bypassTxEqualizer[i] = true;
+            eqCfg.cfr[i].bypass = true;
+            eqCfg.cfr[i].sleep = true;
+            eqCfg.cfr[i].bypassGain = true;
+            eqCfg.cfr[i].interpolation = oversample;
+            eqCfg.fir[i].sleep = true;
+            eqCfg.fir[i].bypass = true;
+        }
+        mEqualizer->Configure(eqCfg);
+        LMS2_SetSampleRate(sampleRate, oversample);
+    }
+    else if (moduleIndex == 2 && sampleRate > 0)
+    {
+        LMS3_SetSampleRate_ExternalDAC(sampleRate, sampleRate);
+    }
 }
 
 double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
@@ -853,11 +879,11 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         if (!trxPort->IsOpen())
         {
             int dirFlag = 0;
-            if (config.rxCount > 0 && config.txCount > 0)
+            if (config.channels.at(lime::TRXDir::Rx).size() > 0 && config.channels.at(lime::TRXDir::Tx).size() > 0)
                 dirFlag = O_RDWR;
-            else if (config.rxCount > 0)
+            else if (config.channels.at(lime::TRXDir::Rx).size() > 0)
                 dirFlag = O_RDONLY;
-            else if (config.txCount > 0)
+            else if (config.channels.at(lime::TRXDir::Tx).size() > 0)
                 dirFlag = O_WRONLY;
             if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
             {
@@ -870,11 +896,11 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         return 0;
     } catch (std::logic_error& e)
     {
-        printf("LimeSDR_X3::StreamSetup logic_error %s\n", e.what());
+        lime::error("LimeSDR_X3::StreamSetup logic_error %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
-        printf("LimeSDR_X3::StreamSetup runtime_error %s\n", e.what());
+        lime::error("LimeSDR_X3::StreamSetup runtime_error %s", e.what());
         throw;
     }
 }
@@ -1013,15 +1039,16 @@ void LimeSDR_X3::LMS1SetPath(TRXDir dir, uint8_t chan, uint8_t pathId)
         switch (ePathLMS1_Rx(pathId))
         {
         case ePathLMS1_Rx::NONE:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_NONE);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::NONE);
             break;
         case ePathLMS1_Rx::LNAH:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAH);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAH);
             break;
         case ePathLMS1_Rx::LNAL:
-            path = static_cast<uint8_t>(LMS7002M::PathRFE::PATH_RFE_LNAL);
+            path = static_cast<uint8_t>(LMS7002M::PathRFE::LNAL);
             break;
-        //case ePathLMS1_Rx::LNAW : path = LMS7002M::PATH_RFE_LNAW; break;
+        // TODO:
+        //case ePathLMS1_Rx::LNAW : path = LMS7002M::LNAW; break;
         default:
             throw std::logic_error("Invalid LMS1 Rx path");
         }
@@ -1144,7 +1171,7 @@ void LimeSDR_X3::LMS2SetPath(TRXDir dir, uint8_t chan, uint8_t path)
     mFPGA->WriteRegister(sw_addr, sw_val);
     lime::LMS7002M* lms = mLMSChips.at(1);
     lms->SetBandTRF(1); // LMS2 uses only BAND1
-    lms->SetPathRFE(LMS7002M::PathRFE::PATH_RFE_LNAH); // LMS2 only uses LNAH
+    lms->SetPathRFE(LMS7002M::PathRFE::LNAH); // LMS2 only uses LNAH
 }
 
 void LimeSDR_X3::LMS3SetPath(TRXDir dir, uint8_t chan, uint8_t path)

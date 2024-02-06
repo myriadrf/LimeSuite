@@ -10,6 +10,7 @@
 #include "TRXLooper.h"
 
 using namespace std;
+using namespace std::literals::string_literals;
 
 namespace lime {
 
@@ -43,7 +44,6 @@ TRXLooper::TRXLooper(FPGA* f, LMS7002M* chip, int id)
 
 TRXLooper::~TRXLooper()
 {
-    Stop();
 }
 
 /// @brief Gets the current timestamp of the hardware.
@@ -67,28 +67,41 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     if (mRx.thread.joinable() || mTx.thread.joinable())
         throw std::logic_error("Samples streaming already running");
 
-    bool needTx = cfg.txCount > 0;
-    bool needRx = cfg.rxCount > 0; // always need Rx to know current timestamps, cfg.rxCount > 0;
+    bool needTx = cfg.channels.at(TRXDir::Tx).size() > 0;
+    bool needRx = cfg.channels.at(TRXDir::Rx).size() > 0; // always need Rx to know current timestamps, cfg.rxCount > 0;
     //bool needMIMO = cfg.rxCount > 1 || cfg.txCount > 1; // TODO: what if using only B channel, does it need MIMO configuration?
     uint8_t channelEnables = 0;
 
-    for (int i = 0; i < cfg.rxCount; ++i)
+    for (std::size_t i = 0; i < cfg.channels.at(TRXDir::Rx).size(); ++i)
     {
-        if (cfg.rxChannels[i] > 1)
+        if (cfg.channels.at(TRXDir::Rx).at(i) > 1)
+        {
             throw std::logic_error("Invalid Rx channel, only [0,1] channels supported");
+        }
         else
-            channelEnables |= (1 << cfg.rxChannels[i]);
+        {
+            channelEnables |= (1 << cfg.channels.at(TRXDir::Rx).at(i));
+        }
     }
-    for (int i = 0; i < cfg.txCount; ++i)
+
+    for (std::size_t i = 0; i < cfg.channels.at(TRXDir::Tx).size(); ++i)
     {
-        if (cfg.txChannels[i] > 1)
+        if (cfg.channels.at(TRXDir::Tx).at(i) > 1)
+        {
             throw std::logic_error("Invalid Tx channel, only [0,1] channels supported");
+        }
         else
-            channelEnables |= (1 << cfg.txChannels[i]); // << 8;
+        {
+            channelEnables |= (1 << cfg.channels.at(TRXDir::Tx).at(i)); // << 8;
+        }
     }
+
     if ((cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I12) &&
         (cfg.linkFormat != SDRDevice::StreamConfig::DataFormat::I16))
+    {
         throw std::logic_error("Unsupported stream link format");
+    }
+
     mConfig = cfg;
 
     //configure FPGA on first start, or disable FPGA when not streaming
@@ -121,12 +134,19 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
     fpga->WriteRegister(0x0007, channelEnables);
     fpga->ResetTimestamp();
 
-    constexpr uint16_t waitGPS_PPS = 1 << 2;
-    int interface_ctrl_000A = fpga->ReadRegister(0x000A);
-    interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
-    if (cfg.extraConfig && cfg.extraConfig->waitPPS)
-        interface_ctrl_000A |= waitGPS_PPS;
-    fpga->WriteRegister(0x000A, interface_ctrl_000A);
+    // XTRX has RF switches control bits where the GPS_PPS control should be.
+    bool hasGPSPPS = fpga->ReadRegister(0x0000) != LMS_DEV_LIMESDR_XTRX;
+    if (hasGPSPPS)
+    {
+        constexpr uint16_t waitGPS_PPS = 1 << 2;
+        int interface_ctrl_000A = fpga->ReadRegister(0x000A);
+        interface_ctrl_000A &= ~waitGPS_PPS; // disable by default
+        if (cfg.extraConfig.waitPPS)
+        {
+            interface_ctrl_000A |= waitGPS_PPS;
+        }
+        fpga->WriteRegister(0x000A, interface_ctrl_000A);
+    }
 
     // Don't just use REALTIME scheduling, or at least be cautious with it.
     // if the thread blocks for too long, Linux can trigger RT throttling
@@ -141,6 +161,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         auto RxLoopFunction = std::bind(&TRXLooper::ReceivePacketsLoop, this);
         mRx.thread = std::thread(RxLoopFunction);
         SetOSThreadPriority(ThreadPriority::HIGHEST, schedulingPolicy, &mRx.thread);
+#ifdef __linux__
         pthread_setname_np(mRx.thread.native_handle(), "lime:RxLoop");
 
         cpu_set_t cpuset;
@@ -150,6 +171,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         // if (rc != 0) {
         //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
         // }
+#endif
     }
     if (needTx)
     {
@@ -157,6 +179,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         auto TxLoopFunction = std::bind(&TRXLooper::TransmitPacketsLoop, this);
         mTx.thread = std::thread(TxLoopFunction);
         SetOSThreadPriority(ThreadPriority::HIGHEST, schedulingPolicy, &mTx.thread);
+#ifdef __linux__
         pthread_setname_np(mTx.thread.native_handle(), "lime:TxLoop");
 
         cpu_set_t cpuset;
@@ -166,6 +189,7 @@ void TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
         // if (rc != 0) {
         //   printf("Error calling pthread_setaffinity_np: %i\n", rc);
         // }
+#endif
     }
 
     // if (cfg.alignPhase)
@@ -213,45 +237,24 @@ void TRXLooper::Stop()
             mTx.thread.join();
     } catch (...)
     {
-        printf("Failed to join TRXLooper threads\n");
+        lime::error("Failed to join TRXLooper threads"s);
     }
     fpga->StopStreaming();
 
     RxTeardown();
     TxTeardown();
 
-    if (mRx.stagingPacket != nullptr)
-    {
-        mRx.memPool->Free(mRx.stagingPacket);
-        mRx.stagingPacket = nullptr;
-    }
-
-    if (mTx.stagingPacket != nullptr)
-    {
-        mTx.memPool->Free(mTx.stagingPacket);
-        mTx.stagingPacket = nullptr;
-    }
-
-    if (mRx.memPool != nullptr)
-    {
-        delete mRx.memPool;
-        mRx.memPool = nullptr;
-    }
-
-    if (mTx.memPool != nullptr)
-    {
-        delete mTx.memPool;
-        mTx.memPool = nullptr;
-    }
+    mRx.DeleteMemoryPool();
+    mTx.DeleteMemoryPool();
 
     mStreamEnabled = false;
 }
 
-template<class T> uint32_t TRXLooper::StreamRxTemplate(T** dest, uint32_t count, SDRDevice::StreamMeta* meta)
+template<class T> uint32_t TRXLooper::StreamRxTemplate(T* const* dest, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     bool timestampSet = false;
     uint32_t samplesProduced = 0;
-    const bool useChannelB = mConfig.rxCount > 1;
+    const bool useChannelB = mConfig.channels.at(TRXDir::Rx).size() > 1;
 
     bool firstIteration = true;
 
@@ -303,20 +306,20 @@ template<class T> uint32_t TRXLooper::StreamRxTemplate(T** dest, uint32_t count,
 /// @param count The amount of samples to reveive.
 /// @param meta The metadata of the packets of the stream.
 /// @return The amount of samples received.
-uint32_t TRXLooper::StreamRx(complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamRx(complex32f_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     return StreamRxTemplate<complex32f_t>(samples, count, meta);
 }
 
 /// @copydoc TRXLooper::StreamRx()
-uint32_t TRXLooper::StreamRx(complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta)
+uint32_t TRXLooper::StreamRx(complex16_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta)
 {
     return StreamRxTemplate<complex16_t>(samples, count, meta);
 }
 
 template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
-    const bool useChannelB = mConfig.txCount > 1;
+    const bool useChannelB = mConfig.channels.at(lime::TRXDir::Tx).size() > 1;
     const bool useTimestamp = meta ? meta->waitForTimestamp : false;
     const bool flush = meta && meta->flushPartialPacket;
     int64_t ts = meta ? meta->timestamp : 0;

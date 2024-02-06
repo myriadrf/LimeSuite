@@ -4,9 +4,11 @@
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include "lms7suiteAppFrame.h"
 #include "limesuite/LMS7002M.h"
+#include "Logger.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;
+using namespace std::literals::string_literals;
 
 indexValueMap hbi_ovr_txtsp_IndexValuePairs;
 indexValueMap tsgfcw_txtsp_IndexValuePairs;
@@ -1495,7 +1497,7 @@ void lms7002_pnlTXTSP_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
     long value = event.GetInt();
@@ -1570,89 +1572,40 @@ void lms7002_pnlTXTSP_view::OnbtnLoadDCQClick(wxCommandEvent& event)
 
 void lms7002_pnlTXTSP_view::onbtnGFIR1Coef(wxCommandEvent& event)
 {
-    lms7002_dlgGFIR_Coefficients* dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR1 Coefficients"));
-    std::vector<double> coefficients;
-    const int maxCoefCount = 40;
-    coefficients.resize(maxCoefCount, 0);
-    // uint16_t ch;
-    // LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    // ch = (ch == 2) ? 1 : 0;
-    // ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
-    // int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_TX, ch, LMS_GFIR1, &coefficients[0]);
-    // if (status < 0)
-    // {
-    //     wxMessageBox(_("Failed to read GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-    //     dlg->Destroy();
-    //     return;
-    // }
+    lms7002_dlgGFIR_Coefficients dlg(this, wxID_ANY, wxT("GFIR1 Coefficients"));
+    int status = dlg.ReadCoefficients(TRXDir::Tx, 0, lmsControl);
 
-    // dlg->SetCoefficients(coefficients);
-    // if (dlg->ShowModal() == wxID_OK)
-    // {
-    //     coefficients = dlg->GetCoefficients();
-    //     status = LMS_SetGFIRCoeff(lmsControl, LMS_CH_TX, ch, LMS_GFIR1, &coefficients[0],coefficients.size());
-    //     if (status != 0)
-    //         wxMessageBox(_("Failed to set GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-    // }
-    dlg->Destroy();
+    if (status >= 0 && dlg.ShowModal() == wxID_OK)
+    {
+        dlg.WriteCoefficients(TRXDir::Tx, 0, lmsControl);
+    }
+
     UpdateGUI();
 }
 
 void lms7002_pnlTXTSP_view::onbtnGFIR2Coef(wxCommandEvent& event)
 {
-    lms7002_dlgGFIR_Coefficients* dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR2 Coefficients"));
-    std::vector<double> coefficients;
-    const int maxCoefCount = 40;
-    coefficients.resize(maxCoefCount, 0);
-    // uint16_t ch;
-    // LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    // ch = (ch == 2) ? 1 : 0;
-    // ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
-    // int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_TX, ch, LMS_GFIR2, &coefficients[0]);
-    // if (status < 0)
-    // {
-    //     wxMessageBox(_("Failed to read GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-    //     dlg->Destroy();
-    //     return;
-    // }
-    // dlg->SetCoefficients(coefficients);
-    // if (dlg->ShowModal() == wxID_OK)
-    // {
-    //     coefficients = dlg->GetCoefficients();
-    //     status = LMS_SetGFIRCoeff(lmsControl, LMS_CH_TX, ch, LMS_GFIR2, &coefficients[0],coefficients.size());
-    //     if (status != 0)
-    //         wxMessageBox(_("Failed to set GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-    // }
-    dlg->Destroy();
+    lms7002_dlgGFIR_Coefficients dlg(this, wxID_ANY, wxT("GFIR2 Coefficients"));
+    int status = dlg.ReadCoefficients(TRXDir::Tx, 1, lmsControl);
+
+    if (status >= 0 && dlg.ShowModal() == wxID_OK)
+    {
+        dlg.WriteCoefficients(TRXDir::Tx, 1, lmsControl);
+    }
+
     UpdateGUI();
 }
 
 void lms7002_pnlTXTSP_view::onbtnGFIR3Coef(wxCommandEvent& event)
 {
-    lms7002_dlgGFIR_Coefficients* dlg = new lms7002_dlgGFIR_Coefficients(this, wxID_ANY, wxT("GFIR3 Coefficients"));
-    std::vector<double> coefficients;
-    const int maxCoefCount = 120;
-    coefficients.resize(maxCoefCount, 0);
-    // uint16_t ch;
-    // LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    // ch = (ch == 2) ? 1 : 0;
-    // ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
-    // int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_TX, ch, LMS_GFIR3, &coefficients[0]);
-    // if (status < 0)
-    // {
-    //     wxMessageBox(_("Failed to read GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-    //     dlg->Destroy();
-    //     return;
-    // }
-    // dlg->SetCoefficients(coefficients);
-    // if (dlg->ShowModal() == wxID_OK)
-    // {
-    //     coefficients = dlg->GetCoefficients();
-    //     status = LMS_SetGFIRCoeff(lmsControl, LMS_CH_TX, ch, LMS_GFIR3, &coefficients[0],coefficients.size());
-    //     if (status != 0)
-    //         wxMessageBox(_("Failed to set GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-    // }
-    dlg->Destroy();
+    lms7002_dlgGFIR_Coefficients dlg(this, wxID_ANY, wxT("GFIR3 Coefficients"));
+    int status = dlg.ReadCoefficients(TRXDir::Tx, 2, lmsControl);
+
+    if (status >= 0 && dlg.ShowModal() == wxID_OK)
+    {
+        dlg.WriteCoefficients(TRXDir::Tx, 2, lmsControl);
+    }
+
     UpdateGUI();
 }
 

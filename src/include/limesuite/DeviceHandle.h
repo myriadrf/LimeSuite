@@ -13,7 +13,7 @@ namespace lime {
 
   When using DeviceHandle to specify an enumeration hint,
   simply fill in only the fields that the user is interested in.
-  Each default field (empty string, -1 index) will be ignored
+  Each default field (empty string) will be ignored
   by the connection registry entry discovery implementation.
  */
 class LIME_API DeviceHandle
@@ -33,7 +33,7 @@ class LIME_API DeviceHandle
      */
     std::string media;
 
-    /// The name of the device. Example: STREAM, NOVENA.
+    /// The name of the device. Example: "LimeSDR-USB", "LimeSDR X3", "LimeSDR Mini".
     std::string name;
 
     /// An address such a URL, IP address, VID:PID or similar.
@@ -55,6 +55,14 @@ class LIME_API DeviceHandle
      * @return A string that may be printed.
      */
     std::string ToString(void) const;
+
+    /*!
+     * Checks whether both handles are equal, but ignoring fields that are empty on the passed in one.
+     * NOTE: foo.IsEqualIgnoringEmpty(bar) IS NOT EQUAL TO bar.IsEqualIgnoringEmpty(foo)
+     * @param other The handle to compare to (empty values from this one are ignored)
+     * @return Whether both DeviceHandles are equal (ignoring empty fields)
+     */
+    bool IsEqualIgnoringEmpty(const DeviceHandle& other) const;
 };
 
 } // namespace lime

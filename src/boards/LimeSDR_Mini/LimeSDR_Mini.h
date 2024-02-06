@@ -26,8 +26,12 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual int Init() override;
     virtual void Reset() override;
 
+    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
+
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
+
+    virtual double GetTemperature(uint8_t moduleIndex) override;
 
     virtual void Synchronize(bool toChip) override;
 
@@ -47,7 +51,6 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
   protected:
-    void SetSampleRate(double f_Hz, uint8_t oversample);
     SDRDevice::Descriptor GetDeviceInfo();
     static int UpdateFPGAInterface(void* userData);
 

@@ -25,17 +25,17 @@ void LMS7002M_RegistersMap::SetDefaultValue(uint16_t address, uint16_t value)
     mChannelB[address].defaultValue = value;
 }
 
-void LMS7002M_RegistersMap::InitializeDefaultValues(const std::vector<const LMS7Parameter*> parameterList)
+void LMS7002M_RegistersMap::InitializeDefaultValues(const std::vector<std::reference_wrapper<const LMS7Parameter>> parameterList)
 {
-    for (auto parameter : parameterList)
+    for (const LMS7Parameter& parameter : parameterList)
     {
-        uint16_t regValue = mChannelA[parameter->address].defaultValue;
-        mChannelA[parameter->address].defaultValue = regValue | (parameter->defaultValue << parameter->lsb);
-        mChannelA[parameter->address].value = mChannelA[parameter->address].defaultValue;
-        if (parameter->address >= 0x0100)
+        uint16_t regValue = mChannelA[parameter.address].defaultValue;
+        mChannelA[parameter.address].defaultValue = regValue | (parameter.defaultValue << parameter.lsb);
+        mChannelA[parameter.address].value = mChannelA[parameter.address].defaultValue;
+        if (parameter.address >= 0x0100)
         {
-            mChannelB[parameter->address].value = mChannelA[parameter->address].value;
-            mChannelB[parameter->address].defaultValue = mChannelA[parameter->address].defaultValue;
+            mChannelB[parameter.address].value = mChannelA[parameter.address].value;
+            mChannelB[parameter.address].defaultValue = mChannelA[parameter.address].defaultValue;
         }
     }
     //add NCO/PHO registers

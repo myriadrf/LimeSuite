@@ -5,7 +5,7 @@ namespace lime {
 enum class TRXDir : bool { Rx, Tx };
 
 struct Range {
-    Range(double min = 0, double max = 0, double step = 0)
+    constexpr Range(double min = 0.0, double max = 0.0, double step = 0.0)
         : min(min)
         , max(max)
         , step(step){};
@@ -25,7 +25,7 @@ template<class T> class DeltaVariable
     @brief Construct a new DeltaVariable object.
     @param init The initial value of the variable.
    */
-    DeltaVariable(T init)
+    constexpr DeltaVariable(T init)
         : mValue(init)
         , mLastValue(0){};
 
@@ -33,28 +33,28 @@ template<class T> class DeltaVariable
       @brief Sets the value of the delta variable.
       @param val The value to set the delta variable to.
      */
-    void set(T val) { mValue = val; }
+    constexpr void set(T val) { mValue = val; }
 
     /**
       @brief Adds the given value to the delta variable
       @param val The value to add to the delta variable.
      */
-    void add(T val) { mValue += val; }
+    constexpr void add(T val) { mValue += val; }
 
     /**
       @brief Gets the difference between the value at last reset and current value.
       @return The delta between the last time the delta variable was reset and the current value.
      */
-    T delta() const { return mValue - mLastValue; }
+    constexpr T delta() const { return mValue - mLastValue; }
 
     /**
       @brief Gets the current value of the delta variable.
       @return The current stored value of the delta variable.
      */
-    T value() const { return mValue; }
+    constexpr T value() const { return mValue; }
 
     /** @brief Resets the delta variable to start measuring from its current value. */
-    void checkpoint() { mLastValue = mValue; }
+    constexpr void checkpoint() { mLastValue = mValue; }
 
   private:
     T mValue;
