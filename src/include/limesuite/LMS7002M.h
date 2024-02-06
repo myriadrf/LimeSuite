@@ -40,7 +40,7 @@ struct RSSI_measurements {
 typedef double float_type;
 
 /** @brief Class for communicating with the LMS7002M chip.
- * 
+ *
  * More information: https://limemicro.com/technology/lms7002m/
 */
 class LIME_API LMS7002M
@@ -168,7 +168,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the RX PGA gain in dB
-     * @param gain in dB range -12.0, 19.0 dB
+     * @param gain In dB range -12.0, 19.0 dB
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetRBBPGA_dB(const float_type gain, const Channel channel);
@@ -177,7 +178,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the RX LNA gain in dB
-     * @param gain in dB range 0.0, 30.0 dB
+     * @param gain In dB range 0.0, 30.0 dB
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetRFELNA_dB(const float_type gain, const Channel channel);
@@ -186,7 +188,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the RX loopback LNA gain in dB
-     * @param gain in dB range 0.0, 40.0 dB
+     * @param gain In dB range 0.0, 40.0 dB
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetRFELoopbackLNA_dB(const float_type gain, const Channel channel);
@@ -196,7 +199,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the RX TIA gain in dB
-     * @param gain in dB range 0.0, 12.0 dB
+     * @param gain In dB range 0.0, 12.0 dB
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetRFETIA_dB(const float_type gain, const Channel channel);
@@ -205,7 +209,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the TX PAD gain in dB
-     * @param gain in dB range -52.0, 0.0 dB
+     * @param gain In dB range -52.0, 0.0 dB
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetTRFPAD_dB(const float_type gain, const Channel channel);
@@ -215,7 +220,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the TBB frontend gain in dB
-     * @param gain in dB relative to optimal gain (0 - optimal gain, >0 may cause saturation)
+     * @param gain In dB relative to optimal gain (0 - optimal gain, >0 may cause saturation)
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetTBBIAMP_dB(const float_type gain, const Channel channel);
@@ -225,7 +231,8 @@ class LIME_API LMS7002M
 
     /*!
      * Set the TX loopback PAD gain in dB
-     * @param gain in dB range -4.3, 0.0 dB
+     * @param gain In dB range -4.3, 0.0 dB
+     * @param channel The channel to set it for
      * @return 0 for success, else error
      */
     int SetTRFLoopbackPAD_dB(const float_type gain, const Channel channel);

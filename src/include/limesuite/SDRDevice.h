@@ -353,10 +353,6 @@ class LIME_API SDRDevice
     /// @param status The pointer to which to output the GPS status.
     virtual void GetGPSLock(GPS_Lock* status) = 0;
 
-    /// @brief Gets the current sample rate of the device.
-    /// @param moduleIndex The device index to get the sample rate of.
-    /// @param trx The direction of the sample rate to get.
-    /// @return The sample rate of the specified device and direction.
     virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
 
     /// @brief Gets the frequency of a specified clock.

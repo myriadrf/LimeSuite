@@ -2215,7 +2215,7 @@ int LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_typ
 
 /** @brief Returns currently loaded FIR coefficients.
     @param dir Transmitter or receiver selection.
-    @param GFIR_index GFIR index from 0 to 2.
+    @param gfirIndex GFIR index from 0 to 2.
     @param coef Array of returned coefficients (normalized from -1 to 1)
     @param coefCount Number of coefficients to read.
     @return 0-success, other-failure.
