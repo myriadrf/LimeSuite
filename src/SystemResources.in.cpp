@@ -8,6 +8,7 @@
 #include "Logger.h"
 
 #include <cstdlib> //getenv, system
+#include <filesystem>
 #include <vector>
 #include <sstream>
 #include <iostream>
@@ -27,9 +28,6 @@
     #include <pwd.h>
     #include <unistd.h>
 #endif
-
-#include <sys/types.h>
-#include <sys/stat.h> //stat
 
 std::string lime::getLimeSuiteRoot(void)
 {
@@ -173,27 +171,20 @@ int lime::downloadImageResource(const std::string& name)
     const std::string destFile(destDir + "/" + name);
     const std::string sourceUrl("https://downloads.myriadrf.org/project/limesuite/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
 
-    //check if the directory already exists
-    struct stat s;
-    if (stat(destDir.c_str(), &s) == 0)
+    if (std::filesystem::exists(destDir))
     {
-        if ((s.st_mode & S_IFDIR) == 0)
+        if (!std::filesystem::is_directory(destDir))
         {
             return lime::ReportError("Not a directory: %s", destDir.c_str());
         }
     }
-
-    //create images directory
     else
     {
-#ifdef __unix__
-        const std::string mkdirCmd("mkdir -p \"" + destDir + "\"");
-#else
-        const std::string mkdirCmd("md.exe \"" + destDir + "\"");
-#endif
-        int result = std::system(mkdirCmd.c_str());
-        if (result != 0)
+        bool result = std::filesystem::create_directories(destDir);
+        if (!result)
+        {
             return lime::ReportError(result, "Failed to create directory: %s", destDir.c_str());
+        }
     }
 
     //check for write access
