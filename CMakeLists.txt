@@ -215,7 +215,7 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH ON)
 
     if(CURRENT_OSX_VERSION GREATER_EQUAL 13.0)
-        set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,/usr/local/lib")
+        SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}")
     endif()
 endif()
 
