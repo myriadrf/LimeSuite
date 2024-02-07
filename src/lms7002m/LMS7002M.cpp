@@ -1716,8 +1716,8 @@ int LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t val
 
 /** @brief Change given parameter value
     @param address register address
-    @param msb Most significant byte
-    @param lsb Least significant byte
+    @param msb Most significant bit index
+    @param lsb Least significant bit index
     @param value new bits value, the value is shifted left by lsb bits
     @param fromChip read initial value directly from chip
 */

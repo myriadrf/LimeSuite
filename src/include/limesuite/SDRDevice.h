@@ -32,26 +32,27 @@ class LIME_API SDRDevice
     /// @brief Enumerator to define the log level of a log message.
     enum class LogLevel : uint8_t { CRITICAL, ERROR, WARNING, INFO, VERBOSE, DEBUG };
 
+    /// @brief Information about possible gain values.
     struct GainValue {
-        uint16_t hardwareRegisterValue;
-        float actualGainValue;
+        uint16_t hardwareRegisterValue; ///< The value that is written to the hardware
+        float actualGainValue; ///< The actual meaning of the value (in dB)
     };
 
     /// @brief General information about the Radio-Frequency System-on-Chip (RFSoC).
     struct RFSOCDescriptor {
-        std::string name;
-        uint8_t channelCount;
-        std::unordered_map<TRXDir, std::vector<std::string>> pathNames;
+        std::string name; ///< The name of the system
+        uint8_t channelCount; ///< The available channel count of the system
+        std::unordered_map<TRXDir, std::vector<std::string>> pathNames; ///< The available antenna names
 
         Range frequencyRange; ///< Deliverable frequency capabilities of the device
         Range samplingRateRange; ///< Sampling rate capabilities of the device
 
         std::unordered_map<TRXDir, std::unordered_map<std::string, Range>> antennaRange; ///< Antenna recommended bandwidths
-        std::unordered_map<TRXDir, Range> lowPassFilterRange;
+        std::unordered_map<TRXDir, Range> lowPassFilterRange; ///< The ranges of the low pass filter
 
-        std::unordered_map<TRXDir, std::set<eGainTypes>> gains;
-        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange;
-        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues;
+        std::unordered_map<TRXDir, std::set<eGainTypes>> gains; ///< The types of gains available
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, Range>> gainRange; ///< The available ranges of each gain
+        std::unordered_map<TRXDir, std::unordered_map<eGainTypes, std::vector<GainValue>>> gainValues; ///< The possible gain values
     };
 
     /// @brief Structure for the information of a custom parameter.
@@ -183,7 +184,7 @@ class LIME_API SDRDevice
 
         StreamConfig();
 
-        std::unordered_map<TRXDir, std::vector<uint8_t>> channels;
+        std::unordered_map<TRXDir, std::vector<uint8_t>> channels; ///< The channels to set up for the stream.
 
         DataFormat format; ///< Samples format used for Read/Write functions
         DataFormat linkFormat; ///< Samples format used in transport layer Host<->FPGA
@@ -192,7 +193,7 @@ class LIME_API SDRDevice
         /// Default: 0 - allow to decide internally.
         uint32_t bufferSize;
 
-        /// Optional: expected sampling rate for data transfer optimizations.
+        /// Optional: expected sampling rate for data transfer optimizations (in Hz).
         /// Default: 0 - decide internally.
         float hintSampleRate;
         bool alignPhase; ///< Attempt to do phases alignment between paired channels
@@ -253,25 +254,33 @@ class LIME_API SDRDevice
             /// @brief Configuration of a general finite impulse response (FIR) filter.
             struct GFIRFilter {
                 bool enabled; ///< Whether the filter is enabled or not.
-                double bandwidth; ///< The bandwidth of the filter.
+                double bandwidth; ///< The bandwidth of the filter (in Hz).
             };
 
+            /// @brief The structure holding the status of the test signal the device can produce.
             struct TestSignal {
+                /// @brief The enumeration describing the divide mode of the test signal.
                 enum class Divide : uint8_t {
                     Div8 = 1U,
                     Div4 = 2U,
                 };
 
+                /// @brief The enumeration describing the scale of the test signal.
                 enum class Scale : uint8_t {
                     Half = 0U,
                     Full = 1U,
                 };
 
-                bool enabled;
-                bool dcMode;
-                Divide divide;
-                Scale scale;
+                bool enabled; ///< Denotes whether test mode is enabled or not.
+                bool dcMode; ///< The DC mode of the test mode.
+                Divide divide; ///< The current divide of the test signal.
+                Scale scale; ///< The current scale of the test signal.
 
+                /// @brief Constructs the TestSignal struct
+                /// @param enabled Denotes whether test mode is enabled or not (default false)
+                /// @param dcMode The DC mode of the test mode (default false)
+                /// @param divide The current divide of the test signal (default Div8)
+                /// @param scale The current scale of the test signal (default Half)
                 TestSignal(bool enabled = false, bool dcMode = false, Divide divide = Divide::Div8, Scale scale = Scale::Half)
                     : enabled(enabled)
                     , dcMode(dcMode)
@@ -281,11 +290,11 @@ class LIME_API SDRDevice
                 }
             };
 
-            double centerFrequency; ///< The center frequency of the direction of this channel.
-            double NCOoffset; ///< The offset from the channel's numerically controlled oscillator (NCO).
-            double sampleRate; ///< The sample rate of this direction of a channel.
+            double centerFrequency; ///< The center frequency of the direction of this channel (in Hz).
+            double NCOoffset; ///< The offset from the channel's numerically controlled oscillator (NCO) (in Hz).
+            double sampleRate; ///< The sample rate of this direction of a channel (in Hz).
             std::unordered_map<eGainTypes, double> gain; ///< The gains and their current values for this direction.
-            double lpf; ///< The bandwidth of the Low Pass Filter (LPF).
+            double lpf; ///< The bandwidth of the Low Pass Filter (LPF) (in Hz).
             uint8_t path; ///< The antenna being used for this direction.
             uint8_t oversample; ///< The oversample ratio of this direction.
             GFIRFilter gfir; ///< The general finite impulse response (FIR) filter settings of this direction.
@@ -294,6 +303,9 @@ class LIME_API SDRDevice
             TestSignal testSignal; ///< Denotes whether the signal being sent is a test signal or not.
         };
 
+        /// @brief Gets the reference to the direction settings.
+        /// @param direction The direction to get it for.
+        /// @return The reference to the direction.
         Direction& GetDirection(TRXDir direction)
         {
             switch (direction)
@@ -305,6 +317,9 @@ class LIME_API SDRDevice
             }
         }
 
+        /// @brief Gets the const reference to the direction settings.
+        /// @param direction The direction to get it for.
+        /// @return The const reference to the direction.
         const Direction& GetDirection(TRXDir direction) const
         {
             switch (direction)
@@ -353,6 +368,11 @@ class LIME_API SDRDevice
     /// @param status The pointer to which to output the GPS status.
     virtual void GetGPSLock(GPS_Lock* status) = 0;
 
+    /// @brief Enables or disables the specified channel.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction of the channel to configure.
+    /// @param channel The channel to configure.
+    /// @param enable Whether to enable the channel or not.
     virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
 
     /// @brief Gets the frequency of a specified clock.
@@ -367,28 +387,120 @@ class LIME_API SDRDevice
     /// @param channel The channel to set the frequency of.
     virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
+    /// @brief Gets the current frequency of the given channel.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The current radio frequency of the channel (in Hz).
     virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the radio frequency of the given channel.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param frequency The frequency to set the channel to (in Hz).
     virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
 
+    /// @brief Gets the current frequency of the NCO.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @param index The index of the NCO to read from.
+    /// @return The current frequency of the NCO (in Hz)
     virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index) = 0;
+
+    /// @brief Sets the frequency and the phase angle of the NCO.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param index The index of the NCO to use.
+    /// @param frequency The frequency of the NCO to set (in Hz).
+    /// @param phaseOffset Phase offset angle (in degrees)
     virtual void SetNCOFrequency(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) = 0;
 
+    /// @brief Gets the current offset of the NCO compared to the main frequency.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The delta between the current device frequency and the current device NCO frequency (in Hz).
     virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
 
+    /// @brief Gets the current sample rate of the device.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The currend device sample rate (in Hz)
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the sample rate of the device.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param sampleRate The target sample rate (in Hz)
+    /// @param oversample The RF oversampling ratio.
     virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
 
-    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    /// @brief Gets the current value of the specified gain.
+    /// @param moduleIndex The device index to read from.
+    /// @param direction The direction to read from.
+    /// @param channel The channel to read from.
+    /// @param gain The type of gain to get the data of.
+    /// @param value The value of the gain (in dB).
+    /// @return The status code of the operation.
     virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
+    /// @brief Sets the gain level of a specified gain.
+    /// @param moduleIndex The device index to configure.
+    /// @param direction The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param gain The type of gain to set.
+    /// @param value The amount of gain to set (in dB).
+    /// @return The status code of the operation.
+    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+
+    /// @brief Gets the current frequency of the Low Pass Filter.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The current frequency of the Low Pass Filter (in Hz).
     virtual double GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the Low Pass Filter to a specified frequency.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param lpf The bandwidth of the Low Pass Filter to set it to (in Hz).
     virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
 
+    /// @brief Gets the currently set antenna of the device.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The ID of the currently set antenna.
     virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the current antenna of the device.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param path The ID of the antenna to set the device to use.
     virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
 
+    /// @brief Gets the current status of the test signal mode.
+    /// @param moduleIndex The device index to read from.
+    /// @param direction The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The current status of the test signal mode.
     virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) = 0;
+
+    /// @brief Sets the test signal mode.
+    /// @param moduleIndex The device index to configure.
+    /// @param direction The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param signalConfiguration The configuration of the test mode to set.
+    /// @param dc_i The I value of the test mode to send (0 for defaults)
+    /// @param dc_q The Q value of the test mode to send (0 for defaults)
     virtual void SetTestSignal(uint8_t moduleIndex,
         TRXDir direction,
         uint8_t channel,
@@ -396,38 +508,157 @@ class LIME_API SDRDevice
         int16_t dc_i = 0,
         int16_t dc_q = 0) = 0;
 
+    /// @brief Gets if the DC corrector bypass is enabled or not.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return Whether the DC corrector bypassis enabled or not (false = bypass the corrector, true = use the corrector)
     virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Enables or disables the DC corrector bypass.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param isAutomatic Whether to use the DC corrector bypass or not (false = bypass the corrector, true = use the corrector)
     virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
 
+    /// @brief Gets the DC I and Q corrector values.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The current DC I and Q corrector values.
     virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the DC I and Q corrector values.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param offset The offsets of the I and Q channels.
     virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
 
+    /// @brief Gets the current I and Q gain corrector values.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The current I and Q gain corrector values.
     virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the I and Q gain corrector values.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param balance The I and Q corrector values to set.
     virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
 
+    /// @brief Gets whether the VCO comparators of the clock generator are locked or not.
+    /// @param moduleIndex The device index to read from.
+    /// @return A value indicating whether the VCO comparators of the clock generator are locked or not.
     virtual bool GetCGENLocked(uint8_t moduleIndex) = 0;
+
+    /// @brief Gets the temperature of the device.
+    /// @param moduleIndex The device index to get the temperature of.
+    /// @return The temperature of the device (in degrees Celsius)
     virtual double GetTemperature(uint8_t moduleIndex) = 0;
 
+    /// @brief Gets whether the VCO comparators of the LO synthesizer are locked or not.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @return A value indicating whether the VCO comparators of the clock generator are locked or not.
     virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) = 0;
 
+    /// @brief Reads the value of the given register.
+    /// @param moduleIndex The device index to read from.
+    /// @param address The memory address to read from.
+    /// @param useFPGA Whether to read memory from the FPGA or not.
+    /// @return The value read from the register.
     virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) = 0;
+
+    /// @brief Writes the given register value to the given address.
+    /// @param moduleIndex The device index to configure.
+    /// @param address The address of the memory to write to.
+    /// @param value The value to write to the device's memory.
+    /// @param useFPGA Whether to write to the FPGA or not (default false)
     virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
 
+    /// @brief Loads the configuration of a device from a given file.
+    /// @param moduleIndex The device index to write the configuration into.
+    /// @param filename The file to read the data from.
     virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+
+    /// @brief Saves the current configuration of the device into a given file.
+    /// @param moduleIndex The device index to save the data from.
+    /// @param filename The file to save the information to.
     virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
 
+    /// @brief Gets the given parameter from the device.
+    /// @param moduleIndex The device index to configure.
+    /// @param channel The channel to configure.
+    /// @param parameterKey The key of the paremeter to read from.
+    /// @return The value read from the parameter.
     virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) = 0;
+
+    /// @brief Sets the given parameter in the device.
+    /// @param moduleIndex The device index to configure.
+    /// @param channel The channel to configure.
+    /// @param parameterKey The key of the paremeter to write to.
+    /// @param value The value to write to the address.
     virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
 
+    /// @brief Gets the given parameter from the device.
+    /// @param moduleIndex The device index to get the data from.
+    /// @param channel The channel to get the data from.
+    /// @param address The memory address of the device to read.
+    /// @param msb The index of the most significant bit of the address to read. (16-bit register)
+    /// @param lsb The index of the least significant bit of the address to read. (16-bit register)
+    /// @return The value read from the parameter.
     virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb) = 0;
+
+    /// @brief Sets the given parameter in the device.
+    /// @param moduleIndex The device index to configure.
+    /// @param channel The channel to configure.
+    /// @param address The memory address in the device to change.
+    /// @param msb The index of the most significant bit of the address to modify. (16-bit register)
+    /// @param lsb The index of the least significant bit of the address to modify. (16-bit register)
+    /// @param value The value to write to the address.
     virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
 
+    /// @brief Calibrates the given channel for a given bandwidth.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction of the channel to configure.
+    /// @param channel The channel to configure.
+    /// @param bandwidth The bandwidth of the channel to calibrate for (in Hz).
     virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
+
+    /// @brief Configures the GFIR with the settings.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction of the channel to configure.
+    /// @param channel The channel to configure.
+    /// @param settings The settings of the GFIR to set.
     virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
 
+    /// @brief Gets the current coefficients of a GFIR.
+    /// @param moduleIndex The device index to get the coefficients from.
+    /// @param trx The direction of the channel to get the data from.
+    /// @param channel The channel to get the data from.
+    /// @param gfirID The ID of the GFIR to get the coefficients from.
+    /// @return The current coefficients (normalized in the range [-1; 1]) of the GFIR.
     virtual std::vector<double> GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID) = 0;
+
+    /// @brief Sets the coefficients of a given GFIR
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction of the channel to configure.
+    /// @param channel The channel to set the filter of.
+    /// @param gfirID The ID of the GFIR to set.
+    /// @param coefficients The coefficients (normalized in the range [-1; 1]) to set the GFIR to.
     virtual void SetGFIRCoefficients(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients) = 0;
+
+    /// @brief Sets the GFIR to use.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction of the channel to configure.
+    /// @param channel The channel to set the filter of.
+    /// @param gfirID The ID of the GFIR to set.
+    /// @param enabled Whether the specifed GFIR should be enabled or disabled.
     virtual void SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
 
     /// @brief Synchronizes the cached changed register values on the host with the real values on the device.
@@ -438,7 +669,14 @@ class LIME_API SDRDevice
     /// @param enable Whether to enable or disable the register value caching (true = enabled).
     virtual void EnableCache(bool enable) = 0;
 
+    /// @brief Gets the hardware timestamp with the applied offset.
+    /// @param moduleIndex The device index to configure.
+    /// @return The current timestamp of the hardware.
     virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) = 0;
+
+    /// @brief Sets the hardware timestamp to the provided one by applying a constant offset.
+    /// @param moduleIndex The device index to configure.
+    /// @param now What the definition of the current time should be.
     virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
 
     /// @brief Sets up all the streams on a device.
