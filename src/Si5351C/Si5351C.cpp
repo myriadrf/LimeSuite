@@ -302,18 +302,18 @@ Si5351C::Status Si5351C::UploadConfiguration()
     outBuffer.push_back(std::byte{ 3 });
     outBuffer.push_back(std::byte{ 0xFF });
     //Power down all output drivers
-    for (uint8_t i = 0; i < 8; ++i)
+    for (uint8_t i = 0U; i < 8U; ++i)
     {
         outBuffer.push_back(static_cast<std::byte>(16 + i));
         outBuffer.push_back(std::byte{ 0x84 });
     }
     //write new configuration
-    for (uint8_t i = 15; i <= 92; ++i)
+    for (uint8_t i = 15U; i <= 92U; ++i)
     {
         outBuffer.push_back(std::byte{ i });
         outBuffer.push_back(std::byte{ m_newConfiguration[i] });
     }
-    for (uint8_t i = 149; i <= 170; ++i)
+    for (uint8_t i = 149U; i <= 170U; ++i)
     {
         outBuffer.push_back(std::byte{ i });
         outBuffer.push_back(std::byte{ m_newConfiguration[i] });
