@@ -12,6 +12,7 @@
 #include <functional>
 #include <memory>
 
+#include "mcu_programs.h"
 #include "limesuite/config.h"
 
 namespace lime {
@@ -71,8 +72,6 @@ class LIME_API MCU_BD
     int WaitForMCU(uint32_t timeout_ms);
     static const char* MCUStatusMessage(const uint8_t code);
 
-    static const int cMaxFWSize = 1024 * 16;
-
     /*!
      * Callback from programming processes
      * @param bsent number of bytes transferred
@@ -112,7 +111,7 @@ class LIME_API MCU_BD
     // The SFR content
     unsigned char m_SFR[256];
     // The program memory code
-    unsigned char byte_array[cMaxFWSize];
+    unsigned char byte_array[MCU_PROGRAM_SIZE];
 
     void mSPI_write(unsigned short addr_reg, unsigned short data_reg);
     unsigned short mSPI_read(unsigned short addr_reg);

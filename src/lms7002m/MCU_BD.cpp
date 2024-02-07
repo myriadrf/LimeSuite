@@ -36,7 +36,7 @@ MCU_BD::MCU_BD()
     //default value,
     //must be verified during program exploatation
     m_iLoopTries = 20;
-    byte_array_size = cMaxFWSize;
+    byte_array_size = MCU_PROGRAM_SIZE;
     // array initiallization
     for (i = 0; i <= 255; i++)
     {
@@ -57,7 +57,13 @@ MCU_BD::~MCU_BD()
 void MCU_BD::Initialize(std::shared_ptr<ISPI> pSerPort, unsigned size)
 {
     m_serPort = pSerPort;
-    if (size > 0)
+
+    if (size > MCU_PROGRAM_SIZE)
+    {
+        byte_array_size = MCU_PROGRAM_SIZE;
+        lime::warning("%s %i", "MCU_BD initialize size exceeds maximum size; clamping to max of", MCU_PROGRAM_SIZE);
+    }
+    else if (size > 0)
         byte_array_size = size;
 }
 
