@@ -315,7 +315,7 @@ int LimeSDR_Mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-    if (lms->CalibrateTxGain(0, nullptr) != 0)
+    if (lms->CalibrateTxGain() != 0)
         return -1;
 
     lms->EnableChannel(TRXDir::Tx, 0, false);

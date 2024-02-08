@@ -303,14 +303,15 @@ void LimeSDR_XTRX::Configure(const SDRConfig& cfg, uint8_t socIndex)
 
         for (int i = 0; i < 2; ++i)
         {
-            chip->SetActiveChannel(i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
+            LMS7002M::Channel enumChannel = i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB;
+            chip->SetActiveChannel(enumChannel);
             const ChannelConfig& ch = cfg.channel[i];
 
             if (socIndex == 0)
             {
-                if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, i, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != 0)
+                if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, enumChannel, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != 0)
                     throw std::logic_error(strFormat("Rx ch%i GFIR config failed", i));
-                if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, i, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != 0)
+                if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, enumChannel, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != 0)
                     throw std::logic_error(strFormat("Tx ch%i GFIR config failed", i));
             }
 

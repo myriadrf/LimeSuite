@@ -154,9 +154,8 @@ int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-
 /// @brief Constructs a new LimeSDR_X3 object
-/// 
+///
 /// Do not perform any unnecessary configuring to device in constructor, so you
 /// could read back it's state for debugging purposes
 /// @param spiLMS7002M The communications port to the LMS7002M chips.
@@ -666,7 +665,9 @@ void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig&
 
     if (socIndex == 0)
     {
-        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
+        if (trx.enabled &&
+            chip->SetGFIRFilter(
+                dir, ch == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
         {
             throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
         }

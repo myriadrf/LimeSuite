@@ -215,7 +215,7 @@ void TRXLooper::Start()
     //int64_t startPoint = std::chrono::time_point_cast<std::chrono::microseconds>(pcStreamStart).time_since_epoch().count();
     //printf("Stream%i start %lius\n", chipId, startPoint);
     // if (!mConfig.alignPhase)
-    //     lms->ResetLogicregisters();
+    //     lms->ResetLogicRegisters();
 }
 
 /// @brief Stops the stream and cleans up all the memory.

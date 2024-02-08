@@ -461,7 +461,9 @@ void LMS7002M_SDRDevice::ConfigureGFIR(
     uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings)
 {
     LMS7002M* lms = mLMSChips.at(moduleIndex);
-    int returnValue = lms->SetGFIRFilter(trx, channel, settings.enabled, settings.bandwidth);
+    LMS7002M::Channel enumChannel = channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+
+    int returnValue = lms->SetGFIRFilter(trx, enumChannel, settings.enabled, settings.bandwidth);
     if (returnValue != 0)
     {
         throw std::runtime_error("Setting GFIR Filter failed");
@@ -1113,7 +1115,7 @@ int LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, 
 
     if (fpga.SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipIndex) != 0)
         return -1;
-    soc.ResetLogicregisters();
+    soc.ResetLogicRegisters();
     return 0;
 }
 

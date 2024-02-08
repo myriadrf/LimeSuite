@@ -169,9 +169,6 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements* measurements)
     return rssi;
 }
 
-/** @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
-@return 0-success, other-failure
-*/
 int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz)
@@ -266,9 +263,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     return 0;
 }
 
-/** @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
-    @return 0-success, other-failure
-*/
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz)
@@ -389,11 +383,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     return 0;
 }
 
-/** @brief Loads given DC_REG values into registers
-    @param dir TxTSP or RxTSP selection
-    @param I DC_REG I value
-    @param Q DC_REG Q value
-*/
 int LMS7002M::LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q)
 {
     if (dir == TRXDir::Tx)
