@@ -8,10 +8,11 @@
 
 namespace lime {
 
+/** @brief Structure for holding information about the aggregate stream. */
 struct LIME_API StreamAggregate {
-    SDRDevice* device;
-    std::vector<int32_t> channels;
-    int32_t streamIndex;
+    SDRDevice* device; ///< The device the stream is coming from.
+    std::vector<int32_t> channels; ///< The channels the device is streaming with.
+    int32_t streamIndex; ///< The index of the stream.
 };
 
 /** @brief Class for managing streaming from multiple devices at the same time. */

@@ -25,19 +25,6 @@ class ISPI;
 class LMS7002M_RegistersMap;
 class MCU_BD;
 
-struct RSSI_measurements {
-    void clear()
-    {
-        amplitudeFFT.clear();
-        amplitudeGeortzelF.clear();
-        amplitudeGeortzelFPGA.clear();
-    }
-
-    std::vector<float> amplitudeFFT;
-    std::vector<float> amplitudeGeortzelF;
-    std::vector<float> amplitudeGeortzelFPGA;
-};
-
 typedef double float_type;
 
 /*! @brief Class for communicating with the LMS7002M chip.
@@ -950,7 +937,7 @@ class LIME_API LMS7002M
     static const std::array<std::array<float_type, 2>, 3> gVCO_frequency_table;
     static const std::array<float_type, 2> gCGEN_VCO_frequencies;
 
-    uint32_t GetRSSI(RSSI_measurements* measurements = nullptr);
+    uint32_t GetRSSI();
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
 
     int CalibrateTxGainSetup();

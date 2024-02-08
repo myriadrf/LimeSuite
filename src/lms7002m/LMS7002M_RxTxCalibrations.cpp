@@ -159,7 +159,7 @@ static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
 */
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
 */
-uint32_t LMS7002M::GetRSSI(RSSI_measurements* measurements)
+uint32_t LMS7002M::GetRSSI()
 {
     //delay to make sure RSSI gets enough samples to refresh before reading it
     this_thread::sleep_for(chrono::microseconds(50));

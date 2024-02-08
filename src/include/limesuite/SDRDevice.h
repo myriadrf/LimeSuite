@@ -155,6 +155,7 @@ class LIME_API SDRDevice
     struct StreamConfig {
         /// @brief Extra configuration settings for a stream.
         struct Extras {
+            /// @brief The settings structure for a packet transmission.
             struct PacketTransmission {
                 PacketTransmission();
 
