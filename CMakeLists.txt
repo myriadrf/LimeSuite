@@ -291,8 +291,18 @@ feature_summary(WHAT PACKAGES_FOUND
 )
 
 message(STATUS "######################################################")
+feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND
+    DESCRIPTION "Missing required packages:"
+)
+
+message(STATUS "######################################################")
 feature_summary(WHAT RECOMMENDED_PACKAGES_NOT_FOUND
-    DESCRIPTION "Recommended packages not found:"
+    DESCRIPTION "Missing recommended packages:"
+)
+
+message(STATUS "######################################################")
+feature_summary(WHAT OPTIONAL_PACKAGES_NOT_FOUND
+    DESCRIPTION "Missing optional packages:"
 )
 
 message(STATUS "######################################################")

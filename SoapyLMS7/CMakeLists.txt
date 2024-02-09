@@ -3,6 +3,10 @@
 ########################################################################
 
 find_package(SoapySDR CONFIG)
+set_package_properties(SoapySDR PROPERTIES
+    TYPE OPTIONAL
+    PURPOSE "Adds LimeSuite bindings for SoapySDR"
+)
 
 ########################################################################
 ## Feature registration
