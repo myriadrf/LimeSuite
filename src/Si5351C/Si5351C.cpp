@@ -299,7 +299,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
 {
     std::vector<std::byte> outBuffer;
     //Disable outputs
-    outBuffer.push_back(std::byte{ 3 });
+    outBuffer.push_back(std::byte{ 0x03 });
     outBuffer.push_back(std::byte{ 0xFF });
     //Power down all output drivers
     for (uint8_t i = 0U; i < 8U; ++i)
@@ -311,19 +311,19 @@ Si5351C::Status Si5351C::UploadConfiguration()
     for (uint8_t i = 15U; i <= 92U; ++i)
     {
         outBuffer.push_back(std::byte{ i });
-        outBuffer.push_back(std::byte{ m_newConfiguration[i] });
+        outBuffer.push_back(m_newConfiguration[i]);
     }
     for (uint8_t i = 149U; i <= 170U; ++i)
     {
         outBuffer.push_back(std::byte{ i });
-        outBuffer.push_back(std::byte{ m_newConfiguration[i] });
+        outBuffer.push_back(m_newConfiguration[i]);
     }
     //apply soft reset
     outBuffer.push_back(std::byte{ 177 });
     outBuffer.push_back(std::byte{ 0xAC });
     //Enabe desired outputs
     outBuffer.push_back(std::byte{ 3 });
-    outBuffer.push_back(std::byte{ m_newConfiguration[3] });
+    outBuffer.push_back(m_newConfiguration[3]);
 
     try
     {
@@ -614,7 +614,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
     FindVCO(CLK, PLL, 600000000, 900000000);
     int addr;
     m_newConfiguration[3] = std::byte{ 0 };
-    for (int i = 0; i < 8; ++i)
+    for (uint8_t i = 0; i < 8; ++i)
     {
         m_newConfiguration[3] |= static_cast<std::byte>((!CLK[i].powered) << i); //enabled
         m_newConfiguration[16 + i] = std::byte{ 0 };
