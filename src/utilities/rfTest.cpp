@@ -155,14 +155,14 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
     // complex32f_t rxSamples[2];
     // rxSamples[0] = aligned_alloc(alignment, samplesToBuffer);
     std::vector<std::vector<complex32f_t>> rxSamples(2); // allocate two channels for simplicity
-    for (uint i = 0; i < rxSamples.size(); ++i)
+    for (size_t i = 0; i < rxSamples.size(); ++i)
         rxSamples[i].resize(samplesToBuffer);
 
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
     std::vector<std::vector<complex32f_t>> txPattern(2);
     const int txPacketCount = 4;
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (size_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount * samplesInPkt);
         for (int j = 0; j < txPacketCount; ++j)
@@ -343,14 +343,14 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
         (float)txDeltaTS / samplesInPkt);
 
     std::vector<std::vector<complex32f_t>> rxSamples(2); // allocate two channels for simplicity
-    for (uint i = 0; i < rxSamples.size(); ++i)
+    for (size_t i = 0; i < rxSamples.size(); ++i)
         rxSamples[i].resize(samplesToBuffer);
 
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
     std::vector<std::vector<complex32f_t>> txPattern(stream.channels.at(lime::TRXDir::Tx).size());
     const int txPacketCount = 1;
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (size_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount * samplesInPkt); // 4 packets should be enough
         for (int j = 0; j < txPacketCount; ++j)
