@@ -56,9 +56,9 @@ TEST(LMS64CProtocol, GPIODirWriteTestOneBlock)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::GPIODirWrite(mockPort, &value, 1);
+    OpStatus returnValue = LMS64CProtocol::GPIODirWrite(mockPort, &value, 1);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, GPIODirWriteTestTwoBlocks)
@@ -83,9 +83,9 @@ TEST(LMS64CProtocol, GPIODirWriteTestTwoBlocks)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::GPIODirWrite(mockPort, values.data(), 2);
+    OpStatus returnValue = LMS64CProtocol::GPIODirWrite(mockPort, values.data(), 2);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, GPIODirWriteTestNotFullyWritten)
