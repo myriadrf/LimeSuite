@@ -48,9 +48,9 @@ TEST(LMS64CProtocol, GetFirmwareInfoGetsInfo)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
+    OpStatus returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, GetFirmwareInfoNotFullyWritten)
@@ -67,9 +67,9 @@ TEST(LMS64CProtocol, GetFirmwareInfoNotFullyWritten)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
-    int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
+    OpStatus returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
-    EXPECT_EQ(returnValue, -1);
+    EXPECT_EQ(returnValue, OpStatus::IO_FAILURE);
 }
 
 TEST(LMS64CProtocol, GetFirmwareInfoNotFullyRead)
@@ -86,9 +86,9 @@ TEST(LMS64CProtocol, GetFirmwareInfoNotFullyRead)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
+    OpStatus returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
-    EXPECT_EQ(returnValue, -1);
+    EXPECT_EQ(returnValue, OpStatus::IO_FAILURE);
 }
 
 TEST(LMS64CProtocol, GetFirmwareInfoWrongStatus)
@@ -110,7 +110,7 @@ TEST(LMS64CProtocol, GetFirmwareInfoWrongStatus)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
+    OpStatus returnValue = LMS64CProtocol::GetFirmwareInfo(mockPort, info, subdevice);
 
-    EXPECT_EQ(returnValue, -1);
+    EXPECT_EQ(returnValue, OpStatus::IO_FAILURE);
 }
