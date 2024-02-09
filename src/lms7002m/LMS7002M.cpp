@@ -6,6 +6,8 @@
 
 #include "limesuite/LMS7002M.h"
 
+#define _USE_MATH_DEFINES
+
 #include <algorithm>
 #include <cassert>
 #include <chrono>

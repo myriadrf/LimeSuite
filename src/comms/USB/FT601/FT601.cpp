@@ -3,7 +3,7 @@
 #include "DeviceExceptions.h"
 #include "USBTransferContext_FT601.h"
 
-using namespace lime;
+namespace lime {
 
 static const int STREAM_BULK_WRITE_ADDRESS = 0x03;
 static const int STREAM_BULK_READ_ADDRESS = 0x83;
@@ -37,7 +37,7 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
     if (FT_FAILED(ftStatus))
     {
         ReportError(ENODEV, "Failed to list USB Devices");
-        return -1;
+        return false;
     }
 
     FT_AbortPipe(mFTHandle, STREAM_BULK_READ_ADDRESS);
@@ -371,3 +371,5 @@ int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
     return 0;
 }
 #endif
+
+} // namespace lime

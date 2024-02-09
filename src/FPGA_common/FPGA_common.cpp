@@ -441,7 +441,7 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
     lime::debug("FPGA SetPllFrequency: PLL[%i] input:%.3f MHz clockCount:%i", pllIndex, inputFreq / 1e6, clockCount);
     WriteRegistersBatch batch(this);
     const auto timeout = chrono::seconds(3);
-    if (not fpgaPort)
+    if (!fpgaPort)
         return ReportError(OpStatus::IO_FAILURE, "ConfigureFPGA_PLL: connection port is NULL");
 
     const bool waitForDone = HasWaitForDone(ReadRegister(0)); // read targetDevice
@@ -463,7 +463,7 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
             clocks[i].phaseShift_deg,
             clocks[i].findPhase);
         willDoPhaseSearch |= clocks[i].findPhase;
-        if (clocks[i].outFrequency < PLLlowerLimit && not clocks[i].bypass)
+        if (clocks[i].outFrequency < PLLlowerLimit && !clocks[i].bypass)
             return ReportError(
                 OpStatus::OUT_OF_RANGE, "FPGA SetPllFrequency: PLL[%i], clock[%i] must be >=%g MHz", pllIndex, i, PLLlowerLimit / 1e6);
     }
@@ -570,13 +570,13 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
         const int C = ceil(Fvco / clocks[i].outFrequency);
         if (i < 8)
         {
-            if (not clocks[i].bypass && C != 1)
+            if (!clocks[i].bypass && C != 1)
                 c7_c0_odds_byps &= ~(1 << (i * 2)); //enable output
             c7_c0_odds_byps |= (C % 2) << (i * 2 + 1); //odd bit
         }
         else
         {
-            if (not clocks[i].bypass && C != 1)
+            if (!clocks[i].bypass && C != 1)
                 c15_c8_odds_byps &= ~(1 << ((i - 8) * 2)); //enable output
             c15_c8_odds_byps |= (C % 2) << ((i - 8) * 2 + 1); //odd bit
         }
@@ -624,7 +624,7 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
 
 OpStatus FPGA::SetDirectClocking(int clockIndex)
 {
-    if (not fpgaPort)
+    if (!fpgaPort)
         return ReportError(OpStatus::IO_FAILURE, "SetDirectClocking: connection port is NULL");
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);

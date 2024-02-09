@@ -3,7 +3,6 @@
 #include "USBGeneric.h"
 
 #ifndef __unix__
-    #include "windows.h"
     #include "FTD3XXLibrary/FTD3XX.h"
 #endif
 

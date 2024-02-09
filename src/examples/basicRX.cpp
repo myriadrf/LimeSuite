@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     std::cout << "Stream started ...\n";
     signal(SIGINT, intHandler);
 
-    const uint fftSize = 16384;
+    const unsigned int fftSize = 16384;
     complex32f_t** rxSamples = new complex32f_t*[2]; // allocate two channels for simplicity
     for (int i = 0; i < 2; ++i)
         rxSamples[i] = new complex32f_t[fftSize];

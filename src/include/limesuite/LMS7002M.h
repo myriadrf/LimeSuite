@@ -12,6 +12,7 @@
 #include "limesuite/LMS7002M_parameters.h"
 #include "limesuite/OpStatus.h"
 
+#include <array>
 #include <cstdarg>
 #include <cstdint>
 #include <functional>

@@ -7,6 +7,7 @@
 #include "Logger.h"
 #include "TRXLooper.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <complex>

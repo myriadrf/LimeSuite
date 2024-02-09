@@ -16,7 +16,11 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::
 {
     for (int i = 0; i < blockCount; ++i)
     {
+#if __unix__
         void* ptr = aligned_alloc(alignment, blockSize);
+#else
+        void* ptr = _aligned_malloc(alignment, blockSize);
+#endif
         if (!ptr)
         {
             throw std::runtime_error("Failed to allocate memory");

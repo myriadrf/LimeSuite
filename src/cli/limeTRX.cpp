@@ -10,6 +10,7 @@
 #include "kissFFT/kiss_fft.h"
 #include <condition_variable>
 #include <mutex>
+
 // #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
     #include "gnuPlotPipe.h"
@@ -80,7 +81,7 @@ enum Args {
     HELP = 'h',
     DEVICE = 'd',
     CHIP = 'c',
-    INPUT = 'i',
+    INPUTFILE = 'i',
     OUTPUT = 'o',
     SAMPLES_COUNT = 's',
     TIME = 't',
@@ -328,7 +329,7 @@ int main(int argc, char** argv)
     static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
         { "device", required_argument, 0, Args::DEVICE },
         { "chip", required_argument, 0, Args::CHIP },
-        { "input", required_argument, 0, Args::INPUT },
+        { "input", required_argument, 0, Args::INPUTFILE },
         { "output", required_argument, 0, Args::OUTPUT },
         { "looptx", no_argument, 0, Args::LOOPTX },
         { "samplesCount", required_argument, 0, Args::SAMPLES_COUNT },
@@ -380,7 +381,7 @@ int main(int argc, char** argv)
         case Args::LOOPTX:
             loopTx = true;
             break;
-        case Args::INPUT:
+        case Args::INPUTFILE:
             if (optarg != NULL)
             {
                 tx = true;

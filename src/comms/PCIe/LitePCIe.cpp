@@ -1,15 +1,19 @@
 #include "LitePCIe.h"
-#include <unistd.h>
-#include <fcntl.h>
+
 #include <iostream>
-#include <poll.h>
-#include <sys/mman.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 #include <string.h>
 #include <thread>
-
 #include "Logger.h"
+
+#ifdef __unix__
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <poll.h>
+    #include <sys/mman.h>
+    #include <sys/ioctl.h>
+    #include "software/kernel/litepcie.h"
+#endif
 
 using namespace std;
 using namespace lime;

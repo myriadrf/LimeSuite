@@ -197,7 +197,7 @@ void USBGeneric::Disconnect()
 int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
 {
     long len = 0;
-    if (not IsConnected())
+    if (!IsConnected())
     {
         throw std::runtime_error("BulkTransfer: USB device is not connected");
     }
@@ -225,7 +225,7 @@ int32_t USBGeneric::ControlTransfer(
     int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
 {
     long len = length;
-    if (not IsConnected())
+    if (!IsConnected())
     {
         throw std::runtime_error("ControlTransfer: USB device is not connected");
     }

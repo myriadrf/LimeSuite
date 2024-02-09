@@ -33,7 +33,7 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
         view = token;
     }
 
-    uint commentLevelsDeep = 1;
+    unsigned int commentLevelsDeep = 1;
 
     while (commentLevelsDeep != 0) // Multiline comments can be nested
     {
