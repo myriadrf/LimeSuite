@@ -286,6 +286,16 @@ add_subdirectory(amarisoft-plugin)
 include(FeatureSummary)
 message(STATUS "")
 message(STATUS "######################################################")
+feature_summary(WHAT PACKAGES_FOUND
+    DESCRIPTION "Packages found:"
+)
+
+message(STATUS "######################################################")
+feature_summary(WHAT RECOMMENDED_PACKAGES_NOT_FOUND
+    DESCRIPTION "Recommended packages not found:"
+)
+
+message(STATUS "######################################################")
 message(STATUS "## ${PROJECT_NAME} enabled features")
 message(STATUS "######################################################")
 feature_summary(WHAT ENABLED_FEATURES)

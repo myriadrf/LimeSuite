@@ -27,6 +27,11 @@ if(WIN32)
     message(STATUS "FTDI_LIBRARIES: ${FTDI_LIBRARIES}")
 elseif(UNIX)
     find_package(libusb-1.0)
+    set_package_properties(libusb-1.0 PROPERTIES
+        TYPE RECOMMENDED
+        PURPOSE "Adds USB communication support for FT601 chip"
+    )
+
     set(FTDI_FOUND ${LIBUSB_1_FOUND})
     if (NOT ${FTDI_FOUND})
         message(WARNING "libusb-1.0 libraries not found. Omitting FTDI USB support")

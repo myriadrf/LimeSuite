@@ -1,5 +1,9 @@
 if(WIN32)
     find_package(CyAPI)
+    set_package_properties(CyAPI
+        TYPE RECOMMENDED
+        PURPOSE "Adds USB communication support for Cypress FX3 chip"
+    )
     set(FX3_FOUND ${CYAPI_FOUND})
     set(FX3_INCLUDE_DIRS ${CYAPI_INCLUDE_DIRS})
     set(FX3_LIBRARIES ${CYAPI_LIBRARIES} SetupAPI)
@@ -11,6 +15,10 @@ if(WIN32)
     endif()
 elseif(UNIX)
     find_package(libusb-1.0)
+    set_package_properties(libusb-1.0 PROPERTIES
+        TYPE RECOMMENDED
+        PURPOSE "Adds USB communication support for Cypress FX3 chip"
+    )
     set(FX3_FOUND ${LIBUSB_1_FOUND})
     if (NOT ${FX3_FOUND})
         message(WARNING "libusb-1.0 libraries not found. Omitting Cypress FX3 USB support")
