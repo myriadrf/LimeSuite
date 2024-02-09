@@ -227,11 +227,7 @@ add_subdirectory(SoapyLMS7)
 ########################################################################
 ## udev rules for linux usb
 ########################################################################
-if (DEFINED UDEV_RULES_PATH)
-    install(
-        FILES ${CMAKE_CURRENT_SOURCE_DIR}/udev-rules/64-limesuite.rules
-        DESTINATION ${UDEV_RULES_PATH})
-endif()
+add_subdirectory(udev-rules)
 
 ########################################################################
 ## Doxygen
