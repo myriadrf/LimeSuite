@@ -1,0 +1,58 @@
+name: GTest tests
+
+on:
+  push:
+    branches: [ master, litepcie-update ]
+  pull_request:
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  SOAPY_SDR_BRANCH: master
+  INSTALL_PREFIX: ${{github.workspace}}/deps
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+            matrix:
+              os: [ubuntu-latest]
+                # os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -qq libusb-1.0-0-dev
+
+    - name: Install osx dependencies
+      if: matrix.os == 'macos-latest'
+      run: brew install libusb wxmac
+
+    - name: Download windows dependencies
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir ${{github.workspace}}/deps
+        curl -o ${{github.workspace}}/deps/FX3SDK.zip -L https://downloads.myriadrf.org/project/limesuite/appveyor/FX3SDK.zip
+        7z x ${{github.workspace}}/deps/FX3SDK.zip -o${{github.workspace}}/deps/FX3SDK
+        curl -o ${{github.workspace}}/deps/wxWidgets-headers.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxWidgets-3.1.5-headers.7z
+        7z x ${{github.workspace}}/deps/wxWidgets-headers.7z -o${{github.workspace}}/deps/wxWidgets
+        curl -o ${{github.workspace}}/deps/wxWidgets.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxMSW-3.1.5_vc14x_x64_Dev.7z
+        7z x ${{github.workspace}}/deps/wxWidgets.7z -o${{github.workspace}}/deps/wxWidgets
+
+    - name: Configure CMake (windows)
+      if: matrix.os == 'windows-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DwxWidgets_ROOT_DIR=${{github.workspace}}/deps/wxWidgets -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK
+
+    - name: Configure CMake (linux)
+      if: matrix.os != 'windows-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DBUILD_SHARED_LIBS=OFF -DBINARY_OUTPUT_DIR=${{github.workspace}}/build/bin/
+
+    - name: Build and run tests
+      run: |
+        cmake --build ${{github.workspace}}/build --config LimeSuite2Test
+        ${{github.workspace}}/build/bin/LimeSuite2Test

@@ -1,6 +1,6 @@
 set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
-set(LIME_TEST_SUITE_SOURCES 
+set(LIME_TEST_SUITE_SOURCES
     boards/LimeSDR/LimeSDRTest.cpp
     boards/LimeSDR/USB_CSR_Pipe_SDRTest.cpp
     boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
@@ -32,7 +32,9 @@ target_link_libraries(
     GTest::gmock_main
 )
 
-set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+if (BINARY_OUTPUT_DIR)
+    set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(${LIME_TEST_SUITE_NAME})
