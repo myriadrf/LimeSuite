@@ -17,7 +17,7 @@ set(LIMESDR_XTRX_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIMESDR_XTRX "Enable LimeSDR XTRX support" ON "ENABLE_LIBRARY;ENABLE_LITE_PCIE" OFF)
-add_feature_info(BoardLimeSDRXTRX ENABLE_LIMESDR_XTRX "LimeSDR XTRX board support")
+add_feature_info(LIMESDR_XTRX ENABLE_LIMESDR_XTRX "LimeSDR XTRX board support")
 if (NOT ENABLE_LIMESDR_XTRX)
     return()
 endif()

@@ -15,7 +15,7 @@ set(MM_X8_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIMESDR_MMX8 "Enable LimeMM-X8 board support" ON "ENABLE_LIBRARY;ENABLE_LITE_PCIE" OFF)
-add_feature_info(ENABLE_LIMESDR_MMX8 ENABLE_LIMESDR_MMX8 "LimeSDR MM-X8 board support")
+add_feature_info(LIMESDR_MMX8 ENABLE_LIMESDR_MMX8 "LimeSDR MM-X8 board support")
 if (NOT ENABLE_LIMESDR_MMX8)
     return()
 endif()
