@@ -51,7 +51,7 @@ class USBGeneric
 
     bool isConnected;
 
-    int GetUSBContextIndex();
+    virtual int GetUSBContextIndex();
     virtual void WaitForXfers(uint8_t endPointAddr);
 
 #ifdef __unix__

@@ -100,3 +100,37 @@ void FX3::AbortEndpointXfers(uint8_t endPointAddr)
     WaitForXfers(endPointAddr);
 }
 #endif
+
+int FX3::GetUSBContextIndex()
+{
+    std::unique_lock<std::mutex> lock{ contextsLock };
+
+    USBTransferContext_FX3* FX3contexts = static_cast<USBTransferContext_FX3*>(contexts);
+
+    if (FX3contexts == nullptr)
+    {
+        return -1;
+    }
+
+    int i = 0;
+    bool contextFound = false;
+    // Find not used context
+    for (i = 0; i < USB_MAX_CONTEXTS; i++)
+    {
+        if (!FX3contexts[i].used)
+        {
+            contextFound = true;
+            break;
+        }
+    }
+
+    if (!contextFound)
+    {
+        lime::error("No contexts left for reading or sending data"s);
+        return -1;
+    }
+
+    FX3contexts[i].used = true;
+
+    return i;
+}

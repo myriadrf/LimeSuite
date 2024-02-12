@@ -27,6 +27,8 @@ class FX3 : public USBGeneric
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
+
+    virtual int GetUSBContextIndex() override;
 };
 
 } // namespace lime

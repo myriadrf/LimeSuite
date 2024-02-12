@@ -39,7 +39,11 @@ MemoryPool::~MemoryPool()
     while (!mFreeBlocks.empty())
     {
         void* ptr = mFreeBlocks.top();
+#ifdef __unix__
         free(ptr);
+#else
+        _aligned_free(ptr);
+#endif
         mFreeBlocks.pop();
     }
     for (auto ptr : mUsedBlocks)
