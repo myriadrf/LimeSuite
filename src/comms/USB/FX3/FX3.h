@@ -9,6 +9,11 @@
 #include <thread>
 #include <ciso646>
 
+#ifndef __unix__
+    #include "windows.h"
+    #include "CyAPI.h"
+#endif // !__unix__
+
 namespace lime {
 
 /** @brief A class for communicating with devices using the Cypress USB 3.0 CYUSB3014-BZXC USB controller. */
@@ -29,6 +34,21 @@ class FX3 : public USBGeneric
 #endif
 
     virtual int GetUSBContextIndex() override;
+
+#ifndef __unix__
+    static const int MAX_EP_CNT = 16;
+    CCyFX3Device* USBDevicePrimary;
+    //control endpoints
+    CCyControlEndPoint* InCtrlEndPt3;
+    CCyControlEndPoint* OutCtrlEndPt3;
+
+    //end points for samples reading and writing
+    CCyUSBEndPoint* InEndPt[MAX_EP_CNT];
+    CCyUSBEndPoint* OutEndPt[MAX_EP_CNT];
+
+    CCyUSBEndPoint* InCtrlBulkEndPt;
+    CCyUSBEndPoint* OutCtrlBulkEndPt;
+#endif
 };
 
 } // namespace lime

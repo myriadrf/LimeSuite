@@ -48,7 +48,7 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
     }
 
     CCyUSBDevice device;
-    if (device.DeviceCount())
+    if (device.DeviceCount() > 0)
     {
         for (int i = 0; i < device.DeviceCount(); ++i)
         {
