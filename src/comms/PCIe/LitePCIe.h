@@ -4,12 +4,16 @@
 #include <atomic>
 #include <vector>
 
-#include "software/kernel/litepcie.h"
+#include "limesuite/config.h"
+
+#ifdef __unix__
+    #include "software/kernel/litepcie.h"
+#endif // __unix__
 
 namespace lime {
 
 /** @brief Class for communicating with a PCIe device. */
-class LitePCIe
+class LIME_API LitePCIe
 {
   public:
     static std::vector<std::string> GetDevicesWithPattern(const std::string& regex);

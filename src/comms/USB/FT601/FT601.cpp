@@ -149,18 +149,21 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 
     ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
-    FT_InitializeOverlapped(mFTHandle, &contexts[index].inOvLap);
+
+    USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[index];
+
+    FT_InitializeOverlapped(mFTHandle, context->inOvLap);
 
     if (endPointAddr == STREAM_BULK_READ_ADDRESS)
     {
-        ftStatus = FT_ReadPipe(mFTHandle, STREAM_BULK_READ_ADDRESS, buffer, length, &ulActual, &contexts[index].inOvLap);
+        ftStatus = FT_ReadPipe(mFTHandle, STREAM_BULK_READ_ADDRESS, buffer, length, &ulActual, context->inOvLap);
     }
     else
     {
-        ftStatus = FT_WritePipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS, buffer, length, &ulActual, &contexts[index].inOvLap);
+        ftStatus = FT_WritePipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS, buffer, length, &ulActual, context->inOvLap);
     }
 
-    contexts[index].endPointAddr = endPointAddr;
+    context->endPointAddr = endPointAddr;
 
     if (ftStatus != FT_IO_PENDING)
     {
@@ -174,9 +177,11 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 
 bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 {
+
     if (contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-        DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
+        USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[contextHandle];
+        DWORD dwRet = WaitForSingleObject(context->inOvLap->hEvent, timeout_ms);
 
         if (dwRet == WAIT_OBJECT_0)
         {
@@ -193,8 +198,9 @@ int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
     {
         ULONG ulActualBytesTransferred;
         FT_STATUS ftStatus = FT_OK;
+        USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[contextHandle];
 
-        ftStatus = FT_GetOverlappedResult(mFTHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+        ftStatus = FT_GetOverlappedResult(mFTHandle, context->inOvLap, &ulActualBytesTransferred, FALSE);
 
         if (ftStatus != FT_OK)
         {
@@ -205,8 +211,8 @@ int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
             length = ulActualBytesTransferred;
         }
 
-        FT_ReleaseOverlapped(mFTHandle, &contexts[contextHandle].inOvLap);
-        contexts[contextHandle].used = false;
+        FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
+        context->used = false;
         return length;
     }
 
@@ -219,9 +225,11 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
-        if (contexts[i].used == true && contexts[i].endPointAddr == endPointAddr)
+        USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[i];
+
+        if (contexts[i].used == true && context->endPointAddr == endPointAddr)
         {
-            FT_ReleaseOverlapped(mFTHandle, &contexts[i].inOvLap);
+            FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
             contexts[i].used = false;
         }
     }

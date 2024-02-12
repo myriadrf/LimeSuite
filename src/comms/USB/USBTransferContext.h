@@ -16,6 +16,10 @@
     #endif
 #endif
 
+#ifndef __unix__
+    #include <windows.h>
+#endif
+
 namespace lime {
 
 /** @brief Base class for a USB transfer context. */
@@ -34,6 +38,8 @@ class USBTransferContext
     std::atomic<bool> done;
     std::mutex transferLock;
     std::condition_variable cv;
+#else
+    PUCHAR context;
 #endif
 };
 

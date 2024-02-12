@@ -10,6 +10,7 @@
 #include "kissFFT/kiss_fft.h"
 #include <condition_variable>
 #include <mutex>
+#include <getopt.h>
 
 // #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT

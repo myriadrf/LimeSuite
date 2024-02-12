@@ -19,7 +19,7 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::
 #if __unix__
         void* ptr = aligned_alloc(alignment, blockSize);
 #else
-        void* ptr = _aligned_malloc(alignment, blockSize);
+        void* ptr = _aligned_malloc(blockSize, alignment);
 #endif
         if (!ptr)
         {
@@ -43,7 +43,13 @@ MemoryPool::~MemoryPool()
         mFreeBlocks.pop();
     }
     for (auto ptr : mUsedBlocks)
+    {
+#ifdef __unix__
         free(ptr);
+#else
+        _aligned_free(ptr);
+#endif
+    }
 }
 
 void* MemoryPool::Allocate(int size)

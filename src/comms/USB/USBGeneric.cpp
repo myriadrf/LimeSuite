@@ -179,7 +179,7 @@ void USBGeneric::Disconnect()
             contexts[i].transfer->dev_handle = dev_handle;
         }
     }
-#endif
+
     std::unique_lock<std::mutex> lock{ contextsLock };
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
@@ -189,6 +189,7 @@ void USBGeneric::Disconnect()
             AbortEndpointXfers(contexts[i].transfer->endpoint);
         }
     }
+#endif
 
     delete[] contexts;
     contexts = nullptr;
@@ -304,6 +305,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
 
     return i;
 #endif
+    return 0;
 }
 
 bool USBGeneric::WaitForXfer(int contextHandle, uint32_t timeout_ms)
@@ -388,6 +390,7 @@ int USBGeneric::GetUSBContextIndex()
 
 void USBGeneric::WaitForXfers(uint8_t endPointAddr)
 {
+#ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
         if (contexts[i].used && contexts[i].transfer->endpoint == endPointAddr)
@@ -396,6 +399,7 @@ void USBGeneric::WaitForXfers(uint8_t endPointAddr)
             FinishDataXfer(nullptr, 0, i);
         }
     }
+#endif
 }
 
 } // namespace lime

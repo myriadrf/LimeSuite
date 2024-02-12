@@ -140,7 +140,7 @@ void LMS7002M::Log(const char* text, LogType type)
 }
 
 //Compatibility for vasprintf under MSVC
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || !defined(__unix__)
 int vasprintf(char** strp, const char* fmt, va_list ap)
 {
     int r = _vscprintf(fmt, ap);

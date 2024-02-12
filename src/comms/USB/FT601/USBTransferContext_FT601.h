@@ -16,8 +16,7 @@ class USBTransferContext_FT601 : public USBTransferContext
     USBTransferContext_FT601();
 
 #ifndef __unix__
-    PUCHAR context;
-    OVERLAPPED inOvLap;
+    LPOVERLAPPED inOvLap;
     uint8_t endPointAddr;
 #endif
 };
