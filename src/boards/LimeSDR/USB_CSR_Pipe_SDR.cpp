@@ -37,8 +37,13 @@ int USB_CSR_Pipe_SDR::Write(const uint8_t* data, size_t length, int timeout_ms)
     }
 
 #ifdef __unix__
-    return port.ControlTransfer(
-        LIBUSB_REQUEST_TYPE_VENDOR, CTR_W_REQCODE, CTR_W_VALUE, CTR_W_INDEX, const_cast<uint8_t*>(data), length, timeout_ms);
+    return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR,
+        FX3::CTR_W_REQCODE,
+        FX3::CTR_W_VALUE,
+        FX3::CTR_W_INDEX,
+        const_cast<uint8_t*>(data),
+        length,
+        timeout_ms);
 #else
     return port.ControlTransfer(0, 0, 0, 0, const_cast<uint8_t*>(data), length, timeout_ms);
 #endif // __unix__
@@ -54,8 +59,13 @@ int USB_CSR_Pipe_SDR::Read(uint8_t* data, size_t length, int timeout_ms)
     }
 
 #ifdef __unix__
-    return port.ControlTransfer(
-        LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, CTR_R_REQCODE, CTR_R_VALUE, CTR_R_INDEX, data, length, timeout_ms);
+    return port.ControlTransfer(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
+        FX3::CTR_R_REQCODE,
+        FX3::CTR_R_VALUE,
+        FX3::CTR_R_INDEX,
+        data,
+        length,
+        timeout_ms);
 #else
     return port.ControlTransfer(1, 0, 0, 0, const_cast<uint8_t*>(data), length, timeout_ms);
 #endif // __unix__
