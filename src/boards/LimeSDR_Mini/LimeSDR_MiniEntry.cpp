@@ -91,7 +91,6 @@ SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
     {
         vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
         pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
-
     }
 
     auto usbComms = std::make_shared<FT601>(
