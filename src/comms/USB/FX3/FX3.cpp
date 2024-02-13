@@ -39,15 +39,15 @@ bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
     Disconnect();
 #ifndef __unix__
-    unsigned int index = 0;
+    unsigned char index = 0;
     if (index > USBDevicePrimary->DeviceCount())
     {
-        return ReportError(ERANGE, "ConnectionSTREAM: Device index out of range");
+        return ReportError(ERANGE, "FX3::Connect: Device index out of range");
     }
 
     if (USBDevicePrimary->Open(index) == false)
     {
-        return ReportError(-1, "ConnectionSTREAM: Failed to open device");
+        return ReportError(-1, "FX3::Connect: Failed to open device");
     }
 
     if (InCtrlEndPt3)
@@ -178,7 +178,7 @@ int32_t FX3::BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t t
     switch (endPoint)
     {
     case FX3::CONTROL_BULK_OUT_ADDRESS: // Write
-        if (OutCtrlEndPt3)
+        if (OutCtrlBulkEndPt)
         {
             LONG longLength = static_cast<LONG>(length);
             if (OutCtrlBulkEndPt->XferData(data, longLength))
@@ -188,7 +188,7 @@ int32_t FX3::BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t t
         }
         break;
     case FX3::CONTROL_BULK_IN_ADDRESS: // Read
-        if (endPoint)
+        if (InCtrlBulkEndPt)
         {
             LONG longLength = static_cast<LONG>(length);
 
@@ -228,6 +228,8 @@ int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
                 return length;
             }
         }
+    default:
+        throw std::logic_error("Invalid request type");
     }
     return 0;
 }
@@ -249,8 +251,7 @@ int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
         if (OutEndPt[STREAM_BULK_OUT_ADDRESS])
         {
             FX3context->EndPt = OutEndPt[STREAM_BULK_OUT_ADDRESS];
-            FX3context->context =
-                FX3context->EndPt->BeginDataXfer(reinterpret_cast<unsigned char*>(buffer), length, FX3context->inOvLap);
+            FX3context->context = FX3context->EndPt->BeginDataXfer(buffer, length, FX3context->inOvLap);
         }
 
         break;
@@ -282,8 +283,7 @@ bool FX3::WaitForXfer(int contextHandle, uint32_t timeout_ms)
         return true; //there is nothing to wait for (signal wait finished)
     }
 
-    int status = 0;
-    status = FX3context->EndPt->WaitForXfer(FX3context->inOvLap, timeout_ms);
+    bool status = FX3context->EndPt->WaitForXfer(FX3context->inOvLap, timeout_ms);
     return status;
 }
 
@@ -301,12 +301,16 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
         return 0;
     }
 
-    int status = 0;
     long len = length;
-    status =
-        FX3context->EndPt->FinishDataXfer(reinterpret_cast<unsigned char*>(buffer), len, FX3context->inOvLap, FX3context->context);
+    bool status = FX3context->EndPt->FinishDataXfer(buffer, len, FX3context->inOvLap, FX3context->context);
     FX3context->used = false;
     FX3context->Reset();
+
+    if (!status)
+    {
+        return 0;
+    }
+
     return len;
 }
 
