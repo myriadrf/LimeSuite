@@ -15,6 +15,8 @@
 #include <stdexcept>
 #include <cstdint>
 
+#undef ERROR
+
 namespace lime {
 
 enum class LogLevel : uint8_t {

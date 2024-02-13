@@ -1,6 +1,8 @@
 #include "pnlMiniLog.h"
 #include "dlgFullMessageLog.h"
 
+#undef ERROR
+
 static wxTextAttr mDefaultStyle;
 
 pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)

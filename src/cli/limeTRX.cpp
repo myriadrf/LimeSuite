@@ -20,6 +20,8 @@
 using namespace lime;
 using namespace std;
 
+#undef ERROR
+
 std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurently
 
 bool stopProgram(false);

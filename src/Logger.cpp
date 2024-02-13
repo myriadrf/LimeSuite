@@ -11,6 +11,7 @@
 #ifdef _MSC_VER
     #define thread_local __declspec(thread)
     #include <Windows.h>
+    #undef ERROR
 #endif
 
 #ifdef __APPLE__
