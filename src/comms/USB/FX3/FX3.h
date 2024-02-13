@@ -68,7 +68,7 @@ class FX3 : public USBGeneric
 
     static constexpr uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
     static constexpr uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
-    
+
     static constexpr uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
     static constexpr uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
 };

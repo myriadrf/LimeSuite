@@ -85,7 +85,7 @@ SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
         vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
         pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
     }
- 
+
     auto usbComms = std::make_shared<FX3>(
 #ifdef __unix__
         ctx
