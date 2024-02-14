@@ -21,7 +21,8 @@ TEST(USB_CSR_Pipe_SDR, WriteBulkTransfer)
     int timeout = 100;
     int length = sizeof(LMS64CPacket);
 
-    EXPECT_CALL(mockConnection, BulkTransfer(FX3::CONTROL_BULK_OUT_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
+    EXPECT_CALL(
+        mockConnection, BulkTransfer(FX3::CONTROL_BULK_OUT_ADDRESS, Pointer(reinterpret_cast<uint8_t*>(&pkt)), length, timeout))
         .Times(1);
     pipe.Write(reinterpret_cast<uint8_t*>(&pkt), length, timeout);
 }
