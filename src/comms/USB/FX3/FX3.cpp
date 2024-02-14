@@ -9,6 +9,8 @@ FX3::FX3(void* usbContext)
     : USBGeneric(usbContext)
 {
 #ifndef __unix__
+    std::scoped_lock lock{ FX3mutex };
+
     if (usbContext == nullptr)
     {
         USBDevicePrimary = new CCyFX3Device();
@@ -39,6 +41,8 @@ bool FX3::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
 {
     Disconnect();
 #ifndef __unix__
+    std::scoped_lock lock{ FX3mutex };
+
     unsigned char index = 0;
     if (index > USBDevicePrimary->DeviceCount())
     {
@@ -139,6 +143,8 @@ void FX3::Disconnect()
         dev_handle = nullptr;
     }
 #else
+    std::scoped_lock lock{ FX3mutex };
+
     USBDevicePrimary->Close();
     for (int i = 0; i < MAX_EP_CNT; ++i)
     {
@@ -166,6 +172,8 @@ void FX3::Disconnect()
 bool FX3::IsConnected()
 {
 #ifndef __unix__
+    std::scoped_lock lock{ FX3mutex };
+
     return USBDevicePrimary->IsOpen() && isConnected;
 #else
     return isConnected;
@@ -175,6 +183,8 @@ bool FX3::IsConnected()
 #ifndef __unix__
 int32_t FX3::BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t timeout_ms)
 {
+    std::scoped_lock lock{ FX3mutex };
+
     switch (endPoint)
     {
     case FX3::CONTROL_BULK_OUT_ADDRESS: // Write
@@ -206,6 +216,8 @@ int32_t FX3::BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t t
 
 int32_t FX3::ControlTransfer(int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
 {
+    std::scoped_lock lock{ FX3mutex };
+
     switch (requestType)
     {
     case 0: // Write
@@ -228,6 +240,7 @@ int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
                 return length;
             }
         }
+        break;
     default:
         throw std::logic_error("Invalid request type");
     }
@@ -243,6 +256,7 @@ int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
         return -1;
     }
 
+    std::scoped_lock lock{ FX3mutex };
     USBTransferContext_FX3* FX3context = &static_cast<USBTransferContext_FX3*>(contexts)[index];
 
     switch (endPointAddr)
@@ -253,7 +267,6 @@ int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
             FX3context->EndPt = OutEndPt[STREAM_BULK_OUT_ADDRESS];
             FX3context->context = FX3context->EndPt->BeginDataXfer(buffer, length, FX3context->inOvLap);
         }
-
         break;
     case FX3::STREAM_BULK_IN_ADDRESS: // Rx/Read
         if (InEndPt[endPointAddr & 0xF])
@@ -301,6 +314,8 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
         return 0;
     }
 
+    std::scoped_lock lock{ FX3mutex };
+
     long len = length;
     bool status = FX3context->EndPt->FinishDataXfer(buffer, len, FX3context->inOvLap, FX3context->context);
     FX3context->used = false;
@@ -316,6 +331,8 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 
 void FX3::AbortEndpointXfers(uint8_t endPointAddr)
 {
+    std::scoped_lock lock{ FX3mutex };
+
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
         if (InEndPt[i] && InEndPt[i]->Address == endPointAddr)

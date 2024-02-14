@@ -55,6 +55,8 @@ class FX3 : public USBGeneric
 
     CCyUSBEndPoint* InCtrlBulkEndPt;
     CCyUSBEndPoint* OutCtrlBulkEndPt;
+
+    std::mutex FX3mutex;
 #endif
 
     static constexpr int CTR_W_REQCODE = 0xC1;
