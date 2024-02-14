@@ -241,7 +241,7 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
     {
         USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[i];
 
-        if (context->used == true && context->endPointAddr == endPointAddr)
+        if (context->used && context->endPointAddr == endPointAddr)
         {
             FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
             context->used = false;
@@ -256,6 +256,20 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, endPointAddr, sizeof(FPGA_TxDataPacket));
 
     WaitForXfers(endPointAddr);
+}
+
+void FT601::WaitForXfers(uint8_t endPointAddr)
+{
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[i];
+
+        if (context->endPointAddr == endPointAddr)
+        {
+            WaitForXfer(i, 250);
+            FinishDataXfer(nullptr, 0, i);
+        }
+    }
 }
 #endif
 

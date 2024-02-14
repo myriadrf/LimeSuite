@@ -47,6 +47,7 @@ class FT601 : public USBGeneric
 #ifndef __unix__
     FT_HANDLE mFTHandle;
     int ReinitPipe(unsigned char ep);
+    virtual void WaitForXfers(uint8_t endPointAddr) override;
 #else
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);

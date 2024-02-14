@@ -331,10 +331,10 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 
 void FX3::AbortEndpointXfers(uint8_t endPointAddr)
 {
-    std::scoped_lock lock{ FX3mutex };
-
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
+        std::scoped_lock lock{ FX3mutex };
+
         if (InEndPt[i] && InEndPt[i]->Address == endPointAddr)
         {
             InEndPt[i]->Abort();
@@ -347,6 +347,21 @@ void FX3::AbortEndpointXfers(uint8_t endPointAddr)
     }
 
     WaitForXfers(endPointAddr);
+}
+
+void FX3::WaitForXfers(uint8_t endPointAddr)
+{
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        USBTransferContext_FX3* FX3context = &static_cast<USBTransferContext_FX3*>(contexts)[i];
+
+        if (FX3context->used &&
+            ((OutEndPt[i] && OutEndPt[i]->Address == endPointAddr) || (InEndPt[i] && InEndPt[i]->Address == endPointAddr)))
+        {
+            WaitForXfer(i, 250);
+            FinishDataXfer(nullptr, 0, i);
+        }
+    }
 }
 #endif
 

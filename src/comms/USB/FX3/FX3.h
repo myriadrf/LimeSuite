@@ -40,9 +40,26 @@ class FX3 : public USBGeneric
         override;
 #endif
 
+    static constexpr int CTR_W_REQCODE = 0xC1;
+    static constexpr int CTR_W_VALUE = 0x0000;
+    static constexpr int CTR_W_INDEX = 0x0000;
+
+    static constexpr int CTR_R_REQCODE = 0xC0;
+    static constexpr int CTR_R_VALUE = 0x0000;
+    static constexpr int CTR_R_INDEX = 0x0000;
+
+    static constexpr uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
+    static constexpr uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
+
+    static constexpr uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
+    static constexpr uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
+
+  protected:
     virtual int GetUSBContextIndex() override;
 
 #ifndef __unix__
+    virtual void WaitForXfers(uint8_t endPointAddr) override;
+
     static const int MAX_EP_CNT = 16;
     CCyFX3Device* USBDevicePrimary;
     //control endpoints
@@ -58,20 +75,6 @@ class FX3 : public USBGeneric
 
     std::mutex FX3mutex;
 #endif
-
-    static constexpr int CTR_W_REQCODE = 0xC1;
-    static constexpr int CTR_W_VALUE = 0x0000;
-    static constexpr int CTR_W_INDEX = 0x0000;
-
-    static constexpr int CTR_R_REQCODE = 0xC0;
-    static constexpr int CTR_R_VALUE = 0x0000;
-    static constexpr int CTR_R_INDEX = 0x0000;
-
-    static constexpr uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
-    static constexpr uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
-
-    static constexpr uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
-    static constexpr uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
 };
 
 } // namespace lime
