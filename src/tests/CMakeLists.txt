@@ -52,8 +52,8 @@ target_link_libraries(
     GTest::gmock_main
 )
 
-if (BINARY_OUTPUT_DIR)
-    set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+if (CMAKE_BINARY_DIR)
+	set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
 
 include(GoogleTest)
