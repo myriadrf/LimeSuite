@@ -390,16 +390,18 @@ int USBGeneric::GetUSBContextIndex()
 
 void USBGeneric::WaitForXfers(uint8_t endPointAddr)
 {
-#ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
+#ifdef __unix__
         if (contexts[i].used && contexts[i].transfer->endpoint == endPointAddr)
+#else
+        if (contexts[i].used)
+#endif
         {
             WaitForXfer(i, 250);
             FinishDataXfer(nullptr, 0, i);
         }
     }
-#endif
 }
 
 } // namespace lime
