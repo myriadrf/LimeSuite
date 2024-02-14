@@ -182,8 +182,11 @@ if(ENABLE_TESTING)
     set(INSTALL_GMOCK OFF) # Don't install the GMock headers
     set(INSTALL_GTEST OFF) # Don't install the GTest headers
 
-    FetchContent_MakeAvailable(googletest)
+    if (MSVC)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif()
 
+    FetchContent_MakeAvailable(googletest)
     enable_testing()
 endif()
 

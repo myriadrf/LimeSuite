@@ -1,12 +1,6 @@
 set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
 set(LIME_TEST_SUITE_SOURCES
-    boards/LimeSDR/LimeSDRTest.cpp
-    boards/LimeSDR/USB_CSR_Pipe_SDRTest.cpp
-    boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
-    boards/LimeSDR_Mini/USB_CSR_Pipe_MiniTest.cpp
-    boards/LimeSDR_X3/SlaveSelectShimTest.cpp
-    comms/PCIe/PCIE_CSR_PipeTest.cpp
     parsers/CoefficientFileParserTest.cpp
     protocols/LMS64CProtocol/CustomParameterReadTest.cpp
     protocols/LMS64CProtocol/CustomParameterWriteTest.cpp
@@ -20,6 +14,32 @@ set(LIME_TEST_SUITE_SOURCES
     protocols/LMS64CProtocol/GPIOWriteTest.cpp
     protocols/LMS64CProtocol/LMS7002M_SPITest.cpp
 )
+
+if (ENABLE_LIMESDR_X3)
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+        boards/LimeSDR_X3/SlaveSelectShimTest.cpp
+    )
+endif()
+
+if (ENABLE_LITE_PCIE)
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+        comms/PCIe/PCIE_CSR_PipeTest.cpp
+    )
+endif()
+
+if (ENABLE_LIMESDR_USB)
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+        boards/LimeSDR/LimeSDRTest.cpp
+        boards/LimeSDR/USB_CSR_Pipe_SDRTest.cpp
+    )
+endif()
+
+if (ENABLE_LIMESDR_MINI)
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+        boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
+        boards/LimeSDR_Mini/USB_CSR_Pipe_MiniTest.cpp
+    )
+endif()
 
 add_executable(${LIME_TEST_SUITE_NAME} ${LIME_TEST_SUITE_SOURCES})
 

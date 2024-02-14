@@ -1,13 +1,14 @@
 #ifndef LIME_SLAVESELECTSHIM_H
 #define LIME_SLAVESELECTSHIM_H
 
+#include "limesuite/config.h"
 #include "limesuite/IComms.h"
 #include <memory>
 
 namespace lime {
 
 /** @brief Communications helper to divert data to specific device. */
-class SlaveSelectShim : public ISPI
+class LIME_API SlaveSelectShim : public ISPI
 {
   public:
     SlaveSelectShim(std::shared_ptr<IComms> comms, uint32_t slaveId);
