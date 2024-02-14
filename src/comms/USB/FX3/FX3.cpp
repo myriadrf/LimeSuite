@@ -209,7 +209,7 @@ int32_t FX3::BulkTransfer(uint8_t endPoint, uint8_t* data, int length, int32_t t
         }
         break;
     default:
-        throw std::logic_error("Invalid endpoint");
+        throw std::logic_error("Invalid endpoint"s);
     }
     return 0;
 }
@@ -242,7 +242,7 @@ int32_t FX3::ControlTransfer(int requestType, int request, int value, int index,
         }
         break;
     default:
-        throw std::logic_error("Invalid request type");
+        throw std::logic_error("Invalid request type"s);
     }
     return 0;
 }
@@ -276,7 +276,7 @@ int FX3::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
         }
         break;
     default:
-        throw std::logic_error("Invalid endpoint for an FX3 connection");
+        throw std::logic_error("Invalid endpoint for an FX3 connection"s);
     }
 
     return index;
