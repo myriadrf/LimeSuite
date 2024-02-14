@@ -18,6 +18,7 @@
 
 #ifndef __unix__
     #include <windows.h>
+    #undef ERROR
 #endif
 
 namespace lime {

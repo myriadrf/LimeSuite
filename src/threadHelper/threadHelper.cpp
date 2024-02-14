@@ -4,6 +4,7 @@
     #include <pthread.h>
 #else
     #include <windows.h>
+    #undef ERROR
 #endif
 #include "Logger.h"
 

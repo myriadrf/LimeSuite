@@ -17,6 +17,8 @@
     #include <shlobj.h>
     #include <io.h>
 
+    #undef ERROR
+
     //access mode constants
     #define F_OK 0
     #define R_OK 2

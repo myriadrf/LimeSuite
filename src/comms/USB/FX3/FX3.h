@@ -10,7 +10,6 @@
 #include <ciso646>
 
 #ifndef __unix__
-    #include "windows.h"
     #include "CyAPI.h"
 #endif // !__unix__
 

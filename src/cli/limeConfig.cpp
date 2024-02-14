@@ -5,8 +5,6 @@
 #include <cstring>
 #include <getopt.h>
 
-#undef ERROR
-
 using namespace std;
 using namespace lime;
 

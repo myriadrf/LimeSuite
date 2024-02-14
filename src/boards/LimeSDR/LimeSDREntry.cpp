@@ -9,7 +9,6 @@
 #include <stdexcept>
 
 #ifndef __unix__
-    #include "windows.h"
     #include "CyAPI.h"
 #else
     #ifdef __GNUC__
