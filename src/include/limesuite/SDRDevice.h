@@ -375,8 +375,10 @@ class LIME_API SDRDevice
     virtual OpStatus SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
 
     virtual OpStatus StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
+    virtual void StreamStart(const std::vector<uint8_t> moduleIndexes);
     virtual void StreamStart(uint8_t moduleIndex) = 0;
     virtual void StreamStop(uint8_t moduleIndex) = 0;
+    virtual void StreamStop(const std::vector<uint8_t> moduleIndexes);
 
     virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
     virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) = 0;

@@ -371,6 +371,8 @@ int main(int argc, char** argv)
                 cerr << "Invalid chip index" << endl;
                 return -1;
             }
+            else
+                cerr << "Chip count " << chipIndexes.size() << endl;
             break;
         case Args::OUTPUT:
             if (optarg != NULL)
