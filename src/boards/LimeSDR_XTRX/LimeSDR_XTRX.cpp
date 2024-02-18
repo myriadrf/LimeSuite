@@ -536,6 +536,22 @@ OpStatus LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uin
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
+
+    if (f_Hz >= 122e6)
+    {
+        // LimeLight & Pad
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(DIQ2_DS), 1);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(LML1_SISODDR), 1);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(LML2_SISODDR), 1);
+        // CDS
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), 0);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML), 1);
+        // LDO
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(PD_LDO_DIGIp1), 0);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(PD_LDO_DIGIp2), 0);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(RDIV_DIGIp2), 140);
+    }
+
     return mLMSChip->SetInterfaceFrequency(cgenFreq, hbi_ovr, hbd_ovr);
 }
 
