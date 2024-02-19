@@ -61,7 +61,7 @@ int pnlX3::LMS_WriteCustomBoardParam(lime::SDRDevice* device, const std::vector<
 
     try
     {
-        return device->CustomParameterWrite(parameters);
+        return device->CustomParameterWrite(parameters) == OpStatus::SUCCESS ? 0 : -1;
     } catch (...)
     {
         return -1;
@@ -77,7 +77,7 @@ int pnlX3::LMS_ReadCustomBoardParam(lime::SDRDevice* device, std::vector<CustomP
 
     try
     {
-        int ret = device->CustomParameterRead(parameters);
+        int ret = device->CustomParameterRead(parameters) == OpStatus::SUCCESS ? 0 : -1;
         return ret;
     } catch (...)
     {

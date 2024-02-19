@@ -64,17 +64,13 @@ TestConfigType generateTestConfig(bool mimo, float sampleRate)
         config.channel[i].tx.path = 2; // band1 // TODO: replace with string names
         config.channel[i].rx.calibrate = false;
         config.channel[i].tx.calibrate = false;
-        config.channel[i].rx.testSignal = false;
-        config.channel[i].tx.testSignal = false;
+        config.channel[i].rx.testSignal.enabled = false;
+        config.channel[i].tx.testSignal.enabled = false;
     }
 
     SDRDevice::StreamConfig stream;
-    stream.rxCount = 1; //channelCount;
-    stream.rxChannels[0] = 0;
-    stream.rxChannels[1] = 1;
-    stream.txCount = 1; //channelCount;
-    stream.txChannels[0] = 0;
-    stream.txChannels[1] = 1;
+    stream.channels[TRXDir::Rx] = { 0, 1 };
+    stream.channels[TRXDir::Tx] = { 0, 1 };
     stream.format = SDRDevice::StreamConfig::DataFormat::F32;
     stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
     stream.alignPhase = false;
@@ -159,14 +155,14 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
     // complex32f_t rxSamples[2];
     // rxSamples[0] = aligned_alloc(alignment, samplesToBuffer);
     std::vector<std::vector<complex32f_t>> rxSamples(2); // allocate two channels for simplicity
-    for (uint i = 0; i < rxSamples.size(); ++i)
+    for (size_t i = 0; i < rxSamples.size(); ++i)
         rxSamples[i].resize(samplesToBuffer);
 
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
     std::vector<std::vector<complex32f_t>> txPattern(2);
     const int txPacketCount = 4;
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (size_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount * samplesInPkt);
         for (int j = 0; j < txPacketCount; ++j)
@@ -250,7 +246,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
         // loopback or verify gain values to know what power change to expect
 
         SDRDevice::StreamMeta txMeta;
-        if (rxMeta.timestamp >= ignoreSamplesAtStart && stream.txCount > 0)
+        if (rxMeta.timestamp >= ignoreSamplesAtStart && stream.channels.at(lime::TRXDir::Tx).size() > 0)
         {
             ++fired;
             int64_t rxNow = rxMeta.timestamp + samplesInPkt;
@@ -332,7 +328,8 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     if (TrySDRConfigure(configPair.first) != 0)
         return false;
 
-    const int samplesInPkt = (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / stream.rxCount;
+    const int samplesInPkt =
+        (stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? 1360 : 1020) / stream.channels.at(lime::TRXDir::Rx).size();
 
     const float rxBufferTime = 0.005; // max buffer size in time (seconds)
     const uint32_t samplesToBuffer = (int)(rxBufferTime * sampleRate / samplesInPkt) * samplesInPkt;
@@ -346,14 +343,14 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
         (float)txDeltaTS / samplesInPkt);
 
     std::vector<std::vector<complex32f_t>> rxSamples(2); // allocate two channels for simplicity
-    for (uint i = 0; i < rxSamples.size(); ++i)
+    for (size_t i = 0; i < rxSamples.size(); ++i)
         rxSamples[i].resize(samplesToBuffer);
 
     // precomputing tx samples here, the result might not be continous
     // each packet with different amplitude to distinguish them in time
-    std::vector<std::vector<complex32f_t>> txPattern(stream.txCount);
+    std::vector<std::vector<complex32f_t>> txPattern(stream.channels.at(lime::TRXDir::Tx).size());
     const int txPacketCount = 1;
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (size_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount * samplesInPkt); // 4 packets should be enough
         for (int j = 0; j < txPacketCount; ++j)

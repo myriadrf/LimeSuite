@@ -10,6 +10,8 @@
 #include "kissFFT/kiss_fft.h"
 #include <condition_variable>
 #include <mutex>
+#include <getopt.h>
+
 // #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
     #include "gnuPlotPipe.h"
@@ -18,12 +20,12 @@
 using namespace lime;
 using namespace std;
 
-std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurently
+std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurrently
 
 bool stopProgram(false);
 void intHandler(int dummy)
 {
-    //std::cerr << "Stoppping\n";
+    //std::cerr << "Stopping\n";
     stopProgram = true;
 }
 
@@ -62,7 +64,7 @@ static int printHelp(void)
     cerr << "    -s, --samplesCount\t\t Number of samples to receive" << endl;
     cerr << "    -t, --time\t\t Time duration in milliseconds to receive" << endl;
     cerr << "    -f, --fft\t\t Display Rx FFT plot" << endl;
-    cerr << "    --contellation\t\t Display IQ constellation plot" << endl;
+    cerr << "    --constellation\t\t Display IQ constellation plot" << endl;
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
     cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
     cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;
@@ -80,7 +82,7 @@ enum Args {
     HELP = 'h',
     DEVICE = 'd',
     CHIP = 'c',
-    INPUT = 'i',
+    INPUTFILE = 'i',
     OUTPUT = 'o',
     SAMPLES_COUNT = 's',
     TIME = 't',
@@ -328,7 +330,7 @@ int main(int argc, char** argv)
     static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
         { "device", required_argument, 0, Args::DEVICE },
         { "chip", required_argument, 0, Args::CHIP },
-        { "input", required_argument, 0, Args::INPUT },
+        { "input", required_argument, 0, Args::INPUTFILE },
         { "output", required_argument, 0, Args::OUTPUT },
         { "looptx", no_argument, 0, Args::LOOPTX },
         { "samplesCount", required_argument, 0, Args::SAMPLES_COUNT },
@@ -380,7 +382,7 @@ int main(int argc, char** argv)
         case Args::LOOPTX:
             loopTx = true;
             break;
-        case Args::INPUT:
+        case Args::INPUTFILE:
             if (optarg != NULL)
             {
                 tx = true;
@@ -486,24 +488,26 @@ int main(int argc, char** argv)
     {
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = rx ? channelCount : 0; // rx channels count
-        for (int i = 0; i < channelCount; ++i)
-            stream.rxChannels[i] = i;
-        stream.txCount = tx ? channelCount : 0;
-        for (int i = 0; i < channelCount; ++i)
-            stream.txChannels[i] = i;
+        for (int i = 0; rx && i < channelCount; ++i)
+        {
+            stream.channels.at(TRXDir::Rx).push_back(i);
+        }
+
+        for (int i = 0; tx && i < channelCount; ++i)
+        {
+            stream.channels.at(TRXDir::Tx).push_back(i);
+        }
 
         stream.format = SDRDevice::StreamConfig::DataFormat::I16;
         stream.linkFormat = linkFormat;
 
         if (syncPPS || rxSamplesInPacket || rxPacketsInBatch || txSamplesInPacket || txPacketsInBatch)
         {
-            stream.extraConfig = new SDRDevice::StreamConfig::Extras();
-            stream.extraConfig->waitPPS = syncPPS;
-            stream.extraConfig->rxSamplesInPacket = rxSamplesInPacket;
-            stream.extraConfig->txSamplesInPacket = txSamplesInPacket;
-            stream.extraConfig->rxPacketsInBatch = rxPacketsInBatch;
-            stream.extraConfig->txMaxPacketsInBatch = txPacketsInBatch;
+            stream.extraConfig.waitPPS = syncPPS;
+            stream.extraConfig.rxSamplesInPacket = rxSamplesInPacket;
+            stream.extraConfig.txSamplesInPacket = txSamplesInPacket;
+            stream.extraConfig.rxPacketsInBatch = rxPacketsInBatch;
+            stream.extraConfig.txMaxPacketsInBatch = txPacketsInBatch;
         }
 
         useComposite = chipIndexes.size() > 1;
@@ -580,7 +584,7 @@ int main(int argc, char** argv)
 
     float peakAmplitude = 0;
     float peakFrequency = 0;
-    float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx);
+    float sampleRate = device->GetSampleRate(chipIndex, TRXDir::Rx, 0);
     if (sampleRate <= 0)
         sampleRate = 1; // sample rate readback not available, assign default value
     float frequencyLO = 0;

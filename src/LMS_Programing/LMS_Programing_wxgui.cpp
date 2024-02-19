@@ -275,21 +275,16 @@ void LMS_Programing_wxgui::DoProgramming()
     obj_ptr = this;
     auto memoryDevice = dataStorageEntries.at(cmbDevice->GetSelection());
 
-    int status;
-    try
-    {
-        status = memoryDevice->ownerDevice->UploadMemory(
-            memoryDevice->memoryDeviceType, 0, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
-    } catch (...)
-    {
-        status = -1;
-    }
+    OpStatus status;
+
+    status = memoryDevice->ownerDevice->UploadMemory(
+        memoryDevice->memoryDeviceType, 0, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
 
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);
     evt.SetEventType(wxEVT_COMMAND_THREAD);
-    evt.SetString(status == 0 ? _("Programming Completed!") : _("Programming failed!\n"));
+    evt.SetString(status == OpStatus::SUCCESS ? _("Programming Completed!") : _("Programming failed!"));
 
     wxPostEvent(this, evt);
     mProgrammingInProgress.store(false);

@@ -1,7 +1,11 @@
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
-#include "CoefficientFileParser.h"
+#include "parsers/CoefficientFileParser.h"
+#include "limesuite/commonTypes.h"
+#include "limesuite/LMS7002M.h"
+
+using namespace lime;
 
 lms7002_dlgGFIR_Coefficients::lms7002_dlgGFIR_Coefficients(wxWindow* parent, wxWindowID id, const wxString& title)
     : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, 0)
@@ -115,8 +119,9 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
-    float cbuf[200];
-    int iVal = Parser::getcoeffs(dlg.GetPath().ToStdString().c_str(), cbuf, 200);
+    std::vector<double> coefficients(200, 0);
+    auto parser = CoefficientFileParser(dlg.GetPath().ToStdString());
+    int iVal = parser.getCoefficients(coefficients, 200);
 
     switch (iVal)
     {
@@ -142,7 +147,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
     gridCoef->GetTable()->AppendRows(spinCoefCount->GetValue());
     for (int i = 0; i < iVal; ++i)
     {
-        gridCoef->SetCellValue(i, 0, std::to_string(cbuf[i]));
+        gridCoef->SetCellValue(i, 0, std::to_string(coefficients[i]));
     }
 }
 
@@ -150,17 +155,20 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile(wxCommandEvent& event)
 {
     wxFileDialog dlg(this, _("Save coefficients file"), "", "", "FIR Coeffs (*.fir)|*.fir", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
-        return;
-    float coefficients[200];
-    memset(coefficients, 0, sizeof(unsigned short) * 200);
-    double ltemp;
-    for (int i = 0; i < spinCoefCount->GetValue(); ++i)
     {
-        ltemp = 0;
-        gridCoef->GetCellValue(i, 0).ToDouble(&ltemp);
-        coefficients[i] = ltemp;
+        return;
     }
-    Parser::saveToFile(dlg.GetPath().ToStdString(), coefficients, spinCoefCount->GetValue());
+
+    const int coefficientCount = spinCoefCount->GetValue();
+    std::vector<double> coefficients(coefficientCount, 0);
+
+    for (int i = 0; i < coefficientCount; ++i)
+    {
+        gridCoef->GetCellValue(i, 0).ToDouble(&coefficients[i]);
+    }
+
+    auto parser = CoefficientFileParser(dlg.GetPath().ToStdString());
+    parser.saveToFile(coefficients);
 }
 
 void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)
@@ -214,4 +222,37 @@ void lms7002_dlgGFIR_Coefficients::OnBtnOkClick(wxCommandEvent& event)
 void lms7002_dlgGFIR_Coefficients::OnBtnCancelClick(wxCommandEvent& event)
 {
     EndModal(wxID_CANCEL);
+}
+
+int lms7002_dlgGFIR_Coefficients::ReadCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl)
+{
+    if (gfirIndex > 2)
+    {
+        gfirIndex = 2;
+    }
+
+    std::vector<double> coefficients;
+    const int maxCoefCount = gfirIndex == 2 ? 120 : 40;
+    coefficients.resize(maxCoefCount, 0);
+
+    OpStatus status = lmsControl->GetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    if (status != OpStatus::SUCCESS)
+    {
+        wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
+        return -1;
+    }
+
+    SetCoefficients(coefficients);
+    return 0;
+}
+
+void lms7002_dlgGFIR_Coefficients::WriteCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl)
+{
+    std::vector<double> coefficients = GetCoefficients();
+    OpStatus status = lmsControl->SetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+
+    if (status != OpStatus::SUCCESS)
+    {
+        wxMessageBox(_("Error writing GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
+    }
 }

@@ -1,4 +1,5 @@
 #include "cli/common.h"
+#include <getopt.h>
 
 using namespace std;
 using namespace lime;
@@ -210,7 +211,8 @@ int main(int argc, char** argv)
     inputFile.read(data.data(), cnt);
     inputFile.close();
 
-    if (memorySelect->ownerDevice->UploadMemory(memorySelect->memoryDeviceType, 0, data.data(), data.size(), progressCallBack) != 0)
+    if (memorySelect->ownerDevice->UploadMemory(memorySelect->memoryDeviceType, 0, data.data(), data.size(), progressCallBack) !=
+        OpStatus::SUCCESS)
     {
         DeviceRegistry::freeDevice(device);
         cout << "Device programming failed." << endl;

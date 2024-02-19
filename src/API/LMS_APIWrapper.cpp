@@ -1,23 +1,24 @@
+#include "CommonFunctions.h"
 #include "lime/LimeSuite.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/DeviceHandle.h"
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/GainTypes.h"
-#include "limesuite/LMS7002M.h"
-#include "limesuite/LMS7002M_parameters.h"
 #include "limesuite/SDRDevice.h"
-#include "LMS7002M_SDRDevice.h"
 #include "Logger.h"
 #include "MemoryPool.h"
 #include "VersionInfo.h"
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
+
+using namespace lime;
 
 namespace {
 
@@ -46,7 +47,6 @@ struct StreamBuffer {
 
 struct LMS_APIDevice {
     lime::SDRDevice* device;
-    lime::SDRDevice::SDRConfig lastSavedSDRConfig;
     lime::SDRDevice::StreamConfig lastSavedStreamConfig;
     std::array<std::array<float_type, 2>, lime::SDRDevice::MAX_CHANNEL_COUNT> lastSavedLPFValue;
     StatsDeltas statsDeltas;
@@ -62,7 +62,6 @@ struct LMS_APIDevice {
     LMS_APIDevice() = delete;
     LMS_APIDevice(lime::SDRDevice* device)
         : device(device)
-        , lastSavedSDRConfig()
         , lastSavedStreamConfig()
         , lastSavedLPFValue()
         , statsDeltas()
@@ -82,6 +81,12 @@ struct LMS_APIDevice {
         {
             delete deviceInfo;
         }
+    }
+
+    const lime::SDRDevice::RFSOCDescriptor& GetRFSOCDescriptor() const
+    {
+        assert(device);
+        return device->GetDescriptor().rfSOC.at(moduleIndex);
     }
 };
 
@@ -105,6 +110,11 @@ struct StreamHandle {
 
 static std::vector<StreamHandle*> streamHandles;
 
+static inline int OpStatusToReturnCode(OpStatus value)
+{
+    return value == OpStatus::SUCCESS ? 0 : -1;
+}
+
 inline LMS_APIDevice* CheckDevice(lms_device_t* device)
 {
     if (device == nullptr)
@@ -124,8 +134,7 @@ inline LMS_APIDevice* CheckDevice(lms_device_t* device, unsigned chan)
         return nullptr;
     }
 
-    const lime::SDRDevice::Descriptor& descriptor = apiDevice->device->GetDescriptor();
-    if (chan >= descriptor.rfSOC[apiDevice->moduleIndex].channelCount)
+    if (chan >= apiDevice->GetRFSOCDescriptor().channelCount)
     {
         lime::error("Invalid channel number.");
         return nullptr;
@@ -155,88 +164,9 @@ inline void CopyString(const std::string& source, char* destination, std::size_t
     destination[destinationLength - 1] = 0;
 }
 
-inline void CopyStringVectorIntoList(std::vector<std::string> strings, lms_name_t* list)
-{
-    for (std::size_t i = 0; i < strings.size(); ++i)
-    {
-        CopyString(strings.at(i), list[i], sizeof(lms_name_t));
-    }
-}
-
 inline lms_range_t RangeToLMS_Range(const lime::Range& range)
 {
     return { range.min, range.max, range.step };
-}
-
-inline double GetGain(LMS_APIDevice* apiDevice, bool dir_tx, size_t chan)
-{
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    try
-    {
-        if (dir_tx)
-        {
-            return config.channel[chan].tx.gain.at(apiDevice->txGain);
-        }
-
-        return config.channel[chan].rx.gain.at(apiDevice->rxGain);
-    } catch (const std::out_of_range& e)
-    {
-        double value = 0;
-
-        int returnValue = apiDevice->device->GetGain(
-            apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, apiDevice->txGain, value);
-        if (returnValue != 0)
-        {
-            throw std::runtime_error("Failed to get gain");
-        }
-
-        return value;
-    }
-}
-
-inline lime::SDRDevice::SDRConfig GetCurrentConfiguration(LMS_APIDevice* apiDevice)
-{
-    lime::SDRDevice::SDRConfig configuration;
-
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        throw std::logic_error("Device is not an LMS device.");
-    }
-
-    configuration.referenceClockFreq = lms->GetReferenceClk_SX(lime::TRXDir::Rx);
-
-    auto rxFrequency = lms->GetFrequencySX(lime::TRXDir::Rx);
-    auto txFrequency = lms->GetFrequencySX(lime::TRXDir::Tx);
-
-    auto channelCount = apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).channelCount;
-
-    for (int i = 0; i < channelCount; ++i)
-    {
-        configuration.channel[i].rx.centerFrequency = rxFrequency;
-        configuration.channel[i].tx.centerFrequency = txFrequency;
-
-        configuration.channel[i].rx.sampleRate =
-            lms->GetSampleRate(lime::TRXDir::Rx, i == 0 ? lime::LMS7002M::Channel::ChA : lime::LMS7002M::Channel::ChB);
-        configuration.channel[i].tx.sampleRate =
-            lms->GetSampleRate(lime::TRXDir::Tx, i == 0 ? lime::LMS7002M::Channel::ChA : lime::LMS7002M::Channel::ChB);
-
-        int returnValue = apiDevice->device->GetGain(
-            apiDevice->moduleIndex, lime::TRXDir::Rx, i, apiDevice->rxGain, configuration.channel[i].rx.gain[apiDevice->rxGain]);
-        returnValue |= apiDevice->device->GetGain(
-            apiDevice->moduleIndex, lime::TRXDir::Tx, i, apiDevice->txGain, configuration.channel[i].tx.gain[apiDevice->txGain]);
-
-        if (returnValue != 0)
-        {
-            throw std::runtime_error("Failed to get gains");
-        }
-
-        // TODO: find ways to get current values for all other fields.
-    }
-
-    return configuration;
 }
 
 static LMS_LogHandler api_msg_handler;
@@ -323,11 +253,8 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t* device)
 
     try
     {
-        int returnCode = apiDevice->device->Init();
-
-        apiDevice->lastSavedSDRConfig = GetCurrentConfiguration(apiDevice);
-
-        return returnCode;
+        OpStatus status = apiDevice->device->Init();
+        return OpStatusToReturnCode(status);
     } catch (...)
     {
         return -1;
@@ -361,31 +288,10 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-    const double defaultFrequency = 1e8;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.enabled = enabled;
-
-        if (config.channel[chan].tx.centerFrequency == 0)
-        {
-            config.channel[chan].tx.centerFrequency = defaultFrequency;
-        }
-    }
-    else
-    {
-        config.channel[chan].rx.enabled = enabled;
-
-        if (config.channel[chan].rx.centerFrequency == 0)
-        {
-            config.channel[chan].rx.centerFrequency = defaultFrequency;
-        }
-    }
-
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->EnableChannel(apiDevice->moduleIndex, direction, chan, enabled);
     } catch (...)
     {
         lime::error("Device configuration failed.");
@@ -404,23 +310,12 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t* device, float_type rate
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    for (std::size_t i = 0; i < lime::SDRDevice::MAX_CHANNEL_COUNT; ++i)
-    {
-        config.channel[i].rx.sampleRate = rate;
-        config.channel[i].rx.oversample = oversample;
-
-        config.channel[i].tx.sampleRate = rate;
-        config.channel[i].tx.oversample = oversample;
-    }
-
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->SetSampleRate(apiDevice->moduleIndex, lime::TRXDir::Rx, 0, rate, oversample);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set sampling rate.");
 
         return -1;
     }
@@ -436,28 +331,15 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t* device, bool dir_tx,
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    for (std::size_t i = 0; i < lime::SDRDevice::MAX_CHANNEL_COUNT; ++i)
-    {
-        if (dir_tx)
-        {
-            config.channel[i].tx.sampleRate = rate;
-            config.channel[i].tx.oversample = oversample;
-        }
-        else
-        {
-            config.channel[i].rx.sampleRate = rate;
-            config.channel[i].rx.oversample = oversample;
-        }
-    }
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->SetSampleRate(apiDevice->moduleIndex, direction, 0, rate, oversample);
+
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s sampling rate.", ToString(direction).c_str());
 
         return -1;
     }
@@ -473,18 +355,13 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    auto rate = apiDevice->device->GetSampleRate(apiDevice->moduleIndex, direction, 0);
 
-    if (dir_tx)
-    {
-        *host_Hz = config.channel[chan].tx.sampleRate;
-        *rf_Hz = config.channel[chan].tx.sampleRate * config.channel[chan].tx.oversample;
-    }
-    else
-    {
-        *host_Hz = config.channel[chan].rx.sampleRate;
-        *rf_Hz = config.channel[chan].rx.sampleRate * config.channel[chan].rx.oversample;
-    }
+    if (host_Hz)
+        *host_Hz = rate;
+    if (rf_Hz)
+        *rf_Hz = rate;
 
     return 0;
 }
@@ -497,7 +374,8 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t* device, bool dir_t
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex].samplingRateRange);
+    if (range)
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().samplingRateRange);
 
     return 0;
 }
@@ -510,7 +388,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t* device, bool dir_tx)
         return -1;
     }
 
-    return apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex].channelCount;
+    return apiDevice->GetRFSOCDescriptor().channelCount;
 }
 
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type frequency)
@@ -521,37 +399,14 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.centerFrequency = frequency;
-
-        const bool txMIMO = config.channel[0].tx.enabled && config.channel[1].tx.enabled;
-        if (txMIMO && config.channel[0].tx.centerFrequency != config.channel[1].tx.centerFrequency)
-        {
-            // Don't configure just yet, wait for both frequencies to be set.
-            return 0;
-        }
-    }
-    else
-    {
-        config.channel[chan].rx.centerFrequency = frequency;
-
-        const bool rxMIMO = config.channel[0].rx.enabled && config.channel[1].rx.enabled;
-        if (rxMIMO && config.channel[0].rx.centerFrequency != config.channel[1].rx.centerFrequency)
-        {
-            // Don't configure just yet, wait for both frequencies to be set.
-            return 0;
-        }
-    }
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->SetFrequency(apiDevice->moduleIndex, direction, chan, frequency);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s LO frequency.", ToString(direction).c_str());
 
         return -1;
     }
@@ -567,14 +422,8 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    if (dir_tx)
-    {
-        *frequency = apiDevice->lastSavedSDRConfig.channel[chan].tx.centerFrequency;
-    }
-    else
-    {
-        *frequency = apiDevice->lastSavedSDRConfig.channel[chan].rx.centerFrequency;
-    }
+    if (frequency)
+        *frequency = apiDevice->device->GetFrequency(apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan);
 
     return 0;
 }
@@ -587,7 +436,8 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t* device, bool dir_
         return -1;
     }
 
-    *range = RangeToLMS_Range(apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex].frequencyRange);
+    if (range)
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().frequencyRange);
 
     return 0;
 }
@@ -600,18 +450,14 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t* device, bool dir_tx, s
         return -1;
     }
 
-    auto rfSOC = apiDevice->device->GetDescriptor().rfSOC[apiDevice->moduleIndex];
+    const auto& rfSOC = apiDevice->GetRFSOCDescriptor();
+    const auto& strings = rfSOC.pathNames.at(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx);
+    for (std::size_t i = 0; i < strings.size(); ++i)
+    {
+        CopyString(strings.at(i), list[i], sizeof(lms_name_t));
+    }
 
-    if (dir_tx)
-    {
-        CopyStringVectorIntoList(rfSOC.txPathNames, list);
-        return rfSOC.txPathNames.size();
-    }
-    else
-    {
-        CopyStringVectorIntoList(rfSOC.rxPathNames, list);
-        return rfSOC.rxPathNames.size();
-    }
+    return strings.size();
 }
 
 API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_t chan, size_t path)
@@ -622,23 +468,14 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t* device, bool dir_tx, size_
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.path = path;
-    }
-    else
-    {
-        config.channel[chan].rx.path = path;
-    }
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->SetAntenna(apiDevice->moduleIndex, direction, chan, path);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s antenna.", ToString(direction).c_str());
 
         return -1;
     }
@@ -654,14 +491,9 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t* device, bool dir_tx, size_
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    if (dir_tx)
-    {
-        return config.channel[chan].tx.path;
-    }
-
-    return config.channel[chan].rx.path;
+    return apiDevice->device->GetAntenna(apiDevice->moduleIndex, direction, chan);
 }
 
 API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, size_t chan, size_t path, lms_range_t* range)
@@ -673,11 +505,12 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t* device, bool dir_tx, siz
     }
 
     lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
-    std::string pathName = dir_tx ? apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).txPathNames.at(path)
-                                  : apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).rxPathNames.at(path);
+    std::string pathName = apiDevice->GetRFSOCDescriptor().pathNames.at(direction).at(path);
 
-    *range = RangeToLMS_Range(
-        apiDevice->device->GetDescriptor().rfSOC.at(apiDevice->moduleIndex).antennaRange.at(direction).at(pathName));
+    if (range)
+    {
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().antennaRange.at(direction).at(pathName));
+    }
 
     return 0;
 }
@@ -690,25 +523,15 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t* device, bool dir_tx, size_t 
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.lpf = bandwidth;
-    }
-    else
-    {
-        config.channel[chan].rx.lpf = bandwidth;
-    }
-
-    apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->SetLowPassFilter(apiDevice->moduleIndex, direction, chan, bandwidth);
+        apiDevice->lastSavedLPFValue[chan][dir_tx] = bandwidth;
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s LPF bandwidth.", ToString(direction).c_str());
 
         return -1;
     }
@@ -724,14 +547,10 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t* device, bool dir_tx, lm
         return -1;
     }
 
-    if (dir_tx)
-    {
-        *range = RangeToLMS_Range({ 5e6, 130e6, 0 });
-    }
-    else
-    {
-        *range = RangeToLMS_Range({ 1.4001e6, 130e6, 0 });
-    }
+    lime::TRXDir direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
+    if (range)
+        *range = RangeToLMS_Range(apiDevice->GetRFSOCDescriptor().lowPassFilterRange.at(direction));
 
     return 0;
 }
@@ -746,33 +565,19 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t* device, bool dir_tx
 
     gain = std::clamp(gain, 0.0, 1.0);
 
-    const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
+
+    auto range = apiDevice->GetRFSOCDescriptor().gainRange.at(direction).at(gainToUse);
+
     gain = range.min + gain * (range.max - range.min);
-
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.gain[apiDevice->txGain] = gain;
-    }
-    else
-    {
-        config.channel[chan].rx.gain[apiDevice->rxGain] = gain;
-    }
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
-
-        // Get the actual set gain value
-        apiDevice->device->GetGain(apiDevice->moduleIndex,
-            dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx,
-            chan,
-            dir_tx ? apiDevice->txGain : apiDevice->rxGain,
-            dir_tx ? config.channel[chan].tx.gain[apiDevice->txGain] : config.channel[chan].rx.gain[apiDevice->rxGain]);
+        apiDevice->device->SetGain(apiDevice->moduleIndex, direction, chan, gainToUse, gain);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s normalized gain.", ToString(direction).c_str());
 
         return -1;
     }
@@ -788,30 +593,15 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.gain[apiDevice->txGain] = gain;
-    }
-    else
-    {
-        config.channel[chan].rx.gain[apiDevice->rxGain] = gain;
-    }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
-
-        // Get the actual set gain value
-        apiDevice->device->GetGain(apiDevice->moduleIndex,
-            dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx,
-            chan,
-            dir_tx ? apiDevice->txGain : apiDevice->rxGain,
-            dir_tx ? config.channel[chan].tx.gain[apiDevice->txGain] : config.channel[chan].rx.gain[apiDevice->rxGain]);
+        apiDevice->device->SetGain(apiDevice->moduleIndex, direction, chan, gainToUse, gain);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s gain.", ToString(direction).c_str());
 
         return -1;
     }
@@ -827,10 +617,18 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
         return -1;
     }
 
-    const lms_range_t range{ -12, dir_tx ? 64.0 : 61.0, 0 };
-    *gain = (GetGain(apiDevice, dir_tx, chan) - range.min) / (range.max - range.min);
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
 
-    return LMS_SUCCESS;
+    auto range = apiDevice->GetRFSOCDescriptor().gainRange.at(direction).at(gainToUse);
+
+    double deviceGain = 0.0;
+    OpStatus returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
+
+    if (gain)
+        *gain = (deviceGain - range.min) / (range.max - range.min);
+
+    return returnValue == OpStatus::SUCCESS ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
@@ -841,8 +639,16 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    *gain = std::lround(GetGain(apiDevice, dir_tx, chan)) + 12;
-    return 0;
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    auto gainToUse = dir_tx ? apiDevice->txGain : apiDevice->rxGain;
+    auto deviceGain = 0.0;
+
+    OpStatus returnValue = apiDevice->device->GetGain(apiDevice->moduleIndex, direction, chan, gainToUse, deviceGain);
+
+    if (gain)
+        *gain = std::lround(deviceGain) + 12;
+
+    return returnValue == OpStatus::SUCCESS ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t chan, double bw, unsigned flags)
@@ -853,34 +659,16 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.calibrate = true;
-    }
-    else
-    {
-        config.channel[chan].rx.calibrate = true;
-    }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->Calibrate(apiDevice->moduleIndex, direction, chan, bw);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to calibrate %s channel %i.", ToString(direction).c_str(), chan);
 
         return -1;
-    }
-
-    if (dir_tx)
-    {
-        config.channel[chan].tx.calibrate = false;
-    }
-    else
-    {
-        config.channel[chan].rx.calibrate = false;
     }
 
     return 0;
@@ -901,73 +689,46 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
+    auto enumToTestStruct = [](lms_testsig_t signal) -> lime::SDRDevice::ChannelConfig::Direction::TestSignal {
+        switch (signal)
+        {
+        case LMS_TESTSIG_NONE:
+            return { false };
+        case LMS_TESTSIG_DC:
+            return { true, true };
+        case LMS_TESTSIG_NCODIV8:
+            return { true,
+                false,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div8,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Half };
+        case LMS_TESTSIG_NCODIV4:
+            return { true,
+                false,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Half };
+        case LMS_TESTSIG_NCODIV8F:
+            return { true,
+                false,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div8,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full };
+        case LMS_TESTSIG_NCODIV4F:
+            return { true,
+                false,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4,
+                lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full };
+        default:
+            throw std::logic_error("Unexpected enumerator lms_testsig_t value");
+        }
+    };
+
+    try {
+        apiDevice->device->SetTestSignal(apiDevice->moduleIndex, direction, chan, enumToTestStruct(sig), dc_i, dc_q);
     }
-
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan % 2) + 1);
-
-    if (dir_tx == false)
+    catch (...)
     {
-        if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_RXTSP), sig != LMS_TESTSIG_NONE, true) != 0)
-        {
-            return -1;
-        }
-
-        if (sig == LMS_TESTSIG_NCODIV8 || sig == LMS_TESTSIG_NCODIV8F)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), 1);
-        }
-        else if (sig == LMS_TESTSIG_NCODIV4 || sig == LMS_TESTSIG_NCODIV4F)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), 2);
-        }
-
-        if (sig == LMS_TESTSIG_NCODIV8 || sig == LMS_TESTSIG_NCODIV4)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), 0);
-        }
-        else if (sig == LMS_TESTSIG_NCODIV8F || sig == LMS_TESTSIG_NCODIV4F)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), 1);
-        }
-
-        lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP), sig == LMS_TESTSIG_DC);
-    }
-    else
-    {
-        if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), sig != LMS_TESTSIG_NONE) != 0)
-        {
-            return -1;
-        }
-
-        if (sig == LMS_TESTSIG_NCODIV8 || sig == LMS_TESTSIG_NCODIV8F)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
-        }
-        else if (sig == LMS_TESTSIG_NCODIV4 || sig == LMS_TESTSIG_NCODIV4F)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 2);
-        }
-
-        if (sig == LMS_TESTSIG_NCODIV8 || sig == LMS_TESTSIG_NCODIV4)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), 0);
-        }
-        else if (sig == LMS_TESTSIG_NCODIV8F || sig == LMS_TESTSIG_NCODIV4F)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), 1);
-        }
-
-        lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), sig == LMS_TESTSIG_DC);
-    }
-
-    if (sig == LMS_TESTSIG_DC)
-    {
-        return lms->LoadDC_REG_IQ(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, dc_i, dc_q);
+        lime::error("Failed to set %s channel %i test signal.", ToString(direction).c_str(), chan);
     }
 
     return 0;
@@ -987,29 +748,12 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         return -1;
     }
 
-    // Configure again in case some skips were made in validation before hand.
-    try
-    {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
-    } catch (...)
-    {
-        lime::error("Device configuration failed.");
-
-        return -1;
-    }
-
     lime::SDRDevice::StreamConfig config = apiDevice->lastSavedStreamConfig;
     config.bufferSize = stream->fifoSize;
 
     auto channel = stream->channel & ~LMS_ALIGN_CH_PHASE; // Clear the align phase bit
-    if (stream->isTx)
-    {
-        config.txChannels[config.txCount++] = channel;
-    }
-    else
-    {
-        config.rxChannels[config.rxCount++] = channel;
-    }
+
+    config.channels.at(stream->isTx ? lime::TRXDir::Tx : lime::TRXDir::Rx).push_back(channel);
 
     config.alignPhase = stream->channel & LMS_ALIGN_CH_PHASE;
 
@@ -1017,46 +761,43 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
     {
     case lms_stream_t::LMS_FMT_F32:
         config.format = lime::SDRDevice::StreamConfig::DataFormat::F32;
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
         break;
     case lms_stream_t::LMS_FMT_I16:
         config.format = lime::SDRDevice::StreamConfig::DataFormat::I16;
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
         break;
     case lms_stream_t::LMS_FMT_I12:
         config.format = lime::SDRDevice::StreamConfig::DataFormat::I12;
+        break;
+    default:
+        return lime::error("Setup stream failed: invalid data format.");
+    }
+
+    switch (stream->linkFmt)
+    {
+    case lms_stream_t::LMS_LINK_FMT_I16:
+        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
+        break;
+    case lms_stream_t::LMS_LINK_FMT_I12:
+    case lms_stream_t::LMS_LINK_FMT_DEFAULT:
         config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
         break;
     default:
-        config.format = lime::SDRDevice::StreamConfig::DataFormat::F32;
-        config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
+        return lime::error("Setup stream failed: invalid link data format.");
     }
-
-    // TODO: check functionality
-    // switch (stream->linkFmt)
-    // {
-    // case lms_stream_t::LMS_LINK_FMT_I16:
-    //     config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I16;
-    //     break;
-    // case lms_stream_t::LMS_LINK_FMT_I12:
-    //     config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
-    // case lms_stream_t::LMS_LINK_FMT_DEFAULT: // do nothing
-    //     break;
-    // }
 
     // TODO: check functionality
     // config.performanceLatency = stream->throughputVsLatency;
 
     auto returnValue = apiDevice->device->StreamSetup(config, apiDevice->moduleIndex);
 
-    if (returnValue == 0)
+    if (returnValue == OpStatus::SUCCESS)
     {
         apiDevice->lastSavedStreamConfig = config;
     }
 
     stream->handle = GetStreamHandle(apiDevice);
 
-    return returnValue;
+    return returnValue == OpStatus::SUCCESS ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t* device, lms_stream_t* stream)
@@ -1168,7 +909,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     }
 
     const uint32_t streamChannel = stream->channel & ~LMS_ALIGN_CH_PHASE;
-    const uint8_t rxChannelCount = handle->parent->lastSavedStreamConfig.rxCount;
+    const std::size_t rxChannelCount = handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Rx).size();
     const std::size_t sampleSize = sizeof(T);
 
     if (rxChannelCount > 1)
@@ -1193,7 +934,7 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
     std::vector<T*> sampleBuffer(rxChannelCount);
     for (uint8_t i = 0; i < rxChannelCount; ++i)
     {
-        if (handle->parent->lastSavedStreamConfig.rxChannels[i] == streamChannel)
+        if (handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Rx).at(i) == streamChannel)
         {
             sampleBuffer[i] = reinterpret_cast<T*>(samples);
         }
@@ -1201,8 +942,11 @@ int ReceiveStream(lms_stream_t* stream, void* samples, size_t sample_count, lms_
         {
             sampleBuffer[i] = reinterpret_cast<T*>(handle->memoryPool.Allocate(sample_count * sampleSize));
 
-            handle->parent->streamBuffers.push_back(
-                { sampleBuffer[i], &handle->memoryPool, direction, handle->parent->lastSavedStreamConfig.rxChannels[i], 0 });
+            handle->parent->streamBuffers.push_back({ sampleBuffer[i],
+                &handle->memoryPool,
+                direction,
+                handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Rx).at(i),
+                0 });
         }
     }
 
@@ -1271,7 +1015,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
     }
 
     const uint32_t streamChannel = stream->channel & ~LMS_ALIGN_CH_PHASE;
-    const uint8_t txChannelCount = handle->parent->lastSavedStreamConfig.txCount;
+    const std::size_t txChannelCount = handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Tx).size();
     const std::size_t sampleSize = sizeof(T);
 
     std::vector<const T*> sampleBuffer(txChannelCount, nullptr);
@@ -1280,9 +1024,9 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
     {
         if (buffer.direction == direction)
         {
-            for (uint8_t i = 0; i < txChannelCount; ++i)
+            for (std::size_t i = 0; i < txChannelCount; ++i)
             {
-                if (handle->parent->lastSavedStreamConfig.txChannels[i] == buffer.channel)
+                if (handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Tx).at(i) == buffer.channel)
                 {
                     sampleBuffer[i] = reinterpret_cast<const T*>(buffer.buffer);
                     break;
@@ -1293,7 +1037,7 @@ int SendStream(lms_stream_t* stream, const void* samples, size_t sample_count, c
 
     for (uint8_t i = 0; i < txChannelCount; ++i)
     {
-        if (handle->parent->lastSavedStreamConfig.txChannels[i] == streamChannel)
+        if (handle->parent->lastSavedStreamConfig.channels.at(lime::TRXDir::Tx).at(i) == streamChannel)
         {
             sampleBuffer[i] = reinterpret_cast<const T*>(samples);
             break;
@@ -1427,7 +1171,8 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t* dev, uint8_t* buffer, size_t
         return -1;
     }
 
-    return apiDevice->device->GPIORead(buffer, len);
+    OpStatus status = apiDevice->device->GPIORead(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
@@ -1438,7 +1183,8 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t* dev, const uint8_t* buffer,
         return -1;
     }
 
-    return apiDevice->device->GPIOWrite(buffer, len);
+    OpStatus status = apiDevice->device->GPIOWrite(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, size_t len)
@@ -1449,7 +1195,8 @@ API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t* dev, uint8_t* buffer, siz
         return -1;
     }
 
-    return apiDevice->device->GPIODirRead(buffer, len);
+    OpStatus status = apiDevice->device->GPIODirRead(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buffer, size_t len)
@@ -1460,7 +1207,8 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t* dev, const uint8_t* buff
         return -1;
     }
 
-    return apiDevice->device->GPIODirWrite(buffer, len);
+    OpStatus status = apiDevice->device->GPIODirWrite(buffer, len);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type* val, lms_name_t units)
@@ -1472,20 +1220,21 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t* device, uint8_t 
     }
 
     std::vector<lime::CustomParameterIO> parameter{ { param_id, *val, units } };
-    int returnValue = apiDevice->device->CustomParameterRead(parameter);
+    OpStatus returnValue = apiDevice->device->CustomParameterRead(parameter);
 
-    if (returnValue < 0)
+    if (returnValue != OpStatus::SUCCESS)
     {
         return -1;
     }
 
-    *val = parameter[0].value;
+    if (val)
+        *val = parameter[0].value;
     if (units != nullptr)
     {
         CopyString(parameter[0].units, units, sizeof(lms_name_t));
     }
 
-    return returnValue;
+    return OpStatusToReturnCode(returnValue);
 }
 
 API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t param_id, float_type val, const lms_name_t units)
@@ -1498,7 +1247,8 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t* device, uint8_t
 
     std::vector<lime::CustomParameterIO> parameter{ { param_id, val, units } };
 
-    return apiDevice->device->CustomParameterWrite(parameter);
+    OpStatus status = apiDevice->device->CustomParameterWrite(parameter);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* device)
@@ -1509,7 +1259,7 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t* devic
         return nullptr;
     }
 
-    auto descriptor = apiDevice->device->GetDescriptor();
+    const auto& descriptor = apiDevice->device->GetDescriptor();
 
     if (apiDevice->deviceInfo == nullptr)
     {
@@ -1547,7 +1297,8 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t* device, size_t clk_id, f
         return -1;
     }
 
-    *freq = apiDevice->device->GetClockFreq(clk_id, apiDevice->moduleIndex * 2);
+    if (freq)
+        *freq = apiDevice->device->GetClockFreq(clk_id, apiDevice->moduleIndex * 2);
     return *freq > 0 ? 0 : -1;
 }
 
@@ -1564,7 +1315,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
         apiDevice->device->SetClockFreq(clk_id, freq, apiDevice->moduleIndex * 2);
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set clock%li.", clk_id);
 
         return -1;
     }
@@ -1574,28 +1325,14 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t* device, size_t clk_id, f
 
 API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t* dev, size_t ind, float_type* temp)
 {
-    *temp = 0;
-
     LMS_APIDevice* apiDevice = CheckDevice(dev);
     if (apiDevice == nullptr)
     {
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ind));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
-
-    if (lms->SPI_read(0x2F) == 0x3840)
-    {
-        lime::error("Feature is not available on this chip revision.");
-        return -1;
-    }
-
-    *temp = lms->GetTemperature();
+    if (temp)
+        *temp = apiDevice->device->GetTemperature(apiDevice->moduleIndex);
     return 0;
 }
 
@@ -1645,16 +1382,10 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t* device, bool dir_tx, size_t 
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    if (dir_tx)
-    {
-        *bandwidth = config.channel[chan].tx.lpf;
-    }
-    else
-    {
-        *bandwidth = config.channel[chan].rx.lpf;
-    }
+    if (bandwidth)
+        *bandwidth = apiDevice->device->GetLowPassFilter(apiDevice->moduleIndex, direction, chan);
 
     return 0;
 }
@@ -1667,37 +1398,15 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t* device, bool dir_tx, size_t ch
         return -1;
     }
 
-    lime::SDRDevice::SDRConfig& config = apiDevice->lastSavedSDRConfig;
-
-    if (enabled)
-    {
-        if (dir_tx)
-        {
-            config.channel[chan].tx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
-        }
-        else
-        {
-            config.channel[chan].rx.lpf = apiDevice->lastSavedLPFValue[chan][dir_tx];
-        }
-    }
-    else
-    {
-        if (dir_tx)
-        {
-            config.channel[chan].tx.lpf = 130e6;
-        }
-        else
-        {
-            config.channel[chan].rx.lpf = 130e6;
-        }
-    }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     try
     {
-        apiDevice->device->Configure(apiDevice->lastSavedSDRConfig, apiDevice->moduleIndex);
+        apiDevice->device->SetLowPassFilter(
+            apiDevice->moduleIndex, direction, chan, apiDevice->lastSavedLPFValue[chan][dir_tx]); // TODO: fix
     } catch (...)
     {
-        lime::error("Device configuration failed.");
+        lime::error("Failed to set %s channel %li LPF.", ToString(direction).c_str(), chan);
 
         return -1;
     }
@@ -1713,50 +1422,48 @@ API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t* device, bool dir_tx, si
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+
+    auto testSignal = apiDevice->device->GetTestSignal(apiDevice->moduleIndex, direction, chan);
+
+    if (!testSignal.enabled)
     {
-        lime::error("Device is not an LMS device.");
-        return -1;
+        *sig = LMS_TESTSIG_NONE;
+        return 0;
     }
 
-    if (dir_tx)
+    if (testSignal.dcMode)
     {
-        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_TXTSP)) == 0)
-        {
-            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_NONE);
-            return 0;
-        }
-        else if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP)) != 0)
-        {
-            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_DC);
-            return 0;
-        }
-        else
-        {
-            *sig = static_cast<lms_testsig_t>(
-                lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP)) + 2 * lms->Get_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), true));
-            return 0;
-        }
+        *sig = LMS_TESTSIG_DC;
+        return 0;
     }
-    else
+
+    if (testSignal.divide == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4 &&
+        testSignal.scale == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Half)
     {
-        if (lms->Get_SPI_Reg_bits(LMS7param(INSEL_RXTSP)) == 0)
-        {
-            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_NONE);
-            return 0;
-        }
-        else if (lms->Get_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP)) != 0)
-        {
-            *sig = static_cast<lms_testsig_t>(LMS_TESTSIG_DC);
-            return 0;
-        }
-        else
-        {
-            *sig = static_cast<lms_testsig_t>(
-                lms->Get_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP)) + 2 * lms->Get_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), true));
-            return 0;
-        }
+        *sig = LMS_TESTSIG_NCODIV4;
+        return 0;
+    }
+
+    if (testSignal.divide == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div8 &&
+        testSignal.scale == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Half)
+    {
+        *sig = LMS_TESTSIG_NCODIV8;
+        return 0;
+    }
+
+    if (testSignal.divide == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4 &&
+        testSignal.scale == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full)
+    {
+        *sig = LMS_TESTSIG_NCODIV4F;
+        return 0;
+    }
+
+    if (testSignal.divide == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div8 &&
+        testSignal.scale == lime::SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full)
+    {
+        *sig = LMS_TESTSIG_NCODIV8F;
+        return 0;
     }
 
     return -1;
@@ -1770,14 +1477,10 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t* device, const char* filena
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    // TODO: check status
+    apiDevice->device->LoadConfig(apiDevice->moduleIndex, filename);
 
-    return lms ? lms->LoadConfig(filename) : -1;
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filename)
@@ -1788,14 +1491,10 @@ API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t* device, const char* filena
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    // TODO: check status
+    apiDevice->device->SaveConfig(apiDevice->moduleIndex, filename);
 
-    return lms ? lms->SaveConfig(filename) : -1;
+    return 0;
 }
 
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
@@ -1805,8 +1504,8 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
         lime::registerLogHandler(APIMsgHandler);
         api_msg_handler = handler;
     }
-
-    lime::registerLogHandler(nullptr);
+    else
+        lime::registerLogHandler(nullptr);
 }
 
 API_EXPORT const char* CALL_CONV LMS_GetLastErrorMessage(void)
@@ -1821,15 +1520,12 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t* device, bool dir_tx, size_
     {
         return -1;
     }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    // TODO: check status
+    apiDevice->device->ConfigureGFIR(apiDevice->moduleIndex, direction, chan & 1, { enabled, bandwidth });
 
-    return lms->SetGFIRFilter(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan & 1, enabled, bandwidth);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
@@ -1841,22 +1537,13 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    std::vector<double> coefficients(coef, coef + count);
 
-    std::vector<int16_t> convertedCoefficients(count);
+    // TODO: check status
+    apiDevice->device->SetGFIRCoefficients(
+        apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, static_cast<uint8_t>(filt), coefficients);
 
-    for (std::size_t i = 0; i < count; ++i)
-    {
-        convertedCoefficients[i] = static_cast<int16_t>(coef[i]);
-    }
-
-    return lms->SetGFIRCoefficients(
-        dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), convertedCoefficients.data(), count);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
@@ -1867,25 +1554,18 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t* device, bool dir_tx, siz
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
-
     const uint8_t count = filt == LMS_GFIR3 ? 120 : 40;
-    std::vector<int16_t> coefficientBuffer(count);
 
-    auto returnValue = lms->GetGFIRCoefficients(
-        dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, static_cast<uint8_t>(filt), coefficientBuffer.data(), count);
+    // TODO: check status
+    auto coefficients = apiDevice->device->GetGFIRCoefficients(
+        apiDevice->moduleIndex, dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, chan, static_cast<uint8_t>(filt));
 
     for (std::size_t i = 0; i < count; ++i)
     {
-        coef[i] = static_cast<float_type>(coefficientBuffer[i]);
+        coef[i] = coefficients.at(i);
     }
 
-    return returnValue;
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
@@ -1895,64 +1575,10 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t* device, bool dir_tx, size_t c
     {
         return -1;
     }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
-
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan % 2) + 1);
-
-    if (dir_tx)
-    {
-        if (filt == LMS_GFIR1)
-        {
-            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), enabled == false) != 0)
-                return -1;
-        }
-        else if (filt == LMS_GFIR2)
-        {
-            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), enabled == false) != 0)
-                return -1;
-        }
-        else if (filt == LMS_GFIR3)
-        {
-            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), enabled == false) != 0)
-                return -1;
-        }
-    }
-    else
-    {
-        if (filt == LMS_GFIR1)
-        {
-            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), enabled == false) != 0)
-                return -1;
-        }
-        else if (filt == LMS_GFIR2)
-        {
-            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), enabled == false) != 0)
-                return -1;
-        }
-        else if (filt == LMS_GFIR3)
-        {
-            if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false) != 0)
-                return -1;
-        }
-        bool sisoDDR = lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        if (chan % 2)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled | sisoDDR));
-            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled ? 3 : 0);
-        }
-        else
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), !(enabled | sisoDDR));
-            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML), enabled ? 3 : 0);
-        }
-    }
-
+    // TODO: check status
+    apiDevice->device->SetGFIR(apiDevice->moduleIndex, direction, chan, filt, enabled);
     return 0;
 }
 
@@ -1964,14 +1590,9 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t* device, struct LMS7Paramete
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    if (val)
+        *val = apiDevice->device->GetParameter(apiDevice->moduleIndex, 0, param.address, param.msb, param.lsb);
 
-    *val = lms->Get_SPI_Reg_bits(param);
     return 0;
 }
 
@@ -1983,14 +1604,10 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t* device, struct LMS7Paramet
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    // TODO: check status
+    apiDevice->device->SetParameter(apiDevice->moduleIndex, 0, param.address, param.msb, param.lsb, val);
 
-    return lms->Modify_SPI_Reg_bits(param, val);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, size_t ch, const float_type* freq, float_type pho)
@@ -2000,26 +1617,15 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t* device, bool dir_tx, 
     {
         return -1;
     }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
-    if (lms == nullptr)
+    for (int i = 0; i < LMS_NCO_VAL_COUNT; ++i)
     {
-        lime::error("Device is not an LMS device.");
-        return -1;
+        // TODO: check status
+        apiDevice->device->SetNCOFrequency(apiDevice->moduleIndex, direction, ch, i, freq[i], pho);
     }
 
-    if (freq != nullptr)
-    {
-        if (lms->SetNCOFrequencies(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, freq, LMS_NCO_VAL_COUNT, pho) != 0)
-        {
-            return -1;
-        }
-
-        lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, 0);
-        lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
-    }
-
-    return lms->SetNCOPhaseOffsetForMode0(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, pho);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, size_t chan, float_type* freq, float_type* pho)
@@ -2030,24 +1636,16 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, 
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    for (int i = 0; i < LMS_NCO_VAL_COUNT; ++i)
     {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
-
-    if (freq != nullptr)
-    {
-        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
-        {
-            freq[i] = std::fabs(lms->GetNCOFrequency(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, i));
-        }
+        // TODO: check status
+        freq[i] = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, chan, i);
     }
 
     if (pho != nullptr)
     {
-        uint16_t value = lms->SPI_read(dir_tx ? 0x0241 : 0x0441);
+        uint16_t value = apiDevice->device->ReadRegister(apiDevice->moduleIndex, dir_tx ? 0x0241 : 0x0441);
         *pho = 360.0 * value / 65536.0;
     }
 
@@ -2062,27 +1660,22 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t* device, bool dir_tx, size
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
-
-    if (lms->SetNCOFrequency(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, 0, fcw) != 0)
-        return -1;
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    // TODO: check status
+    apiDevice->device->SetNCOFrequency(apiDevice->moduleIndex, direction, ch, 0, fcw);
 
     if (phase != nullptr)
     {
-        if (lms->SetNCOPhases(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, phase, LMS_NCO_VAL_COUNT, fcw) != 0)
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
         {
-            return -1;
+            uint16_t addr = dir_tx ? 0x0244 : 0x0444;
+            uint16_t pho = static_cast<uint16_t>(65536 * (phase[i] / 360));
+            apiDevice->device->WriteRegister(apiDevice->moduleIndex, addr + i, pho);
         }
 
-        if (lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0)
-        {
-            return -1;
-        }
+        auto& selectionParameter = dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX;
+        apiDevice->device->SetParameter(
+            apiDevice->moduleIndex, ch, selectionParameter.address, selectionParameter.msb, selectionParameter.lsb, 0);
     }
 
     return 0;
@@ -2096,26 +1689,24 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(ch / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
 
     if (phase != nullptr)
     {
-        auto phases = lms->GetNCOPhases(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, fcw);
+        apiDevice->device->SetParameter(apiDevice->moduleIndex, ch, "MAC", ch);
 
-        for (std::size_t i = 0; i < phases.size(); ++i)
+        for (std::size_t i = 0; i < LMS_NCO_VAL_COUNT; ++i)
         {
-            phase[i] = phases[i];
+            uint16_t addr = dir_tx ? 0x0244 : 0x0444;
+            uint16_t pho = apiDevice->device->ReadRegister(apiDevice->moduleIndex, addr + i);
+
+            phase[i] = 360 * pho / 65536.0;
         }
     }
 
     if (fcw != nullptr)
     {
-        *fcw = lms->GetNCOFrequency(dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx, 0);
+        *fcw = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, ch, 0);
     }
 
     return 0;
@@ -2129,32 +1720,38 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t* device, bool dir_tx, size
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    auto& cmixBypassParameter = dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP;
+    auto& cmixGainParameter = dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP;
+    auto& selectionParameter = dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX;
+    auto& cmixSelectionParameter = dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP;
 
-    if ((lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan) != 0) ||
-        (lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan) != 0))
-    {
-        return -1;
-    }
+    apiDevice->device->SetParameter(apiDevice->moduleIndex,
+        chan,
+        cmixBypassParameter.address,
+        cmixBypassParameter.msb,
+        cmixBypassParameter.lsb,
+        ind < 0 ? 1 : 0);
+    apiDevice->device->SetParameter(
+        apiDevice->moduleIndex, chan, cmixGainParameter.address, cmixGainParameter.msb, cmixGainParameter.lsb, ind < 0 ? 0 : 1);
 
     if (ind < LMS_NCO_VAL_COUNT)
     {
-        if ((lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, ind) != 0) ||
-            (lms->Modify_SPI_Reg_bits(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down) != 0))
-        {
-            return -1;
-        }
+        apiDevice->device->SetParameter(
+            apiDevice->moduleIndex, chan, selectionParameter.address, selectionParameter.msb, selectionParameter.lsb, ind);
+
+        apiDevice->device->SetParameter(apiDevice->moduleIndex,
+            chan,
+            cmixSelectionParameter.address,
+            cmixSelectionParameter.msb,
+            cmixSelectionParameter.lsb,
+            down);
     }
     else
     {
         lime::error("Invalid NCO index value.");
         return -1;
     }
+
     return 0;
 }
 
@@ -2166,20 +1763,17 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t* device, bool dir_tx, size
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(chan / 2));
-    if (lms == nullptr)
-    {
-        lime::error("Device is not an LMS device.");
-        return -1;
-    }
+    auto& cmixParameter = dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP;
+    auto& selParameter = dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX;
 
-    if (lms->Get_SPI_Reg_bits(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
+    if (apiDevice->device->GetParameter(
+            apiDevice->moduleIndex, chan, cmixParameter.address, cmixParameter.msb, cmixParameter.lsb) != 0)
     {
         lime::error("NCO is disabled.");
         return -1;
     }
 
-    return lms->Get_SPI_Reg_bits(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
+    return apiDevice->device->GetParameter(apiDevice->moduleIndex, chan, selParameter.address, selParameter.msb, selParameter.lsb);
 }
 
 API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address, uint16_t val)
@@ -2190,14 +1784,15 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address,
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
+    try {
+        apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val);
+    }
+    catch(...)
     {
-        lime::error("Device is not an LMS device.");
-        return -1;
+        return lime::error("Failed to write register at %04X.", address);
     }
 
-    return lms->SPI_write(address, val);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, uint16_t* val)
@@ -2208,14 +1803,15 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, 
         return -1;
     }
 
-    lime::LMS7002M* lms = static_cast<lime::LMS7002M*>(apiDevice->device->GetInternalChip(apiDevice->moduleIndex));
-    if (lms == nullptr)
+    try {
+        if (val)
+            *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address);
+    }
+    catch (...)
     {
-        lime::error("Device is not an LMS device.");
-        return -1;
+        return lime::error("Failed to read register at %04X.", address);
     }
 
-    *val = lms->SPI_read(address);
     return 0;
 }
 
@@ -2227,14 +1823,15 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address
         return -1;
     }
 
-    lime::LMS7002M_SDRDevice* sdrDevice = dynamic_cast<lime::LMS7002M_SDRDevice*>(apiDevice->device);
-    if (sdrDevice == nullptr)
+    try {
+        apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val, true);
+    }
+    catch (...)
     {
-        lime::error("Device is not an LMS SDR device.");
-        return -1;
+        return lime::error("Failed to write register at %04X.", address);
     }
 
-    return sdrDevice->WriteFPGARegister(address, val);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address, uint16_t* val)
@@ -2245,26 +1842,16 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address,
         return -1;
     }
 
-    lime::LMS7002M_SDRDevice* sdrDevice = dynamic_cast<lime::LMS7002M_SDRDevice*>(apiDevice->device);
-    if (sdrDevice == nullptr)
+    try {
+        if (val)
+            *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address, true);
+    }
+    catch (...)
     {
-        lime::error("Device is not an LMS SDR device.");
-        return -1;
+        return lime::error("Failed to read register at %04X.", address);
     }
 
-    int value = sdrDevice->ReadFPGARegister(address);
-
-    if (value < 0)
-    {
-        return value; // operation failed return error code
-    }
-
-    if (val != nullptr)
-    {
-        *val = value;
-    }
-
-    return LMS_SUCCESS;
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** samples, uint8_t chCount, size_t sample_count, int format)
@@ -2294,10 +1881,10 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t* device, const void** sample
         break;
     }
 
-    config.txCount = chCount;
     config.format = dataFormat;
 
-    return apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
+    OpStatus status = apiDevice->device->UploadTxWaveform(config, apiDevice->moduleIndex, samples, sample_count);
+    return OpStatusToReturnCode(status);
 }
 
 API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t* device, unsigned ch, bool active)
@@ -2362,10 +1949,12 @@ API_EXPORT int CALL_CONV LMS_Program(
 
         const auto& memoryDevice = apiDevice->device->GetDescriptor().memoryDevices.at(prog_mode);
 
-        return memoryDevice->ownerDevice->UploadMemory(memoryDevice->memoryDeviceType, 0, data, size, ProgrammingCallback);
+        OpStatus status =
+            memoryDevice->ownerDevice->UploadMemory(memoryDevice->memoryDeviceType, 0, data, size, ProgrammingCallback);
+        return OpStatusToReturnCode(status);
     } catch (std::out_of_range& e)
     {
-        lime::error("Mode not found.");
+        lime::error("Invalid programming mode.");
 
         return -1;
     }
@@ -2391,8 +1980,8 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t* device, uint16_t val)
         try
         {
             const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
-
-            return apiDevice->device->MemoryWrite(dataStorage, region, &val);
+            OpStatus status = apiDevice->device->MemoryWrite(dataStorage, region, &val);
+            return OpStatusToReturnCode(status);
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");
@@ -2416,12 +2005,12 @@ static int VCTCXOReadFallbackPath(LMS_APIDevice* apiDevice, uint16_t* val)
 {
     std::vector<lime::CustomParameterIO> parameters{ { BOARD_PARAM_DAC, 0, "" } };
 
-    if (apiDevice->device->CustomParameterRead(parameters) != 0)
-    {
-        return -1;
-    }
+    OpStatus status = apiDevice->device->CustomParameterRead(parameters);
+    if (status != OpStatus::SUCCESS)
+        return OpStatusToReturnCode(status);
 
-    *val = parameters.at(0).value;
+    if (val)
+        *val = parameters.at(0).value;
     return 0;
 }
 
@@ -2443,7 +2032,8 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t* device, uint16_t* val)
         {
             const auto& region = dataStorage->regions.at(lime::eMemoryRegion::VCTCXO_DAC);
 
-            return apiDevice->device->MemoryRead(dataStorage, region, val);
+            OpStatus status = apiDevice->device->MemoryRead(dataStorage, region, val);
+            return OpStatusToReturnCode(status);
         } catch (std::out_of_range& e)
         {
             lime::error("VCTCXO address not found.");

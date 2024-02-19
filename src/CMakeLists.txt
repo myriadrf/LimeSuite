@@ -21,7 +21,6 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
-    SDRDevice.cpp
     StreamComposite.cpp
     CommonFunctions.cpp
     boards/DeviceRegistry.cpp
@@ -50,6 +49,7 @@ set(LIME_SUITE_SOURCES
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp
     gnuPlotPipe.h
+    parsers/CoefficientFileParser.cpp
 
     EnumToString.cpp
 
@@ -62,6 +62,10 @@ set(LIME_SUITE_SOURCES
     mcu_program/common_src/lms7002m_filters.c
 
     API/LMS_APIWrapper.cpp
+
+    include/limesuite/commonTypes.cpp
+    include/limesuite/OpStatus.cpp
+    include/limesuite/SDRDevice.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES( 
@@ -122,7 +126,7 @@ if (ENABLE_LIBRARY)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
     endif()
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_CODE_COVERAGE)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_CODE_COVERAGE AND (NOT MSVC))
         include(CodeCoverage)
         append_coverage_compiler_flags_to_target(${MAIN_LIBRARY_NAME})
     endif()
@@ -196,7 +200,6 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/lms7002_pnlLDO_view.cpp
     lms7002_wxgui/lms7002_pnlAFE_view.cpp
     lms7002_wxgui/lms7002_pnlGains_view.cpp
-    lms7002_wxgui/CoefficientFileParser.cpp
     lms7002_wxgui/lms7002_pnlRxTSP_view.cpp
     lms7002_wxgui/lms7002_mainPanel.cpp
     # lms7002_wxgui/dlgViewSFR.cpp

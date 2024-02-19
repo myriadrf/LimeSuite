@@ -9,7 +9,9 @@
 #include "limesuite/LMS7002M.h"
 #include "FPGA_common.h"
 #include "Logger.h"
+
 using namespace lime;
+using namespace std::literals::string_literals;
 
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : ILMS7002MTab(parent, id, pos, size, style)
@@ -792,7 +794,7 @@ void lms7002_pnlCLKGEN_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
 
@@ -829,7 +831,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-    if (lms->SetInterfaceFrequency(freqMHz * 1e6, interp, decim))
+    if (lms->SetInterfaceFrequency(freqMHz * 1e6, interp, decim) != OpStatus::SUCCESS)
     {
         wxMessageBox(_("CLKGEN: failed to set interface frequency"));
         return;
@@ -854,7 +856,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxCommandEvent& event)
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-    if (lms->SetInterfaceFrequency(freqMHz * 1e6, interp, decim))
+    if (lms->SetInterfaceFrequency(freqMHz * 1e6, interp, decim) != OpStatus::SUCCESS)
     {
         wxMessageBox(_("CLKGEN: failed to set interface frequency"));
         auto freq = lms->GetFrequencyCGEN();
@@ -880,7 +882,7 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick(wxCommandEvent& event)
 {
     LMS7002M* lms = lmsControl;
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
-    if (lms->TuneVCO(lime::LMS7002M::VCO_Module::VCO_CGEN) != 0)
+    if (lms->TuneVCO(lime::LMS7002M::VCO_Module::VCO_CGEN) != OpStatus::SUCCESS)
     {
         wxMessageBox(wxString(_("CLKGEN VCO Tune failed")));
         return;

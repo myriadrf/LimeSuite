@@ -12,12 +12,14 @@
 #include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
+#include "FX3/FX3.h"
 
-#include <assert.h>
+#include <array>
+#include <cassert>
+#include <cmath>
 #include <memory>
 #include <set>
 #include <stdexcept>
-#include <cmath>
 
 #ifdef __unix__
     #ifdef __GNUC__
@@ -30,21 +32,7 @@
     #endif
 #endif
 
-#define CTR_W_REQCODE 0xC1
-#define CTR_W_VALUE 0x0000
-#define CTR_W_INDEX 0x0000
-
-#define CTR_R_REQCODE 0xC0
-#define CTR_R_VALUE 0x0000
-#define CTR_R_INDEX 0x0000
-
 using namespace lime;
-
-static const uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
-static const uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
-
-static const uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
-static const uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
 
 static const uint8_t SPI_LMS7002M = 0;
 static const uint8_t SPI_FPGA = 1;
@@ -138,10 +126,13 @@ LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     RFSOCDescriptor soc;
     soc.name = "LMS";
     soc.channelCount = 2;
-    soc.rxPathNames = { "None", "LNAH", "LNAL", "LNAW" };
-    soc.txPathNames = { "None", "Band1", "Band2" };
+    soc.pathNames[TRXDir::Rx] = { "None", "LNAH", "LNAL", "LNAW" };
+    soc.pathNames[TRXDir::Tx] = { "None", "Band1", "Band2" };
     soc.samplingRateRange = { 100e3, 61.44e6, 0 };
     soc.frequencyRange = { 100e3, 3.8e9, 0 };
+
+    soc.lowPassFilterRange[TRXDir::Rx] = { 1.4001e6, 130e6 };
+    soc.lowPassFilterRange[TRXDir::Tx] = { 5e6, 130e6 };
 
     soc.antennaRange[TRXDir::Rx]["LNAH"] = { 2e9, 2.6e9 };
     soc.antennaRange[TRXDir::Rx]["LNAL"] = { 700e6, 900e6 };
@@ -193,7 +184,7 @@ LimeSDR::~LimeSDR()
     }
 }
 
-void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
+OpStatus LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 {
     try
     {
@@ -259,35 +250,30 @@ void LimeSDR::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
             // TODO: set filters...
         }
         mLMSChips[0]->SetActiveChannel(LMS7002M::Channel::ChA);
-        // sampling rate
-        double sampleRate;
 
-        if (rxUsed)
-        {
-            sampleRate = cfg.channel[0].rx.sampleRate;
-        }
-        else
-        {
-            sampleRate = cfg.channel[0].tx.sampleRate;
-        }
+        TRXDir direction = rxUsed ? TRXDir::Rx : TRXDir::Tx;
+
+        // sampling rate
+        double sampleRate = cfg.channel[0].GetDirection(direction).sampleRate;
 
         if (sampleRate > 0)
         {
-            SetSampleRate(sampleRate, cfg.channel[0].rx.oversample);
+            SetSampleRate(0, direction, 0, sampleRate, cfg.channel[0].GetDirection(direction).oversample);
         }
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR config: %s\n", e.what());
+        lime::error("LimeSDR config: %s", e.what());
         throw;
     } catch (std::runtime_error& e)
     {
         throw;
     }
+    return OpStatus::SUCCESS;
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-int LimeSDR::UpdateFPGAInterface(void* userData)
+OpStatus LimeSDR::UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);
@@ -296,12 +282,12 @@ int LimeSDR::UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
+OpStatus LimeSDR::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
-    const bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
+    const bool bypass = (oversample == 1) || (oversample == 0 && sampleRate > 62e6);
     uint8_t decimation = 7; // HBD_OVR_RXTSP=7 - bypass
     uint8_t interpolation = 7; // HBI_OVR_TXTSP=7 - bypass
-    double cgenFreq = f_Hz * 4; // AI AQ BI BQ
+    double cgenFreq = sampleRate * 4; // AI AQ BI BQ
     // TODO:
     // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
     // {
@@ -322,36 +308,44 @@ void LimeSDR::SetSampleRate(double f_Hz, uint8_t oversample)
         decimation = 4;
         if (oversample <= 16)
         {
-            const int decTbl[] = { 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
-            decimation = decTbl[oversample];
+            constexpr std::array<int, 17> decimationTable{ 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
+            decimation = decimationTable.at(oversample);
         }
         interpolation = decimation;
         cgenFreq *= 2 << decimation;
     }
+
     if (bypass)
-        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", f_Hz / 1e6, cgenFreq / 1e6);
+    {
+        lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: bypass, Interp: bypass", sampleRate / 1e6, cgenFreq / 1e6);
+    }
     else
+    {
         lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i",
-            f_Hz / 1e6,
+            sampleRate / 1e6,
             cgenFreq / 1e6,
             decimation + 1,
             interpolation + 1); // dec/inter ratio is 2^(value+1)
+    }
+    lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    mLMSChips[0]->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
+    lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+    lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    return lms->SetInterfaceFrequency(cgenFreq, interpolation, decimation);
 }
 
-int LimeSDR::Init()
+OpStatus LimeSDR::Init()
 {
+    OpStatus status;
     lime::LMS7002M* lms = mLMSChips[0];
     // TODO: write GPIO to hard reset the chip
-    if (lms->ResetChip() != 0)
-        return -1;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
@@ -378,7 +372,7 @@ int LimeSDR::Init()
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return status;
 }
 
 SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
@@ -387,9 +381,9 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     SDRDevice::Descriptor deviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo info;
-    int returnCode = LMS64CProtocol::GetFirmwareInfo(*mSerialPort, info);
+    OpStatus returnCode = LMS64CProtocol::GetFirmwareInfo(*mSerialPort, info);
 
-    if (returnCode != 0)
+    if (returnCode != OpStatus::SUCCESS)
     {
         deviceDescriptor.name = GetDeviceName(LMS_DEV_UNKNOWN);
         deviceDescriptor.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
@@ -420,17 +414,17 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     return deviceDescriptor;
 }
 
-void LimeSDR::Reset()
+OpStatus LimeSDR::Reset()
 {
-    LMS64CProtocol::DeviceReset(*mSerialPort, 0);
+    return LMS64CProtocol::DeviceReset(*mSerialPort, 0);
 }
 
-int LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)
+OpStatus LimeSDR::EnableChannel(TRXDir dir, uint8_t channel, bool enabled)
 {
-    int ret = mLMSChips[0]->EnableChannel(dir, channel, enabled);
+    OpStatus status = mLMSChips[0]->EnableChannel(dir, channel, enabled);
     if (dir == TRXDir::Tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
         mLMSChips[0]->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
-    return ret;
+    return status;
 }
 /*
 uint8_t LimeSDR::GetPath(SDRDevice::Dir dir, uint8_t channel) const
@@ -448,23 +442,9 @@ double LimeSDR::GetClockFreq(uint8_t clk_id, uint8_t channel)
     return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel);
 }
 
-void LimeSDR::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
+OpStatus LimeSDR::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
-}
-
-void LimeSDR::Synchronize(bool toChip)
-{
-    if (toChip)
-    {
-        if (mLMSChips[0]->UploadAll() == 0)
-        {
-            mLMSChips[0]->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true);
-            //ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000); // TODO: implement
-        }
-    }
-    else
-        mLMSChips[0]->DownloadAll();
+    return mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
 }
 
 void LimeSDR::EnableCache(bool enable)
@@ -474,7 +454,7 @@ void LimeSDR::EnableCache(bool enable)
         mFPGA->EnableValuesCache(enable);
 }
 
-int LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+OpStatus LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     assert(mSerialPort);
     assert(MOSI);
@@ -564,7 +544,7 @@ int LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint
         }
     }
 
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 /*int LimeSDR::I2CWrite(int address, const uint8_t *data, uint32_t length)
@@ -644,7 +624,7 @@ void LimeSDR::ResetUSBFIFO()
     }
 }
 
-int LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
+OpStatus LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
     // Allow multiple setup calls
     if (mStreamers.at(moduleIndex) != nullptr)
@@ -652,20 +632,9 @@ int LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         delete mStreamers.at(moduleIndex);
     }
 
-    try
-    {
-        mStreamers.at(moduleIndex) =
-            new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips.at(moduleIndex), STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
-        mStreamers.at(moduleIndex)->Setup(config);
-
-        return 0;
-    } catch (std::logic_error& e)
-    {
-        return -1;
-    } catch (std::runtime_error& e)
-    {
-        return -1;
-    }
+    mStreamers.at(moduleIndex) =
+        new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips.at(moduleIndex), FX3::STREAM_BULK_IN_ADDRESS, FX3::STREAM_BULK_OUT_ADDRESS);
+    return mStreamers.at(moduleIndex)->Setup(config);
 }
 
 void LimeSDR::StreamStart(uint8_t moduleIndex)
@@ -695,32 +664,32 @@ void* LimeSDR::GetInternalChip(uint32_t index)
     return mLMSChips.at(index);
 }
 
-int LimeSDR::GPIODirRead(uint8_t* buffer, const size_t bufLength)
+OpStatus LimeSDR::GPIODirRead(uint8_t* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIODirRead(buffer, bufLength);
 }
 
-int LimeSDR::GPIORead(uint8_t* buffer, const size_t bufLength)
+OpStatus LimeSDR::GPIORead(uint8_t* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIORead(buffer, bufLength);
 }
 
-int LimeSDR::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
+OpStatus LimeSDR::GPIODirWrite(const uint8_t* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIODirWrite(buffer, bufLength);
 }
 
-int LimeSDR::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
+OpStatus LimeSDR::GPIOWrite(const uint8_t* buffer, const size_t bufLength)
 {
     return mfpgaPort->GPIOWrite(buffer, bufLength);
 }
 
-int LimeSDR::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
+OpStatus LimeSDR::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
     return mfpgaPort->CustomParameterWrite(parameters);
 }
 
-int LimeSDR::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
+OpStatus LimeSDR::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
     return mfpgaPort->CustomParameterRead(parameters);
 }

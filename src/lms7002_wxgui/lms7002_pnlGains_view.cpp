@@ -3,8 +3,11 @@
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "limesuite/SDRDevice.h"
+#include "Logger.h"
+
 using namespace lime;
 using namespace LMS7002_WXGUI;
+using namespace std::literals::string_literals;
 
 static indexValueMap g_lna_rfe_IndexValuePairs;
 static indexValueMap g_tia_rfe_IndexValuePairs;
@@ -261,7 +264,7 @@ void lms7002_pnlGains_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
     long value = event.GetInt();
