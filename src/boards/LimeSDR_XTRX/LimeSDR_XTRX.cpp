@@ -489,15 +489,6 @@ OpStatus LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uin
     uint8_t hbd_ovr = 7; // decimation ratio is 2^(1+hbd_ovr), HBD_OVR_RXTSP=7 - bypass
     uint8_t hbi_ovr = 7; // interpolation ratio is 2^(1+hbi_ovr), HBI_OVR_TXTSP=7 - bypass
     double cgenFreq = f_Hz * 4; // AI AQ BI BQ
-    // TODO:
-    // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
-    // {
-    //     if (rx_channels[i].cF_offset_nco != 0.0 || tx_channels[i].cF_offset_nco != 0.0)
-    //     {
-    //         bypass = false;
-    //         break;
-    //     }
-    // }
     if (!bypass)
     {
         if (oversample == 0)
@@ -513,11 +504,19 @@ OpStatus LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uin
             hbd_ovr = decTbl[oversample];
         }
         cgenFreq *= 2 << hbd_ovr;
+        rxDecimation = 2 << hbd_ovr;
+
+        if (txInterpolation == 0)
+        {
+            int txMultiplier = std::log2(lime::LMS7002M::CGEN_MAX_FREQ / cgenFreq);
+            txInterpolation = rxDecimation << txMultiplier;
+        }
+
         if (txInterpolation >= rxDecimation)
             hbi_ovr = hbd_ovr + std::log2(txInterpolation / rxDecimation);
         else
-            throw std::logic_error(
-                strFormat("Rx decimation(2^%i) > Tx interpolation(2^%i) currently not supported", hbd_ovr, hbi_ovr));
+            return lime::ReportError(
+                OpStatus::NOT_SUPPORTED, "Rx decimation(2^%i) > Tx interpolation(2^%i) currently not supported", hbd_ovr, hbi_ovr);
     }
     lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i",
         f_Hz / 1e6,
