@@ -995,7 +995,7 @@ uint8_t CalibrateTx(bool extLoopback)
     CalibrateTxDCAuto();
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO, 0);
     CalibrateIQImbalance(LMS7002M_Tx);
-TxCalibrationEnd: {
+TxCalibrationEnd : {
     //analog dc is not overwritten by chip state restore
     uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP);
     uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP);
@@ -1495,7 +1495,7 @@ uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF / calibUserBwDivider + offsetNCO, 0);
     CalibrateIQImbalance(LMS7002M_Rx);
-RxCalibrationEndStage: {
+RxCalibrationEndStage : {
     uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_RXTSP);
     uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP);
     uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP);
