@@ -13,7 +13,7 @@ namespace lime {
 template<uint8_t chCount> class SamplesPacket
 {
   public:
-    static constexpr int headerSize = sizeof(SamplesPacket);
+    static constexpr int headerSize = 3 * sizeof(uint8_t*) * chCount + 17;
     static SamplesPacket* ConstructSamplesPacket(void* vptr, uint32_t samplesCount, uint8_t frameSize)
     {
         uint8_t* ptr = reinterpret_cast<uint8_t*>(vptr);

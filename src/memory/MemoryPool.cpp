@@ -1,8 +1,11 @@
 #include "MemoryPool.h"
+
 #include <cstring>
 #include <stdexcept>
 #include <string>
 #include <sstream>
+
+#include "Logger.h"
 
 namespace lime {
 MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::string& name)
@@ -13,7 +16,11 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::
 {
     for (int i = 0; i < blockCount; ++i)
     {
+#if __unix__
         void* ptr = aligned_alloc(alignment, blockSize);
+#else
+        void* ptr = _aligned_malloc(alignment, blockSize);
+#endif
         if (!ptr)
         {
             throw std::runtime_error("Failed to allocate memory");
@@ -69,7 +76,7 @@ void MemoryPool::Free(void* ptr)
         {
             char ctemp[1024];
             sprintf(ctemp,
-                "%s Double free?, allocs: %i , frees: %i, used: %li, free: %li\n ptr: %p",
+                "%s Double free?, allocs: %i , frees: %i, used: %li, free: %li, ptr: %p",
                 name.c_str(),
                 allocCnt,
                 freeCnt,
@@ -77,7 +84,7 @@ void MemoryPool::Free(void* ptr)
                 mFreeBlocks.size(),
                 ptr);
             for (auto adr : mUsedBlocks)
-                printf("addrs: %p\n", adr);
+                lime::error("addrs: %p", adr);
             throw std::runtime_error(ctemp);
         }
         else

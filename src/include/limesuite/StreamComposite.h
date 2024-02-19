@@ -21,7 +21,7 @@ class LIME_API StreamComposite
     StreamComposite() = delete;
     StreamComposite(const std::vector<StreamAggregate>& aggregate);
 
-    int StreamSetup(const SDRDevice::StreamConfig& config);
+    OpStatus StreamSetup(const SDRDevice::StreamConfig& config);
     void StreamStart();
     void StreamStop();
 

@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     config.channel[0].tx.lpf = 0;
     config.channel[0].tx.path = 2; // TODO: replace with string names
     config.channel[0].tx.calibrate = true;
-    config.channel[0].tx.testSignal = false;
+    config.channel[0].tx.testSignal.enabled = false;
 
     std::cout << "Configuring device ...\n";
     try
@@ -80,9 +80,9 @@ int main(int argc, char** argv)
 
         // Samples data streaming configuration
         SDRDevice::StreamConfig stream;
-        stream.rxCount = 0;
-        stream.txCount = 1; // tx channels count
-        stream.txChannels[0] = 0;
+
+        stream.channels[TRXDir::Tx] = { 0 };
+
         stream.format = SDRDevice::StreamConfig::DataFormat::F32;
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
 
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
     std::vector<std::vector<complex32f_t>> txPattern(2);
     const int txPacketCount = 4;
     const int samplesInPkt = 1024;
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (size_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount * samplesInPkt);
         for (int j = 0; j < txPacketCount; ++j)

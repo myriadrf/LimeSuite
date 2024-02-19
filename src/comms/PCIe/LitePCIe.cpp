@@ -1,18 +1,23 @@
 #include "LitePCIe.h"
-#include <unistd.h>
-#include <fcntl.h>
+
 #include <iostream>
-#include <poll.h>
-#include <sys/mman.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 #include <string.h>
 #include <thread>
-
 #include "Logger.h"
+
+#ifdef __unix__
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <poll.h>
+    #include <sys/mman.h>
+    #include <sys/ioctl.h>
+    #include "software/kernel/litepcie.h"
+#endif
 
 using namespace std;
 using namespace lime;
+using namespace std::literals::string_literals;
 
 #define EXTRA_CHECKS 1
 
@@ -52,7 +57,7 @@ int LitePCIe::Open(const std::string& deviceFilename, uint32_t flags)
     if (mFileDescriptor < 0)
     {
         isConnected = false;
-        printf("LitePCIe: Failed to open (%s), errno(%i) %s\n", mFilePath.c_str(), errno, strerror(errno));
+        lime::error("LitePCIe: Failed to open (%s), errno(%i) %s", mFilePath.c_str(), errno, strerror(errno));
         return -1;
     }
 
@@ -187,15 +192,13 @@ int LitePCIe::WriteRaw(const uint8_t* buffer, const int length, int timeout_ms)
             switch (errno)
             {
             case EAGAIN:
-                //printf("Write EAGAIN %i\n", bytesRemaining);
                 bytesOut = 0;
                 break;
-                //return totalBytesReceived;
             case EINTR:
-                printf("Write EINTR\n");
+                lime::error("Write EINTR"s);
                 continue;
             default:
-                printf("Write default\n");
+                lime::error("Write default"s);
                 return errno;
             }
         }
@@ -209,16 +212,16 @@ int LitePCIe::WriteRaw(const uint8_t* buffer, const int length, int timeout_ms)
                 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t1).count();
             if (pollTimeout <= 0)
                 break;
-            printf("poll for %ims\n", pollTimeout);
+            lime::debug("poll for %ims", pollTimeout);
             int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
             {
-                printf("Write poll errno(%i) %s\n", errno, strerror(errno));
+                lime::error("Write poll errno(%i) %s", errno, strerror(errno));
                 return -errno;
             }
             else if (ret == 0) // timeout
             {
-                printf("Write poll timeout %i\n", pollTimeout);
+                lime::error("Write poll timeout %i", pollTimeout);
                 break;
             }
             continue;
@@ -244,20 +247,16 @@ int LitePCIe::ReadRaw(uint8_t* buffer, const int length, int timeout_ms)
 
         if (bytesIn < 0)
         {
-            //printf("read errno %i, bytesIn: %i\n", errno, bytesIn);
             switch (errno)
             {
             case EAGAIN:
-                //printf("Read EAGAIN, bytes remaining: %i\n", bytesRemaining);
                 bytesIn = 0;
                 return length - bytesRemaining;
-                break;
-                //return totalBytesReceived;
             case EINTR:
-                printf("Read EINTR\n");
+                lime::error("Read EINTR"s);
                 continue;
             default:
-                printf("Read default\n");
+                lime::error("Read default"s);
                 return -errno;
             }
         }
@@ -273,18 +272,18 @@ int LitePCIe::ReadRaw(uint8_t* buffer, const int length, int timeout_ms)
                 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t1).count();
             if (pollTimeout <= 0)
             {
-                printf("Read poll timeout of %i\n", pollTimeout);
+                lime::error("Read poll timeout of %i", pollTimeout);
                 return length - bytesRemaining;
             }
             int ret = poll(&desc, 1, pollTimeout);
             if (ret < 0)
             {
-                printf("Read poll errno(%i) %s\n", errno, strerror(errno));
+                lime::error("Read poll errno(%i) %s", errno, strerror(errno));
                 return -errno;
             }
             else if (ret == 0) // timeout
             {
-                printf("Read poll timeout %i\n", timeout_ms);
+                lime::error("Read poll timeout %i", timeout_ms);
                 break;
             }
             continue;
@@ -292,7 +291,7 @@ int LitePCIe::ReadRaw(uint8_t* buffer, const int length, int timeout_ms)
 #ifdef EXTRA_CHECKS
         if (bytesIn > bytesRemaining)
         {
-            printf("LitePCIe::ReadRaw read expected(%i), returned(%i)\n", bytesRemaining, bytesIn);
+            lime::error("LitePCIe::ReadRaw read expected(%i), returned(%i)", bytesRemaining, bytesIn);
             return -1;
         }
 #endif
@@ -302,10 +301,10 @@ int LitePCIe::ReadRaw(uint8_t* buffer, const int length, int timeout_ms)
              std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
 #ifdef EXTRA_CHECKS
     // if (bytesRemaining > 0)
-    //     printf("LitePCIe::ReadRaw %i bytes remaining after timeout\n", bytesRemaining);
+    //     lime::error("LitePCIe::ReadRaw %i bytes remaining after timeout", bytesRemaining);
     // auto rdTime = std::chrono::duration_cast<std::chrono::microseconds>(chrono::high_resolution_clock::now() - t1).count();
     // if(rdTime > 100)
-    //     printf("ReadRaw too long %i\n", rdTime);
+    //     lime::error("ReadRaw too long %i", rdTime);
 #endif
     return length - bytesRemaining;
 }
@@ -326,7 +325,7 @@ void LitePCIe::RxDMAEnable(bool enabled, uint32_t bufferSize, uint8_t irqPeriod)
     }
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_DMA_WRITER, &writer);
     if (ret < 0)
-        printf("Failed DMA writer ioctl. errno(%i) %s\n", errno, strerror(errno));
+        lime::error("Failed DMA writer ioctl. errno(%i) %s", errno, strerror(errno));
 }
 
 void LitePCIe::TxDMAEnable(bool enabled)
@@ -340,7 +339,7 @@ void LitePCIe::TxDMAEnable(bool enabled)
     reader.sw_count = 0;
     int ret = ioctl(mFileDescriptor, LITEPCIE_IOCTL_DMA_READER, &reader);
     if (ret < 0)
-        printf("Failed DMA reader ioctl. err(%i) %s\n", errno, strerror(errno));
+        lime::error("Failed DMA reader ioctl. err(%i) %s", errno, strerror(errno));
 }
 
 LitePCIe::DMAState LitePCIe::GetRxDMAState()
@@ -392,7 +391,7 @@ bool LitePCIe::WaitRx()
     }
     else if (ret == 0)
     {
-        //printf("PollRx timeout\n");
+        //lime::error("PollRx timeout"s);
     }
     else
     {
@@ -426,7 +425,7 @@ bool LitePCIe::WaitTx()
     }
     else if (ret == 0)
     {
-        //printf("PollTx timeout\n");
+        //lime::error("PollTx timeout"s);
     }
     else
     {

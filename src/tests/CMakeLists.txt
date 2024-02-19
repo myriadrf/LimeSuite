@@ -1,12 +1,13 @@
 set(LIME_TEST_SUITE_NAME LimeSuite2Test)
 
-set(LIME_TEST_SUITE_SOURCES 
+set(LIME_TEST_SUITE_SOURCES
     boards/LimeSDR/LimeSDRTest.cpp
     boards/LimeSDR/USB_CSR_Pipe_SDRTest.cpp
     boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
     boards/LimeSDR_Mini/USB_CSR_Pipe_MiniTest.cpp
     boards/LimeSDR_X3/SlaveSelectShimTest.cpp
     comms/PCIe/PCIE_CSR_PipeTest.cpp
+    parsers/CoefficientFileParserTest.cpp
     protocols/LMS64CProtocol/CustomParameterReadTest.cpp
     protocols/LMS64CProtocol/CustomParameterWriteTest.cpp
     protocols/LMS64CProtocol/DeviceResetTest.cpp
@@ -31,7 +32,9 @@ target_link_libraries(
     GTest::gmock_main
 )
 
-set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+if (BINARY_OUTPUT_DIR)
+    set_target_properties(${LIME_TEST_SUITE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(${LIME_TEST_SUITE_NAME})

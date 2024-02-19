@@ -7,50 +7,54 @@ StreamComposite::StreamComposite(const std::vector<StreamAggregate>& aggregate)
     mAggregate = aggregate;
 }
 
-int StreamComposite::StreamSetup(const SDRDevice::StreamConfig& config)
+OpStatus StreamComposite::StreamSetup(const SDRDevice::StreamConfig& config)
 {
     mActiveAggregates.clear();
     SDRDevice::StreamConfig subConfig = config;
-    subConfig.rxCount = 0;
-    subConfig.txCount = 0;
 
-    int rxNeed = config.rxCount;
-    int txNeed = config.txCount;
+    subConfig.channels.at(TRXDir::Rx).clear();
+    subConfig.channels.at(TRXDir::Tx).clear();
 
-    for (auto& a : mAggregate)
+    std::size_t rxNeed = config.channels.at(TRXDir::Rx).size();
+    std::size_t txNeed = config.channels.at(TRXDir::Tx).size();
+
+    for (auto& aggregate : mAggregate)
     {
-        const SDRDevice::Descriptor& desc = a.device->GetDescriptor();
-        int channelCount = a.channels.size();
+        const SDRDevice::Descriptor& desc = aggregate.device->GetDescriptor();
+        std::size_t aggregateChannelCount = aggregate.channels.size();
 
-        subConfig.rxCount = rxNeed > channelCount ? channelCount : rxNeed;
-        for (int j = 0; j < subConfig.rxCount; ++j)
+        std::size_t channelCount = std::min(aggregateChannelCount, rxNeed);
+        for (std::size_t j = 0; j < channelCount; ++j)
         {
-            if (a.channels[j] >= desc.rfSOC[a.streamIndex].channelCount)
-                return -1;
+            if (aggregate.channels[j] >= desc.rfSOC[aggregate.streamIndex].channelCount)
+                return OpStatus::OUT_OF_RANGE;
 
-            subConfig.rxChannels[j] = a.channels[j];
+            subConfig.channels.at(TRXDir::Rx).push_back(aggregate.channels[j]);
         }
-        rxNeed -= subConfig.rxCount;
+        rxNeed -= channelCount;
 
-        subConfig.txCount = txNeed > channelCount ? channelCount : txNeed;
-        for (int j = 0; j < subConfig.txCount; ++j)
+        channelCount = std::min(aggregateChannelCount, txNeed);
+        for (std::size_t j = 0; j < channelCount; ++j)
         {
-            if (a.channels[j] >= desc.rfSOC[a.streamIndex].channelCount)
-                return -1;
+            if (aggregate.channels[j] >= desc.rfSOC[aggregate.streamIndex].channelCount)
+                return OpStatus::OUT_OF_RANGE;
 
-            subConfig.txChannels[j] = a.channels[j];
+            subConfig.channels.at(TRXDir::Tx).push_back(aggregate.channels[j]);
         }
-        txNeed -= subConfig.txCount;
+        txNeed -= channelCount;
 
-        int rez = a.device->StreamSetup(subConfig, a.streamIndex);
-        if (rez != 0)
-            return rez;
-        mActiveAggregates.push_back(a);
+        OpStatus status = aggregate.device->StreamSetup(subConfig, aggregate.streamIndex);
+        if (status != OpStatus::SUCCESS)
+            return status;
+
+        mActiveAggregates.push_back(aggregate);
 
         if (rxNeed == 0 && txNeed == 0)
+        {
             break;
+        }
     }
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 void StreamComposite::StreamStart()

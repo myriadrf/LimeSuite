@@ -8,9 +8,11 @@ endif()
 
 if (UNIX)
     find_package(Gnuplot)
+    set_package_properties(Gnuplot PROPERTIES
+        TYPE OPTIONAL
+    )
     if (GNUPLOT_FOUND)
         add_definitions(-DUSE_GNU_PLOT)
-        message(STATUS "GNUPlot Found")
     endif()
 endif()
 

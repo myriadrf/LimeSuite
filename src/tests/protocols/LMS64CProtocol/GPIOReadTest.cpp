@@ -48,9 +48,9 @@ TEST(LMS64CProtocol, GPIOReadTestOneBlock)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     uint8_t actual = 0U;
-    int returnValue = LMS64CProtocol::GPIORead(mockPort, &actual, 1);
+    OpStatus returnValue = LMS64CProtocol::GPIORead(mockPort, &actual, 1);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
     EXPECT_EQ(actual, value);
 }
 
@@ -75,9 +75,9 @@ TEST(LMS64CProtocol, GPIOReadTestTwoBlocks)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     std::array<uint8_t, 2> actual{ 0, 0 };
-    int returnValue = LMS64CProtocol::GPIORead(mockPort, actual.data(), 2);
+    OpStatus returnValue = LMS64CProtocol::GPIORead(mockPort, actual.data(), 2);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
     EXPECT_EQ(actual[0], value1);
     EXPECT_EQ(actual[1], value2);
 }

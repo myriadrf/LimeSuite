@@ -17,6 +17,12 @@ struct complex32f_t {
     float q; ///< The Q component of the number.
 };
 
+/** @brief Structure to hold a 64 bit float complex number. */
+struct complex64f_t {
+    double i; ///< The I component of the number.
+    double q; ///< The Q component of the number.
+};
+
 } // namespace lime
 
 #endif

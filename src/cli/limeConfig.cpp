@@ -164,7 +164,7 @@ int main(int argc, char** argv)
             config.channel[0].rx.oversample = stoi(optarg);
             break;
         case RXTESTSIGNAL:
-            config.channel[0].rx.testSignal = stoi(optarg) != 0;
+            config.channel[0].rx.testSignal.enabled = stoi(optarg) != 0;
             break;
         case TXEN:
             config.channel[0].tx.enabled = stoi(optarg) != 0;
@@ -182,7 +182,7 @@ int main(int argc, char** argv)
             config.channel[0].tx.oversample = stoi(optarg);
             break;
         case TXTESTSIGNAL:
-            config.channel[0].tx.testSignal = stoi(optarg) != 0;
+            config.channel[0].tx.testSignal.enabled = stoi(optarg) != 0;
             break;
         case INIFILE:
             iniFilename = optarg;
@@ -247,10 +247,10 @@ int main(int argc, char** argv)
                 cerr << "Failed to get internal chip: " << moduleId << endl;
                 return EXIT_FAILURE;
             }
-            if (chip->LoadConfig(configFilepath) != 0)
+            if (chip->LoadConfig(configFilepath) != OpStatus::SUCCESS)
             {
                 cerr << "Error loading file: " << configFilepath << endl;
-                return -1;
+                return EXIT_FAILURE;
             }
 
             for (int i = 0; i < device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)

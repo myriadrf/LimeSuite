@@ -3,6 +3,8 @@
 
 #include <cassert>
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 #ifdef __unix__
@@ -178,6 +180,16 @@ void USBGeneric::Disconnect()
         }
     }
 #endif
+    std::unique_lock<std::mutex> lock{ contextsLock };
+
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        if (contexts[i].used)
+        {
+            AbortEndpointXfers(contexts[i].transfer->endpoint);
+        }
+    }
+
     delete[] contexts;
     contexts = nullptr;
 }
@@ -185,7 +197,7 @@ void USBGeneric::Disconnect()
 int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
 {
     long len = 0;
-    if (not IsConnected())
+    if (!IsConnected())
     {
         throw std::runtime_error("BulkTransfer: USB device is not connected");
     }
@@ -199,7 +211,7 @@ int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length
 
     if (status != 0)
     {
-        printf("USBGeneric::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i\n",
+        lime::error("USBGeneric::BulkTransfer(0x%02X) : %s, transferred: %i, expected: %i",
             endPointAddr,
             libusb_error_name(status),
             actualTransferred,
@@ -213,7 +225,7 @@ int32_t USBGeneric::ControlTransfer(
     int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
 {
     long len = length;
-    if (not IsConnected())
+    if (!IsConnected())
     {
         throw std::runtime_error("ControlTransfer: USB device is not connected");
     }
@@ -285,7 +297,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
 
     if (status != 0)
     {
-        printf("BEGIN DATA TRANSFER %s\n", libusb_error_name(status));
+        lime::error("BEGIN DATA TRANSFER %s", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -325,6 +337,11 @@ int USBGeneric::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHand
 
 void USBGeneric::AbortEndpointXfers(uint8_t endPointAddr)
 {
+    if (contexts == nullptr)
+    {
+        return;
+    }
+
 #ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
@@ -341,6 +358,11 @@ int USBGeneric::GetUSBContextIndex()
 {
     std::unique_lock<std::mutex> lock{ contextsLock };
 
+    if (contexts == nullptr)
+    {
+        return -1;
+    }
+
     int i = 0;
     bool contextFound = false;
     // Find not used context
@@ -355,7 +377,7 @@ int USBGeneric::GetUSBContextIndex()
 
     if (!contextFound)
     {
-        printf("No contexts left for reading or sending data\n");
+        lime::error("No contexts left for reading or sending data"s);
         return -1;
     }
 

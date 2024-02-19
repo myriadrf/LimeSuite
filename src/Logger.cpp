@@ -56,9 +56,21 @@ int lime::ReportError(const int errnum)
     return lime::ReportError(errnum, errToStr(errnum));
 }
 
+lime::OpStatus lime::ReportError(const lime::OpStatus errnum)
+{
+    return lime::ReportError(errnum, ToCString(errnum));
+}
+
 int lime::ReportError(const int errnum, const char* format, va_list argList)
 {
     _reportedErrorCode = errnum;
+    vsnprintf(_reportedErrorMessage, MAX_MSG_LEN, format, argList);
+    lime::log(LogLevel::ERROR, _reportedErrorMessage);
+    return errnum;
+}
+
+lime::OpStatus lime::ReportError(const lime::OpStatus errnum, const char* format, va_list argList)
+{
     vsnprintf(_reportedErrorMessage, MAX_MSG_LEN, format, argList);
     lime::log(LogLevel::ERROR, _reportedErrorMessage);
     return errnum;

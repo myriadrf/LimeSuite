@@ -28,8 +28,11 @@
 
 #include "limesuite/SDRDevice.h"
 #include "limesuite/LMS7002M.h"
+#include "Logger.h"
+
 using namespace std;
 using namespace lime;
+using namespace std::literals::string_literals;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : ISOCPanel(parent, id, pos, size, style)
@@ -238,7 +241,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
         currentTab->second->UpdateGUI();
     t2 = wxGetUTCTimeMillis();
 #ifndef NDEBUG
-    cout << "Visible GUI update time: " << (t2 - t1).ToString() << endl;
+    lime::debug("Visible GUI update time: "s + (t2 - t1).ToString());
 #endif
 }
 
@@ -300,7 +303,7 @@ void lms7002_mainPanel::OnOpenProject(wxCommandEvent& event)
     }
     try
     {
-        if (chip->LoadConfig(dlg.GetPath().ToStdString()) != 0)
+        if (chip->LoadConfig(dlg.GetPath().ToStdString()) != OpStatus::SUCCESS)
             wxMessageBox(_("Failed to load file"), _("Warning"));
     } catch (std::runtime_error& e)
     {
@@ -325,7 +328,7 @@ void lms7002_mainPanel::OnSaveProject(wxCommandEvent& event)
         return;
     }
 
-    if (chip->SaveConfig(dlg.GetPath().ToStdString()) != 0)
+    if (chip->SaveConfig(dlg.GetPath().ToStdString()) != OpStatus::SUCCESS)
         wxMessageBox(_("Failed to save file"), _("Warning"));
 }
 

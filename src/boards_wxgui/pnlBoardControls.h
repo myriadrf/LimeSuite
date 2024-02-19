@@ -127,7 +127,7 @@ class pnlBoardControls : public IModuleFrame
     wxButton* btnCustomRd;
     wxButton* btnCustomWr;
     void OnMemoryWrite(wxCommandEvent& event);
-    int ReadMemory(MemoryParamGUI* gui);
+    lime::OpStatus ReadMemory(MemoryParamGUI* gui);
     void OnMemoryRead(wxCommandEvent& event);
     void OnCustomRead(wxCommandEvent& event);
     void OnCustomWrite(wxCommandEvent& event);

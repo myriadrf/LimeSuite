@@ -2,7 +2,7 @@ name: CMake
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, litepcie-update ]
   pull_request:
 
 env:

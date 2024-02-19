@@ -45,7 +45,7 @@
 
 if (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
   # in cache already
-  set(LIBUSB_FOUND TRUE)
+  set(LIBUSB_1_FOUND TRUE)
 else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
   find_path(LIBUSB_1_INCLUDE_DIR
     NAMES
@@ -101,18 +101,21 @@ endif(bananapi-r2)
   endif (LIBUSB_1_INCLUDE_DIRS AND LIBUSB_1_LIBRARIES)
 
   if (LIBUSB_1_FOUND)
-    if (NOT libusb_1_FIND_QUIETLY)
+    if (NOT libusb-1.0_FIND_QUIETLY)
       message(STATUS "Found libusb-1.0:")
-	  message(STATUS " - Includes: ${LIBUSB_1_INCLUDE_DIRS}")
-	  message(STATUS " - Libraries: ${LIBUSB_1_LIBRARIES}")
-    endif (NOT libusb_1_FIND_QUIETLY)
+	    message(STATUS " - LIBUSB_1_INCLUDE_DIRS: ${LIBUSB_1_INCLUDE_DIRS}")
+	    message(STATUS " - LIBUSB_1_LIBRARIES: ${LIBUSB_1_LIBRARIES}")
+    endif (NOT libusb-1.0_FIND_QUIETLY)
   else (LIBUSB_1_FOUND)
-    if (libusb_1_FIND_REQUIRED)
+    if (libusb-1.0_FIND_REQUIRED)
       message(FATAL_ERROR "Could not find libusb")
-    endif (libusb_1_FIND_REQUIRED)
+    endif (libusb-1.0_FIND_REQUIRED)
   endif (LIBUSB_1_FOUND)
 
   # show the LIBUSB_1_INCLUDE_DIRS and LIBUSB_1_LIBRARIES variables only in the advanced view
   mark_as_advanced(LIBUSB_1_INCLUDE_DIRS LIBUSB_1_LIBRARIES)
+  mark_as_advanced(LIBUSB_1_INCLUDE_DIR LIBUSB_1_LIBRARY)
 
 endif (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
+
+set(libusb-1.0_FOUND ${LIBUSB_1_FOUND})
