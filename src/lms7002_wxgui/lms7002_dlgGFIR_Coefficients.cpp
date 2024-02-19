@@ -120,7 +120,8 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
         return;
 
     std::vector<double> coefficients(200, 0);
-    int iVal = lime::CoefficientFileParser::getCoefficients(dlg.GetPath().ToStdString(), coefficients, 200);
+    auto parser = CoefficientFileParser(dlg.GetPath().ToStdString());
+    int iVal = parser.getCoefficients(coefficients, 200);
 
     switch (iVal)
     {
@@ -166,7 +167,8 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile(wxCommandEvent& event)
         gridCoef->GetCellValue(i, 0).ToDouble(&coefficients[i]);
     }
 
-    lime::CoefficientFileParser::saveToFile(dlg.GetPath().ToStdString(), coefficients);
+    auto parser = CoefficientFileParser(dlg.GetPath().ToStdString());
+    parser.saveToFile(coefficients);
 }
 
 void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)

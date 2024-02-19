@@ -11,6 +11,7 @@
 #ifdef _MSC_VER
     #define thread_local __declspec(thread)
     #include <Windows.h>
+    #undef ERROR
 #endif
 
 #ifdef __APPLE__
@@ -34,8 +35,10 @@ static const char* errToStr(const int errnum)
         NULL);
     return buff;
 #else
+    #ifndef __unix__
+    strerror_s(buff, sizeof(buff), errnum);
+    #elif !(defined(__GLIBC__) && defined(__GNU_SOURCE))
     //http://linux.die.net/man/3/strerror_r
-    #if !(defined(__GLIBC__) && defined(__GNU_SOURCE))
     auto result = strerror_r(errnum, buff, sizeof(buff));
     (void)result;
     #else

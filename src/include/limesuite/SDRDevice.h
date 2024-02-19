@@ -114,7 +114,7 @@ class LIME_API SDRDevice
             std::size_t totalCount;
             std::size_t usedCount;
 
-            float ratio() { return static_cast<float>(usedCount) / totalCount; }
+            float ratio() const { return static_cast<float>(usedCount) / totalCount; }
         };
 
         StreamStats() { memset(this, 0, sizeof(StreamStats)); }
@@ -139,7 +139,7 @@ class LIME_API SDRDevice
     };
 
     // channels order and data transmission formats setup
-    struct StreamConfig {
+    struct LIME_API StreamConfig {
         struct Extras {
             Extras();
             bool usePoll;

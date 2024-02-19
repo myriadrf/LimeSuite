@@ -12,6 +12,7 @@
 #include "lms7002m/LMS7002M_validation.h"
 #include "protocols/LMS64CProtocol.h"
 #include "limesuite/DeviceNode.h"
+#include "FX3/FX3.h"
 
 #include <array>
 #include <cassert>
@@ -31,21 +32,7 @@
     #endif
 #endif
 
-#define CTR_W_REQCODE 0xC1
-#define CTR_W_VALUE 0x0000
-#define CTR_W_INDEX 0x0000
-
-#define CTR_R_REQCODE 0xC0
-#define CTR_R_VALUE 0x0000
-#define CTR_R_INDEX 0x0000
-
 using namespace lime;
-
-static const uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
-static const uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
-
-static const uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
-static const uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
 
 static const uint8_t SPI_LMS7002M = 0;
 static const uint8_t SPI_FPGA = 1;
@@ -646,7 +633,7 @@ OpStatus LimeSDR::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
     }
 
     mStreamers.at(moduleIndex) =
-        new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips.at(moduleIndex), STREAM_BULK_IN_ADDRESS, STREAM_BULK_OUT_ADDRESS);
+        new TRXLooper_USB(mStreamPort, mFPGA, mLMSChips.at(moduleIndex), FX3::STREAM_BULK_IN_ADDRESS, FX3::STREAM_BULK_OUT_ADDRESS);
     return mStreamers.at(moduleIndex)->Setup(config);
 }
 

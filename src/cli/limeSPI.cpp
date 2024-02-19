@@ -1,7 +1,8 @@
 #include "cli/common.h"
 
-#include <assert.h>
+#include <cassert>
 #include <cstring>
+#include <getopt.h>
 
 using namespace std;
 using namespace lime;

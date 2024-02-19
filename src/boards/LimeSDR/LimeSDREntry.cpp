@@ -9,7 +9,6 @@
 #include <stdexcept>
 
 #ifndef __unix__
-    #include "windows.h"
     #include "CyAPI.h"
 #else
     #ifdef __GNUC__
@@ -48,7 +47,7 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
     }
 
     CCyUSBDevice device;
-    if (device.DeviceCount())
+    if (device.DeviceCount() > 0)
     {
         for (int i = 0; i < device.DeviceCount(); ++i)
         {
@@ -77,8 +76,14 @@ std::vector<DeviceHandle> LimeSDREntry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDREntry::make(const DeviceHandle& handle)
 {
     const auto splitPos = handle.addr.find(":");
-    const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
-    const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
+    uint16_t vid = 0;
+    uint16_t pid = 0;
+
+    if (splitPos != std::string::npos)
+    {
+        vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
+        pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
+    }
 
     auto usbComms = std::make_shared<FX3>(
 #ifdef __unix__

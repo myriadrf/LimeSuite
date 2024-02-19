@@ -10,6 +10,7 @@
 #include "kissFFT/kiss_fft.h"
 #include <condition_variable>
 #include <mutex>
+#include <getopt.h>
 
 // #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
@@ -19,12 +20,12 @@
 using namespace lime;
 using namespace std;
 
-std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurently
+std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurrently
 
 bool stopProgram(false);
 void intHandler(int dummy)
 {
-    //std::cerr << "Stoppping\n";
+    //std::cerr << "Stopping\n";
     stopProgram = true;
 }
 
@@ -63,7 +64,7 @@ static int printHelp(void)
     cerr << "    -s, --samplesCount\t\t Number of samples to receive" << endl;
     cerr << "    -t, --time\t\t Time duration in milliseconds to receive" << endl;
     cerr << "    -f, --fft\t\t Display Rx FFT plot" << endl;
-    cerr << "    --contellation\t\t Display IQ constellation plot" << endl;
+    cerr << "    --constellation\t\t Display IQ constellation plot" << endl;
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
     cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
     cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;

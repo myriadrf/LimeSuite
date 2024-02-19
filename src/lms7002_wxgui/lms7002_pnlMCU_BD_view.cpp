@@ -608,7 +608,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent& event)
     temps = temps + m_sTxtFileName;
     lblTestResultsFile->SetLabel(temps);
 
-    std::ifstream inFile(m_sTxtFileName);
+    std::ifstream inFile(std::string{ m_sTxtFileName });
 
     if (inFile.is_open())
     {
@@ -908,7 +908,7 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
     wxString m_sTxtFileName = _("lms7suite_mcu/TestResults.txt");
     lblTestResultsFile->SetLabel("Test results file: " + m_sTxtFileName);
 
-    std::ifstream inFile(m_sTxtFileName);
+    std::ifstream inFile(std::string{ m_sTxtFileName });
 
     if (inFile.is_open())
     {
