@@ -13,9 +13,10 @@ class FPGA_XTRX : public FPGA
   public:
     FPGA_XTRX(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI);
     virtual ~FPGA_XTRX(){};
-    OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0) override;
-    OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0) override;
-    OpStatus SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount);
+
+  protected:
+    OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int chipIndex = 0) override;
+    OpStatus SetPllFrequency(const uint8_t pllIndex, const double inputFreq, std::vector<FPGA_PLL_clock>& clocks) override;
 };
 
 } // namespace lime

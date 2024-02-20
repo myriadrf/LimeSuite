@@ -436,8 +436,9 @@ OpStatus FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool d
     @param clockCount number of clocks to configure
     @return 0-success, other-failure
 */
-OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
+OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, std::vector<FPGA_PLL_clock>& clocks)
 {
+    const uint8_t clockCount = clocks.size();
     lime::debug("FPGA SetPllFrequency: PLL[%i] input:%.3f MHz clockCount:%i", pllIndex, inputFreq / 1e6, clockCount);
     WriteRegistersBatch batch(this);
     const auto timeout = chrono::seconds(3);
@@ -589,7 +590,18 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
     batch.WriteRegister(0x0028, c15_c8_odds_byps);
     batch.Flush();
 
-    if (clockCount != 4 || clocks->index == 3) // TODO: this seems to be LimeSDR-Mini specific
+    // LimeSDR Mini, Mini v2: FPGA has only one PLL with 4 clocks
+    // Other boards have separate PLL for Rx/Tx, each with 2 clocks
+    bool startPLLconfig = clockCount != 4;
+    for (const auto& clk : clocks)
+    {
+        if (clk.index == 3)
+        {
+            startPLLconfig = true;
+            break;
+        }
+    }
+    if (startPLLconfig)
         WriteRegister(0x0023, reg23val | PLLCFG_START);
     if (waitForDone) //wait for config to activate
     {
@@ -841,7 +853,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
     bool comp = (epIndex==2 && format!=StreamConfig::FMT_INT12) ? false : true;
 
     const int samplesInPkt = comp ? samples12InPkt : samples16InPkt;
-    WriteRegister(0xFFFF, 1 << epIndex);
+    SelectModule(epIndex);
     WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
     WriteRegister(0x000E, comp ? 0x2 : 0x0); //16bit samples
 
@@ -929,15 +941,15 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
+OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int chipIndex)
 {
-    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g ch:%i",
+    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g chip:%i",
         txRate_Hz / 1e6,
         rxRate_Hz / 1e6,
         txPhase,
         rxPhase,
-        channel);
-    lime::FPGA::FPGA_PLL_clock clocks[2];
+        chipIndex);
+    SelectModule(chipIndex);
     OpStatus status = OpStatus::SUCCESS;
 
     const uint32_t addr = 0x002A;
@@ -950,12 +962,14 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
 
     if (rxRate_Hz >= 5e6)
     {
-        clocks[0].index = 0;
-        clocks[0].outFrequency = bypassRx ? 2 * rxRate_Hz : rxRate_Hz;
-        clocks[1].index = 1;
-        clocks[1].outFrequency = clocks[0].outFrequency;
-        clocks[1].phaseShift_deg = rxPhase;
-        status = SetPllFrequency(1, rxRate_Hz, clocks, 2);
+        std::vector<FPGA::FPGA_PLL_clock> rxClocks(2);
+        rxClocks[0].index = 0;
+        rxClocks[0].outFrequency = bypassRx ? 2 * rxRate_Hz : rxRate_Hz;
+
+        rxClocks[1].index = 1;
+        rxClocks[1].outFrequency = rxClocks[0].outFrequency;
+        rxClocks[1].phaseShift_deg = rxPhase;
+        status = SetPllFrequency(1, rxRate_Hz, rxClocks);
     }
     else
         status = SetDirectClocking(1);
@@ -965,12 +979,14 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
 
     if (txRate_Hz >= 5e6)
     {
-        clocks[0].index = 0;
-        clocks[0].outFrequency = bypassTx ? 2 * txRate_Hz : txRate_Hz;
-        clocks[1].index = 1;
-        clocks[1].outFrequency = clocks[0].outFrequency;
-        clocks[1].phaseShift_deg = txPhase;
-        status = SetPllFrequency(0, txRate_Hz, clocks, 2);
+        std::vector<FPGA::FPGA_PLL_clock> txClocks(2);
+        txClocks[0].index = 0;
+        txClocks[0].outFrequency = bypassTx ? 2 * txRate_Hz : txRate_Hz;
+
+        txClocks[1].index = 1;
+        txClocks[1].outFrequency = txClocks[0].outFrequency;
+        txClocks[1].phaseShift_deg = txPhase;
+        status = SetPllFrequency(0, txRate_Hz, txClocks);
     }
     else
         status = SetDirectClocking(0);
@@ -982,8 +998,11 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
 OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
 {
     lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz chipIndex:%i", txRate_Hz / 1e6, rxRate_Hz / 1e6, chipIndex);
+    SelectModule(chipIndex);
     //PrintStackTrace();
     const int pll_ind = (chipIndex == 1) ? 2 : 0;
+    const int txPLLindex = pll_ind;
+    const int rxPLLindex = txPLLindex + 1;
     OpStatus status = OpStatus::SUCCESS;
     uint32_t reg20;
     bool bypassTx = false;
@@ -1061,18 +1080,22 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     }
 
     bool phaseSearchSuccess = false;
-    lime::FPGA::FPGA_PLL_clock clocks[2];
-    clocks[0].index = 0;
-    clocks[0].outFrequency = bypassRx ? 2 * rxRate_Hz : rxRate_Hz;
-    clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
-    clocks[0].findPhase = false;
-    clocks[1] = clocks[0];
-    clocks[1].index = 1;
-    clocks[1].findPhase = true;
+    // FPGA Rx PLL, needs to have two clocks configured.
+    // CLK1 needs to do phase search
+    std::vector<lime::FPGA::FPGA_PLL_clock> rxClocks(2);
+    rxClocks[0].index = 0;
+    rxClocks[0].outFrequency = bypassRx ? 2 * rxRate_Hz : rxRate_Hz;
+    rxClocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
+    rxClocks[0].findPhase = false;
 
-    for (int i = 0; i < 10; i++) //attempt phase search 10 times
+    rxClocks[1] = rxClocks[0];
+    rxClocks[1].index = 1;
+    rxClocks[1].findPhase = true;
+
+    const int pllConfigRetryCount = 2;
+    for (int i = 0; i < pllConfigRetryCount; i++) // attempt phase search multiple times
     {
-        if (SetPllFrequency(pll_ind + 1, rxRate_Hz, clocks, 2) == OpStatus::SUCCESS)
+        if (SetPllFrequency(rxPLLindex, rxRate_Hz, rxClocks) == OpStatus::SUCCESS)
         {
             phaseSearchSuccess = true;
             break;
@@ -1088,14 +1111,15 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     {
         lime::error("LML RX phase search FAIL");
         status = OpStatus::ERROR;
-        clocks[0].index = 0;
-        clocks[0].phaseShift_deg = 0;
-        clocks[0].findPhase = false;
-        clocks[1].findPhase = false;
-        SetPllFrequency(pll_ind + 1, rxRate_Hz, clocks, 2);
+        rxClocks[0].index = 0;
+        rxClocks[0].phaseShift_deg = 0;
+        rxClocks[0].findPhase = false;
+        rxClocks[1].findPhase = false;
+        OpStatus status = SetPllFrequency(rxPLLindex, rxRate_Hz, rxClocks);
+        if (status != OpStatus::SUCCESS)
+            return status;
     }
 
-    WriteRegister(0xFFFF, 1 << chipIndex);
     uint16_t reg_000A = ReadRegister(0x000A);
     WriteRegister(0x000A, reg_000A & ~(RX_EN | TX_EN | TX_PTRN_EN | RX_PTRN_EN)); // clear test patterns
     {
@@ -1112,17 +1136,22 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     }
 
     phaseSearchSuccess = false;
-    clocks[0].index = 0;
-    clocks[0].outFrequency = bypassTx ? 2 * txRate_Hz : txRate_Hz;
-    clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
-    clocks[0].findPhase = false;
-    clocks[1] = clocks[0];
-    clocks[1].index = 1;
-    clocks[1].findPhase = true;
+    // FPGA Tx PLL, needs to have two clocks configured.
+    // any one of the clocks needs to do phase search
+    std::vector<lime::FPGA::FPGA_PLL_clock> txClocks(2);
+    txClocks[0].index = 0;
+    txClocks[0].outFrequency = bypassTx ? 2 * txRate_Hz : txRate_Hz;
+    txClocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
+    txClocks[0].findPhase = false;
+
+    txClocks[1] = txClocks[0];
+    txClocks[1].index = 1;
+    txClocks[1].findPhase = true;
     WriteRegister(0x000A, reg_000A | TX_PTRN_EN);
-    for (int i = 0; i < 10; i++) //attempt phase search 10 times
+
+    for (int i = 0; i < pllConfigRetryCount; i++)
     {
-        if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2) == OpStatus::SUCCESS)
+        if (SetPllFrequency(txPLLindex, txRate_Hz, txClocks) == OpStatus::SUCCESS)
         {
             phaseSearchSuccess = true;
             break;
@@ -1138,11 +1167,13 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     {
         lime::error("LML TX phase search FAIL");
         status = OpStatus::ERROR;
-        clocks[0].index = 0;
-        clocks[0].phaseShift_deg = 0;
-        clocks[0].findPhase = false;
-        clocks[1].findPhase = false;
-        SetPllFrequency(pll_ind, txRate_Hz, clocks, 2);
+        txClocks[0].phaseShift_deg = 0;
+        txClocks[0].findPhase = false;
+        txClocks[1].phaseShift_deg = 0;
+        txClocks[1].findPhase = false;
+        OpStatus status = SetPllFrequency(txPLLindex, txRate_Hz, txClocks);
+        if (status != OpStatus::SUCCESS)
+            return status;
     }
 
     //Restore registers
@@ -1170,7 +1201,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
 
 int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
 {
-    WriteRegister(0xFFFF, 1 << epIndex);
+    SelectModule(epIndex);
     StopStreaming();
     // TODO: connection->ResetStreamBuffers();
     WriteRegister(0x0008, 0x0100 | 0x2);
@@ -1258,6 +1289,11 @@ void FPGA::GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descrip
     desc.gatewareVersion = std::to_string(int(gw.version));
     desc.gatewareRevision = std::to_string(int(gw.revision));
     desc.hardwareVersion = std::to_string(int(gw.hardwareVersion));
+}
+
+OpStatus FPGA::SelectModule(uint8_t chipIndex)
+{
+    return WriteRegister(0xFFFF, 1 << chipIndex);
 }
 
 } //namespace lime

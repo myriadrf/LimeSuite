@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "SamplesPacket.h"
 #include "DataPacket.h"
@@ -48,8 +49,8 @@ class FPGA
         double rd_actualFrequency;
     };
 
-    virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0);
-    virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0);
+    virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int chipIndex = 0);
+    virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int chipIndex = 0);
     double DetectRefClk(double fx3Clk = 100e6);
 
     static int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
@@ -78,8 +79,9 @@ class FPGA
     static void GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc);
 
   protected:
+    OpStatus SelectModule(uint8_t chipIndex);
     OpStatus WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title = "");
-    OpStatus SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
+    virtual OpStatus SetPllFrequency(uint8_t pllIndex, double inputFreq, std::vector<FPGA_PLL_clock>& outputs);
     OpStatus SetDirectClocking(int clockIndex);
     std::shared_ptr<ISPI> fpgaPort;
     std::shared_ptr<ISPI> lms7002mPort;
