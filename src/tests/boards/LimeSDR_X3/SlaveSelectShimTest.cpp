@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "tests/include/limesuite/CommsMock.h"
-#include "SlaveSelectShim.h"
+#include "LimeSDR_X3/SlaveSelectShim.h"
 
 using namespace lime;
 using namespace lime::testing;

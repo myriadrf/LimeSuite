@@ -10,7 +10,6 @@
 #include <fstream>
 #include <algorithm>
 #include <signal.h>
-#include <getopt.h>
 
 #include "limesuite/DeviceHandle.h"
 #include "limesuite/DeviceRegistry.h"

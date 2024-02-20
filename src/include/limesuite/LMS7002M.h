@@ -10,7 +10,9 @@
 #include "limesuite/commonTypes.h"
 #include "limesuite/config.h"
 #include "limesuite/LMS7002M_parameters.h"
+#include "limesuite/OpStatus.h"
 
+#include <array>
 #include <cstdarg>
 #include <cstdint>
 #include <functional>
@@ -136,19 +138,19 @@ class LIME_API LMS7002M
      * @param enable true to enable, false to disable
      * @return 0 - success, other - failure
      */
-    int EnableChannel(TRXDir dir, const uint8_t channel, const bool enable);
+    OpStatus EnableChannel(TRXDir dir, const uint8_t channel, const bool enable);
 
     /*!
      * @brief Writes all registers from host to chip
      * @return 0-success, other-failure
      */
-    int UploadAll();
+    OpStatus UploadAll();
 
     /*!
      * @brief Reads all registers from the chip to host
      * @return 0-success, other-failure
      */
-    int DownloadAll();
+    OpStatus DownloadAll();
 
     /*!
      * @brief Reads all chip configuration and checks if it matches with local registers copy.
@@ -163,25 +165,25 @@ class LIME_API LMS7002M
      * @param copySX Whether to copy the SX registers or not.
      * @return 0-success, other-failure
      */
-    int CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
+    OpStatus CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
 
     /*!
      * @brief Sends reset signal to chip, after reset enables B channel controls
      * @return 0-success, other-failure
      */
-    int ResetChip();
+    OpStatus ResetChip();
 
     /*!
      * Perform soft-reset sequence over SPI
      * @return 0 - success, other - failure
      */
-    int SoftReset();
+    OpStatus SoftReset();
 
     /*!
      * @brief Resets the logic registers to their default state.
      * @return 0 - success, other - failure
      */
-    int ResetLogicRegisters();
+    OpStatus ResetLogicRegisters();
 
     /*!
      * @brief Reads configuration file and uploads registers to chip
@@ -189,14 +191,14 @@ class LIME_API LMS7002M
      * @param tuneDynamicValues Whether to tune the dynamic values or not
      * @return 0 - success, other - failure
      */
-    int LoadConfig(const std::string& filename, bool tuneDynamicValues = true);
+    OpStatus LoadConfig(const std::string& filename, bool tuneDynamicValues = true);
 
     /*!
      * @brief Reads all registers from chip and saves to file
      * @param filename destination filename
      * @return 0-success, other failure
      */
-    int SaveConfig(const std::string& filename);
+    OpStatus SaveConfig(const std::string& filename);
 
     /*!
      * @brief Returns given parameter value from chip register
@@ -223,7 +225,7 @@ class LIME_API LMS7002M
      * @param value new parameter value
      * @return 0 - success, other - failure
      */
-    int Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t value, bool fromChip = false);
+    OpStatus Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t value, bool fromChip = false);
 
     /*!
      * @brief Change given parameter value
@@ -234,7 +236,7 @@ class LIME_API LMS7002M
      * @param fromChip read initial value directly from chip
      * @return 0 - success, other - failure
      */
-    int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
+    OpStatus Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
 
     /*!
      * @brief Write given data value to whole register
@@ -243,7 +245,7 @@ class LIME_API LMS7002M
      * @param toChip whether we're writing to the chip or not
      * @return 0-success, other-failure
      */
-    int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
+    OpStatus SPI_write(uint16_t address, uint16_t data, bool toChip = false);
 
     /*!
      * @brief Reads whole register value from given address
@@ -252,14 +254,14 @@ class LIME_API LMS7002M
      * @param fromChip read value directly from chip
      * @return register value
     */
-    uint16_t SPI_read(uint16_t address, bool fromChip = false, int* status = 0);
+    uint16_t SPI_read(uint16_t address, bool fromChip = false, OpStatus* status = 0);
 
     /*!
      * @brief Performs registers test by writing known data and confirming readback data
      * @param fileName The name of the file to write the test output to.
      * @return 0-registers test passed, other-failure
      */
-    int RegistersTest(const std::string& fileName = "registersTest.txt");
+    OpStatus RegistersTest(const std::string& fileName = "registersTest.txt");
 
     /*!
      * @brief Get parameter by name
@@ -274,7 +276,7 @@ class LIME_API LMS7002M
      * @param useExtLoopback Whether to use external loopback or not.
      * @return 0 - success, other - failure
      */
-    int CalibrateRx(float_type bandwidth_Hz, const bool useExtLoopback = false);
+    OpStatus CalibrateRx(float_type bandwidth_Hz, const bool useExtLoopback = false);
 
     /*!
      * @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
@@ -282,46 +284,46 @@ class LIME_API LMS7002M
      * @param useExtLoopback Whether to use external loopback or not.
      * @return 0 - success, other - failure
      */
-    int CalibrateTx(float_type bandwidth_Hz, const bool useExtLoopback = false);
+    OpStatus CalibrateTx(float_type bandwidth_Hz, const bool useExtLoopback = false);
 
     /**
      * @brief Tunes the Low Pass Filter for the TX direction.
      * @param tx_lpf_freq_RF The frequency (in Hz) to tune the filter to.
      * @return 0 - success, other - failure
      */
-    int TuneTxFilter(const float_type tx_lpf_freq_RF);
+    OpStatus TuneTxFilter(const float_type tx_lpf_freq_RF);
 
     /**
      * @brief Tunes the Low Pass Filter for the RX direction.
      * @param rx_lpf_freq_RF The frequency (in Hz) to tune the filter to.
      * @return 0 - success, other - failure
      */
-    int TuneRxFilter(const float_type rx_lpf_freq_RF);
+    OpStatus TuneRxFilter(const float_type rx_lpf_freq_RF);
 
     /*!
      * @brief Calibrates the internal Analog to Digital Converter on the chip.
      * @param clkDiv The clock division ratio for measurement loop.
      * @return 0 for success, else error
      */
-    int CalibrateInternalADC(int clkDiv = 32);
+    OpStatus CalibrateInternalADC(int clkDiv = 32);
 
     /*!
      * @brief Calibrates the RP_BIAS of the chip.
      * @return 0 for success, else error
      */
-    int CalibrateRP_BIAS();
+    OpStatus CalibrateRP_BIAS();
 
     /*!
      * @brief Calibrates the TX gain.
      * @return 0 for success, else error
      */
-    int CalibrateTxGain();
+    OpStatus CalibrateTxGain();
 
     /**
      * @brief Calibrates the Analog RSSI
      * @return 0 for success, else error
      */
-    int CalibrateAnalogRSSI_DC_Offset();
+    OpStatus CalibrateAnalogRSSI_DC_Offset();
 
     /*!
      * Set the RX PGA gain in dB
@@ -329,7 +331,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetRBBPGA_dB(const float_type gain, const Channel channel);
+    OpStatus SetRBBPGA_dB(const float_type gain, const Channel channel);
 
     /*!
      * Gets the RX PGA gain in dB
@@ -344,7 +346,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetRFELNA_dB(const float_type gain, const Channel channel);
+    OpStatus SetRFELNA_dB(const float_type gain, const Channel channel);
 
     /*!
      * Gets the RX LNA gain in dB
@@ -359,7 +361,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetRFELoopbackLNA_dB(const float_type gain, const Channel channel);
+    OpStatus SetRFELoopbackLNA_dB(const float_type gain, const Channel channel);
 
     /*!
      * Get the actual RX loopback LNA gain in dB
@@ -374,7 +376,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetRFETIA_dB(const float_type gain, const Channel channel);
+    OpStatus SetRFETIA_dB(const float_type gain, const Channel channel);
 
     /*!
      * Get the RX TIA gain in dB
@@ -389,7 +391,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetTRFPAD_dB(const float_type gain, const Channel channel);
+    OpStatus SetTRFPAD_dB(const float_type gain, const Channel channel);
 
     /*!
      * @brief Gets the actual TX PAD gain.
@@ -404,7 +406,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetTBBIAMP_dB(const float_type gain, const Channel channel);
+    OpStatus SetTBBIAMP_dB(const float_type gain, const Channel channel);
 
     /*!
      * @brief Gets the TBB frontend gain.
@@ -419,7 +421,7 @@ class LIME_API LMS7002M
      * @param channel The channel to set it for
      * @return 0 for success, else error
      */
-    int SetTRFLoopbackPAD_dB(const float_type gain, const Channel channel);
+    OpStatus SetTRFLoopbackPAD_dB(const float_type gain, const Channel channel);
 
     /*!
      * @brief Gets the actual TX loopback PAD gain.
@@ -443,7 +445,7 @@ class LIME_API LMS7002M
      * @param path The enumeration value of the path to set it to
      * @return 0-success, other-failure
      */
-    int SetPathRFE(PathRFE path);
+    OpStatus SetPathRFE(PathRFE path);
 
     /*!
      * @brief Gets the currently set RFE path
@@ -456,7 +458,7 @@ class LIME_API LMS7002M
      * @param band 1 or 2
      * @return 0 - success, other - failure
      */
-    int SetBandTRF(const int band);
+    OpStatus SetBandTRF(const int band);
 
     /*!
      * Get the TRF Band selection.
@@ -471,7 +473,7 @@ class LIME_API LMS7002M
      * @param path The index of the antenna to use.
      * @return 0-success, other-failure
      */
-    int SetPath(TRXDir direction, uint8_t channel, uint8_t path);
+    OpStatus SetPath(TRXDir direction, uint8_t channel, uint8_t path);
 
     /*!
      * @brief Sets the reference clock of the SX
@@ -479,7 +481,7 @@ class LIME_API LMS7002M
      * @param freq_Hz The frequency to set the reference clock to (in Hz)
      * @return 0-success, other-failure
      */
-    int SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
+    OpStatus SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
 
     /*!
      * @brief Returns reference clock in Hz used for SXT or SXR.
@@ -502,7 +504,7 @@ class LIME_API LMS7002M
      * @param output if not null outputs calculated CGEN parameters
      * @return 0-success, other-cannot deliver desired frequency
      */
-    int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
+    OpStatus SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
 
     /*!
      * @brief Gets whether the VCO comparators of the clock generator are locked or not.
@@ -524,7 +526,7 @@ class LIME_API LMS7002M
      * @param output if not null outputs intermediate calculation values
      * @return 0-success, other-cannot deliver requested frequency
      */
-    int SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output = nullptr);
+    OpStatus SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output = nullptr);
 
     /*!
      * @brief Sets SX frequency with Reference clock spur cancelation
@@ -533,7 +535,7 @@ class LIME_API LMS7002M
      * @param BW The bandwidth (in Hz)
      * @return 0-success, other-cannot deliver requested frequency
      */
-    int SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
+    OpStatus SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
 
     /*!
      * @brief Gets whether the VCO comparators of the LO synthesizer are locked or not.
@@ -544,19 +546,8 @@ class LIME_API LMS7002M
 
     ///VCO modules available for tuning
     enum class VCO_Module : uint8_t { VCO_CGEN, VCO_SXR, VCO_SXT };
-
-    /*!
-     * @brief Performs VCO tuning operations for CLKGEN
-     * @return 0-success, other-failure
-     */
-    int TuneCGENVCO();
-
-    /*!
-     * @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
-     * @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
-     * @return 0-success, other-failure
-     */
-    int TuneVCO(VCO_Module module);
+    OpStatus TuneCGENVCO();
+    OpStatus TuneVCO(VCO_Module module);
 
     /*!
      * @brief Loads given DC_REG values into registers
@@ -565,7 +556,7 @@ class LIME_API LMS7002M
      * @param Q DC_REG Q value
      * @return 0-success, other-failure
      */
-    int LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q);
+    OpStatus LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q);
 
     /*!
      * @brief Sets chosen NCO's frequency
@@ -574,7 +565,7 @@ class LIME_API LMS7002M
      * @param freq_Hz desired NCO frequency
      * @return 0-success, other-failure
      */
-    int SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz);
+    OpStatus SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz);
 
     /*!
      * @brief Returns chosen NCO's frequency in Hz
@@ -591,7 +582,7 @@ class LIME_API LMS7002M
      * @param angle_deg phase offset angle in degrees
      * @return 0-success, other-failure
      */
-    int SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg);
+    OpStatus SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg);
 
     /*!
      * @brief Sets chosen NCO's phase offset angle
@@ -600,7 +591,7 @@ class LIME_API LMS7002M
      * @param angle_deg phase offset angle in degrees
      * @return 0-success, other-failure
      */
-    int SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg);
+    OpStatus SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg);
 
     /*!
      * @brief Returns chosen NCO's phase offset angle in radians
@@ -625,7 +616,7 @@ class LIME_API LMS7002M
      * @param coefCount Number of coefficients to read.
      * @return 0-success, other-failure.
      */
-    int GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount);
+    OpStatus GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount);
 
     /*!
      * @brief Uploads given FIR coefficients to chip
@@ -637,7 +628,7 @@ class LIME_API LMS7002M
      *
      * This function does not change GFIR*_L or GFIR*_N parameters, they have to be set manually
      */
-    int SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
+    OpStatus SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount);
 
     /*!
      * @brief Sets up the GFIR filter.
@@ -647,7 +638,7 @@ class LIME_API LMS7002M
      * @param bandwidth The bandwidth (in Hz) to set the filter for.
      * @return 0-success, other-failure
      */
-    int SetGFIRFilter(TRXDir dir, Channel ch, bool enabled, double bandwidth);
+    OpStatus SetGFIRFilter(TRXDir dir, Channel ch, bool enabled, double bandwidth);
 
     /*!
      * @brief Sets the frequencies of the NCO.
@@ -657,7 +648,7 @@ class LIME_API LMS7002M
      * @param phaseOffset The phase offset of the NCO to set.
      * @return 0-success, other-failure
      */
-    int SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
+    OpStatus SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
     /*!
      * @brief Gets the current frequencies of the NCO.
@@ -675,7 +666,7 @@ class LIME_API LMS7002M
      * @param frequencyOffset The offset of the NCO (in Hz).
      * @return 0-success, other-failure
      */
-    int SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset);
+    OpStatus SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
     /*!
      * @brief Gets the current phases of the NCO (currently returns an empty vector)
@@ -693,7 +684,7 @@ class LIME_API LMS7002M
      * @param decimation The HBD decimation ratio (actual ratio is pow(2, decimation + 1), 7 for bypass)
      * @return 0-success, other-failure
      */
-    int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
+    OpStatus SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
     /*!
      * @brief Gets the current sample rate of the specified channel.
@@ -741,7 +732,7 @@ class LIME_API LMS7002M
      * @param enable Enables or disables the
      * @return 0-success, other-failure
      */
-    int SetRxDCRemoval(const bool enable);
+    OpStatus SetRxDCRemoval(const bool enable);
 
     /*!
      * Get the RX DC removal filter enabled.
@@ -754,7 +745,7 @@ class LIME_API LMS7002M
      * @param enable true - use same PLL for Tx and Rx, false - us seperate PLLs
      * @return 0-success, other-failure
      */
-    int EnableSXTDD(bool enable);
+    OpStatus EnableSXTDD(bool enable);
 
     /*!
      * Set the TX DC offset adjustment.
@@ -763,7 +754,7 @@ class LIME_API LMS7002M
      * @param Q the imaginary adjustment [+1.0, -1.0]
      * @return 0-success, other-failure
      */
-    int SetDCOffset(TRXDir dir, const float_type I, const float_type Q);
+    OpStatus SetDCOffset(TRXDir dir, const float_type I, const float_type Q);
 
     /*!
      * Readback the TX DC offset adjustment.
@@ -781,7 +772,7 @@ class LIME_API LMS7002M
      * @param gainQ the imaginary gain adjustment [+1.0, 0.0]
      * @return 0 - success, other - failure
      */
-    int SetIQBalance(const TRXDir dir, const float_type phase, const float_type gainI, const float_type gainQ);
+    OpStatus SetIQBalance(const TRXDir dir, const float_type phase, const float_type gainI, const float_type gainQ);
 
     /*!
      * Get the IQ imbalance correction.
@@ -804,7 +795,7 @@ class LIME_API LMS7002M
      * @param clk_id The enumerator value of the clock to set.
      * @param freq The frequency (in Hz) to set the clock to.
      */
-    void SetClockFreq(ClockID clk_id, double freq);
+    OpStatus SetClockFreq(ClockID clk_id, double freq);
 
     /*!
      * @brief Modifies the defaults of this instance's Register map.
@@ -852,7 +843,7 @@ class LIME_API LMS7002M
      * @param toChip force write to chip
      * @return 0-success, other-failure
      */
-    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
+    OpStatus SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
 
     /*!
      * @brief Batches multiple register reads into least amount of transactions
@@ -861,10 +852,10 @@ class LIME_API LMS7002M
      * @param cnt number of registers to read
      * @return 0-success, other-failure
      */
-    int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
+    OpStatus SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 
     /// @brief The clock generator change callback type
-    typedef int (*CGENChangeCallbackType)(void* userData);
+    typedef OpStatus (*CGENChangeCallbackType)(void* userData);
 
     /*!
      * @brief Sets the function that gets executed when the CGEN changes.
@@ -914,7 +905,7 @@ class LIME_API LMS7002M
      * @brief Sets given module registers to default values
      * @return 0-success, other-failure
      */
-    virtual int SetDefaults(MemorySection module);
+    virtual OpStatus SetDefaults(MemorySection module);
 
     LMS7002M_RegistersMap* BackupRegisterMap(void);
     void RestoreRegisterMap(LMS7002M_RegistersMap* backup);
@@ -940,11 +931,11 @@ class LIME_API LMS7002M
     uint32_t GetRSSI();
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
 
-    int CalibrateTxGainSetup();
+    OpStatus CalibrateTxGainSetup();
 
-    int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream& ss);
+    OpStatus RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream& ss);
 
-    int Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop);
+    OpStatus Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop);
 
     virtual void Log(const char* text, LogType type);
 
@@ -962,7 +953,7 @@ class LIME_API LMS7002M
     std::shared_ptr<ISPI> controlPort;
     std::array<int, 2> opt_gain_tbb;
     double _cachedRefClockRate;
-    int LoadConfigLegacyFile(const std::string& filename);
+    OpStatus LoadConfigLegacyFile(const std::string& filename);
 };
 } // namespace lime
 #endif

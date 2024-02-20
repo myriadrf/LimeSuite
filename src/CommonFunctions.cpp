@@ -19,4 +19,15 @@ const std::string strFormat(const char* format, ...)
     return std::string(ctemp);
 }
 
+std::string ToString(TRXDir dir)
+{
+    switch (dir)
+    {
+    case TRXDir::Rx:
+        return "Rx";
+    case TRXDir::Tx:
+        return "Tx";
+    }
+}
+
 } // namespace lime

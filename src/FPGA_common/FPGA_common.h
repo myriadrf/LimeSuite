@@ -26,9 +26,9 @@ class FPGA
     FPGA(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI);
     virtual ~FPGA(){};
 
-    int StartStreaming();
-    int StopStreaming();
-    int ResetTimestamp();
+    OpStatus StartStreaming();
+    OpStatus StopStreaming();
+    OpStatus ResetTimestamp();
 
     /** @brief Structure for holding FPGA's Phase-Locked Loop (PLL) clock information. */
     struct FPGA_PLL_clock {
@@ -49,8 +49,8 @@ class FPGA
         double rd_actualFrequency;
     };
 
-    virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase);
-    virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int channel);
+    virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase);
+    virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int channel);
     double DetectRefClk(double fx3Clk = 100e6);
 
     static int FPGAPacketPayload2Samples(
@@ -62,12 +62,12 @@ class FPGA
     static int Samples2FPGAPacketPayloadFloat(
         const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
     virtual void EnableValuesCache(bool enabled);
-    virtual int WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt);
-    virtual int ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);
-    int WriteRegister(uint32_t addr, uint32_t val);
+    virtual OpStatus WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt);
+    virtual OpStatus ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);
+    OpStatus WriteRegister(uint32_t addr, uint32_t val);
     int ReadRegister(uint32_t addr);
-    int WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
-    int ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);
+    OpStatus WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
+    OpStatus ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);
 
     /** @brief Structure containing the gateware information of the FPGA */
     struct GatewareInfo {
@@ -80,15 +80,15 @@ class FPGA
     static void GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc);
 
   protected:
-    int WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title = "");
-    int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
-    int SetDirectClocking(int clockIndex);
+    OpStatus WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title = "");
+    OpStatus SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
+    OpStatus SetDirectClocking(int clockIndex);
     std::shared_ptr<ISPI> fpgaPort;
     std::shared_ptr<ISPI> lms7002mPort;
 
   private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
-    int SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val);
+    OpStatus SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool doPhaseSearch, uint16_t& reg23val);
     bool useCache;
     std::map<uint16_t, uint16_t> regsCache;
 };

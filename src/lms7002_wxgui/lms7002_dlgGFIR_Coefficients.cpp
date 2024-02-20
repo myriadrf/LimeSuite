@@ -5,6 +5,8 @@
 #include "limesuite/commonTypes.h"
 #include "limesuite/LMS7002M.h"
 
+using namespace lime;
+
 lms7002_dlgGFIR_Coefficients::lms7002_dlgGFIR_Coefficients(wxWindow* parent, wxWindowID id, const wxString& title)
     : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, 0)
 {
@@ -118,7 +120,8 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile(wxCommandEvent& event)
         return;
 
     std::vector<double> coefficients(200, 0);
-    int iVal = lime::CoefficientFileParser::getCoefficients(dlg.GetPath().ToStdString(), coefficients, 200);
+    auto parser = CoefficientFileParser(dlg.GetPath().ToStdString());
+    int iVal = parser.getCoefficients(coefficients, 200);
 
     switch (iVal)
     {
@@ -164,7 +167,8 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile(wxCommandEvent& event)
         gridCoef->GetCellValue(i, 0).ToDouble(&coefficients[i]);
     }
 
-    lime::CoefficientFileParser::saveToFile(dlg.GetPath().ToStdString(), coefficients);
+    auto parser = CoefficientFileParser(dlg.GetPath().ToStdString());
+    parser.saveToFile(coefficients);
 }
 
 void lms7002_dlgGFIR_Coefficients::OnClearTable(wxCommandEvent& event)
@@ -231,23 +235,23 @@ int lms7002_dlgGFIR_Coefficients::ReadCoefficients(lime::TRXDir direction, uint8
     const int maxCoefCount = gfirIndex == 2 ? 120 : 40;
     coefficients.resize(maxCoefCount, 0);
 
-    int status = lmsControl->GetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
-    if (status < 0)
+    OpStatus status = lmsControl->GetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    if (status != OpStatus::SUCCESS)
     {
         wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
-        return status;
+        return -1;
     }
 
     SetCoefficients(coefficients);
-    return status;
+    return 0;
 }
 
 void lms7002_dlgGFIR_Coefficients::WriteCoefficients(lime::TRXDir direction, uint8_t gfirIndex, lime::LMS7002M* lmsControl)
 {
     std::vector<double> coefficients = GetCoefficients();
-    int status = lmsControl->SetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
+    OpStatus status = lmsControl->SetGFIRCoefficients(direction, gfirIndex, &coefficients[0], coefficients.size());
 
-    if (status < 0)
+    if (status != OpStatus::SUCCESS)
     {
         wxMessageBox(_("Error writing GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
     }

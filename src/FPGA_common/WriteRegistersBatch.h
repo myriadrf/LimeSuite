@@ -15,7 +15,7 @@ class WriteRegistersBatch
     WriteRegistersBatch(FPGA* fpga);
     ~WriteRegistersBatch();
 
-    int Flush();
+    OpStatus Flush();
     void WriteRegister(uint16_t addr, uint16_t value);
 
   private:

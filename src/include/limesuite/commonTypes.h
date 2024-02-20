@@ -5,6 +5,8 @@ namespace lime {
 /// @brief The direction of the transmission
 enum class TRXDir : bool { Rx, Tx };
 
+const char* ToCString(TRXDir dir);
+
 /// @brief Structure describing the range possible.
 struct Range {
     /// @brief Constructs the range structure,

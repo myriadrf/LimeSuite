@@ -16,7 +16,7 @@ template<uint8_t chCount> class SamplesPacket
 {
   public:
     /** The size of the structure that holds the sample packet information. */
-    static constexpr int headerSize = sizeof(SamplesPacket);
+    static constexpr int headerSize = 3 * sizeof(uint8_t*) * chCount + 17;
 
     /**
       @brief Constructs the sample packet class.
@@ -150,7 +150,7 @@ template<uint8_t chCount> class SamplesPacket
     }
 
     /**
-      @brief Scales the packet's samples' I and Q values by the given multiplier. 
+      @brief Scales the packet's samples' I and Q values by the given multiplier.
       @tparam T The type of samples the packet is holding.
       @param iScale The multiplier with which to multiply all the I values.
       @param qScale The multiplier with which to multiply all the Q values.

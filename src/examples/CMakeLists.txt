@@ -8,9 +8,11 @@ endif()
 
 if (UNIX)
     find_package(Gnuplot)
+    set_package_properties(Gnuplot PROPERTIES
+        TYPE OPTIONAL
+    )
     if (GNUPLOT_FOUND)
         add_definitions(-DUSE_GNU_PLOT)
-        message(STATUS "GNUPlot Found")
     endif()
 endif()
 
@@ -47,4 +49,6 @@ target_link_libraries(legacyGpio_example PUBLIC ${MAIN_LIBRARY_NAME})
 add_executable(legacySingleRX legacy/singleRX.cpp)
 set_target_properties(legacySingleRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${examplesOutputDir}/legacy RUNTIME_OUTPUT_NAME singleRX)
 target_link_libraries(legacySingleRX PUBLIC ${MAIN_LIBRARY_NAME})
-target_compile_options(legacySingleRX PRIVATE -Wno-unused-but-set-variable)
+if(CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(legacySingleRX PRIVATE -Wno-unused-but-set-variable)
+endif()

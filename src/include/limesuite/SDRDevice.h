@@ -12,6 +12,7 @@
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/OpStatus.h"
 #include "limesuite/GainTypes.h"
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
@@ -152,7 +153,7 @@ class LIME_API SDRDevice
     };
 
     /// @brief Configuration settings for a stream.
-    struct StreamConfig {
+    struct LIME_API StreamConfig {
         /// @brief Extra configuration settings for a stream.
         struct Extras {
             /// @brief The settings structure for a packet transmission.
@@ -352,7 +353,7 @@ class LIME_API SDRDevice
     /// @brief Configures the device using the given configuration.
     /// @param config The configuration to set up the device with.
     /// @param moduleIndex The device index to configure.
-    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
+    virtual OpStatus Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /// @brief Gets the Descriptor of the SDR Device.
     /// @return The Descriptor of the device.
@@ -360,21 +361,21 @@ class LIME_API SDRDevice
 
     /// @brief Initializes the device with initial settings.
     /// @return The success status of the initialization (0 on success).
-    virtual int Init() = 0;
+    virtual OpStatus Init() = 0;
 
     /// @brief Resets the device.
-    virtual void Reset() = 0;
+    virtual OpStatus Reset() = 0;
 
     /// @brief Gets the current status of the GPS locks.
     /// @param status The pointer to which to output the GPS status.
-    virtual void GetGPSLock(GPS_Lock* status) = 0;
+    virtual OpStatus GetGPSLock(GPS_Lock* status) = 0;
 
     /// @brief Enables or disables the specified channel.
     /// @param moduleIndex The device index to configure.
     /// @param trx The direction of the channel to configure.
     /// @param channel The channel to configure.
     /// @param enable Whether to enable the channel or not.
-    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
+    virtual OpStatus EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
 
     /// @brief Gets the frequency of a specified clock.
     /// @param clk_id The clock ID to get the frequency of.
@@ -386,7 +387,7 @@ class LIME_API SDRDevice
     /// @param clk_id The clock ID to set the frequency of.
     /// @param freq The new frequency of the specified clock (in Hz).
     /// @param channel The channel to set the frequency of.
-    virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
+    virtual OpStatus SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
     /// @brief Gets the current frequency of the given channel.
     /// @param moduleIndex The device index to read from.
@@ -400,7 +401,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to configure.
     /// @param channel The channel to configure.
     /// @param frequency The frequency to set the channel to (in Hz).
-    virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
+    virtual OpStatus SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
 
     /// @brief Gets the current frequency of the NCO.
     /// @param moduleIndex The device index to read from.
@@ -417,7 +418,7 @@ class LIME_API SDRDevice
     /// @param index The index of the NCO to use.
     /// @param frequency The frequency of the NCO to set (in Hz).
     /// @param phaseOffset Phase offset angle (in degrees)
-    virtual void SetNCOFrequency(
+    virtual OpStatus SetNCOFrequency(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) = 0;
 
     /// @brief Gets the current offset of the NCO compared to the main frequency.
@@ -440,7 +441,7 @@ class LIME_API SDRDevice
     /// @param channel The channel to configure.
     /// @param sampleRate The target sample rate (in Hz)
     /// @param oversample The RF oversampling ratio.
-    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
+    virtual OpStatus SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
 
     /// @brief Gets the current value of the specified gain.
     /// @param moduleIndex The device index to read from.
@@ -449,7 +450,7 @@ class LIME_API SDRDevice
     /// @param gain The type of gain to get the data of.
     /// @param value The value of the gain (in dB).
     /// @return The status code of the operation.
-    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
+    virtual OpStatus GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
     /// @brief Sets the gain level of a specified gain.
     /// @param moduleIndex The device index to configure.
@@ -458,7 +459,7 @@ class LIME_API SDRDevice
     /// @param gain The type of gain to set.
     /// @param value The amount of gain to set (in dB).
     /// @return The status code of the operation.
-    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    virtual OpStatus SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
 
     /// @brief Gets the current frequency of the Low Pass Filter.
     /// @param moduleIndex The device index to read from.
@@ -472,7 +473,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to configure.
     /// @param channel The channel to configure.
     /// @param lpf The bandwidth of the Low Pass Filter to set it to (in Hz).
-    virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
+    virtual OpStatus SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
 
     /// @brief Gets the currently set antenna of the device.
     /// @param moduleIndex The device index to read from.
@@ -486,7 +487,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to configure.
     /// @param channel The channel to configure.
     /// @param path The ID of the antenna to set the device to use.
-    virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
+    virtual OpStatus SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
 
     /// @brief Gets the current status of the test signal mode.
     /// @param moduleIndex The device index to read from.
@@ -502,7 +503,7 @@ class LIME_API SDRDevice
     /// @param signalConfiguration The configuration of the test mode to set.
     /// @param dc_i The I value of the test mode to send (0 for defaults)
     /// @param dc_q The Q value of the test mode to send (0 for defaults)
-    virtual void SetTestSignal(uint8_t moduleIndex,
+    virtual OpStatus SetTestSignal(uint8_t moduleIndex,
         TRXDir direction,
         uint8_t channel,
         ChannelConfig::Direction::TestSignal signalConfiguration,
@@ -521,7 +522,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to configure.
     /// @param channel The channel to configure.
     /// @param isAutomatic Whether to use the DC corrector bypass or not (false = bypass the corrector, true = use the corrector)
-    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
+    virtual OpStatus SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
 
     /// @brief Gets the DC I and Q corrector values.
     /// @param moduleIndex The device index to read from.
@@ -535,7 +536,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to configure.
     /// @param channel The channel to configure.
     /// @param offset The offsets of the I and Q channels.
-    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
+    virtual OpStatus SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
 
     /// @brief Gets the current I and Q gain corrector values.
     /// @param moduleIndex The device index to read from.
@@ -549,7 +550,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to configure.
     /// @param channel The channel to configure.
     /// @param balance The I and Q corrector values to set.
-    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
+    virtual OpStatus SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
 
     /// @brief Gets whether the VCO comparators of the clock generator are locked or not.
     /// @param moduleIndex The device index to read from.
@@ -579,17 +580,17 @@ class LIME_API SDRDevice
     /// @param address The address of the memory to write to.
     /// @param value The value to write to the device's memory.
     /// @param useFPGA Whether to write to the FPGA or not (default false)
-    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
+    virtual OpStatus WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
 
     /// @brief Loads the configuration of a device from a given file.
     /// @param moduleIndex The device index to write the configuration into.
     /// @param filename The file to read the data from.
-    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual OpStatus LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
 
     /// @brief Saves the current configuration of the device into a given file.
     /// @param moduleIndex The device index to save the data from.
     /// @param filename The file to save the information to.
-    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual OpStatus SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
 
     /// @brief Gets the given parameter from the device.
     /// @param moduleIndex The device index to configure.
@@ -603,7 +604,7 @@ class LIME_API SDRDevice
     /// @param channel The channel to configure.
     /// @param parameterKey The key of the paremeter to write to.
     /// @param value The value to write to the address.
-    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
+    virtual OpStatus SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
 
     /// @brief Gets the given parameter from the device.
     /// @param moduleIndex The device index to get the data from.
@@ -621,21 +622,23 @@ class LIME_API SDRDevice
     /// @param msb The index of the most significant bit of the address to modify. (16-bit register)
     /// @param lsb The index of the least significant bit of the address to modify. (16-bit register)
     /// @param value The value to write to the address.
-    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
+    virtual OpStatus SetParameter(
+        uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
 
     /// @brief Calibrates the given channel for a given bandwidth.
     /// @param moduleIndex The device index to configure.
     /// @param trx The direction of the channel to configure.
     /// @param channel The channel to configure.
     /// @param bandwidth The bandwidth of the channel to calibrate for (in Hz).
-    virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
+    virtual OpStatus Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
 
     /// @brief Configures the GFIR with the settings.
     /// @param moduleIndex The device index to configure.
     /// @param trx The direction of the channel to configure.
     /// @param channel The channel to configure.
     /// @param settings The settings of the GFIR to set.
-    virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
+    virtual OpStatus ConfigureGFIR(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
 
     /// @brief Gets the current coefficients of a GFIR.
     /// @param moduleIndex The device index to get the coefficients from.
@@ -651,7 +654,7 @@ class LIME_API SDRDevice
     /// @param channel The channel to set the filter of.
     /// @param gfirID The ID of the GFIR to set.
     /// @param coefficients The coefficients (normalized in the range [-1; 1]) to set the GFIR to.
-    virtual void SetGFIRCoefficients(
+    virtual OpStatus SetGFIRCoefficients(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients) = 0;
 
     /// @brief Sets the GFIR to use.
@@ -660,11 +663,11 @@ class LIME_API SDRDevice
     /// @param channel The channel to set the filter of.
     /// @param gfirID The ID of the GFIR to set.
     /// @param enabled Whether the specifed GFIR should be enabled or disabled.
-    virtual void SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
+    virtual OpStatus SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
 
     /// @brief Synchronizes the cached changed register values on the host with the real values on the device.
     /// @param toChip The direction in which to synchronize (true = uploads to the device).
-    virtual void Synchronize(bool toChip) = 0;
+    virtual OpStatus Synchronize(bool toChip) = 0;
 
     /// @brief Enable or disable register value caching on the host side.
     /// @param enable Whether to enable or disable the register value caching (true = enabled).
@@ -678,13 +681,13 @@ class LIME_API SDRDevice
     /// @brief Sets the hardware timestamp to the provided one by applying a constant offset.
     /// @param moduleIndex The device index to configure.
     /// @param now What the definition of the current time should be.
-    virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
+    virtual OpStatus SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
 
     /// @brief Sets up all the streams on a device.
     /// @param config The configuration to use for setting the streams up.
     /// @param moduleIndex The index of the device to set up.
     /// @return Success status (0 on success).
-    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
+    virtual OpStatus StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
 
     /// @brief Starts all the set up streams on the device.
     /// @param moduleIndex The index of the device to start the streams on.
@@ -728,46 +731,46 @@ class LIME_API SDRDevice
     /// @param samples The samples to upload to the device.
     /// @param count The amount of samples to upload to the device.
     /// @return Operation status (0 on success).
-    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+    virtual OpStatus UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
     {
-        return -1;
+        return OpStatus::NOT_IMPLEMENTED;
     }
 
     /// @copydoc ISPI::SPI()
     /// @param spiBusAddress The SPI address of the device to use.
-    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual OpStatus SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count);
 
     /// @copydoc II2C::I2CWrite()
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
+    virtual OpStatus I2CWrite(int address, const uint8_t* data, uint32_t length);
 
     /// @copydoc II2C::I2CRead()
-    virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
+    virtual OpStatus I2CRead(int address, uint8_t* dest, uint32_t length);
 
     /***********************************************************************
      * GPIO API
      **********************************************************************/
 
     /// @copydoc IComms::GPIOWrite()
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIOWrite(const uint8_t* buffer, const size_t bufLength);
 
     /// @copydoc IComms::GPIORead()
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIORead(uint8_t* buffer, const size_t bufLength);
 
     /// @copydoc IComms::GPIODirWrite()
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIODirWrite(const uint8_t* buffer, const size_t bufLength);
 
     /// @copydoc IComms::GPIODirRead()
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIODirRead(uint8_t* buffer, const size_t bufLength);
 
     /***********************************************************************
      * Aribtrary settings API
      **********************************************************************/
 
     /// @copydoc IComms::CustomParameterWrite()
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters);
 
     /// @copydoc IComms::CustomParameterRead()
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters);
 
     /// @brief The definition of a function to run when data is received.
     typedef void (*DataCallbackType)(bool, const uint8_t*, const uint32_t);
@@ -798,10 +801,10 @@ class LIME_API SDRDevice
     /// @param length The length of the memory to upload.
     /// @param callback The callback to call for status updates.
     /// @return The success status of the operation (0 on success).
-    virtual int UploadMemory(
+    virtual OpStatus UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
     {
-        return -1;
+        return OpStatus::NOT_IMPLEMENTED;
     };
 
     /// @brief Writes given data into a given memory address in EEPROM memory.
@@ -809,14 +812,20 @@ class LIME_API SDRDevice
     /// @param region Information of the region in which to write the data to.
     /// @param data The data to write into the specified memory.
     /// @return The operation success state.
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
+    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+    {
+        return OpStatus::NOT_IMPLEMENTED;
+    };
 
     /// @brief Reads data from a given memory address in EEPROM memory.
     /// @param storage The storage device to read from.
     /// @param region Information of the region from which to read the memory.
     /// @param data The storage buffer for the data being read.
     /// @return The operation success state.
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
+    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+    {
+        return OpStatus::NOT_IMPLEMENTED;
+    };
 };
 
 } // namespace lime

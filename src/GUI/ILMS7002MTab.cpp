@@ -75,7 +75,7 @@ int ILMS7002MTab::LMS_ReadLMSReg(ControllerType* lms, uint16_t address, uint16_t
 }
 int ILMS7002MTab::LMS_WriteLMSReg(ControllerType* lms, uint16_t address, uint16_t value)
 {
-    return lms->SPI_write(address, value);
+    return lms->SPI_write(address, value) == OpStatus::SUCCESS ? 0 : -1;
 }
 
 int ILMS7002MTab::LMS_ReadParam(ControllerType* lmsControl, const LMS7Parameter& param, uint16_t* value)

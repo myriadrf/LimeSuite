@@ -3,7 +3,7 @@
 #include "DeviceExceptions.h"
 #include "USBTransferContext_FT601.h"
 
-using namespace lime;
+namespace lime {
 
 static const int STREAM_BULK_WRITE_ADDRESS = 0x03;
 static const int STREAM_BULK_READ_ADDRESS = 0x83;
@@ -15,6 +15,8 @@ FT601::FT601(void* usbContext)
     : USBGeneric(usbContext)
 #ifdef __unix
     , mUsbCounter(0)
+#else
+    , mFTHandle(nullptr)
 #endif
 {
 }
@@ -37,7 +39,7 @@ bool FT601::Connect(uint16_t vid, uint16_t pid, const std::string& serial)
     if (FT_FAILED(ftStatus))
     {
         ReportError(ENODEV, "Failed to list USB Devices");
-        return -1;
+        return false;
     }
 
     FT_AbortPipe(mFTHandle, STREAM_BULK_READ_ADDRESS);
@@ -115,7 +117,7 @@ int32_t FT601::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int
     DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
     if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
     {
-        if (FT_GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesTransferred, FALSE) == FALSE)
+        if (FT_GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesTransferred, FALSE) != FT_OK)
         {
             ReinitPipe(endPointAddr);
             ulBytesTransferred = -1;
@@ -149,23 +151,26 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 
     ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
-    FT_InitializeOverlapped(mFTHandle, &contexts[index].inOvLap);
+
+    USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[index];
+
+    FT_InitializeOverlapped(mFTHandle, context->inOvLap);
 
     if (endPointAddr == STREAM_BULK_READ_ADDRESS)
     {
-        ftStatus = FT_ReadPipe(mFTHandle, STREAM_BULK_READ_ADDRESS, buffer, length, &ulActual, &contexts[index].inOvLap);
+        ftStatus = FT_ReadPipe(mFTHandle, STREAM_BULK_READ_ADDRESS, buffer, length, &ulActual, context->inOvLap);
     }
     else
     {
-        ftStatus = FT_WritePipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS, buffer, length, &ulActual, &contexts[index].inOvLap);
+        ftStatus = FT_WritePipe(mFTHandle, STREAM_BULK_WRITE_ADDRESS, buffer, length, &ulActual, context->inOvLap);
     }
 
-    contexts[index].endPointAddr = endPointAddr;
+    context->endPointAddr = endPointAddr;
 
     if (ftStatus != FT_IO_PENDING)
     {
         lime::error("ERROR BEGIN DATA TRANSFER %d", ftStatus);
-        contexts[index].used = false;
+        context->used = false;
         return -1;
     }
 
@@ -174,43 +179,58 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
 
 bool FT601::WaitForXfer(int contextHandle, int32_t timeout_ms)
 {
-    if (contextHandle >= 0 && contexts[contextHandle].used == true)
+    if (contextHandle < 0)
     {
-        DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
-
-        if (dwRet == WAIT_OBJECT_0)
-        {
-            return true;
-        }
+        return true;
     }
 
-    return true; //there is nothing to wait for (signal wait finished)
+    USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[contextHandle];
+
+    if (!context->used)
+    {
+        return true; //there is nothing to wait for (signal wait finished)
+    }
+
+    DWORD dwRet = WaitForSingleObject(context->inOvLap->hEvent, timeout_ms);
+
+    if (dwRet == WAIT_OBJECT_0)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 {
-    if (contextHandle >= 0 && contexts[contextHandle].used == true)
+    if (contextHandle < 0)
     {
-        ULONG ulActualBytesTransferred;
-        FT_STATUS ftStatus = FT_OK;
-
-        ftStatus = FT_GetOverlappedResult(mFTHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
-
-        if (ftStatus != FT_OK)
-        {
-            length = 0;
-        }
-        else
-        {
-            length = ulActualBytesTransferred;
-        }
-
-        FT_ReleaseOverlapped(mFTHandle, &contexts[contextHandle].inOvLap);
-        contexts[contextHandle].used = false;
-        return length;
+        return 0;
     }
 
-    return 0;
+    USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[contextHandle];
+    if (!context->used)
+    {
+        return 0;
+    }
+
+    ULONG ulActualBytesTransferred;
+    FT_STATUS ftStatus = FT_OK;
+
+    ftStatus = FT_GetOverlappedResult(mFTHandle, context->inOvLap, &ulActualBytesTransferred, FALSE);
+
+    if (ftStatus != FT_OK)
+    {
+        length = 0;
+    }
+    else
+    {
+        length = ulActualBytesTransferred;
+    }
+
+    FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
+    context->used = false;
+    return length;
 }
 
 void FT601::AbortEndpointXfers(uint8_t endPointAddr)
@@ -219,10 +239,12 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
-        if (contexts[i].used == true && contexts[i].endPointAddr == endPointAddr)
+        USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[i];
+
+        if (context->used && context->endPointAddr == endPointAddr)
         {
-            FT_ReleaseOverlapped(mFTHandle, &contexts[i].inOvLap);
-            contexts[i].used = false;
+            FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
+            context->used = false;
         }
     }
 
@@ -235,7 +257,55 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
 
     WaitForXfers(endPointAddr);
 }
+
+void FT601::WaitForXfers(uint8_t endPointAddr)
+{
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[i];
+
+        if (context->endPointAddr == endPointAddr)
+        {
+            WaitForXfer(i, 250);
+            FinishDataXfer(nullptr, 0, i);
+        }
+    }
+}
 #endif
+
+int FT601::GetUSBContextIndex()
+{
+    std::unique_lock<std::mutex> lock{ contextsLock };
+
+    USBTransferContext_FT601* FT601contexts = static_cast<USBTransferContext_FT601*>(contexts);
+
+    if (FT601contexts == nullptr)
+    {
+        return -1;
+    }
+
+    int i = 0;
+    bool contextFound = false;
+    // Find not used context
+    for (i = 0; i < USB_MAX_CONTEXTS; i++)
+    {
+        if (!FT601contexts[i].isTransferUsed)
+        {
+            contextFound = true;
+            break;
+        }
+    }
+
+    if (!contextFound)
+    {
+        lime::error("No contexts left for reading or sending data"s);
+        return -1;
+    }
+
+    FT601contexts[i].isTransferUsed = true;
+
+    return i;
+}
 
 int FT601::ResetStreamBuffers()
 {
@@ -371,3 +441,5 @@ int FT601::FT_SetStreamPipe(unsigned char ep, size_t size)
     return 0;
 }
 #endif
+
+} // namespace lime

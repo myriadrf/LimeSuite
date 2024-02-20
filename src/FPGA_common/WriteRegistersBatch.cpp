@@ -22,9 +22,9 @@ WriteRegistersBatch::~WriteRegistersBatch()
 
 /// @brief Writes the modified values into the FPGA.
 /// @return The operation status (0 on success).
-int WriteRegistersBatch::Flush()
+OpStatus WriteRegistersBatch::Flush()
 {
-    int status = owner->WriteRegisters(addrs.data(), values.data(), addrs.size());
+    OpStatus status = owner->WriteRegisters(addrs.data(), values.data(), addrs.size());
     addrs.clear();
     values.clear();
     return status;

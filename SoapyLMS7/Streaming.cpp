@@ -216,7 +216,7 @@ SoapySDR::Stream* SoapyLMS7::setupStream(
 
     // Create the stream
     auto returnValue = sdrDevice->StreamSetup(config, 0);
-    if (returnValue != 0)
+    if (returnValue != OpStatus::SUCCESS)
     {
         throw std::runtime_error("SoapyLMS7::setupStream() failed: " + std::string(GetLastErrorMessage()));
     }

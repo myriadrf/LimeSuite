@@ -22,8 +22,8 @@ class TRXLooper
     virtual ~TRXLooper();
 
     uint64_t GetHardwareTimestamp() const;
-    void SetHardwareTimestamp(const uint64_t now);
-    virtual void Setup(const lime::SDRDevice::StreamConfig& cfg);
+    OpStatus SetHardwareTimestamp(const uint64_t now);
+    virtual OpStatus Setup(const lime::SDRDevice::StreamConfig& cfg);
     virtual void Start();
     virtual void Stop();
 

@@ -13,9 +13,9 @@ class FPGA_X3 : public FPGA
   public:
     FPGA_X3(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSPI);
     virtual ~FPGA_X3(){};
-    int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase) override;
-    int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int channel) override;
-    int SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount);
+    OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase) override;
+    OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int channel) override;
+    OpStatus SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount);
 };
 
 } // namespace lime

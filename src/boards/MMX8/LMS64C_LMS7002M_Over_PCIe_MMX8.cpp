@@ -8,17 +8,17 @@ LMS64C_LMS7002M_Over_PCIe_MMX8::LMS64C_LMS7002M_Over_PCIe_MMX8(std::shared_ptr<L
 {
 }
 
-int LMS64C_LMS7002M_Over_PCIe_MMX8::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+OpStatus LMS64C_LMS7002M_Over_PCIe_MMX8::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     return SPI(0, MOSI, MISO, count);
 }
 
-int LMS64C_LMS7002M_Over_PCIe_MMX8::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+OpStatus LMS64C_LMS7002M_Over_PCIe_MMX8::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count, subdeviceIndex);
 }
 
-int LMS64C_LMS7002M_Over_PCIe_MMX8::ResetDevice(int chipSelect)
+OpStatus LMS64C_LMS7002M_Over_PCIe_MMX8::ResetDevice(int chipSelect)
 {
     return LMS64CProtocol::DeviceReset(pipe, chipSelect, subdeviceIndex);
 }

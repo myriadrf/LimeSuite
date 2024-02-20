@@ -61,15 +61,15 @@ bool LMS7002M_Validate(const SDRDevice::SDRConfig& cfg, std::vector<std::string>
     for (int i = 0; i < 2; ++i)
     {
         const SDRDevice::ChannelConfig& ch = cfg.channel[i];
-        if (ch.rx.enabled && not InRange(ch.rx.centerFrequency, minLO, maxLO))
+        if (ch.rx.enabled && !InRange(ch.rx.centerFrequency, minLO, maxLO))
             errors.push_back(strFormat("Rx ch%i LO (%g) out of range [%g:%g]", i, ch.rx.centerFrequency, minLO, maxLO));
-        if (ch.tx.enabled && not InRange(ch.tx.centerFrequency, minLO, maxLO))
+        if (ch.tx.enabled && !InRange(ch.tx.centerFrequency, minLO, maxLO))
             errors.push_back(strFormat("Tx ch%i LO (%g) out of range [%g:%g]", i, ch.tx.centerFrequency, minLO, maxLO));
 
-        if (ch.rx.enabled && not InRange(ch.rx.path, 0, 3))
+        if (ch.rx.enabled && !InRange(ch.rx.path, 0, 3))
             errors.push_back(strFormat("Rx ch%i invalid path(%i)", i, ch.rx.path));
 
-        if (ch.tx.enabled && not InRange(ch.tx.path, 0, 2))
+        if (ch.tx.enabled && !InRange(ch.tx.path, 0, 2))
             errors.push_back(strFormat("Tx ch%i invalid path(%i)", i, ch.tx.path));
 
         if (abs(ch.rx.NCOoffset) > ch.rx.sampleRate / 2)

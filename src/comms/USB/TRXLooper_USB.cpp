@@ -47,7 +47,7 @@ TRXLooper_USB::~TRXLooper_USB()
     }
 }
 
-void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
+OpStatus TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
 {
     mConfig = config;
 
@@ -61,7 +61,7 @@ void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
         TxSetup();
     }
 
-    TRXLooper::Setup(config);
+    return TRXLooper::Setup(config);
 }
 
 int TRXLooper_USB::TxSetup()
@@ -126,16 +126,16 @@ void TRXLooper_USB::TransmitPacketsLoop()
     SamplesPacketType* srcPkt = nullptr;
 
     bool isBufferFull = false;
-    uint payloadSize = 0;
-    uint bytesUsed = 0;
-    uint packetsCreated = 0;
+    uint32_t payloadSize = 0;
+    uint32_t bytesUsed = 0;
+    uint32_t packetsCreated = 0;
 
     const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    uint samplesInPkt = (packed ? 1360 : 1020) / conversion.channelCount;
+    uint32_t samplesInPkt = (packed ? 1360 : 1020) / conversion.channelCount;
 
     const bool mimo = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size()) > 1;
     const int bytesForFrame = (packed ? 3 : 4) * (mimo ? 2 : 1);
-    uint maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
+    uint32_t maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
 
     const uint8_t safeTxEndPt = txEndPt; // To make sure no undefined behaviour happens when killing the thread
 
@@ -197,8 +197,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
             header->ignoreTimestamp(!srcPkt->metadata.waitForTimestamp);
 
-            const uint freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
-            uint transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint>(srcPkt->size()));
+            const uint32_t freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
+            uint32_t transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint32_t>(srcPkt->size()));
             transferCount = std::min(transferCount, samplesInPkt);
 
             if (transferCount > 0)

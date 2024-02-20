@@ -21,17 +21,17 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public IComms
      */
     LMS64C_FPGA_Over_PCIe_MMX8(std::shared_ptr<LitePCIe> dataPort, uint32_t subdeviceIndex);
 
-    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
-    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual OpStatus SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual OpStatus SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
-    virtual int ProgramWrite(
+    virtual OpStatus ProgramWrite(
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override;
 
-    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) override;
-    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) override;
+    virtual OpStatus MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) override;
+    virtual OpStatus MemoryRead(uint32_t address, void* data, uint32_t dataLength) override;
 
   private:
     PCIE_CSR_Pipe pipe;

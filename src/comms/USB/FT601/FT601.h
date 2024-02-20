@@ -1,9 +1,10 @@
 #pragma once
 
 #include "USBGeneric.h"
+#include "limesuite/config.h"
+#include "USBTransferContext_FT601.h"
 
 #ifndef __unix__
-    #include "windows.h"
     #include "FTD3XXLibrary/FTD3XX.h"
 #endif
 
@@ -42,6 +43,7 @@ class FT601 : public USBGeneric
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
+    virtual int GetUSBContextIndex() override;
 
     /**
       @brief Resets the stream buffers of the device.
@@ -53,6 +55,7 @@ class FT601 : public USBGeneric
 #ifndef __unix__
     FT_HANDLE mFTHandle;
     int ReinitPipe(unsigned char ep);
+    virtual void WaitForXfers(uint8_t endPointAddr) override;
 #else
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);

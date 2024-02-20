@@ -15,7 +15,7 @@ class TRXLooper_USB : public TRXLooper
     TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt);
     virtual ~TRXLooper_USB();
 
-    virtual void Setup(const SDRDevice::StreamConfig& config) override;
+    virtual OpStatus Setup(const SDRDevice::StreamConfig& config) override;
 
   protected:
     virtual int RxSetup() override;

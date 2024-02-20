@@ -22,7 +22,11 @@ MemoryPool::MemoryPool(int blockCount, int blockSize, int alignment, const std::
 {
     for (int i = 0; i < blockCount; ++i)
     {
+#if __unix__
         void* ptr = std::aligned_alloc(alignment, blockSize);
+#else
+        void* ptr = _aligned_malloc(blockSize, alignment);
+#endif
         if (!ptr)
         {
             throw std::runtime_error("Failed to allocate memory");
@@ -42,11 +46,21 @@ MemoryPool::~MemoryPool()
     while (!mFreeBlocks.empty())
     {
         void* ptr = mFreeBlocks.top();
+#ifdef __unix__
         free(ptr);
+#else
+        _aligned_free(ptr);
+#endif
         mFreeBlocks.pop();
     }
     for (auto ptr : mUsedBlocks)
+    {
+#ifdef __unix__
         free(ptr);
+#else
+        _aligned_free(ptr);
+#endif
+    }
 }
 
 /// @brief Gives a block of memory of a given size.

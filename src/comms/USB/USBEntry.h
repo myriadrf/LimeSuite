@@ -3,6 +3,7 @@
 
 #include "limesuite/DeviceRegistry.h"
 #include "USBEntry.h"
+#include <cstdint>
 #include <set>
 
 #ifdef __unix__

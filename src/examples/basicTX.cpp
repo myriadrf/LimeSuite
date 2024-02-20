@@ -105,7 +105,7 @@ int main(int argc, char** argv)
     std::vector<std::vector<complex32f_t>> txPattern(2);
     const int txPacketCount = 4;
     const int samplesInPkt = 1024;
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (size_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(txPacketCount * samplesInPkt);
         for (int j = 0; j < txPacketCount; ++j)

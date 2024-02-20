@@ -15,9 +15,9 @@ FPGA_Mini::FPGA_Mini(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms700
 {
 }
 
-int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
+OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
 {
-    int status = 0;
+    OpStatus status = OpStatus::SUCCESS;
 
     FPGA_PLL_clock clocks[4];
     if ((txRate_Hz >= 5e6) && (rxRate_Hz >= 5e6))
@@ -48,7 +48,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
     }
 
     status = SetDirectClocking(0);
-    if (status != 0)
+    if (status != OpStatus::SUCCESS)
     {
         return status;
     }
@@ -57,7 +57,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
     return status;
 }
 
-int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
     uint32_t reg20;
     const double rxPhC1 = 89.46;
@@ -120,7 +120,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         clocks[1] = clocks[0];
         clocks[2] = clocks[0];
         clocks[3] = clocks[0];
-        if (SetPllFrequency(0, rxRate_Hz, clocks, 4) == 0)
+        if (SetPllFrequency(0, rxRate_Hz, clocks, 4) == OpStatus::SUCCESS)
         {
             rxPhaseSearchSuccess = true;
             break;
@@ -151,7 +151,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             clocks[2] = clocks[0];
             clocks[3] = clocks[0];
             WriteRegister(0x000A, 0x0200);
-            if (SetPllFrequency(0, txRate_Hz, clocks, 4) == 0)
+            if (SetPllFrequency(0, txRate_Hz, clocks, 4) == OpStatus::SUCCESS)
             {
                 txPhaseSearchSuccess = true;
                 break;
@@ -184,9 +184,10 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     if (!rxPhaseSearchSuccess || !txPhaseSearchSuccess)
     {
         SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz);
-        return -1;
+        // TODO: should SetInterfaceFreq override failure?
+        return OpStatus::ERROR;
     }
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 } //namespace lime

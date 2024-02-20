@@ -422,16 +422,16 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll(wxCommandEvent& event)
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
 
-    int status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, useExtLoopback);
+    OpStatus status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, useExtLoopback);
 
-    if (status != 0)
+    if (status != OpStatus::SUCCESS)
     {
         // wxMessageBox(wxString::Format(_("Tx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
         UpdateGUI();
         return;
     }
 
-    status |= lmsControl->CalibrateRx(bandwidth_MHz * 1e6, useExtLoopback);
+    status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, useExtLoopback);
     // if (status != 0)
     //     wxMessageBox(wxString::Format(_("Rx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
     // else

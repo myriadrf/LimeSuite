@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "limesuite/config.h"
+#include "limesuite/OpStatus.h"
 
 namespace lime {
 
@@ -20,7 +21,7 @@ class LIME_API ISPI
       @param count Input/output data length.
       @returns Whether the operation succeedded or not.
      */
-    virtual int SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual OpStatus SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 
     /**
       @brief Writing/reading registers for specific slave.
@@ -30,7 +31,7 @@ class LIME_API ISPI
       @param count Input/output data length.
       @returns Whether the operation succeedded or not.
      */
-    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
+    virtual OpStatus SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 };
 
 /** @brief An interface for Inter-Integrated Circuit communications */
@@ -46,7 +47,7 @@ class LIME_API II2C
       @param length Output data length.
       @return 0 on success.
      */
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
+    virtual OpStatus I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
 
     /**
       @brief Read from an available Inter-Integrated Circuit slave.
@@ -59,7 +60,7 @@ class LIME_API II2C
       @param length Number of bytes to read.
       @return 0 on success.
      */
-    virtual int I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
+    virtual OpStatus I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
 };
 
 /// @brief The structure for writing and reading custom parameters
@@ -82,7 +83,7 @@ class IComms : public ISPI
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Reads general-purpose input/output (GPIO) values from device
@@ -90,7 +91,7 @@ class IComms : public ISPI
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIORead(uint8_t* buffer, const size_t bufLength) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Write general-purpose input/output (GPIO) direction control values to device.
@@ -98,7 +99,7 @@ class IComms : public ISPI
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Read general-purpose input/output (GPIO) direction control configuration from device.
@@ -106,21 +107,21 @@ class IComms : public ISPI
       @param bufLength The length of @p buffer.
       @return The operation success state.
      */
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIODirRead(uint8_t* buffer, const size_t bufLength) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Writes a given list of custom parameters to the device.
       @param parameters The list of parameters to write.
       @return The operation success state.
      */
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Reads a given list of custom parameters from the device.
       @param[inout] parameters The list of parameters to read. The read values will end up in this vector.
       @return The operation success state.
      */
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief The function to call when writing a program into the device using @ref lime::IComms::ProgramWrite().
@@ -140,9 +141,9 @@ class IComms : public ISPI
       @param callback The progress callback to call when writing data.
       @return The operation success state.
      */
-    virtual int ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)
+    virtual OpStatus ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr)
     {
-        return -1;
+        return OpStatus::NOT_IMPLEMENTED;
     }
 
     /**
@@ -150,7 +151,7 @@ class IComms : public ISPI
       @param chipSelect Which chip to reset.
       @return Whether the operation succeeded or not.
      */
-    virtual int ResetDevice(int chipSelect) { return -1; };
+    virtual OpStatus ResetDevice(int chipSelect) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Writes given values into a given memory address in EEPROM memory.
@@ -159,7 +160,7 @@ class IComms : public ISPI
       @param dataLength The length of the data to write.
       @return The operation success state.
      */
-    virtual int MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return -1; };
+    virtual OpStatus MemoryWrite(uint32_t address, const void* data, uint32_t dataLength) { return OpStatus::NOT_IMPLEMENTED; };
 
     /**
       @brief Reads memory from a given memory address in EEPROM memory.
@@ -168,7 +169,7 @@ class IComms : public ISPI
       @param dataLength The length of the destination buffer (the amount of bytes to read).
       @return The operation success state.
      */
-    virtual int MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return -1; };
+    virtual OpStatus MemoryRead(uint32_t address, void* data, uint32_t dataLength) { return OpStatus::NOT_IMPLEMENTED; };
 };
 
 } // namespace lime

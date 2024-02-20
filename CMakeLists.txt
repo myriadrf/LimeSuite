@@ -135,7 +135,7 @@ endif()
 
 if (MSVC)
     include_directories(${PROJECT_SOURCE_DIR}/external/msvc)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
     set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
     set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
 
@@ -182,8 +182,11 @@ if(ENABLE_TESTING)
     set(INSTALL_GMOCK OFF) # Don't install the GMock headers
     set(INSTALL_GTEST OFF) # Don't install the GTest headers
 
-    FetchContent_MakeAvailable(googletest)
+    if (MSVC)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif()
 
+    FetchContent_MakeAvailable(googletest)
     enable_testing()
 endif()
 
@@ -227,11 +230,7 @@ add_subdirectory(SoapyLMS7)
 ########################################################################
 ## udev rules for linux usb
 ########################################################################
-if (DEFINED UDEV_RULES_PATH)
-    install(
-        FILES ${CMAKE_CURRENT_SOURCE_DIR}/udev-rules/64-limesuite.rules
-        DESTINATION ${UDEV_RULES_PATH})
-endif()
+add_subdirectory(udev-rules)
 
 ########################################################################
 ## Doxygen
@@ -289,6 +288,26 @@ add_subdirectory(amarisoft-plugin)
 #########################################################################
 include(FeatureSummary)
 message(STATUS "")
+message(STATUS "######################################################")
+feature_summary(WHAT PACKAGES_FOUND
+    DESCRIPTION "Packages found:"
+)
+
+message(STATUS "######################################################")
+feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND
+    DESCRIPTION "Missing required packages:"
+)
+
+message(STATUS "######################################################")
+feature_summary(WHAT RECOMMENDED_PACKAGES_NOT_FOUND
+    DESCRIPTION "Missing recommended packages:"
+)
+
+message(STATUS "######################################################")
+feature_summary(WHAT OPTIONAL_PACKAGES_NOT_FOUND
+    DESCRIPTION "Missing optional packages:"
+)
+
 message(STATUS "######################################################")
 message(STATUS "## ${PROJECT_NAME} enabled features")
 message(STATUS "######################################################")

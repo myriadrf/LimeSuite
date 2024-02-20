@@ -6,8 +6,7 @@ namespace lime {
 
 // templates with fixed iteration count allow to produce more efficient instructions
 
-template<uint32_t srcCount>
-static void fastPath_complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src)
+template<uint32_t srcCount> static void fastPath_complex16_to_complex32f(complex32f_t* dest, const complex16_t* src)
 {
     constexpr float scale = 1.0f / 32768.0f;
     for (uint16_t i = 0; i < srcCount; i += 2)
@@ -20,8 +19,7 @@ static void fastPath_complex16_to_complex32f(complex32f_t* __restrict__ dest, co
     }
 }
 
-static void slowPath_complex16_to_complex32f(
-    complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src, uint32_t srcCount)
+static void slowPath_complex16_to_complex32f(complex32f_t* dest, const complex16_t* src, uint32_t srcCount)
 {
     constexpr float scale = 1.0f / 32768.0f;
     for (uint16_t i = 0; i < srcCount; i += 2)
@@ -34,7 +32,7 @@ static void slowPath_complex16_to_complex32f(
     }
 }
 
-void complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t* __restrict__ src, uint32_t srcCount)
+void complex16_to_complex32f(complex32f_t* dest, const complex16_t* src, uint32_t srcCount)
 {
     switch (srcCount)
     {
@@ -57,8 +55,7 @@ void complex16_to_complex32f(complex32f_t* __restrict__ dest, const complex16_t*
 }
 
 template<uint32_t srcCount>
-static void fastPath_complex16_to_complex32f_unzip(
-    complex32f_t* __restrict__ destA, complex32f_t* __restrict__ destB, const complex16_t* __restrict__ src)
+static void fastPath_complex16_to_complex32f_unzip(complex32f_t* destA, complex32f_t* destB, const complex16_t* src)
 {
     constexpr float scale = 1.0f / 32768.0f;
     for (uint32_t i = 0; i < srcCount / 2; i++)
@@ -73,7 +70,7 @@ static void fastPath_complex16_to_complex32f_unzip(
 }
 
 static void slowPath_complex16_to_complex32f_unzip(
-    complex32f_t* __restrict__ destA, complex32f_t* __restrict__ destB, const complex16_t* __restrict__ src, uint32_t srcCount)
+    complex32f_t* destA, complex32f_t* destB, const complex16_t* src, uint32_t srcCount)
 {
     constexpr float scale = 1.0f / 32768.0f;
     for (uint32_t i = 0; i < srcCount / 2; i++)
@@ -87,8 +84,7 @@ static void slowPath_complex16_to_complex32f_unzip(
     }
 }
 
-void complex16_to_complex32f_unzip(
-    complex32f_t* __restrict__ destA, complex32f_t* __restrict__ destB, const complex16_t* __restrict__ src, uint32_t srcCount)
+void complex16_to_complex32f_unzip(complex32f_t* destA, complex32f_t* destB, const complex16_t* src, uint32_t srcCount)
 {
     switch (srcCount)
     {
@@ -110,8 +106,7 @@ void complex16_to_complex32f_unzip(
     }
 }
 
-template<uint32_t srcCount>
-static void fastPath_complex32f_to_complex16(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ src)
+template<uint32_t srcCount> static void fastPath_complex32f_to_complex16(complex16_t* dest, const complex32f_t* src)
 {
     const int16_t scale = 32767;
     for (uint32_t i = 0; i < srcCount; i++)
@@ -121,8 +116,7 @@ static void fastPath_complex32f_to_complex16(complex16_t* __restrict__ dest, con
     }
 }
 
-static void slowPath_complex32f_to_complex16(
-    complex16_t* __restrict__ dest, const complex32f_t* __restrict__ src, uint32_t srcCount)
+static void slowPath_complex32f_to_complex16(complex16_t* dest, const complex32f_t* src, uint32_t srcCount)
 {
     const int16_t scale = 32767;
     for (uint32_t i = 0; i < srcCount; i++)
@@ -132,7 +126,7 @@ static void slowPath_complex32f_to_complex16(
     }
 }
 
-void complex32f_to_complex16(complex16_t* __restrict__ dest, const complex32f_t* __restrict__ src, uint32_t srcCount)
+void complex32f_to_complex16(complex16_t* dest, const complex32f_t* src, uint32_t srcCount)
 {
     switch (srcCount)
     {
@@ -155,8 +149,7 @@ void complex32f_to_complex16(complex16_t* __restrict__ dest, const complex32f_t*
 }
 
 template<uint32_t srcCount>
-static void fastPath_complex32f_to_complex16_zip(
-    complex16_t* __restrict__ dest, const complex32f_t* __restrict__ srcA, const complex32f_t* __restrict__ srcB)
+static void fastPath_complex32f_to_complex16_zip(complex16_t* dest, const complex32f_t* srcA, const complex32f_t* srcB)
 {
     constexpr int16_t scale = 32767;
     for (uint32_t i = 0; i < srcCount; i++)
@@ -170,7 +163,7 @@ static void fastPath_complex32f_to_complex16_zip(
 }
 
 static void slowPath_complex32f_to_complex16_zip(
-    complex16_t* __restrict__ dest, const complex32f_t* __restrict__ srcA, const complex32f_t* __restrict__ srcB, uint32_t srcCount)
+    complex16_t* dest, const complex32f_t* srcA, const complex32f_t* srcB, uint32_t srcCount)
 {
     constexpr int16_t scale = 32767;
     for (uint32_t i = 0; i < srcCount; i++)
@@ -183,8 +176,7 @@ static void slowPath_complex32f_to_complex16_zip(
     }
 }
 
-void complex32f_to_complex16_zip(
-    complex16_t* __restrict__ dest, const complex32f_t* __restrict__ srcA, const complex32f_t* __restrict__ srcB, uint32_t srcCount)
+void complex32f_to_complex16_zip(complex16_t* dest, const complex32f_t* srcA, const complex32f_t* srcB, uint32_t srcCount)
 {
     switch (srcCount)
     {

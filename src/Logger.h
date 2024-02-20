@@ -8,11 +8,14 @@
 #define LIMESUITE_LOGGER_H
 
 #include "limesuite/config.h"
+#include "limesuite/OpStatus.h"
 #include <string>
 #include <cstdarg>
 #include <cerrno>
 #include <stdexcept>
 #include <cstdint>
+
+#undef ERROR
 
 namespace lime {
 
@@ -96,6 +99,7 @@ LIME_API const char* GetLastErrorMessage(void);
  * \return a non-zero status code to return
  */
 LIME_API int ReportError(const int errnum);
+LIME_API lime::OpStatus ReportError(const lime::OpStatus errnum);
 
 /*!
  * Report an error as an integer code and a formatted message string.
@@ -104,6 +108,7 @@ LIME_API int ReportError(const int errnum);
  * \return a non-zero status code to return
  */
 inline int ReportError(const int errnum, const char* format, ...);
+inline lime::OpStatus ReportError(const lime::OpStatus errnum, const char* format, ...);
 
 /*!
  * Report an error as a formatted message string.
@@ -121,6 +126,7 @@ inline int ReportError(const char* format, ...);
  * \return a non-zero status code to return
  */
 LIME_API int ReportError(const int errnum, const char* format, va_list argList);
+LIME_API lime::OpStatus ReportError(const lime::OpStatus errnum, const char* format, va_list argList);
 
 } // namespace lime
 
@@ -210,6 +216,15 @@ inline int lime::ReportError(const int errnum, const char* format, ...)
     va_list argList;
     va_start(argList, format);
     int status = lime::ReportError(errnum, format, argList);
+    va_end(argList);
+    return status;
+}
+
+inline lime::OpStatus lime::ReportError(const lime::OpStatus errnum, const char* format, ...)
+{
+    va_list argList;
+    va_start(argList, format);
+    lime::OpStatus status = lime::ReportError(errnum, format, argList);
     va_end(argList);
     return status;
 }

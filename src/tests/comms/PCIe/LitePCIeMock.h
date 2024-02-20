@@ -3,7 +3,7 @@
 
 #include <gmock/gmock.h>
 
-#include "LitePCIe.h"
+#include "comms/PCIe/LitePCIe.h"
 
 namespace lime::testing {
 

@@ -801,7 +801,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
                 p,
                 stream.format == SDRDevice::StreamConfig::DataFormat::F32 ? "F32" : "I16",
                 stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? "I12" : "I16");
-            if (portDevice->StreamSetup(stream, lime->chipIndex[p]) != 0)
+            if (portDevice->StreamSetup(stream, lime->chipIndex[p]) != OpStatus::SUCCESS)
             {
                 Log(LogLevel::ERROR, "Port%i stream setup failed.\n", p);
                 return -1;
@@ -959,7 +959,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                 else
                     sprintf(configFilepath, "%s", filename);
 
-                if (chip->LoadConfig(configFilepath, false) != 0)
+                if (chip->LoadConfig(configFilepath, false) != OpStatus::SUCCESS)
                 {
                     Log(LogLevel::ERROR, "Error loading file: %s\n", filename);
                     return -1;

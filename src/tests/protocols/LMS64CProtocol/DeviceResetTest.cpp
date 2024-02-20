@@ -66,9 +66,9 @@ TEST(LMS64CProtocol, DeviceResetTestCorrectCommand)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::DeviceReset(mockPort, socIndex, subdevice);
+    OpStatus returnValue = LMS64CProtocol::DeviceReset(mockPort, socIndex, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, DeviceResetTestNotFullyWritten)

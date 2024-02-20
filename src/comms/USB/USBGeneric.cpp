@@ -179,7 +179,7 @@ void USBGeneric::Disconnect()
             contexts[i].transfer->dev_handle = dev_handle;
         }
     }
-#endif
+
     std::unique_lock<std::mutex> lock{ contextsLock };
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
@@ -189,6 +189,7 @@ void USBGeneric::Disconnect()
             AbortEndpointXfers(contexts[i].transfer->endpoint);
         }
     }
+#endif
 
     delete[] contexts;
     contexts = nullptr;
@@ -197,7 +198,7 @@ void USBGeneric::Disconnect()
 int32_t USBGeneric::BulkTransfer(uint8_t endPointAddr, uint8_t* data, int length, int32_t timeout_ms)
 {
     long len = 0;
-    if (not IsConnected())
+    if (!IsConnected())
     {
         throw std::runtime_error("BulkTransfer: USB device is not connected");
     }
@@ -225,7 +226,7 @@ int32_t USBGeneric::ControlTransfer(
     int requestType, int request, int value, int index, uint8_t* data, uint32_t length, int32_t timeout_ms)
 {
     long len = length;
-    if (not IsConnected())
+    if (!IsConnected())
     {
         throw std::runtime_error("ControlTransfer: USB device is not connected");
     }
@@ -304,6 +305,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
 
     return i;
 #endif
+    return 0;
 }
 
 bool USBGeneric::WaitForXfer(int contextHandle, int32_t timeout_ms)
@@ -388,6 +390,7 @@ int USBGeneric::GetUSBContextIndex()
 
 void USBGeneric::WaitForXfers(uint8_t endPointAddr)
 {
+#ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
         if (contexts[i].isTransferUsed && contexts[i].transfer->endpoint == endPointAddr)
@@ -396,6 +399,7 @@ void USBGeneric::WaitForXfers(uint8_t endPointAddr)
             FinishDataXfer(nullptr, 0, i);
         }
     }
+#endif
 }
 
 } // namespace lime
