@@ -28,7 +28,8 @@ OpStatus LMS64C_FPGA_Over_PCIe_MMX8::CustomParameterRead(std::vector<CustomParam
     return LMS64CProtocol::CustomParameterRead(pipe, parameters, subdeviceIndex);
 }
 
-OpStatus LMS64C_FPGA_Over_PCIe_MMX8::ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
+OpStatus LMS64C_FPGA_Over_PCIe_MMX8::ProgramWrite(
+    const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
 {
     return LMS64CProtocol::ProgramWrite(
         pipe, data, length, prog_mode, static_cast<LMS64CProtocol::ProgramWriteTarget>(target), callback, subdeviceIndex);

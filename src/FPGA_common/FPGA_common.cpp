@@ -462,7 +462,10 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
     //check if all clocks are above 5MHz
     const double PLLlowerLimit = 5e6;
     if (inputFreq < PLLlowerLimit)
-        return ReportError(OpStatus::OUT_OF_RANGE, "FPGA SetPllFrequency: PLL[%i] input frequency must be >=%g MHz", pllIndex, PLLlowerLimit / 1e6);
+        return ReportError(OpStatus::OUT_OF_RANGE,
+            "FPGA SetPllFrequency: PLL[%i] input frequency must be >=%g MHz",
+            pllIndex,
+            PLLlowerLimit / 1e6);
     for (int i = 0; i < clockCount; ++i)
     {
         lime::debug("CLK[%i] Fout:%.3f MHz bypass:%i phase:%g findPhase: %i",
@@ -473,8 +476,11 @@ OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, F
             clocks[i].findPhase);
         willDoPhaseSearch |= clocks[i].findPhase;
         if (clocks[i].outFrequency < PLLlowerLimit && !clocks[i].bypass)
-            return ReportError(
-                OpStatus::OUT_OF_RANGE, "FPGA SetPllFrequency: PLL[%i], clock[%i] must be >=%g MHz", pllIndex, i, PLLlowerLimit / 1e6);
+            return ReportError(OpStatus::OUT_OF_RANGE,
+                "FPGA SetPllFrequency: PLL[%i], clock[%i] must be >=%g MHz",
+                pllIndex,
+                i,
+                PLLlowerLimit / 1e6);
     }
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
@@ -850,11 +856,8 @@ int FPGA::Samples2FPGAPacketPayload(
 /// @return The operation status.
 OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
 {
-    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g",
-        txRate_Hz / 1e6,
-        rxRate_Hz / 1e6,
-        txPhase,
-        rxPhase);
+    lime::debug(
+        "FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g", txRate_Hz / 1e6, rxRate_Hz / 1e6, txPhase, rxPhase);
     lime::FPGA::FPGA_PLL_clock clocks[2];
     OpStatus status = OpStatus::SUCCESS;
 

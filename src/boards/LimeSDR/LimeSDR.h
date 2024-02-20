@@ -32,7 +32,6 @@ class LimeSDR : public LMS7002M_SDRDevice
     virtual OpStatus SetSampleRate(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
 
-
     virtual OpStatus SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
     virtual OpStatus StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;

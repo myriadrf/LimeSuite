@@ -11,7 +11,7 @@ namespace lime {
 class LIME_API SlaveSelectShim : public ISPI
 {
   public:
-  /**
+    /**
     @brief Construct a new Slave Select Shim object
     @param comms The communications interface to use.
     @param slaveId The ID of the slave for this shim.

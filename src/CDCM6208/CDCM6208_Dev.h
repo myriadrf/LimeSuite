@@ -73,15 +73,15 @@ struct CDCM_Outputs {
 };
 
 /** @brief Class for controlling the CDCM6208 2:8 Clock Generator, Jitter Cleaner With Fractional Dividers.
- * 
+ *
  * More information: https://www.ti.com/product/CDCM6208
  */
 class LIME_API CDCM_Dev
 {
   public:
-  /**
+    /**
     @brief Constructs a new CDCM_Dev object.
-    
+
     @param comms The communications path to use.
     @param SPI_BASE_ADDR The base address for the API interface.
    */
@@ -144,7 +144,7 @@ class LIME_API CDCM_Dev
     double DecToFrac(double target, int* num, int* den);
 
     /**
-      @brief Checks if the given double is an integer.      
+      @brief Checks if the given double is an integer.
       @param var The double to check.
       @return Whether the double is an integer or not.
      */
