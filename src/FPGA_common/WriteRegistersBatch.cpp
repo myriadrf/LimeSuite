@@ -3,7 +3,7 @@
 #ifndef NDEBUG
     #define ASSERT_WARNING(cond, message) \
         if (!cond) \
-        printf("W: %s (%s)\n", message, #cond)
+        lime::warning("%s (%s)\n", message, #cond)
 #else
     #define ASSERT_WARNING(cond, message)
 #endif

@@ -10,7 +10,7 @@
 
 namespace lime {
 
-/** 
+/**
   @brief A class for managing the transmission buffer for the PCIe transfer.
   @tparam T The samples packet input type.
  */
