@@ -291,7 +291,7 @@ bool FX3::WaitForXfer(int contextHandle, int32_t timeout_ms)
 
     USBTransferContext_FX3* FX3context = &static_cast<USBTransferContext_FX3*>(contexts)[contextHandle];
 
-    if (!FX3context->used)
+    if (!FX3context->isTransferUsed)
     {
         return true; //there is nothing to wait for (signal wait finished)
     }
@@ -309,7 +309,7 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 
     USBTransferContext_FX3* FX3context = &static_cast<USBTransferContext_FX3*>(contexts)[contextHandle];
 
-    if (!FX3context->used)
+    if (!FX3context->isTransferUsed)
     {
         return 0;
     }
@@ -318,7 +318,7 @@ int FX3::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 
     long len = length;
     bool status = FX3context->EndPt->FinishDataXfer(buffer, len, FX3context->inOvLap, FX3context->context);
-    FX3context->used = false;
+    FX3context->isTransferUsed = false;
     FX3context->Reset();
 
     if (!status)
@@ -355,7 +355,7 @@ void FX3::WaitForXfers(uint8_t endPointAddr)
     {
         USBTransferContext_FX3* FX3context = &static_cast<USBTransferContext_FX3*>(contexts)[i];
 
-        if (FX3context->used &&
+        if (FX3context->isTransferUsed &&
             ((OutEndPt[i] && OutEndPt[i]->Address == endPointAddr) || (InEndPt[i] && InEndPt[i]->Address == endPointAddr)))
         {
             WaitForXfer(i, 250);
