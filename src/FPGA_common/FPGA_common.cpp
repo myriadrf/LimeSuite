@@ -307,6 +307,7 @@ OpStatus FPGA::StartStreaming()
     if (interface_ctrl_000A < 0)
         return OpStatus::IO_FAILURE;
     ASSERT_WARNING((interface_ctrl_000A & RX_EN) == 0, "FPGA stream is already started");
+    interface_ctrl_000A &= ~(TX_PTRN_EN | RX_PTRN_EN); // disable test patterns
     return WriteRegister(0x000A, interface_ctrl_000A | RX_EN);
 }
 
@@ -359,7 +360,7 @@ OpStatus FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t error
         if (error != 0)
         {
             lime::warning("%s error, reg:0x%04X=0x%04X, errorBits:0x%04X", title.c_str(), pollAddr, state, error);
-            return OpStatus::BUSY;
+            //return OpStatus::BUSY;
         }
 
         if (!done)
