@@ -15,7 +15,7 @@ set(LIMESDR_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIMESDR_USB "Enable LimeSDR support" ON "ENABLE_LIBRARY;ENABLE_USB_FX3" OFF)
-add_feature_info(BoardLimeSDR ENABLE_LIMESDR_USB "LimeSDR board support")
+add_feature_info(LIMESDR_USB ENABLE_LIMESDR_USB "LimeSDR USB board support")
 if (NOT ENABLE_LIMESDR_USB)
     return()
 endif()
