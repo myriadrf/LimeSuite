@@ -101,7 +101,7 @@ void FPGA::EnableValuesCache(bool enabled)
 /// @brief Writes the specified value into the specified address into the FPGA.
 /// @param address The address to write to.
 /// @param value The value to write.
-/// @return The operation status (0 on success).
+/// @return The operation status.
 OpStatus FPGA::WriteRegister(uint32_t address, uint32_t value)
 {
     return WriteRegisters(&address, &value, 1);
@@ -120,7 +120,7 @@ int FPGA::ReadRegister(uint32_t address)
 /// @param addrs The addresses to write to.
 /// @param data The values to write into the memory.
 /// @param cnt The amount of values to write.
-/// @return The success status of the operation (0 on success).
+/// @return The status of the operation.
 OpStatus FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned cnt)
 {
     std::vector<uint32_t> spiBuffer;
@@ -197,7 +197,7 @@ OpStatus FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsig
 /// @brief Writes the given data blocks into LMS7002M chip.
 /// @param data The data to write.
 /// @param length The length of the data to write.
-/// @return Whether the operation succeedded or not.
+/// @return The status of the operation.
 OpStatus FPGA::WriteLMS7002MSPI(const uint32_t* data, uint32_t length)
 {
 #ifndef NDEBUG
@@ -211,7 +211,7 @@ OpStatus FPGA::WriteLMS7002MSPI(const uint32_t* data, uint32_t length)
 /// @param writeData The addresses to read from.
 /// @param readData The storage to store the read data.
 /// @param length The length of the data to read.
-/// @return Whether the operation succeedded or not.
+/// @return The status of the operation.
 OpStatus FPGA::ReadLMS7002MSPI(const uint32_t* writeData, uint32_t* readData, uint32_t length)
 {
     return lms7002mPort->SPI(writeData, readData, length);
@@ -221,7 +221,7 @@ OpStatus FPGA::ReadLMS7002MSPI(const uint32_t* writeData, uint32_t* readData, ui
 /// @param addrs The addresses to read.
 /// @param data The data array to write the read values to.
 /// @param cnt The amount of registers to read.
-/// @return The operation status (0 on success).
+/// @return The operation status.
 OpStatus FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
 {
     std::vector<uint32_t> spiBuffer;
@@ -304,7 +304,7 @@ OpStatus FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt
 }
 
 /// @brief Tells the FPGA to start streaming sample data.
-/// @return The operation status (0 on success).
+/// @return The operation status.
 OpStatus FPGA::StartStreaming()
 {
     lime::debug("%s", __func__);
@@ -316,7 +316,7 @@ OpStatus FPGA::StartStreaming()
 }
 
 /// @brief Tells the FPGA to stop streaming sample data.
-/// @return The operation status (0 on success).
+/// @return The operation status.
 OpStatus FPGA::StopStreaming()
 {
     lime::debug("%s", __func__);
@@ -328,7 +328,7 @@ OpStatus FPGA::StopStreaming()
 }
 
 /// @brief Resets the timestamp of the FPGA.
-/// @return The operation status (0 on success).
+/// @return The operation status.
 OpStatus FPGA::ResetTimestamp()
 {
     lime::debug("%s", __func__);
@@ -443,7 +443,7 @@ OpStatus FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool d
     @param inputFreq Input frequency.
     @param clocks List of clocks to configure.
     @param clockCount Number of clocks to configure.
-    @return 0 on success, other on failure.
+    @return The operation status.
 */
 OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
 {
@@ -847,7 +847,7 @@ int FPGA::Samples2FPGAPacketPayload(
 }
 
 /// @brief Configures FPGA PLLs to LimeLight interface frequency.
-/// @return 0 on success; other on failure.
+/// @return The operation status.
 OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
 {
     lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz txPhase:%g rxPhase:%g",

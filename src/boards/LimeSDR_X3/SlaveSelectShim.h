@@ -22,7 +22,7 @@ class LIME_API SlaveSelectShim : public ISPI
 
     /**
       @brief Send the reset device command to the device under this shim.
-      @return The success status of the operation (0 on success),
+      @return The status of the operation.
      */
     virtual OpStatus ResetDevice();
 

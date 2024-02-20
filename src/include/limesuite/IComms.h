@@ -19,7 +19,7 @@ class LIME_API ISPI
       @param MOSI Main Out Sub In (data output from main).
       @param MISO Main In Sub Out (data output from sub).
       @param count Input/output data length.
-      @returns Whether the operation succeedded or not.
+      @returns The operation status.
      */
     virtual OpStatus SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 
@@ -29,7 +29,7 @@ class LIME_API ISPI
       @param MOSI Main Out Sub In (data output from main).
       @param MISO Main In Sub Out (data output from sub).
       @param count Input/output data length.
-      @returns Whether the operation succeedded or not.
+      @returns The operation status.
      */
     virtual OpStatus SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
 };
@@ -45,7 +45,7 @@ class LIME_API II2C
       @param address Inter-Integrated Circuit slave address.
       @param data Output buffer.
       @param length Output data length.
-      @return 0 on success.
+      @return The operation status.
      */
     virtual OpStatus I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
 
@@ -58,7 +58,7 @@ class LIME_API II2C
       @param address The address of the slave.
       @param [out] dest Buffer to store read data from the slave.
       @param length Number of bytes to read.
-      @return 0 on success.
+      @return The operation status.
      */
     virtual OpStatus I2CRead(int address, uint8_t* dest, uint32_t length) = 0;
 };

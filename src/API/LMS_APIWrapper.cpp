@@ -628,7 +628,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t* device, bool dir_tx
     if (gain)
         *gain = (deviceGain - range.min) / (range.max - range.min);
 
-    return returnValue == OpStatus::SUCCESS ? 0 : -1;
+    return OpStatusToReturnCode(returnValue);
 }
 
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t chan, unsigned* gain)
@@ -648,7 +648,7 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t* device, bool dir_tx, size_t
     if (gain)
         *gain = std::lround(deviceGain) + 12;
 
-    return returnValue == OpStatus::SUCCESS ? 0 : -1;
+    return OpStatusToReturnCode(returnValue);
 }
 
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t* device, bool dir_tx, size_t chan, double bw, unsigned flags)
@@ -723,10 +723,10 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(
         }
     };
 
-    try {
+    try
+    {
         apiDevice->device->SetTestSignal(apiDevice->moduleIndex, direction, chan, enumToTestStruct(sig), dc_i, dc_q);
-    }
-    catch (...)
+    } catch (...)
     {
         lime::error("Failed to set %s channel %i test signal.", ToString(direction).c_str(), chan);
     }
@@ -1784,10 +1784,10 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t* device, uint32_t address,
         return -1;
     }
 
-    try {
+    try
+    {
         apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val);
-    }
-    catch(...)
+    } catch (...)
     {
         return lime::error("Failed to write register at %04X.", address);
     }
@@ -1803,11 +1803,11 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t* device, uint32_t address, 
         return -1;
     }
 
-    try {
+    try
+    {
         if (val)
             *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address);
-    }
-    catch (...)
+    } catch (...)
     {
         return lime::error("Failed to read register at %04X.", address);
     }
@@ -1823,10 +1823,10 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t* device, uint32_t address
         return -1;
     }
 
-    try {
+    try
+    {
         apiDevice->device->WriteRegister(apiDevice->moduleIndex, address, val, true);
-    }
-    catch (...)
+    } catch (...)
     {
         return lime::error("Failed to write register at %04X.", address);
     }
@@ -1842,11 +1842,11 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t* device, uint32_t address,
         return -1;
     }
 
-    try {
+    try
+    {
         if (val)
             *val = apiDevice->device->ReadRegister(apiDevice->moduleIndex, address, true);
-    }
-    catch (...)
+    } catch (...)
     {
         return lime::error("Failed to read register at %04X.", address);
     }

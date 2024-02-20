@@ -136,19 +136,19 @@ class LIME_API LMS7002M
      * @param dir Rx or Tx
      * @param channel true for the transmit size, false for receive
      * @param enable true to enable, false to disable
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus EnableChannel(TRXDir dir, const uint8_t channel, const bool enable);
 
     /*!
      * @brief Writes all registers from host to chip
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus UploadAll();
 
     /*!
      * @brief Reads all registers from the chip to host
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus DownloadAll();
 
@@ -163,25 +163,25 @@ class LIME_API LMS7002M
      * @param src The channel to copy from.
      * @param dest The channel to copy to.
      * @param copySX Whether to copy the SX registers or not.
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
 
     /*!
      * @brief Sends reset signal to chip, after reset enables B channel controls
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus ResetChip();
 
     /*!
      * Perform soft-reset sequence over SPI
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus SoftReset();
 
     /*!
      * @brief Resets the logic registers to their default state.
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus ResetLogicRegisters();
 
@@ -189,14 +189,14 @@ class LIME_API LMS7002M
      * @brief Reads configuration file and uploads registers to chip
      * @param filename Configuration source file
      * @param tuneDynamicValues Whether to tune the dynamic values or not
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus LoadConfig(const std::string& filename, bool tuneDynamicValues = true);
 
     /*!
      * @brief Reads all registers from chip and saves to file
      * @param filename destination filename
-     * @return 0-success, other failure
+     * @return The status of the operation
      */
     OpStatus SaveConfig(const std::string& filename);
 
@@ -223,7 +223,7 @@ class LIME_API LMS7002M
      * @param param LMS7002M control parameter
      * @param fromChip read initial value directly from chip
      * @param value new parameter value
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t value, bool fromChip = false);
 
@@ -234,7 +234,7 @@ class LIME_API LMS7002M
      * @param lsb Least significant bit index
      * @param value new bits value, the value is shifted left by lsb bits
      * @param fromChip read initial value directly from chip
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
 
@@ -243,15 +243,15 @@ class LIME_API LMS7002M
      * @param address SPI address
      * @param data new register value
      * @param toChip whether we're writing to the chip or not
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SPI_write(uint16_t address, uint16_t data, bool toChip = false);
 
     /*!
      * @brief Reads whole register value from given address
      * @param address SPI address
-     * @param status operation status(optional)
      * @param fromChip read value directly from chip
+     * @param status The operation success status (optional).
      * @return register value
     */
     uint16_t SPI_read(uint16_t address, bool fromChip = false, OpStatus* status = 0);
@@ -259,7 +259,7 @@ class LIME_API LMS7002M
     /*!
      * @brief Performs registers test by writing known data and confirming readback data
      * @param fileName The name of the file to write the test output to.
-     * @return 0-registers test passed, other-failure
+     * @return The operation status.
      */
     OpStatus RegistersTest(const std::string& fileName = "registersTest.txt");
 
@@ -274,7 +274,7 @@ class LIME_API LMS7002M
      * @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
      * @param bandwidth_Hz The bandwidth to calibrate the device for (in Hz)
      * @param useExtLoopback Whether to use external loopback or not.
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus CalibrateRx(float_type bandwidth_Hz, const bool useExtLoopback = false);
 
@@ -282,46 +282,46 @@ class LIME_API LMS7002M
      * @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
      * @param bandwidth_Hz The bandwidth to calibrate the device for (in Hz)
      * @param useExtLoopback Whether to use external loopback or not.
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus CalibrateTx(float_type bandwidth_Hz, const bool useExtLoopback = false);
 
     /**
      * @brief Tunes the Low Pass Filter for the TX direction.
      * @param tx_lpf_freq_RF The frequency (in Hz) to tune the filter to.
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus TuneTxFilter(const float_type tx_lpf_freq_RF);
 
     /**
      * @brief Tunes the Low Pass Filter for the RX direction.
      * @param rx_lpf_freq_RF The frequency (in Hz) to tune the filter to.
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus TuneRxFilter(const float_type rx_lpf_freq_RF);
 
     /*!
      * @brief Calibrates the internal Analog to Digital Converter on the chip.
      * @param clkDiv The clock division ratio for measurement loop.
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus CalibrateInternalADC(int clkDiv = 32);
 
     /*!
      * @brief Calibrates the RP_BIAS of the chip.
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus CalibrateRP_BIAS();
 
     /*!
      * @brief Calibrates the TX gain.
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus CalibrateTxGain();
 
     /**
      * @brief Calibrates the Analog RSSI
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus CalibrateAnalogRSSI_DC_Offset();
 
@@ -329,7 +329,7 @@ class LIME_API LMS7002M
      * Set the RX PGA gain in dB
      * @param gain In dB range -12.0, 19.0 dB
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetRBBPGA_dB(const float_type gain, const Channel channel);
 
@@ -344,7 +344,7 @@ class LIME_API LMS7002M
      * Set the RX LNA gain in dB
      * @param gain In dB range 0.0, 30.0 dB
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetRFELNA_dB(const float_type gain, const Channel channel);
 
@@ -359,7 +359,7 @@ class LIME_API LMS7002M
      * Set the RX loopback LNA gain in dB
      * @param gain In dB range 0.0, 40.0 dB
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetRFELoopbackLNA_dB(const float_type gain, const Channel channel);
 
@@ -374,7 +374,7 @@ class LIME_API LMS7002M
      * Set the RX TIA gain in dB
      * @param gain In dB range 0.0, 12.0 dB
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetRFETIA_dB(const float_type gain, const Channel channel);
 
@@ -389,7 +389,7 @@ class LIME_API LMS7002M
      * Set the TX PAD gain in dB
      * @param gain In dB range -52.0, 0.0 dB
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetTRFPAD_dB(const float_type gain, const Channel channel);
 
@@ -404,7 +404,7 @@ class LIME_API LMS7002M
      * Set the TBB frontend gain in dB
      * @param gain In dB relative to optimal gain (0 - optimal gain, >0 may cause saturation)
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetTBBIAMP_dB(const float_type gain, const Channel channel);
 
@@ -419,7 +419,7 @@ class LIME_API LMS7002M
      * Set the TX loopback PAD gain in dB
      * @param gain In dB range -4.3, 0.0 dB
      * @param channel The channel to set it for
-     * @return 0 for success, else error
+     * @return The status of the operation
      */
     OpStatus SetTRFLoopbackPAD_dB(const float_type gain, const Channel channel);
 
@@ -443,7 +443,7 @@ class LIME_API LMS7002M
     /*!
      * @brief Sets the RFE input path.
      * @param path The enumeration value of the path to set it to
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetPathRFE(PathRFE path);
 
@@ -456,7 +456,7 @@ class LIME_API LMS7002M
     /*!
      * Set the TRF Band selection.
      * @param band 1 or 2
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus SetBandTRF(const int band);
 
@@ -471,7 +471,7 @@ class LIME_API LMS7002M
      * @param direction The direction to set the antenna for.
      * @param channel The channel to set the antenna for.
      * @param path The index of the antenna to use.
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetPath(TRXDir direction, uint8_t channel, uint8_t path);
 
@@ -479,7 +479,7 @@ class LIME_API LMS7002M
      * @brief Sets the reference clock of the SX
      * @param dir Rx/Tx module selection
      * @param freq_Hz The frequency to set the reference clock to (in Hz)
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetReferenceClk_SX(TRXDir dir, float_type freq_Hz);
 
@@ -502,7 +502,7 @@ class LIME_API LMS7002M
      * @param freq_Hz desired frequency in Hz
      * @param retainNCOfrequencies recalculate NCO coefficients to keep currently set frequencies
      * @param output if not null outputs calculated CGEN parameters
-     * @return 0-success, other-cannot deliver desired frequency
+     * @return The status of the operation
      */
     OpStatus SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
 
@@ -524,7 +524,7 @@ class LIME_API LMS7002M
      * @param dir Rx/Tx module selection
      * @param freq_Hz desired frequency in Hz
      * @param output if not null outputs intermediate calculation values
-     * @return 0-success, other-cannot deliver requested frequency
+     * @return The status of the operation
      */
     OpStatus SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output = nullptr);
 
@@ -533,7 +533,7 @@ class LIME_API LMS7002M
      * @param dir Rx/Tx module selection
      * @param freq_Hz desired frequency in Hz
      * @param BW The bandwidth (in Hz)
-     * @return 0-success, other-cannot deliver requested frequency
+     * @return The status of the operation
      */
     OpStatus SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW);
 
@@ -546,7 +546,18 @@ class LIME_API LMS7002M
 
     ///VCO modules available for tuning
     enum class VCO_Module : uint8_t { VCO_CGEN, VCO_SXR, VCO_SXT };
+
+    /*!
+     * @brief Performs VCO tuning operations for CLKGEN
+     * @return The status of the operation
+     */
     OpStatus TuneCGENVCO();
+
+    /*!
+     * @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
+     * @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
+     * @return The status of the operation
+     */
     OpStatus TuneVCO(VCO_Module module);
 
     /*!
@@ -554,7 +565,7 @@ class LIME_API LMS7002M
      * @param dir TxTSP or RxTSP selection
      * @param I DC_REG I value
      * @param Q DC_REG Q value
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q);
 
@@ -563,7 +574,7 @@ class LIME_API LMS7002M
      * @param dir transmitter or receiver selection
      * @param index NCO index from 0 to 15
      * @param freq_Hz desired NCO frequency
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz);
 
@@ -580,7 +591,7 @@ class LIME_API LMS7002M
      * @brief Sets chosen NCO phase offset angle when memory table MODE is 0
      * @param dir transmitter or receiver selection
      * @param angle_deg phase offset angle in degrees
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg);
 
@@ -589,7 +600,7 @@ class LIME_API LMS7002M
      * @param dir transmitter or receiver selection
      * @param index PHO index from 0 to 15
      * @param angle_deg phase offset angle in degrees
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg);
 
@@ -614,7 +625,7 @@ class LIME_API LMS7002M
      * @param gfirIndex GFIR index from 0 to 2.
      * @param coef Array of returned coefficients (normalized from -1 to 1)
      * @param coefCount Number of coefficients to read.
-     * @return 0-success, other-failure.
+     * @return The status of the operation.
      */
     OpStatus GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount);
 
@@ -624,7 +635,7 @@ class LIME_API LMS7002M
      * @param gfirIndex GIR index from 0 to 2
      * @param coef array of coefficients (normalized from -1 to 1)
      * @param coefCount number of coefficients
-     * @return 0-success, other-failure
+     * @return The status of the operation
      *
      * This function does not change GFIR*_L or GFIR*_N parameters, they have to be set manually
      */
@@ -636,7 +647,7 @@ class LIME_API LMS7002M
      * @param ch The channel for which to set up the filter
      * @param enabled Whether to enable or disable the GFIR filter
      * @param bandwidth The bandwidth (in Hz) to set the filter for.
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetGFIRFilter(TRXDir dir, Channel ch, bool enabled, double bandwidth);
 
@@ -646,7 +657,7 @@ class LIME_API LMS7002M
      * @param freq_Hz The frequency array to set.
      * @param count The amount of frequencies to set (max 16)
      * @param phaseOffset The phase offset of the NCO to set.
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset);
 
@@ -664,7 +675,7 @@ class LIME_API LMS7002M
      * @param angles_deg The angles of the NCO to set (in degrees).
      * @param count The amount of angles to set (max 16)
      * @param frequencyOffset The offset of the NCO (in Hz).
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_t count, float_type frequencyOffset);
 
@@ -682,7 +693,7 @@ class LIME_API LMS7002M
      * @param cgen_freq_Hz The clock frequency to set (in Hz)
      * @param interpolation The HBI interpolation ratio (actual ratio is pow(2, interpolation + 1), 7 for bypass)
      * @param decimation The HBD decimation ratio (actual ratio is pow(2, decimation + 1), 7 for bypass)
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
@@ -730,7 +741,7 @@ class LIME_API LMS7002M
     /*!
      * @brief Enables or disables the DC corrector bypass
      * @param enable Enables or disables the
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetRxDCRemoval(const bool enable);
 
@@ -743,7 +754,7 @@ class LIME_API LMS7002M
     /*!
      * Enables/disables TDD mode
      * @param enable true - use same PLL for Tx and Rx, false - us seperate PLLs
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus EnableSXTDD(bool enable);
 
@@ -752,7 +763,7 @@ class LIME_API LMS7002M
      * @param dir true for tx, false for rx
      * @param I the real adjustment [+1.0, -1.0]
      * @param Q the imaginary adjustment [+1.0, -1.0]
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SetDCOffset(TRXDir dir, const float_type I, const float_type Q);
 
@@ -770,7 +781,7 @@ class LIME_API LMS7002M
      * @param phase the phase adjustment [+pi, -pi]
      * @param gainI the real gain adjustment [+1.0, 0.0]
      * @param gainQ the imaginary gain adjustment [+1.0, 0.0]
-     * @return 0 - success, other - failure
+     * @return The status of the operation
      */
     OpStatus SetIQBalance(const TRXDir dir, const float_type phase, const float_type gainI, const float_type gainQ);
 
@@ -794,6 +805,7 @@ class LIME_API LMS7002M
      * @brief Sets the frequency of the selected clock.
      * @param clk_id The enumerator value of the clock to set.
      * @param freq The frequency (in Hz) to set the clock to.
+     * @return The operation success status.
      */
     OpStatus SetClockFreq(ClockID clk_id, double freq);
 
@@ -841,7 +853,7 @@ class LIME_API LMS7002M
      * @param spiData registers data to be written
      * @param cnt number of registers to write
      * @param toChip force write to chip
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
 
@@ -850,7 +862,7 @@ class LIME_API LMS7002M
      * @param spiAddr SPI addresses to read
      * @param spiData array for read data
      * @param cnt number of registers to read
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     OpStatus SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
 
@@ -903,7 +915,7 @@ class LIME_API LMS7002M
 
     /*!
      * @brief Sets given module registers to default values
-     * @return 0-success, other-failure
+     * @return The status of the operation
      */
     virtual OpStatus SetDefaults(MemorySection module);
 

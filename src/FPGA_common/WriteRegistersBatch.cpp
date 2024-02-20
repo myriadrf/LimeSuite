@@ -21,7 +21,7 @@ WriteRegistersBatch::~WriteRegistersBatch()
 }
 
 /// @brief Writes the modified values into the FPGA.
-/// @return The operation status (0 on success).
+/// @return The operation status.
 OpStatus WriteRegistersBatch::Flush()
 {
     OpStatus status = owner->WriteRegisters(addrs.data(), values.data(), addrs.size());

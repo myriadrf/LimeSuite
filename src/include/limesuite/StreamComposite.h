@@ -27,7 +27,7 @@ class LIME_API StreamComposite
 
     /// @brief Sets up the streams with the given configuration.
     /// @param config The configuration to set up the streams with.
-    /// @return The status of the operation (0 on success).
+    /// @return The status of the operation.
     OpStatus StreamSetup(const SDRDevice::StreamConfig& config);
 
     /// @brief Starts all of the aggregated streams.

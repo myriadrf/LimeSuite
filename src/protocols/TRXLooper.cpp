@@ -55,6 +55,7 @@ uint64_t TRXLooper::GetHardwareTimestamp() const
 
 /// @brief Sets the hardware timestamp.
 /// @param now The current timestamp to set.
+/// @return The status of the operation.
 OpStatus TRXLooper::SetHardwareTimestamp(const uint64_t now)
 {
     mTimestampOffset = now - mRx.lastTimestamp.load(std::memory_order_relaxed);
@@ -63,6 +64,7 @@ OpStatus TRXLooper::SetHardwareTimestamp(const uint64_t now)
 
 /// @brief Sets up the stream of this looper.
 /// @param cfg The configuration settings to set up the stream with.
+/// @return The status of the operation.
 OpStatus TRXLooper::Setup(const SDRDevice::StreamConfig& cfg)
 {
     if (mRx.thread.joinable() || mTx.thread.joinable())
