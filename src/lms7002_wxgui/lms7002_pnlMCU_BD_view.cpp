@@ -584,15 +584,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent& event)
         }
     }
 
-    // debugging
-    //for (i=0; i<m_iTestResultFileLine; i++) {
-    //  fprintf(outFile, "%d %d %d \n",
-    //          TestResultArray_code[i],
-    //          TestResultArray_address[i],
-    //          TestResultArray_value[i]);
-    //}
-    // fclose(outFile);
-    // end debugging
+    inFile.close();
 }
 
 void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent& event)
