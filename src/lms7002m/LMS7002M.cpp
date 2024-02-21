@@ -1745,7 +1745,7 @@ OpStatus LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb
 */
 OpStatus LMS7002M::Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop)
 {
-    OpStatus status;
+    OpStatus status = OpStatus::SUCCESS;
     uint16_t reg_data;
     std::vector<uint16_t> addresses;
     std::vector<uint16_t> data;
@@ -1758,9 +1758,9 @@ OpStatus LMS7002M::Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* mas
         data.push_back(reg_data);
         ++start;
     }
-    status = SPI_write_batch(&addresses[0], &data[0], addresses.size());
     if (status != OpStatus::SUCCESS)
         return status;
+    status = SPI_write_batch(&addresses[0], &data[0], addresses.size());
     return status;
 }
 
