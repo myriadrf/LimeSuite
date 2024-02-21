@@ -14,6 +14,7 @@
 #ifndef __unix__
     #include "windows.h"
     #include "FTD3XXLibrary/FTD3XX.h"
+    #undef ERROR
 #else
     #ifdef __GNUC__
         #pragma GCC diagnostic push
@@ -83,8 +84,15 @@ std::vector<DeviceHandle> LimeSDR_MiniEntry::enumerate(const DeviceHandle& hint)
 SDRDevice* LimeSDR_MiniEntry::make(const DeviceHandle& handle)
 {
     const auto splitPos = handle.addr.find(":");
-    const uint16_t vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
-    const uint16_t pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
+
+    uint16_t vid = 0;
+    uint16_t pid = 0;
+
+    if (splitPos != std::string::npos)
+    {
+        vid = std::stoi(handle.addr.substr(0, splitPos), nullptr, 16);
+        pid = std::stoi(handle.addr.substr(splitPos + 1), nullptr, 16);
+    }
 
     auto usbComms = std::make_shared<FT601>(
 #ifdef __unix__

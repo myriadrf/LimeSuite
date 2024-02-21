@@ -9,8 +9,10 @@
 
 #include "limesuite/config.h"
 
+#include <fstream>
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -19,8 +21,10 @@ namespace lime {
 class LIME_API CoefficientFileParser
 {
   public:
-    static int getCoefficients(const std::filesystem::path& filename, std::vector<double>& coefficients, int max);
-    static void saveToFile(const std::filesystem::path& filename, const std::vector<double>& coefficients);
+    CoefficientFileParser(const std::filesystem::path& filename);
+
+    int getCoefficients(std::vector<double>& coefficients, int max);
+    void saveToFile(const std::vector<double>& coefficients);
 
   private:
     enum class ErrorCodes : int8_t {
@@ -32,8 +36,11 @@ class LIME_API CoefficientFileParser
         TOO_MANY_COEFFS = -5,
     };
 
-    static ErrorCodes getValue(std::ifstream& file, double& value);
-    static void parseMultilineComments(std::ifstream& file, std::string& token);
+    ErrorCodes getValue(std::ifstream& file, double& value);
+    void parseMultilineComments(std::ifstream& file, std::string& token);
+
+    std::filesystem::path filename;
+    std::stringstream tokenBuffer;
 };
 
 } // namespace lime

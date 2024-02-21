@@ -100,12 +100,13 @@ template<class T> int StreamComposite::StreamTx(const T* const* samples, uint32_
 }
 
 // force instantiate functions with these types
-template int StreamComposite::StreamRx<lime::complex16_t>(lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamRx<lime::complex32f_t>(
+template LIME_API int StreamComposite::StreamRx<lime::complex16_t>(
+    lime::complex16_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
+template LIME_API int StreamComposite::StreamRx<lime::complex32f_t>(
     lime::complex32f_t** samples, uint32_t count, SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamTx<lime::complex16_t>(
+template LIME_API int StreamComposite::StreamTx<lime::complex16_t>(
     const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
-template int StreamComposite::StreamTx<lime::complex32f_t>(
+template LIME_API int StreamComposite::StreamTx<lime::complex32f_t>(
     const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
 } // namespace lime

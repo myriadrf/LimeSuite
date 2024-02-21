@@ -6,6 +6,7 @@
 #ifndef __unix__
     #include "windows.h"
     #include "CyAPI.h"
+    #undef ERROR
 #endif
 
 namespace lime {
@@ -23,7 +24,6 @@ class USBTransferContext_FX3 : public USBTransferContext
     bool Reset() override;
 
 #ifndef __unix__
-    PUCHAR context;
     CCyUSBEndPoint* EndPt;
     OVERLAPPED* inOvLap;
 #endif

@@ -1,4 +1,5 @@
 #include "cli/common.h"
+#include <getopt.h>
 
 using namespace std;
 using namespace lime;

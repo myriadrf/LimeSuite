@@ -17,6 +17,11 @@ using namespace lime;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 
+CoefficientFileParser::CoefficientFileParser(const std::filesystem::path& filename)
+    : filename(filename)
+{
+}
+
 void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::string& token)
 {
     std::string_view view = token;
@@ -96,20 +101,35 @@ void CoefficientFileParser::parseMultilineComments(std::ifstream& file, std::str
 // ***************************************************************
 CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream& file, double& value)
 {
-    file >> value;
-    if (!file.fail())
+    std::string token = ""s;
+
+    tokenBuffer >> value;
+    if (!tokenBuffer.fail())
     {
         return ErrorCodes::SUCCESS;
     }
 
-    if (file.eof())
+    if (!tokenBuffer.eof())
     {
-        return ErrorCodes::END_OF_FILE;
+        tokenBuffer.clear();
+        tokenBuffer >> token;
     }
+    else
+    {
+        file >> value;
+        if (!file.fail())
+        {
+            return ErrorCodes::SUCCESS;
+        }
 
-    file.clear();
-    std::string token;
-    file >> token;
+        if (file.eof())
+        {
+            return ErrorCodes::END_OF_FILE;
+        }
+
+        file.clear();
+        file >> token;
+    }
 
     bool hasValueBeenRead = false;
 
@@ -164,12 +184,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
         }
     }
 
-    // Rewind file by the amount of unparsed characters.
-    std::size_t charsToUnget = token.size();
-    for (std::size_t i = 0; i < charsToUnget; ++i)
-    {
-        file.unget();
-    }
+    tokenBuffer = std::stringstream{ token };
 
     return ErrorCodes::SUCCESS;
 }
@@ -182,7 +197,7 @@ CoefficientFileParser::ErrorCodes CoefficientFileParser::getValue(std::ifstream&
 //	-5	too many coefficients in the file
 //	>=0 	number of the coefficients read
 // ***************************************************************
-int CoefficientFileParser::getCoefficients(const std::filesystem::path& filename, std::vector<double>& coefficients, int max)
+int CoefficientFileParser::getCoefficients(std::vector<double>& coefficients, int max)
 {
     if (filename.empty())
     {
@@ -231,14 +246,14 @@ int CoefficientFileParser::getCoefficients(const std::filesystem::path& filename
 // ***************************************************************
 // Saves given coefficients to fir file
 // ***************************************************************
-void CoefficientFileParser::saveToFile(const std::filesystem::path& filename, const std::vector<double>& coefficients)
+void CoefficientFileParser::saveToFile(const std::vector<double>& coefficients)
 {
     std::ofstream fout;
     fout.open(filename, std::ios::out);
 
     fout << "/* ******************************************************************"sv << std::endl;
     fout << "   FILE:\t"sv;
-    fout << filename.filename().c_str() << std::endl;
+    fout << filename.filename().generic_string() << std::endl;
 
     fout << "   DESCRIPTION:\t"sv << std::endl;
     fout << "   DATE:\t"sv << std::endl;

@@ -1,6 +1,6 @@
 if(WIN32)
     find_package(CyAPI)
-    set_package_properties(CyAPI
+    set_package_properties(CyAPI PROPERTIES
         TYPE RECOMMENDED
         PURPOSE "Adds USB communication support for Cypress FX3 chip"
     )

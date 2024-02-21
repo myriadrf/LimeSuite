@@ -4,9 +4,9 @@ if(WIN32)
 
     #library directory based on x64 vs x86
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(FTD3XX_LIB_DIR ${USB_INCLUDE_DIRS}/x64)
+        set(FTD3XX_LIB_DIR ${FTDI_INCLUDE_DIRS}/x64)
     else()
-        set(FTD3XX_LIB_DIR ${USB_INCLUDE_DIRS}/Win32)
+        set(FTD3XX_LIB_DIR ${FTDI_INCLUDE_DIRS}/Win32)
     endif()
 
     #default is to use static libs

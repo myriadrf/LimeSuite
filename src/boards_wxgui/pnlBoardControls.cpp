@@ -1,13 +1,15 @@
 #include "pnlBoardControls.h"
 #include <wx/wxprec.h>
-#include "lime/LimeSuite.h"
 #ifdef __BORLANDC__
     #pragma hdrstop
 #endif //__BORLANDC__
 #ifndef WX_PRECOMP
     #include <wx/wx.h>
 #endif //WX_PRECOMP
+#include <wx/spinctrl.h>
+#undef ERROR
 
+#include "lime/LimeSuite.h"
 #include "pnluLimeSDR.h"
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
@@ -16,7 +18,6 @@
 
 #include "ADCUnits.h"
 #include <cassert>
-#include <wx/spinctrl.h>
 #include <vector>
 #include "lms7suiteEvents.h"
 #include "limesuite/SDRDevice.h"
