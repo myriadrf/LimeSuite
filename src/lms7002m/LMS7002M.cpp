@@ -1758,9 +1758,9 @@ OpStatus LMS7002M::Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* mas
         data.push_back(reg_data);
         ++start;
     }
+    status = SPI_write_batch(&addresses[0], &data[0], addresses.size());
     if (status != OpStatus::SUCCESS)
         return status;
-    status = SPI_write_batch(&addresses[0], &data[0], addresses.size());
     return status;
 }
 
