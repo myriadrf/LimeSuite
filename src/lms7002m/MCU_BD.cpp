@@ -324,7 +324,7 @@ int MCU_BD::Read_IRAM()
             i = 256; // error, stop
             aborted.store(true);
         }
-        IncrementStepsDone(0);
+        IncrementStepsDone();
 #ifndef NDEBUG
         lime::debug("MCU reading IRAM: %2i/256\r", stepsDone.load());
 #endif
