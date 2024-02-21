@@ -6,6 +6,7 @@
 #include <wx/timer.h>
 #include <thread>
 #include "ILMS7002MTab.h"
+#include "MCU_BD.h"
 
 class lms7002_pnlMCU_BD_view : public ILMS7002MTab
 {
@@ -28,65 +29,40 @@ class lms7002_pnlMCU_BD_view : public ILMS7002MTab
     void OnRegWriteRead(wxCommandEvent& event);
     void OnbtnRunProductionTestClicked(wxCommandEvent& event);
 
-  public:
-    lms7002_pnlMCU_BD_view(wxWindow* parent, wxWindowID id);
-    ~lms7002_pnlMCU_BD_view();
-
-  protected:
-    static const size_t max_array_size = 16 * 1024;
-    int GetProgramCode(const char* inFileName, bool bin);
-    void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
-    void Wait_CLK_Cycles(int delay);
-    void DebugModeSet_MCU(int m_iMode1, int m_iMode0);
-    void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
-    int ResetPC_MCU();
-    int Change_MCUFrequency(unsigned char data);
-    int One_byte_command(unsigned short data1, unsigned char* rdata1);
-    int Three_byte_command(unsigned char data1,
-        unsigned char data2,
-        unsigned char data3,
-        unsigned char* rdata1,
-        unsigned char* rdata2,
-        unsigned char* rdata3);
-    static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
     void OnProgramingStatusUpdate(wxCommandEvent& event);
-    int WaitUntilWritten();
-    int RunProductionTest_MCU();
-    int Read_IRAM();
-    int ReadOneByte(unsigned char* data);
-    int Read_SFR();
-    int Erase_IRAM();
-    int RunInstr_MCU(unsigned short* pPCVAL);
     void OnReadIRAMfinished(wxThreadEvent& event);
     void OnEraseIRAMfinished(wxThreadEvent& event);
     void OnReadSFRfinished(wxThreadEvent& event);
     void OnProgrammingfinished(wxThreadEvent& event);
+
+    static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
+
+  public:
+    lms7002_pnlMCU_BD_view(wxWindow* parent, wxWindowID id);
+    ~lms7002_pnlMCU_BD_view();
+    void Initialize(ControllerType* pControl) override;
+
+  protected:
+    lime::MCU_BD* mcu;
+
     bool mThreadWorking;
     std::thread mWorkerThread;
     wxTimer* progressPooler;
-    int m_iTestNo;
-    unsigned int m_iInstrNo;
-    int m_iPCvalue;
-    int m_iDebug;
-    int m_iMode0;
-    int m_iMode1;
 
     int m_iTestResultFileLine;
     int TestResultArray_code[256];
     int TestResultArray_address[256];
     int TestResultArray_value[256];
 
-    unsigned short m_iRegAddress;
-    int m_iRegRead;
-    unsigned short m_iRegData;
-
+    int m_iDebug;
+    int m_iMode0;
+    int m_iMode1;
     int m_bLoadedProd;
     int m_bLoadedDebug;
-    std::string mLoadedProgramFilename;
-    unsigned char byte_array[max_array_size];
-    int m_iLoopTries;
-    unsigned char m_IRAM[256];
-    unsigned char m_SFR[256];
+    int m_iTestNo;
+    unsigned int m_iInstrNo;
+    int m_iPCvalue;
+
     static lms7002_pnlMCU_BD_view* obj_ptr;
     static const long ID_PROGRAMING_STATUS_EVENT;
     static const long ID_PROGRAMING_FINISH_EVENT;
