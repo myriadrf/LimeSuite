@@ -149,10 +149,10 @@ static_assert(sizeof(txGainTable) / sizeof(TxGainRow) == 51, "missing tx gains r
 
 static inline int64_t ts_to_time(int64_t fs, int64_t ts)
 {
-    int n, r;
+    int64_t n, r;
     n = (ts / fs);
     r = (ts % fs);
-    return static_cast<int64_t>(n) * 1000000 + ((static_cast<int64_t>(r) * 1000000) / fs);
+    return n * 1000000 + (r * 1000000 / fs);
 }
 
 struct PortChPair {
