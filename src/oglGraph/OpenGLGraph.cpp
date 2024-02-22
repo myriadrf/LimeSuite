@@ -32,6 +32,8 @@ const int OpenGLGraph::GLCanvasAttributes[8] = {
     WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0
 };
 
+bool OpenGLGraph::hasNotRecentEnoughOpenGLVersionWarningBeenThrownYet = false;
+
 GLG_settings::GLG_settings()
     : title("")
     , titleXaxis("")
@@ -179,12 +181,17 @@ bool OpenGLGraph::Initialize(int width, int height)
 
     if (!oglOk)
     {
-        wxMessageBox(
-            wxString::Format(
-                "Your OpenGL version is %s, required version is 2.0\nPlease update your graphics card drivers", userOGLversion),
-            _("WARNING"),
-            wxOK,
-            this);
+        if (!hasNotRecentEnoughOpenGLVersionWarningBeenThrownYet)
+        {
+            hasNotRecentEnoughOpenGLVersionWarningBeenThrownYet = true;
+            wxMessageBox(
+                wxString::Format(
+                    "Your OpenGL version is %s, required version is 2.0\nPlease update your graphics card drivers", userOGLversion),
+                _("WARNING"),
+                wxOK,
+                this);
+        }
+
         return false;
     }
 
