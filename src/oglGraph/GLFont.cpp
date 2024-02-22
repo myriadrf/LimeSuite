@@ -6,6 +6,18 @@
 #include <vector>
 using namespace std;
 
+static constexpr bool IsGlew1_5()
+{
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    return GLEW_VERSION_1_5;
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+}
+
 /** @brief Construct a new GLFont::GLFont object */
 GLFont::GLFont()
     : m_texID(0)
@@ -119,14 +131,7 @@ bool GLFont::load(const char* file)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wold-style-cast"
-#endif
-    if (!m_vboID && GLEW_VERSION_1_5)
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
+    if (!m_vboID && IsGlew1_5())
     {
         glGenBuffers(1, &m_vboID);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
@@ -216,14 +221,7 @@ bool GLFont::loadFromArray(const char* array, unsigned int size)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wold-style-cast"
-#endif
-    if (!m_vboID && GLEW_VERSION_1_5)
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
+    if (!m_vboID && IsGlew1_5())
     {
         glGenBuffers(1, &m_vboID);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
@@ -260,14 +258,7 @@ void GLFont::render_textWorldSpace(const char* text, float x, float y, float fon
     GLGlyph* g = NULL;
     glBindTexture(GL_TEXTURE_2D, m_texID);
 
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wold-style-cast"
-#endif
-    if (GLEW_VERSION_1_5)
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
+    if (IsGlew1_5())
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
     }
@@ -307,7 +298,7 @@ void GLFont::render_textWorldSpace(const char* text, float x, float y, float fon
         vbodata[14] = vbodata[6];
         vbodata[15] = vbodata[11];
 
-        //        if(GLEW_VERSION_1_5)
+        //        if(IsGlew1_5())
         //        {
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), NULL, GL_DYNAMIC_DRAW );
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), vbodata, GL_DYNAMIC_DRAW );
@@ -360,14 +351,7 @@ void GLFont::render_textScreenSpace(const char* text, float x, float y, float fo
     GLGlyph* g = NULL;
     glBindTexture(GL_TEXTURE_2D, m_texID);
 
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wold-style-cast"
-#endif
-    if (GLEW_VERSION_1_5)
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
+    if (IsGlew1_5())
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
     }
@@ -408,7 +392,7 @@ void GLFont::render_textScreenSpace(const char* text, float x, float y, float fo
         vbodata[14] = vbodata[6];
         vbodata[15] = vbodata[11];
 
-        //        if(GLEW_VERSION_1_5)
+        //        if(IsGlew1_5())
         //        {
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), (char*)0, GL_DYNAMIC_DRAW );
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), vbodata, GL_DYNAMIC_DRAW );

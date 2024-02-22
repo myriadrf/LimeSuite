@@ -32,6 +32,18 @@ const int OpenGLGraph::GLCanvasAttributes[8] = {
     WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0
 };
 
+static constexpr bool IsGlew1_5()
+{
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    return GLEW_VERSION_1_5;
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+}
+
 GLG_settings::GLG_settings()
     : title("")
     , titleXaxis("")
@@ -684,14 +696,7 @@ void OpenGLGraph::Draw()
 
     switchToDataView();
 
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wold-style-cast"
-#endif
-    if (settings.useVBO && GLEW_VERSION_1_5)
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
+    if (settings.useVBO && IsGlew1_5())
     {
         for (unsigned int i = 0; i < series.size(); i++)
         {
