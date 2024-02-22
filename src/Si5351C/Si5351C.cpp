@@ -534,12 +534,12 @@ Si5351C::Status Si5351C::UploadConfiguration()
     std::vector<uint8_t> outBuffer;
     //Disable outputs
     outBuffer.push_back(3);
-    outBuffer.push_back(uint8_t(0xFF));
+    outBuffer.push_back(0xFF);
     //Power down all output drivers
     for (int i = 0; i < 8; ++i)
     {
         outBuffer.push_back(16 + i);
-        outBuffer.push_back(uint8_t(0x84));
+        outBuffer.push_back(0x84);
     }
     //write new configuration
     for (int i = 15; i <= 92; ++i)
@@ -553,8 +553,8 @@ Si5351C::Status Si5351C::UploadConfiguration()
         outBuffer.push_back(m_newConfiguration[i]);
     }
     //apply soft reset
-    outBuffer.push_back(uint8_t(177));
-    outBuffer.push_back(uint8_t(0xAC));
+    outBuffer.push_back(0XB1);
+    outBuffer.push_back(0xAC);
     //Enabe desired outputs
     outBuffer.push_back(3);
     outBuffer.push_back(m_newConfiguration[3]);

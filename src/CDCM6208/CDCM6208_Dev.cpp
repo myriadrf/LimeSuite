@@ -740,7 +740,7 @@ int CDCM_Dev::SolveN(int Target, int* Mult8bit, int* Mult10bit)
     double res;
     for (int i10 = 1; i10 <= 1024; i10++)
     {
-        res = double(Target) / i10;
+        res = static_cast<double>(Target) / i10;
         if (res < (1 << 8)) // Check max value
         {
             // Check if res is integer

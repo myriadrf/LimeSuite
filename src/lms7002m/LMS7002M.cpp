@@ -500,14 +500,16 @@ OpStatus LMS7002M::LoadConfigLegacyFile(const std::string& filename)
     typedef INI<std::string, std::string, std::string> ini_t;
     ini_t parser(filename, true);
     if (parser.select("FILE INFO") == false)
-        return ReportError(OpStatus::INVALID_VALUE, "LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename.c_str());
+        return ReportError(
+            OpStatus::INVALID_VALUE, "LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename.c_str());
 
     std::string type = "";
     type = parser.get("type", "undefined");
 
     if (type.find("LMS7002 configuration") == std::string::npos)
     {
-        return ReportError(OpStatus::INVALID_VALUE, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename.c_str());
+        return ReportError(
+            OpStatus::INVALID_VALUE, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename.c_str());
     }
 
     int fileVersion = 0;
@@ -696,7 +698,8 @@ OpStatus LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValue
 
     if (type.find("lms7002m_minimal_config") == std::string::npos)
     {
-        return ReportError(OpStatus::INVALID_VALUE, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename.c_str());
+        return ReportError(
+            OpStatus::INVALID_VALUE, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename.c_str());
     }
 
     int fileVersion = 0;
@@ -797,7 +800,10 @@ OpStatus LMS7002M::ResetLogicregisters()
 {
     const uint16_t x0020_value = SPI_read(0x0020); //reset logic registers
     const uint16_t addr[] = { 0x0020, 0x0020 };
-    const uint16_t values[] = { uint16_t(x0020_value & 0x553F), uint16_t(x0020_value | 0xFFC0) };
+    const uint16_t values[] = {
+        static_cast<uint16_t>(x0020_value & 0x553F),
+        static_cast<uint16_t>(x0020_value | 0xFFC0),
+    };
     //const uint16_t values[] = {x0020_value & 0x55FF, x0020_value | 0xFF00};
     // LRST_TX_B, LRST_TX_A, LRST_RX_B, LRST_RX_A
     return SPI_write_batch(addr, values, 2);
@@ -1736,7 +1742,8 @@ OpStatus LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_
     @param value new bits value, the value is shifted left by lsb bits
     @param fromChip read initial value directly from chip
 */
-OpStatus LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb, const uint8_t lsb, const uint16_t value, bool fromChip)
+OpStatus LMS7002M::Modify_SPI_Reg_bits(
+    const uint16_t address, const uint8_t msb, const uint8_t lsb, const uint16_t value, bool fromChip)
 {
     uint16_t spiDataReg = SPI_read(address, fromChip); //read current SPI reg data
     uint16_t spiMask = (~(~0u << (msb - lsb + 1))) << (lsb); // creates bit mask
@@ -1751,7 +1758,8 @@ OpStatus LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb
     @param start starting index of given arrays
     @param stop end index of given arrays
 */
-OpStatus LMS7002M::Modify_SPI_Reg_mask(const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop)
+OpStatus LMS7002M::Modify_SPI_Reg_mask(
+    const uint16_t* addr, const uint16_t* masks, const uint16_t* values, uint8_t start, uint8_t stop)
 {
     OpStatus status = OpStatus::SUCCESS;
     uint16_t reg_data;
@@ -1906,7 +1914,10 @@ OpStatus LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* ou
             {
                 tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
                 canDeliverFrequency = true;
-                lime::debug("%s : csw=%d %s", vcoNames[sel_vco], tuneScore[sel_vco] + 128, (status == OpStatus::SUCCESS ? "tune ok" : "tune fail"));
+                lime::debug("%s : csw=%d %s",
+                    vcoNames[sel_vco],
+                    tuneScore[sel_vco] + 128,
+                    (status == OpStatus::SUCCESS ? "tune ok" : "tune fail"));
             }
             else
             {
@@ -1959,7 +1970,8 @@ OpStatus LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* ou
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
-        return ReportError(OpStatus::ERROR, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", dir == TRXDir::Tx ? "T" : "R", freq_Hz / 1e6);
+        return ReportError(
+            OpStatus::ERROR, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", dir == TRXDir::Tx ? "T" : "R", freq_Hz / 1e6);
     return OpStatus::SUCCESS;
 }
 
@@ -2063,16 +2075,16 @@ float_type LMS7002M::GetFrequencySX(TRXDir dir)
 OpStatus LMS7002M::SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz)
 {
     if (index > 15)
-        return ReportError(OpStatus::INVALID_VALUE, "SetNCOFrequency(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(OpStatus::INVALID_VALUE, "SetNCOFrequency(index = %d) - index out of range [0, 15]", index);
     float_type refClk_Hz = GetReferenceClk_TSP(dir);
     if (freq_Hz < 0 || freq_Hz / refClk_Hz > 0.5)
         return ReportError(OpStatus::OUT_OF_RANGE,
             "SetNCOFrequency(index = %d) - Frequency(%g MHz) out of range [0-%g) MHz",
-            int(index),
+            index,
             freq_Hz / 1e6,
             refClk_Hz / 2e6);
     uint16_t addr = dir == TRXDir::Tx ? 0x0240 : 0x0440;
-    uint32_t fcw = uint32_t((freq_Hz / refClk_Hz) * 4294967296);
+    uint32_t fcw = static_cast<uint32_t>((freq_Hz / refClk_Hz) * 4294967296);
     SPI_write(addr + 2 + index * 2, (fcw >> 16)); //NCO frequency control word register MSB part.
     SPI_write(addr + 3 + index * 2, fcw); //NCO frequency control word register LSB part.
     return OpStatus::SUCCESS;
@@ -2087,7 +2099,7 @@ OpStatus LMS7002M::SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz
 float_type LMS7002M::GetNCOFrequency(TRXDir dir, uint8_t index, bool fromChip)
 {
     if (index > 15)
-        return ReportError(ERANGE, "GetNCOFrequency_MHz(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(ERANGE, "GetNCOFrequency_MHz(index = %d) - index out of range [0, 15]", index);
     float_type refClk_Hz = GetReferenceClk_TSP(dir);
     uint16_t addr = dir == TRXDir::Tx ? 0x0240 : 0x0440;
     uint32_t fcw = 0;
@@ -2118,7 +2130,7 @@ OpStatus LMS7002M::SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg)
 OpStatus LMS7002M::SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg)
 {
     if (index > 15)
-        return ReportError(OpStatus::INVALID_VALUE, "SetNCOPhaseOffset(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(OpStatus::INVALID_VALUE, "SetNCOPhaseOffset(index = %d) - index out of range [0, 15]", index);
     uint16_t addr = dir == TRXDir::Tx ? 0x0244 : 0x0444;
     uint16_t pho = static_cast<uint16_t>(65536 * (angle_deg / 360));
     SPI_write(addr + index, pho);
@@ -2158,7 +2170,7 @@ std::vector<float_type> LMS7002M::GetNCOPhases(TRXDir dir, float_type* frequency
 float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
 {
     if (index > 15)
-        return ReportError(ERANGE, "GetNCOPhaseOffset_Deg(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(ERANGE, "GetNCOPhaseOffset_Deg(index = %d) - index out of range [0, 15]", index);
     uint16_t addr = dir == TRXDir::Tx ? 0x0244 : 0x0444;
     uint16_t pho = SPI_read(addr + index);
     float_type angle = 360 * pho / 65536.0;
@@ -2253,7 +2265,8 @@ OpStatus LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type
 
     if (coefCount > coefLimit)
     {
-        return ReportError(OpStatus::OUT_OF_RANGE, "GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", coefCount, coefLimit);
+        return ReportError(
+            OpStatus::OUT_OF_RANGE, "GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", coefCount, coefLimit);
     }
 
     std::vector<uint16_t> addresses;
@@ -2415,7 +2428,7 @@ OpStatus LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiD
                 continue;
         }
 
-        data.push_back((1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]); //msbit 1=SPI write
+        data.push_back((1 << 31) | (static_cast<uint32_t>(spiAddr[i]) << 16) | spiData[i]); //msbit 1=SPI write
         if (wr0)
             mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1)
@@ -2763,7 +2776,7 @@ bool LMS7002M::IsSynced()
     std::vector<uint32_t> dataWr(addrToRead.size());
     std::vector<uint32_t> dataRd(addrToRead.size());
     for (size_t i = 0; i < addrToRead.size(); ++i)
-        dataWr[i] = (uint32_t(addrToRead[i]) << 16);
+        dataWr[i] = (static_cast<uint32_t>(addrToRead[i]) << 16);
     controlPort->SPI(dataWr.data(), dataRd.data(), dataWr.size());
 
     for (size_t i = 0; i < addrToRead.size(); ++i)
@@ -2800,7 +2813,7 @@ bool LMS7002M::IsSynced()
     dataWr.resize(addrToRead.size());
     dataRd.resize(addrToRead.size());
     for (size_t i = 0; i < addrToRead.size(); ++i)
-        dataWr[i] = (uint32_t(addrToRead[i]) << 16);
+        dataWr[i] = (static_cast<uint32_t>(addrToRead[i]) << 16);
     controlPort->SPI(dataWr.data(), dataRd.data(), dataWr.size());
     for (size_t i = 0; i < addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
@@ -3092,8 +3105,8 @@ void LMS7002M::GetDCOffset(TRXDir dir, float_type& I, float_type& Q)
 {
     if (dir == TRXDir::Tx)
     {
-        I = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP))) / 127.0; //signed 8-bit
-        Q = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP))) / 127.0; //signed 8-bit
+        I = static_cast<int8_t>(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP))) / 127.0; //signed 8-bit
+        Q = static_cast<int8_t>(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP))) / 127.0; //signed 8-bit
     }
     else
     {
@@ -3122,12 +3135,13 @@ OpStatus LMS7002M::SetIQBalance(const TRXDir dir, const float_type phase, const 
 
 void LMS7002M::GetIQBalance(const TRXDir dir, float_type& phase, float_type& gainI, float_type& gainQ)
 {
-    int iqcorr = int16_t(this->Get_SPI_Reg_bits(dir == TRXDir::Tx ? LMS7param(IQCORR_TXTSP) : LMS7param(IQCORR_RXTSP)) << 4) >>
-                 4; //sign extend 12-bit
-    int gcorri =
-        int16_t(this->Get_SPI_Reg_bits(dir == TRXDir::Tx ? LMS7param(GCORRI_TXTSP) : LMS7param(GCORRI_RXTSP))); //unsigned 11-bit
-    int gcorrq =
-        int16_t(this->Get_SPI_Reg_bits(dir == TRXDir::Tx ? LMS7param(GCORRQ_TXTSP) : LMS7param(GCORRQ_RXTSP))); //unsigned 11-bit
+    int iqcorr =
+        static_cast<int16_t>(this->Get_SPI_Reg_bits(dir == TRXDir::Tx ? LMS7param(IQCORR_TXTSP) : LMS7param(IQCORR_RXTSP)) << 4) >>
+        4; //sign extend 12-bit
+    int gcorri = static_cast<int16_t>(
+        this->Get_SPI_Reg_bits(dir == TRXDir::Tx ? LMS7param(GCORRI_TXTSP) : LMS7param(GCORRI_RXTSP))); //unsigned 11-bit
+    int gcorrq = static_cast<int16_t>(
+        this->Get_SPI_Reg_bits(dir == TRXDir::Tx ? LMS7param(GCORRQ_TXTSP) : LMS7param(GCORRQ_RXTSP))); //unsigned 11-bit
 
     phase = (M_PI / 2) * iqcorr / 2047.0;
     gainI = gcorri / 2047.0;

@@ -204,7 +204,7 @@ int TRXLooper_PCIE::TxSetup()
     mTxArgs.packetsToBatch = mTx.packetsToBatch;
     mTxArgs.samplesInPacket = samplesInPkt;
 
-    float bufferTimeDuration = float(samplesInPkt * mTx.packetsToBatch) / mConfig.hintSampleRate;
+    float bufferTimeDuration = samplesInPkt * mTx.packetsToBatch / mConfig.hintSampleRate;
     if (mCallback_logMessage)
     {
         char msg[256];
@@ -733,7 +733,7 @@ int TRXLooper_PCIE::RxSetup()
     float bufferTimeDuration = 0;
     if (mConfig.hintSampleRate > 0)
     {
-        bufferTimeDuration = float(samplesInPkt * mRx.packetsToBatch) / mConfig.hintSampleRate;
+        bufferTimeDuration = samplesInPkt * mRx.packetsToBatch / mConfig.hintSampleRate;
         irqPeriod = 80e-6 / bufferTimeDuration;
     }
     irqPeriod = std::clamp(irqPeriod, 1, 16);
@@ -835,7 +835,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         dma = mRxArgs.port->GetRxDMAState();
         if (dma.hwIndex != lastHwIndex)
         {
-            const int bytesTransferred = uint16_t(dma.hwIndex - lastHwIndex) * readSize;
+            const int bytesTransferred = (dma.hwIndex - lastHwIndex) * readSize;
             Bps += bytesTransferred;
             stats.bytesTransferred += bytesTransferred;
             lastHwIndex = dma.hwIndex;

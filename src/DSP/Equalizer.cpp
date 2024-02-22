@@ -102,7 +102,7 @@ void Equalizer::Configure(const Equalizer::Config& state)
         const Config::CFR& cfr = state.cfr[ch];
         const Config::FIR& fir = state.fir[ch];
 
-        const bool useOversample = std::min(cfr.interpolation, uint8_t(2)) != 1;
+        const bool useOversample = std::min<uint8_t>(cfr.interpolation, 2) != 1;
 
         WriteRegister(TX_HB_BYP, !useOversample);
         WriteRegister(TX_HB_DEL, useOversample);

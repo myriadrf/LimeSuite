@@ -942,7 +942,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
 
     const uint32_t addr = 0x002A;
     uint32_t val;
-    val = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    val = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(&val, 1);
     ReadLMS7002MSPI(&addr, &val, 1);
     bool bypassTx = (val & 0xF0) == 0x00;
@@ -1023,7 +1023,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     dataWr[0] = 0x0020;
     ReadLMS7002MSPI(dataWr.data(), &reg20, 1);
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     ReadLMS7002MSPI(spiAddr.data(), dataRdA.data(), bakRegCnt);
@@ -1036,7 +1036,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
         bypassRx = (val & 0x0F) == 0x0D;
     }
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFE; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     for (int i = 0; i < bakRegCnt; ++i)
@@ -1044,7 +1044,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
             dataRdB.push_back(spiAddr[i]);
     ReadLMS7002MSPI(dataRdB.data(), dataRdB.data(), dataRdB.size());
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFF; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     {
@@ -1056,7 +1056,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         WriteLMS7002MSPI(dataWr.data(), setRegCnt);
     }
 
@@ -1107,7 +1107,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         WriteLMS7002MSPI(dataWr.data(), setRegCnt);
     }
 
@@ -1146,23 +1146,23 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     }
 
     //Restore registers
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
     for (int i = 0; i < bakRegCnt; ++i)
-        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdA[i]; //msbit 1=SPI write
+        dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | dataRdA[i]; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), bakRegCnt);
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFE; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     int k = 0;
     for (int i = 0; i < bakRegCnt; ++i)
         if (spiAddr[i] >= 0x100)
         {
-            dataWr[k] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdB[k]; //msbit 1=SPI write
+            dataWr[k] = (1 << 31) | (spiAddr[i] << 16) | dataRdB[k]; //msbit 1=SPI write
             k++;
         }
     WriteLMS7002MSPI(dataWr.data(), k);
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | reg20; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
     WriteRegister(0x000A, reg_000A);
     return status;
@@ -1255,9 +1255,9 @@ FPGA::GatewareInfo FPGA::GetGatewareInfo()
 void FPGA::GatewareToDescriptor(const FPGA::GatewareInfo& gw, SDRDevice::Descriptor& desc)
 {
     desc.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gw.boardID));
-    desc.gatewareVersion = std::to_string(int(gw.version));
-    desc.gatewareRevision = std::to_string(int(gw.revision));
-    desc.hardwareVersion = std::to_string(int(gw.hardwareVersion));
+    desc.gatewareVersion = std::to_string(gw.version);
+    desc.gatewareRevision = std::to_string(gw.revision);
+    desc.hardwareVersion = std::to_string(gw.hardwareVersion);
 }
 
 } //namespace lime

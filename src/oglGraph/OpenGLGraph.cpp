@@ -594,7 +594,7 @@ void OpenGLGraph::CalculateGrid()
         }
         while (interval / divisor > 10 * xlines)
             divisor *= 10;
-        settings.gridXspacing = divisor * mult[int(0.5f + interval / xlines / divisor)];
+        settings.gridXspacing = divisor * mult[static_cast<int>(0.5f + interval / xlines / divisor)];
         settings.gridXstart = static_cast<int>(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
     }
     else
@@ -614,7 +614,7 @@ void OpenGLGraph::CalculateGrid()
         }
         while (interval / divisor > 10 * ylines)
             divisor *= 10;
-        settings.gridYspacing = divisor * mult[int(0.5f + interval / ylines / divisor)];
+        settings.gridYspacing = divisor * mult[static_cast<int>(0.5f + interval / ylines / divisor)];
         settings.gridYstart = static_cast<int>(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
     }
     else

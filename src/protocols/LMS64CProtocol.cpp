@@ -238,9 +238,9 @@ void FirmwareToDescriptor(const FirmwareInfo& fw, SDRDevice::Descriptor& descrip
     }
     else
         descriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(fw.expansionBoardId));
-    descriptor.firmwareVersion = std::to_string(int(fw.firmware));
-    descriptor.hardwareVersion = std::to_string(int(fw.hardware));
-    descriptor.protocolVersion = std::to_string(int(fw.protocol));
+    descriptor.firmwareVersion = std::to_string(fw.firmware);
+    descriptor.hardwareVersion = std::to_string(fw.hardware);
+    descriptor.protocolVersion = std::to_string(fw.protocol);
     descriptor.serialNumber = fw.boardSerialNumber;
 }
 

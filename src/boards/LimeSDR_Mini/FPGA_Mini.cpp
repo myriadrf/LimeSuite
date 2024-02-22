@@ -90,7 +90,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
     //backup registers
     dataWr[0] = 0x0020;
     lms7002mPort->SPI(dataWr.data(), &reg20, 1);
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
     lms7002mPort->SPI(spiAddr.data(), dataRd.data(), bakRegCnt);
 
@@ -102,7 +102,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
 
         for (int i = 0; i < setRegCnt; ++i)
         {
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         }
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
@@ -137,7 +137,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
 
         for (int i = 0; i < setRegCnt; ++i)
         {
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         }
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
@@ -172,12 +172,12 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
     //Restore registers
     for (int i = 0; i < bakRegCnt; ++i)
     {
-        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
+        dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | dataRd[i]; //msbit 1=SPI write
     }
 
     lms7002mPort->SPI(dataWr.data(), nullptr, bakRegCnt);
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | reg20; //msbit 1=SPI write
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
 
     WriteRegister(0x000A, 0);

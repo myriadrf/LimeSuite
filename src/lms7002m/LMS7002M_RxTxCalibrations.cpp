@@ -60,8 +60,8 @@ static uint8_t GetExtLoopPair(lime::LMS7002M& ctr, bool calibratingTx)
  */
 static inline int16_t signextIqCorr(const uint16_t regVal)
 {
-    int16_t signedPhase = int16_t(regVal << 4);
-    return int16_t(signedPhase) >> 4;
+    int16_t signedPhase = static_cast<int16_t>(regVal << 4);
+    return signedPhase >> 4;
 }
 
 const double TrxCalib_RF_LimitLow = 2.5e6;
@@ -240,7 +240,8 @@ OpStatus LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
         if (status != MCU_BD::MCU_NO_ERROR)
-            return ReportError(OpStatus::INVALID_VALUE, "Tx Calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
+            return ReportError(
+                OpStatus::INVALID_VALUE, "Tx Calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache
@@ -360,7 +361,8 @@ OpStatus LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);
         int status = mcuControl->WaitForMCU(1000);
         if (status != MCU_BD::MCU_NO_ERROR)
-            return ReportError(OpStatus::INVALID_VALUE, "Rx calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
+            return ReportError(
+                OpStatus::INVALID_VALUE, "Rx calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache

@@ -335,7 +335,7 @@ void MCU_File::ReadHex(unsigned long limit)
                 {
                     char header[256];
                     uint8_t i = 0;
-                    for (i = 0; uint8_t(i + 3) < count; ++i)
+                    for (i = 0; static_cast<uint8_t>(i + 3) < count; ++i)
                     {
                         sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
                         header[i] = static_cast<char>(tmp);
@@ -373,8 +373,8 @@ void MCU_File::ReadHex(unsigned long limit)
                         m_chunks.push_back(MemBlock());
                         m_chunks.back().m_startAddress = startAddress;
                     }
-                    unsigned char i = 0;
-                    for (i = uint8_t(type - '1'); uint8_t(i + 3) < count; ++i)
+                    uint8_t i = 0;
+                    for (i = static_cast<uint8_t>(type - '1'); static_cast<uint8_t>(i + 3) < count; ++i)
                     {
                         sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
                         if (startAddress + i > limit)

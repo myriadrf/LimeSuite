@@ -454,7 +454,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
                         txMeta.timestamp,
                         diff,
                         1000.0 * diff / sampleRate,
-                        float(diff) / samplesInPkt);
+                        static_cast<float>(diff) / samplesInPkt);
                     txPending = false;
                     done = true;
                     break;

@@ -59,7 +59,7 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char*
     wxCommandEvent evt;
     evt.SetString(wxString::FromAscii(message));
     evt.SetEventType(LOG_MESSAGE);
-    evt.SetInt(int(level));
+    evt.SetInt(static_cast<int>(level));
     wxPostEvent(obj_ptr, evt);
 }
 
