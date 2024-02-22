@@ -1996,7 +1996,7 @@ OpStatus LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq
     float newFreq(0);
     if (needCancelation)
     {
-        newFreq = std::round(freq_Hz / refClk) * refClk;
+        newFreq = static_cast<int>(freq_Hz / refClk + 0.5) * refClk;
         TuneRxFilter(BW - BWOffset + 2 * abs(freq_Hz - newFreq));
         status = SetFrequencySX(dir, newFreq);
     }
