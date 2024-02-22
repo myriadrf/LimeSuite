@@ -436,6 +436,11 @@ ISOCPanel* CreateGUI(wxWindow* parent, eDeviceNodeClass deviceNodeClass, void* s
 void LMS7SuiteAppFrame::DeviceTreeSelectionChanged(wxTreeEvent& event)
 {
     DeviceTreeItemData* item = reinterpret_cast<DeviceTreeItemData*>(deviceTree->GetItemData(event.GetItem()));
+    if (item->gui != nullptr && mContent == item->gui)
+    {
+        return;
+    }
+
     if (item->gui == nullptr)
         item->gui = CreateGUI(m_scrolledWindow1, item->soc->deviceNodeClass, item->soc->ptr);
 
