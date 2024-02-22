@@ -12,8 +12,6 @@
 
 #include <wx/app.h>
 
-class ConnectionManager;
-
 class lms7suiteApp : public wxApp
 {
   public:
