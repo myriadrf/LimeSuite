@@ -2,32 +2,32 @@
 #include "LMS7002M_parameters_compact.h"
 #include "spi.h"
 #include "lms7002m_controls.h"
-#include <cmath>
+#include <math.h>
 #include "mcu_defines.h"
+#include <stdlib.h>
 
 #define ENABLE_EXTERNAL_LOOPBACK 1
 
-#include <cstdlib>
+#ifdef __cplusplus
 //#define VERBOSE 1
 //#define DRAW_GNU_PLOTS
 
-#include <thread>
-#include <vector>
-#include <chrono>
-#include <cstdio>
-#include <sstream>
-#include <algorithm>
+    #include <thread>
+    #include <vector>
+    #include <chrono>
+    #include <stdio.h>
+    #include <sstream>
 
-#ifdef DRAW_GNU_PLOTS
-    #define PUSH_GMEASUREMENT_VALUES(value, rssi) gMeasurements.push_back({ value, rssi })
+    #ifdef DRAW_GNU_PLOTS
+        #define PUSH_GMEASUREMENT_VALUES(value, rssi) gMeasurements.push_back({ value, rssi })
 GNUPlotPipe saturationPlot;
 GNUPlotPipe IQImbalancePlot;
 GNUPlotPipe txDCPlot;
 
-#else
-    #define PUSH_GMEASUREMENT_VALUES(value, rssi)
-#endif
-#include <gnuPlotPipe.h>
+    #else
+        #define PUSH_GMEASUREMENT_VALUES(value, rssi)
+    #endif
+    #include <gnuPlotPipe.h>
 
 typedef std::vector<std::pair<float, float>> MeasurementsVector;
 MeasurementsVector gMeasurements;
@@ -51,13 +51,21 @@ void DrawMeasurement(GNUPlotPipe& gp, const MeasurementsVector& vec)
     gp.write("e\n");
 }
 
+extern "C" {
+#else
+    #define VERBOSE 0
+    #define PUSH_GMEASUREMENT_VALUES(value, rssi)
+
+    #include "lms7002_regx51.h" //MCU timer sfr
+#endif // __cplusplus
+
 ///APPROXIMATE conversion
 float ChipRSSI_2_dBFS(uint32_t rssi)
 {
     uint32_t maxRSSI = 0x15FF4;
     if (rssi == 0)
         rssi = 1;
-    return 20 * log10(static_cast<float>(rssi) / maxRSSI);
+    return 20 * log10((float)(rssi) / maxRSSI);
 }
 
 int16_t toSigned(int16_t val, uint8_t msblsb)
@@ -77,6 +85,15 @@ uint16_t RSSIDelayCounter = 1; // MCU timer delay between RSSI measurements
 // [2] tx band, when calibrating Rx, 0-band1, 1-band2
 // [1:0] SEL_PATH_RFE, when calibrating Tx
 uint8_t extLoopbackPair = 0;
+
+int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
+{
+    if (value < minBound)
+        return minBound;
+    if (value > maxBound)
+        return maxBound;
+    return value;
+}
 
 static void FlipRisingEdge(const uint16_t addr, const uint8_t bits)
 {
@@ -110,7 +127,7 @@ void UpdateRSSIDelay()
         decimation = 1; //bypass
     {
         float waitTime = sampleCount / ((GetReferenceClk_TSP_MHz(false) / 2) / decimation);
-        RSSIDelayCounter = (0xFFFF) - static_cast<uint16_t>(waitTime * RefClk / 12);
+        RSSIDelayCounter = (0xFFFF) - (uint16_t)(waitTime * RefClk / 12);
     }
 }
 
@@ -233,7 +250,7 @@ int CheckSaturationTxRx(bool extLoopback)
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF / calibUserBwDivider) * 2, 0);
 
-    g_pga = static_cast<uint8_t>(Get_SPI_Reg_bits(G_PGA_RBB));
+    g_pga = (uint8_t)Get_SPI_Reg_bits(G_PGA_RBB);
 #if ENABLE_EXTERNAL_LOOPBACK
     if (extLoopback)
     {
@@ -242,7 +259,7 @@ int CheckSaturationTxRx(bool extLoopback)
     }
     else
 #endif
-        g_rfe = static_cast<uint8_t>(Get_SPI_Reg_bits(G_RXLOOPB_RFE));
+        g_rfe = (uint8_t)Get_SPI_Reg_bits(G_RXLOOPB_RFE);
     rssi = GetRSSI();
     PUSH_GMEASUREMENT_VALUES(index, ChipRSSI_2_dBFS(rssi));
 
@@ -281,7 +298,7 @@ int CheckSaturationTxRx(bool extLoopback)
                 break;
             Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
             rssi = GetRSSI();
-            if (static_cast<float>(rssi) / rssi_prev < 1.05) // pga should give ~1dB change
+            if ((float)rssi / rssi_prev < 1.05) // pga should give ~1dB change
                 break;
             rssi_prev = rssi;
             PUSH_GMEASUREMENT_VALUES(++index, ChipRSSI_2_dBFS(rssi));
@@ -438,12 +455,12 @@ void AdjustAutoDC(const uint16_t address, bool tx)
 
     minValue = initVal = ReadAnalogDC(address);
     minRSSI = rssi = GetRSSI();
-    WriteAnalogDC(address, std::clamp<int16_t>(initVal + 1, -range, range));
+    WriteAnalogDC(address, clamp(initVal + 1, -range, range));
     valChange = GetRSSI() < rssi ? 1 : -1;
 
     for (i = 8; i; --i)
     {
-        initVal = std::clamp<int16_t>(initVal + valChange, -range, range);
+        initVal = clamp(initVal + valChange, -range, range);
         WriteAnalogDC(address, initVal);
         rssi = GetRSSI();
         if (rssi < minRSSI)
@@ -563,10 +580,10 @@ void CalibrateTxDCAuto()
         qparams.result = 0; //ReadAnalogDC(qparams.param.address);
         for (i = 0; i < 3; ++i)
         {
-            iparams.minValue = std::clamp(iparams.result - offset[i], -1024, 1023);
-            iparams.maxValue = std::clamp(iparams.result + offset[i], -1024, 1023);
-            qparams.minValue = std::clamp(qparams.result - offset[i], -1024, 1023);
-            qparams.maxValue = std::clamp(qparams.result + offset[i], -1024, 1023);
+            iparams.minValue = clamp(iparams.result - offset[i], -1024, 1023);
+            iparams.maxValue = clamp(iparams.result + offset[i], -1024, 1023);
+            qparams.minValue = clamp(qparams.result - offset[i], -1024, 1023);
+            qparams.maxValue = clamp(qparams.result + offset[i], -1024, 1023);
 
             TxDcBinarySearch(&iparams);
 #ifdef DRAW_GNU_PLOTS
@@ -711,8 +728,10 @@ void CalibrateIQImbalance(bool tx)
 
 uint8_t SetupCGEN()
 {
-    uint8_t cgenMultiplier = std::clamp<uint8_t>(std::round(GetFrequencyCGEN() / 46.08e6), 2, 13);
-    uint8_t gfir3n = 4 * cgenMultiplier;
+    uint8_t cgenMultiplier;
+    uint8_t gfir3n;
+    cgenMultiplier = clamp((GetFrequencyCGEN() / 46.08e6) + 0.5, 2, 13);
+    gfir3n = 4 * cgenMultiplier;
     if (Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
         gfir3n /= pow2(Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN));
 
@@ -911,7 +930,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     LoadDC_REG_TX_IQ();
     SetNCOFrequency(LMS7002M_Tx, bandwidthRF / calibUserBwDivider, 0);
     {
-        const uint8_t sel_band1_2_trf = static_cast<uint8_t>(Get_SPI_Reg_bits(0x0103, MSB_LSB(11, 10)));
+        const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, MSB_LSB(11, 10));
 #if ENABLE_EXTERNAL_LOOPBACK
         if (extLoopback)
         {
@@ -962,11 +981,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
 uint8_t CalibrateTx(bool extLoopback)
 {
     const uint16_t x0020val = SPI_read(0x0020);
-#ifdef VERBOSE
+#if defined(VERBOSE) && defined(__cplusplus)
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
 #if VERBOSE
-
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(SEL_BAND1_TRF);
     printf("Tx ch.%s , BW: %g MHz, RF output: %s, Gain: %i, loopb: %s\n",
         (x0020val & 3) == 0x1 ? "A" : "B",
@@ -1301,7 +1319,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
 {
     ROM const uint16_t target_rssi = 0x07000; //0x0B000 = -3 dBFS
     uint16_t rssi;
-    uint8_t cg_iamp = static_cast<uint8_t>(Get_SPI_Reg_bits(CG_IAMP_TBB));
+    uint8_t cg_iamp = (uint8_t)Get_SPI_Reg_bits(CG_IAMP_TBB);
 #ifdef DRAW_GNU_PLOTS
     int index = 0;
     GNUPlotPipe& gp = saturationPlot;
@@ -1416,7 +1434,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
 
 uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
 {
-#ifdef VERBOSE
+#if defined(VERBOSE) && defined(__cplusplus)
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
     uint8_t status;
@@ -1467,7 +1485,7 @@ uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
         goto RxCalibrationEndStage;
     if (!extLoopback)
     {
-        if (Get_SPI_Reg_bits(SEL_PATH_RFE) == 2)
+        if ((uint8_t)Get_SPI_Reg_bits(SEL_PATH_RFE) == 2)
         {
             Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, 0);
             Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, 0);
@@ -1540,3 +1558,7 @@ RxCalibrationEndStage : {
 #endif //LMS_VERBOSE_OUTPUT
     return MCU_NO_ERROR;
 }
+
+#ifdef __cplusplus
+} // extern C
+#endif
