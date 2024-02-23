@@ -14,6 +14,7 @@ namespace lime {
 class LitePCIe;
 class Equalizer;
 class SlaveSelectShim;
+class ISerialPort;
 
 class LimeSDR_X3 : public LMS7002M_SDRDevice
 {

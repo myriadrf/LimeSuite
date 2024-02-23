@@ -571,16 +571,7 @@ OpStatus LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
             }
         }
 
-        if (cfg.referenceClockFreq != 0)
-            chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
-
-        const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
-        if (rxUsed && cfg.channel[0].rx.centerFrequency > 0)
-            chip->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
-        if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
-            chip->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
-        if (tddMode)
-            chip->EnableSXTDD(true);
+        LMS7002LOConfigure(chip, cfg);
 
         if (socIndex == 0)
             chip->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0); // enabled DAC is required for FPGA to work
@@ -618,18 +609,9 @@ OpStatus LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         for (int ch = 0; ch < 2; ++ch)
         {
             chip->SetActiveChannel((ch & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
-
-            if (cfg.channel[ch].rx.testSignal.enabled)
-            {
-                chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, static_cast<uint8_t>(cfg.channel[ch].rx.testSignal.scale));
-                chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, cfg.channel[ch].rx.testSignal.dcMode ? 1 : 0);
-                chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
-                // chip->LoadDC_REG_IQ(false, 0x1230, 0x4560); // gets reset by starting stream
-            }
-            chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, cfg.channel[ch].tx.testSignal.enabled ? 1 : 0);
-
             ConfigureDirection(TRXDir::Rx, chip, cfg, ch, socIndex);
             ConfigureDirection(TRXDir::Tx, chip, cfg, ch, socIndex);
+            LMS7002TestSignalConfigure(chip, cfg.channel[ch], ch);
         }
 
         if (socIndex == 0)

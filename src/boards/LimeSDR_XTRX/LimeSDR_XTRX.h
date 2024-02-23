@@ -12,6 +12,7 @@
 namespace lime {
 
 class LitePCIe;
+class ISerialPort;
 
 static const float XTRX_DEFAULT_REFERENCE_CLOCK = 26e6;
 
@@ -23,6 +24,7 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     LimeSDR_XTRX(std::shared_ptr<IComms> spiLMS7002M,
         std::shared_ptr<IComms> spiFPGA,
         std::shared_ptr<LitePCIe> sampleStream,
+        std::shared_ptr<ISerialPort> control,
         double refClk = XTRX_DEFAULT_REFERENCE_CLOCK);
     virtual ~LimeSDR_XTRX();
 
@@ -54,13 +56,13 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
     OpStatus LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
     static OpStatus LMS1_UpdateFPGAInterface(void* userData);
 
-    enum class ePathLMS1_Rx : uint8_t { NONE, LNAH, LNAL, LNAW };
     enum class ePathLMS1_Tx : uint8_t { NONE, BAND1, BAND2 };
 
   private:
     std::shared_ptr<IComms> lms7002mPort;
     std::shared_ptr<IComms> fpgaPort;
     std::shared_ptr<LitePCIe> mStreamPort;
+    std::shared_ptr<ISerialPort> mSerialPort;
 
     std::mutex mCommsMutex;
     bool mConfigInProgress;

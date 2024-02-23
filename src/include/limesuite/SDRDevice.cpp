@@ -76,3 +76,19 @@ OpStatus SDRDevice::CustomParameterRead(std::vector<CustomParameterIO>& paramete
 {
     return ReportError(OpStatus::NOT_IMPLEMENTED, "CustomParameterRead not implemented");
 }
+
+OpStatus SDRDevice::UploadMemory(
+    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+{
+    return OpStatus::NOT_IMPLEMENTED;
+}
+
+OpStatus SDRDevice::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+{
+    return OpStatus::NOT_IMPLEMENTED;
+}
+
+OpStatus SDRDevice::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+{
+    return OpStatus::NOT_IMPLEMENTED;
+}

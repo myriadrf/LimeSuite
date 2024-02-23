@@ -54,6 +54,7 @@ set(LIME_SUITE_SOURCES
     EnumToString.cpp
 
     DSP/Equalizer.cpp
+    DSP/FFT.cpp
     memory/MemoryPool.cpp
 
     mcu_program/spi.cpp
@@ -62,7 +63,6 @@ set(LIME_SUITE_SOURCES
     mcu_program/common_src/lms7002m_filters.c
 
     API/LMS_APIWrapper.cpp
-
     include/limesuite/commonTypes.cpp
     include/limesuite/OpStatus.cpp
     include/limesuite/SDRDevice.cpp

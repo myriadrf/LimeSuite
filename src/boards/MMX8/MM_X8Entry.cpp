@@ -203,7 +203,8 @@ SDRDevice* LimeSDR_MMX8Entry::make(const DeviceHandle& handle)
             trxStreams[i] = std::make_shared<LitePCIe>();
             trxStreams[i]->SetPathName(portName);
         }
-        return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams), adfComms);
+        auto controlPipe = std::make_shared<PCIE_CSR_Pipe>(control);
+        return new LimeSDR_MMX8(controls, fpga, std::move(trxStreams), controlPipe, adfComms);
     } catch (std::runtime_error& e)
     {
         const std::string reason = "Unable to connect to device using handle (" + handle.Serialize() + "): " + e.what();

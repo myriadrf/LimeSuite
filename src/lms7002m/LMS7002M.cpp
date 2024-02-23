@@ -851,6 +851,12 @@ OpStatus LMS7002M::SaveConfig(const std::string& filename)
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
         fout << addr << "=" << value << std::endl;
+        // add parameter name/value as comments
+        for (const LMS7Parameter& parameter : LMS7parameterList)
+        {
+            if (parameter.address == addrToRead[i])
+                fout << "//" << parameter.name << " : " << Get_SPI_Reg_bits(parameter) << std::endl;
+        }
     }
 
     fout << "[lms7002_registers_b]" << std::endl;

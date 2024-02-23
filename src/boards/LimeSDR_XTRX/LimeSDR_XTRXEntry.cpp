@@ -101,7 +101,8 @@ SDRDevice* LimeSDR_XTRXEntry::make(const DeviceHandle& handle)
         std::string streamFile(handle.addr + "_trx0");
         stream->SetPathName(streamFile);
 
-        return new LimeSDR_XTRX(route_lms7002m, route_fpga, stream);
+        auto controlPipe = std::make_shared<PCIE_CSR_Pipe>(control);
+        return new LimeSDR_XTRX(route_lms7002m, route_fpga, stream, controlPipe);
     } catch (std::runtime_error& e)
     {
         const std::string reason = "Unable to connect to device using handle (" + handle.Serialize() + ")";

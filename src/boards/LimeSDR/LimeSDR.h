@@ -51,6 +51,11 @@ class LimeSDR : public LMS7002M_SDRDevice
     virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
     virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
+    virtual OpStatus UploadMemory(
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
+    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
+    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
+
   protected:
     OpStatus EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
     SDRDevice::Descriptor GetDeviceInfo();
@@ -62,6 +67,7 @@ class LimeSDR : public LMS7002M_SDRDevice
     std::shared_ptr<ISerialPort> mSerialPort;
     std::shared_ptr<IComms> mlms7002mPort;
     std::shared_ptr<IComms> mfpgaPort;
+    bool mConfigInProgress;
 };
 
 } // namespace lime
