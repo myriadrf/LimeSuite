@@ -1697,25 +1697,25 @@ void lms7002_pnlTXTSP_view::UpdateGUI()
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
     int16_t value;
-    LMS_ReadParam(lmsControl, LMS7param(TSGFCW_TXTSP), (uint16_t*)&value);
+    LMS_ReadParam(lmsControl, LMS7param(TSGFCW_TXTSP), reinterpret_cast<uint16_t*>(&value));
 
     rgrTSGFCW_TXTSP->SetSelection(value2index(value, tsgfcw_txtsp_IndexValuePairs));
 
-    LMS_ReadParam(lmsControl, LMS7param(IQCORR_TXTSP), (uint16_t*)&value);
+    LMS_ReadParam(lmsControl, LMS7param(IQCORR_TXTSP), reinterpret_cast<uint16_t*>(&value));
     int bitsToShift = (15 - LMS7param(IQCORR_TXTSP).msb - LMS7param(IQCORR_TXTSP).lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_TXTSP->SetValue(value);
 
-    LMS_ReadParam(lmsControl, LMS7param(SEL_TX), (uint16_t*)&value);
+    LMS_ReadParam(lmsControl, LMS7param(SEL_TX), reinterpret_cast<uint16_t*>(&value));
     assert(rgrNCOselections.size() == 16);
     rgrNCOselections[value & 0xF]->SetValue(true);
     UpdateNCOinputs();
 
-    LMS_ReadParam(lmsControl, LMS7param(DCCORRI_TXTSP), (uint16_t*)&value);
+    LMS_ReadParam(lmsControl, LMS7param(DCCORRI_TXTSP), reinterpret_cast<uint16_t*>(&value));
     int8_t dccorr = value;
     cmbDCCORRI_TXTSP->SetValue(dccorr);
-    LMS_ReadParam(lmsControl, LMS7param(DCCORRQ_TXTSP), (uint16_t*)&value);
+    LMS_ReadParam(lmsControl, LMS7param(DCCORRQ_TXTSP), reinterpret_cast<uint16_t*>(&value));
     dccorr = value;
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
@@ -1739,10 +1739,10 @@ void lms7002_pnlTXTSP_view::UpdateGUI()
     //LMS_GetSampleRate(lmsControl, LMS_CH_TX, ch , &sr, nullptr);
     txtRATEVAL->SetLabel(wxString::Format("%3.3f MHz", sr / 1e6));
     //check if B channel is enabled
-    LMS_ReadParam(lmsControl, LMS7param(MAC), (uint16_t*)&value);
+    LMS_ReadParam(lmsControl, LMS7param(MAC), reinterpret_cast<uint16_t*>(&value));
     if (value >= 2)
     {
-        LMS_ReadParam(lmsControl, LMS7param(MIMO_SISO), (uint16_t*)&value);
+        LMS_ReadParam(lmsControl, LMS7param(MIMO_SISO), reinterpret_cast<uint16_t*>(&value));
         if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }

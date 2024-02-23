@@ -5,8 +5,8 @@
 
 static lime::LMS7002M* serPort;
 
-extern float bandwidthRF;
-extern float RefClk;
+extern "C" float bandwidthRF;
+extern "C" float RefClk;
 
 void SetupCalibrations(lime::LMS7002M* chip, double BW)
 {

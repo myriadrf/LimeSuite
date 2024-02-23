@@ -6,6 +6,10 @@
 #include <math.h>
 #include "mcu_defines.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum { SEARCH_SUCCESS = 0, SEARCH_NEED_TO_DECREASE, SEARCH_NEED_TO_INCREASE };
 
 //rx lpf range limits
@@ -20,14 +24,14 @@ static ROM const float_type TxLPF_RF_LimitHigh = 130e6;
 
 static uint8_t ConfigCGEN_ForLPF_IF(float IF_Hz)
 {
-    uint8_t cgenMultiplier = clamp(IF_Hz * 20 / 46.08e6 + 0.5, 2, 13);
+    uint8_t cgenMultiplier = clamp(round(IF_Hz * 20 / 46.08e6), 2, 13);
     return SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
 }
 
 static uint8_t RxFilterSearch(const uint16_t addr, const uint8_t msblsb, const uint16_t rssi_3dB, const uint16_t stepLimit)
 {
     const bool doDecrement = GetRSSI() < rssi_3dB;
-    int16_t value = Get_SPI_Reg_bits(addr, msblsb);
+    uint16_t value = Get_SPI_Reg_bits(addr, msblsb);
     const uint16_t maxValue = pow2((msblsb >> 4) - (msblsb & 0xF) + 1) - 1;
     uint16_t stepSize = 1;
     while (1)
@@ -805,7 +809,7 @@ static uint8_t SearchTxFilterCCAL_RCAL(uint16_t addr, uint8_t msblsb)
         else if (needToChangeCCAL)
         {
             uint8_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
-            ccal_lpflad_tbb = clamp(++ccal_lpflad_tbb, 0, 31);
+            ccal_lpflad_tbb = clamp(ccal_lpflad_tbb + 1, 0, 31);
             Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
         }
         --iterationsLeft;
@@ -861,3 +865,7 @@ TxFilterSearchEndStage : {
 
     return MCU_NO_ERROR;
 }
+
+#ifdef __cplusplus
+}
+#endif

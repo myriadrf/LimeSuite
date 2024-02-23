@@ -87,6 +87,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options(-fvisibility=hidden)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
 
+    # enable C-style cast warnings in C++
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast")
+
     #disable gcc caller-saves flag for O2-O3 optimizations
     #workaround fix for gcc 9.3+
     if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")

@@ -58,7 +58,8 @@ OpStatus LMS64C_FPGA_Over_PCIe::CustomParameterRead(std::vector<CustomParameterI
 
 OpStatus LMS64C_FPGA_Over_PCIe::ProgramWrite(const char* data, size_t length, int prog_mode, int target, ProgressCallback callback)
 {
-    return LMS64CProtocol::ProgramWrite(pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback);
+    return LMS64CProtocol::ProgramWrite(
+        pipe, data, length, prog_mode, static_cast<LMS64CProtocol::ProgramWriteTarget>(target), callback);
 }
 
 OpStatus LMS64C_FPGA_Over_PCIe::MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)

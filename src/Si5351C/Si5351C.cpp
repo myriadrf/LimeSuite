@@ -26,8 +26,8 @@ using namespace lime;
 /// Splits float into fraction integers A + B/C
 void realToFrac(const float real, int& A, int& B, int& C)
 {
-    A = (int)real;
-    B = (int)((real - A) * 1048576 + 0.5);
+    A = static_cast<int>(real);
+    B = std::round((real - A) * 1048576);
     C = 1048576;
 
     int a = B;
@@ -534,12 +534,12 @@ Si5351C::Status Si5351C::UploadConfiguration()
     std::vector<uint8_t> outBuffer;
     //Disable outputs
     outBuffer.push_back(3);
-    outBuffer.push_back(uint8_t(0xFF));
+    outBuffer.push_back(0xFF);
     //Power down all output drivers
     for (int i = 0; i < 8; ++i)
     {
         outBuffer.push_back(16 + i);
-        outBuffer.push_back(uint8_t(0x84));
+        outBuffer.push_back(0x84);
     }
     //write new configuration
     for (int i = 15; i <= 92; ++i)
@@ -553,8 +553,8 @@ Si5351C::Status Si5351C::UploadConfiguration()
         outBuffer.push_back(m_newConfiguration[i]);
     }
     //apply soft reset
-    outBuffer.push_back(uint8_t(177));
-    outBuffer.push_back(uint8_t(0xAC));
+    outBuffer.push_back(0XB1);
+    outBuffer.push_back(0xAC);
     //Enabe desired outputs
     outBuffer.push_back(3);
     outBuffer.push_back(m_newConfiguration[3]);
@@ -748,7 +748,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
     }
 
     plls[0].VCO_Hz = bestVCOA;
-    plls[0].feedbackDivider = (double)bestVCOA / plls[0].inputFreqHz;
+    plls[0].feedbackDivider = static_cast<double>(bestVCOA) / plls[0].inputFreqHz;
 
     for (int i = 0; i < clockCount; ++i)
     {
@@ -764,7 +764,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
         else
         {
             clocks[i].int_mode = false;
-            clocks[i].multisynthDivider = (double)bestVCOA / clocks[i].outputFreqHz;
+            clocks[i].multisynthDivider = static_cast<double>(bestVCOA) / clocks[i].outputFreqHz;
         }
         clocks[i].pllSource = 0;
     }
@@ -817,7 +817,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
     if (bestVCOB == 0) //just in case if pllb is not used make it the same frequency as plla
         bestVCOB = bestVCOA;
     plls[1].VCO_Hz = bestVCOB;
-    plls[1].feedbackDivider = (double)bestVCOB / plls[0].inputFreqHz;
+    plls[1].feedbackDivider = static_cast<double>(bestVCOB) / plls[0].inputFreqHz;
     for (int i = 0; i < clockCount; ++i)
     {
         if (clocks[i].outputFreqHz == 0 || !clocks[i].powered)
@@ -834,7 +834,7 @@ void Si5351C::FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned l
         else
         {
             clocks[i].int_mode = false;
-            clocks[i].multisynthDivider = (double)bestVCOB / clocks[i].outputFreqHz;
+            clocks[i].multisynthDivider = static_cast<double>(bestVCOB) / clocks[i].outputFreqHz;
         }
         clocks[i].pllSource = 1;
     }
@@ -889,8 +889,8 @@ Si5351C::Status Si5351C::ConfigureClocks()
         {
             if (CLK[i].outputFreqHz <= 150000000)
             {
-                unsigned MSX_P1 = 128 * DivA + floor(128 * ((float)DivB / DivC)) - 512;
-                unsigned MSX_P2 = 128 * DivB - DivC * floor(128 * DivB / DivC);
+                unsigned MSX_P1 = 128 * DivA + std::floor(128 * (static_cast<float>(DivB) / DivC)) - 512;
+                unsigned MSX_P2 = 128 * DivB - DivC * std::floor(128 * DivB / DivC);
                 unsigned MSX_P3 = DivC;
 
                 m_newConfiguration[addr] = MSX_P3 >> 8;
@@ -980,8 +980,8 @@ Si5351C::Status Si5351C::ConfigureClocks()
             DivB,
             DivC);
 
-        MSNx_P1 = 128 * DivA + floor(128 * ((float)DivB / DivC)) - 512;
-        MSNx_P2 = 128 * DivB - DivC * floor(128 * DivB / DivC);
+        MSNx_P1 = 128 * DivA + std::floor(128 * (static_cast<float>(DivB) / DivC)) - 512;
+        MSNx_P2 = 128 * DivB - DivC * std::floor(128 * DivB / DivC);
         MSNx_P3 = DivC;
 
         m_newConfiguration[addr + 4] = MSNx_P1;
@@ -1012,8 +1012,7 @@ void Si5351C::SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled, bo
     {
         if (fOut_Hz < 8000 || fOut_Hz > 160000000)
         {
-            lime::error(
-                "Si5351C - CLK%d output frequency must be between 8kHz and 160MHz. fOut_MHz = %g", (int)id, fOut_Hz / 1000000.0);
+            lime::error("Si5351C - CLK%d output frequency must be between 8kHz and 160MHz. fOut_MHz = %g", id, fOut_Hz / 1000000.0);
             return;
         }
         CLK[id].powered = enabled;

@@ -79,8 +79,12 @@ int LitePCIe::Open(const std::string& deviceFilename, uint32_t flags)
                 const std::string msg = mFilePath + ": DMA writer request denied";
                 throw std::runtime_error(msg);
             }
-            uint8_t* buf = (uint8_t*)mmap(
-                NULL, info.dma_rx_buf_size * info.dma_rx_buf_count, PROT_READ, MAP_SHARED, mFileDescriptor, info.dma_rx_buf_offset);
+            uint8_t* buf = static_cast<uint8_t*>(mmap(NULL,
+                info.dma_rx_buf_size * info.dma_rx_buf_count,
+                PROT_READ,
+                MAP_SHARED,
+                mFileDescriptor,
+                info.dma_rx_buf_offset));
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 const std::string msg = mFilePath + ": failed to MMAP Rx DMA buffer";
@@ -99,12 +103,12 @@ int LitePCIe::Open(const std::string& deviceFilename, uint32_t flags)
                 const std::string msg = mFilePath + ": DMA reader request denied";
                 throw std::runtime_error(msg);
             }
-            uint8_t* buf = (uint8_t*)mmap(NULL,
+            uint8_t* buf = static_cast<uint8_t*>(mmap(NULL,
                 info.dma_tx_buf_size * info.dma_tx_buf_count,
                 PROT_WRITE,
                 MAP_SHARED,
                 mFileDescriptor,
-                info.dma_tx_buf_offset);
+                info.dma_tx_buf_offset));
             if (buf == MAP_FAILED || buf == nullptr)
             {
                 const std::string msg = mFilePath + ": failed to MMAP Tx DMA buffer";

@@ -4,15 +4,11 @@
 #include "lms7002m_controls.h"
 #include <math.h>
 #include "mcu_defines.h"
-
-#ifndef __cplusplus
-    #include "lms7002_regx51.h" //MCU timer sfr
-#endif
+#include <stdlib.h>
 
 #define ENABLE_EXTERNAL_LOOPBACK 1
 
 #ifdef __cplusplus
-    #include <cstdlib>
 //#define VERBOSE 1
 //#define DRAW_GNU_PLOTS
 
@@ -55,6 +51,14 @@ void DrawMeasurement(GNUPlotPipe& gp, const MeasurementsVector& vec)
     gp.write("e\n");
 }
 
+extern "C" {
+#else
+    #define VERBOSE 0
+    #define PUSH_GMEASUREMENT_VALUES(value, rssi)
+
+    #include "lms7002_regx51.h" //MCU timer sfr
+#endif // __cplusplus
+
 ///APPROXIMATE conversion
 float ChipRSSI_2_dBFS(uint32_t rssi)
 {
@@ -70,10 +74,6 @@ int16_t toSigned(int16_t val, uint8_t msblsb)
     val >>= 15 - ((msblsb >> 4) & 0xF);
     return val;
 }
-#else
-    #define VERBOSE 0
-    #define PUSH_GMEASUREMENT_VALUES(value, rssi)
-#endif // __cplusplus
 
 float bandwidthRF = 5e6; //Calibration bandwidth
 uint16_t RSSIDelayCounter = 1; // MCU timer delay between RSSI measurements
@@ -981,11 +981,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
 uint8_t CalibrateTx(bool extLoopback)
 {
     const uint16_t x0020val = SPI_read(0x0020);
-#ifdef VERBOSE
+#if defined(VERBOSE) && defined(__cplusplus)
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
 #if VERBOSE
-
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(SEL_BAND1_TRF);
     printf("Tx ch.%s , BW: %g MHz, RF output: %s, Gain: %i, loopb: %s\n",
         (x0020val & 3) == 0x1 ? "A" : "B",
@@ -1435,7 +1434,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
 
 uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
 {
-#ifdef VERBOSE
+#if defined(VERBOSE) && defined(__cplusplus)
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
     uint8_t status;
@@ -1559,3 +1558,7 @@ RxCalibrationEndStage : {
 #endif //LMS_VERBOSE_OUTPUT
     return MCU_NO_ERROR;
 }
+
+#ifdef __cplusplus
+} // extern C
+#endif

@@ -59,7 +59,7 @@ void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char*
     wxCommandEvent evt;
     evt.SetString(wxString::FromAscii(message));
     evt.SetEventType(LOG_MESSAGE);
-    evt.SetInt(int(level));
+    evt.SetInt(static_cast<int>(level));
     wxPostEvent(obj_ptr, evt);
 }
 
@@ -349,7 +349,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const uint8_t* data, const ui
     repeatedZeros = repeatedZeros - (repeatedZeros & 0x1);
     for (size_t i = 0; i < length - repeatedZeros; ++i)
         //casting to short to print as numbers
-        ss << " " << std::setw(2) << (unsigned short)data[i];
+        ss << " " << std::setw(2) << static_cast<unsigned short>(data[i]);
     if (repeatedZeros > 2)
         ss << " (00 x " << std::dec << repeatedZeros << " times)";
     lime::debug(ss.str());

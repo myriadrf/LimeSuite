@@ -741,7 +741,7 @@ void LimeSDR_X3::SetLMSPath(const TRXDir dir, const SDRDevice::ChannelConfig::Di
         }
         else
         {
-            path = (dir == TRXDir::Rx) ? uint8_t(ePathLMS2_Rx::NONE) : uint8_t(ePathLMS2_Tx::NONE);
+            path = (dir == TRXDir::Rx) ? static_cast<uint8_t>(ePathLMS2_Rx::NONE) : static_cast<uint8_t>(ePathLMS2_Tx::NONE);
         }
 
         LMS2SetPath(dir, ch, path);
@@ -1211,7 +1211,7 @@ void LimeSDR_X3::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
     double txClock = f_Hz;
 
     // Oversample is available only to Tx for LMS#2
-    oversample = std::min(oversample, uint8_t(2));
+    oversample = std::min<uint8_t>(oversample, 2);
     if (oversample == 2 || oversample == 0) // 0 is "auto", use max oversample
         txClock *= 2;
 

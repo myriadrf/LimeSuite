@@ -293,11 +293,17 @@ Si5351C_wxgui::Si5351C_wxgui(
     FlexGridSizer1->Fit(this);
     FlexGridSizer1->SetSizeHints(this);
 
-    Connect(ID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnLoadFileClick);
-    Connect(ID_BUTTON4, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnResetToDefaultsClick);
-    Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnReadStatusClick);
-    Connect(ID_BUTTON5, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnClearStatusClick);
-    Connect(ID_BUTTON3, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnConfigureClockClick);
+    Connect(ID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&Si5351C_wxgui::OnbtnLoadFileClick));
+    Connect(ID_BUTTON4,
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        reinterpret_cast<wxObjectEventFunction>(&Si5351C_wxgui::OnbtnResetToDefaultsClick));
+    Connect(
+        ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&Si5351C_wxgui::OnbtnReadStatusClick));
+    Connect(
+        ID_BUTTON5, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&Si5351C_wxgui::OnbtnClearStatusClick));
+    Connect(ID_BUTTON3,
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        reinterpret_cast<wxObjectEventFunction>(&Si5351C_wxgui::OnbtnConfigureClockClick));
 }
 
 void Si5351C_wxgui::Initialize(SDRDevice* pModule)
