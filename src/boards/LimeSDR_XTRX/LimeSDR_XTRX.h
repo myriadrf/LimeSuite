@@ -26,32 +26,33 @@ class LimeSDR_XTRX : public LMS7002M_SDRDevice
         double refClk = XTRX_DEFAULT_REFERENCE_CLOCK);
     virtual ~LimeSDR_XTRX();
 
-    virtual void Configure(const SDRConfig& config, uint8_t socIndex) override;
+    virtual OpStatus Configure(const SDRConfig& config, uint8_t socIndex) override;
 
-    virtual int Init() override;
+    virtual OpStatus Init() override;
 
-    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
+    virtual OpStatus SetSampleRate(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
-    virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
+    virtual OpStatus SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual OpStatus SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
+    virtual OpStatus StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
-    virtual bool UploadMemory(
+    virtual OpStatus UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
+    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) override;
+    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) override;
 
   protected:
     void LMS1SetPath(bool tx, uint8_t chan, uint8_t path);
-    void LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
-    static int LMS1_UpdateFPGAInterface(void* userData);
+    OpStatus LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uint8_t txInterpolation);
+    static OpStatus LMS1_UpdateFPGAInterface(void* userData);
 
     enum class ePathLMS1_Rx : uint8_t { NONE, LNAH, LNAL, LNAW };
     enum class ePathLMS1_Tx : uint8_t { NONE, BAND1, BAND2 };

@@ -6,7 +6,10 @@
 #include <wx/busyinfo.h>
 #include "lms7suiteAppFrame.h"
 #include "limesuite/LMS7002M.h"
+#include "Logger.h"
+
 using namespace lime;
+using namespace std::literals::string_literals;
 
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(
     wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -419,16 +422,16 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll(wxCommandEvent& event)
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
 
-    int status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, useExtLoopback);
+    OpStatus status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, useExtLoopback);
 
-    if (status != 0)
+    if (status != OpStatus::SUCCESS)
     {
         // wxMessageBox(wxString::Format(_("Tx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
         UpdateGUI();
         return;
     }
 
-    status |= lmsControl->CalibrateRx(bandwidth_MHz * 1e6, useExtLoopback);
+    status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, useExtLoopback);
     // if (status != 0)
     //     wxMessageBox(wxString::Format(_("Rx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
     // else
@@ -465,7 +468,7 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
     if (event.GetEventObject() == cmbDCOFFI_RFE || event.GetEventObject() == cmbDCOFFQ_RFE)

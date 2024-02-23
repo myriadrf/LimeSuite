@@ -15,9 +15,9 @@ FPGA_Mini::FPGA_Mini(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms700
 {
 }
 
-int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
+OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
-    int status = 0;
+    OpStatus status = OpStatus::SUCCESS;
 
     FPGA_PLL_clock clocks[4];
     if ((txRate_Hz >= 5e6) && (rxRate_Hz >= 5e6))
@@ -49,7 +49,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
     {
         status = SetDirectClocking(0);
 
-        if (status == 0)
+        if (status == OpStatus::SUCCESS)
         {
             status = SetDirectClocking(1);
         }
@@ -58,7 +58,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
     return status;
 }
 
-int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
     uint32_t reg20;
     const double rxPhC1 = 89.46;
@@ -90,7 +90,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     //backup registers
     dataWr[0] = 0x0020;
     lms7002mPort->SPI(dataWr.data(), &reg20, 1);
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
     lms7002mPort->SPI(spiAddr.data(), dataRd.data(), bakRegCnt);
 
@@ -102,7 +102,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
         for (int i = 0; i < setRegCnt; ++i)
         {
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         }
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
@@ -121,7 +121,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         clocks[1] = clocks[0];
         clocks[2] = clocks[0];
         clocks[3] = clocks[0];
-        if (SetPllFrequency(0, rxRate_Hz, clocks, 4) == 0)
+        if (SetPllFrequency(0, rxRate_Hz, clocks, 4) == OpStatus::SUCCESS)
         {
             rxPhaseSearchSuccess = true;
             break;
@@ -137,7 +137,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
         for (int i = 0; i < setRegCnt; ++i)
         {
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         }
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
@@ -152,7 +152,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             clocks[2] = clocks[0];
             clocks[3] = clocks[0];
             WriteRegister(0x000A, 0x0200);
-            if (SetPllFrequency(0, txRate_Hz, clocks, 4) == 0)
+            if (SetPllFrequency(0, txRate_Hz, clocks, 4) == OpStatus::SUCCESS)
             {
                 txPhaseSearchSuccess = true;
                 break;
@@ -172,12 +172,12 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     //Restore registers
     for (int i = 0; i < bakRegCnt; ++i)
     {
-        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
+        dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | dataRd[i]; //msbit 1=SPI write
     }
 
     lms7002mPort->SPI(dataWr.data(), nullptr, bakRegCnt);
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | reg20; //msbit 1=SPI write
     lms7002mPort->SPI(dataWr.data(), nullptr, 1);
 
     WriteRegister(0x000A, 0);
@@ -185,9 +185,10 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     if (!rxPhaseSearchSuccess || !txPhaseSearchSuccess)
     {
         SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
-        return -1;
+        // TODO: should SetInterfaceFreq override failure?
+        return OpStatus::ERROR;
     }
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 } //namespace lime

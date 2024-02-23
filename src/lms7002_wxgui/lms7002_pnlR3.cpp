@@ -8,10 +8,13 @@
 #include <thread>
 #include "mcu_programs.h"
 #include "limesuite/LMS7002M.h"
+#include "Logger.h"
 
 #include <vector>
+
 using namespace lime;
 using namespace std;
+using namespace std::literals::string_literals;
 
 lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : ILMS7002MTab(parent, id, pos, size, style)
@@ -526,11 +529,13 @@ void lms7002_pnlR3_view::MCU_RunProcedure(uint8_t id)
     const uint16_t x0002reg = temp & 0xFF;
     const uint16_t interupt6 = 0x0008;
     const uint16_t addrs[5] = { 0x0006, 0x0, 0x0002, 0x0002, 0x0002 };
-    const uint16_t values[5] = { (uint16_t)(id != 0),
-        (uint16_t)(id),
-        (uint16_t)(x0002reg & ~interupt6),
-        (uint16_t)(x0002reg | interupt6),
-        (uint16_t)(x0002reg & ~interupt6) };
+    const uint16_t values[5] = {
+        static_cast<uint16_t>(id != 0),
+        static_cast<uint16_t>(id),
+        static_cast<uint16_t>(x0002reg & ~interupt6),
+        static_cast<uint16_t>(x0002reg | interupt6),
+        static_cast<uint16_t>(x0002reg & ~interupt6),
+    };
     for (int i = 0; i < 5; ++i)
         lmsControl->SPI_write(addrs[i], values[i]);
 }
@@ -568,7 +573,7 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
 
@@ -661,7 +666,7 @@ void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
         return;
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
 }
@@ -690,7 +695,7 @@ void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
         return;
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
 }

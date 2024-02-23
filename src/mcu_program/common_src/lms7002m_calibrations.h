@@ -1,12 +1,17 @@
 #ifndef LMS7002M_CALIBRATIONS_H
 #define LMS7002M_CALIBRATIONS_H
 
-#include "typedefs.h"
+#ifdef __cplusplus
 namespace lime {
 class LMS7002M;
 }
 
 void SetupCalibrations(lime::LMS7002M* chip, double BW);
+
+extern "C" {
+#endif
+
+#include "typedefs.h"
 
 int16_t ReadAnalogDC(const uint16_t addr);
 void UpdateRSSIDelay();
@@ -19,5 +24,9 @@ uint8_t CalibrateRxExternalLoop();
 void CalibrateRxDCAuto();
 uint8_t RunAGC(uint32_t wantedRSSI);
 int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

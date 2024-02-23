@@ -1,15 +1,15 @@
 /**
   @file:   PacketsFIFO.h
   @author: Sander Jobing
- 
+
   Created on July 29, 2017, 5:17 PM
- 
+
   This class implements a Single Producer - Single Consumer lock-free and
   wait-free queue. Only 1 thread can fill the queue, another thread can read
   from the queue, but no more threads are allowed. This lock-free queue
   is a fifo queue, the first element inserted is the first element which
   comes out.
- 
+
   Thanks to Timur Doumler, Juce
   https://www.youtube.com/watch?v=qdrp6k4rcP4
  */
@@ -20,11 +20,14 @@
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <vector>
 
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+#include "Logger.h"
+
+using namespace std::literals::string_literals;
 
 namespace lime {
 
@@ -97,7 +100,7 @@ template<class T> class PacketsFIFO
             {
                 if (canWrite.wait_for(lk, std::chrono::milliseconds(timeout)) == std::cv_status::timeout)
                 {
-                    printf("write fifo timeout\n");
+                    lime::error("write fifo timeout"s);
                     return false;
                 }
             }
@@ -132,7 +135,7 @@ template<class T> class PacketsFIFO
                 //   return false;
                 if (canRead.wait_for(lk, std::chrono::milliseconds(timeout)) == std::cv_status::timeout)
                 {
-                    //printf("pop fifo timeout\n");
+                    //lime::error("pop fifo timeout"s);
                     return false;
                 }
             }

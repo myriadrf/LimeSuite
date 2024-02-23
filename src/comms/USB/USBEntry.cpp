@@ -47,14 +47,12 @@ USBEntry::~USBEntry()
 
 std::vector<DeviceHandle> USBEntry::enumerate(const DeviceHandle& hint)
 {
-#ifdef __unix__
     std::vector<DeviceHandle> handles;
 
     if (!hint.media.empty() && hint.media.find("USB") == std::string::npos)
-    {
         return handles;
-    }
 
+#ifdef __unix__
     libusb_device** devs; // Pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
@@ -98,9 +96,10 @@ std::vector<DeviceHandle> USBEntry::enumerate(const DeviceHandle& hint)
     }
 
     libusb_free_device_list(devs, 1);
-
-    return handles;
+#else
+        // TODO: implement for windows
 #endif
+    return handles;
 }
 
 #ifdef __unix__

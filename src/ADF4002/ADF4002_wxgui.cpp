@@ -509,8 +509,8 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent, wxWindowID id, const wxPoint& pos
     FlexGridSizer1->Fit(this);
     FlexGridSizer1->SetSizeHints(this);
 
-    Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&ADF4002_wxgui::OnbtnCalcSendClick);
-    Connect(ID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&ADF4002_wxgui::OnbtnUploadClick);
+    Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&ADF4002_wxgui::OnbtnCalcSendClick));
+    Connect(ID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&ADF4002_wxgui::OnbtnUploadClick));
     //*)
 }
 

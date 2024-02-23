@@ -32,6 +32,18 @@ const int OpenGLGraph::GLCanvasAttributes[8] = {
     WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0
 };
 
+static constexpr bool IsGlew1_5()
+{
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    return GLEW_VERSION_1_5;
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+}
+
 GLG_settings::GLG_settings()
     : title("")
     , titleXaxis("")
@@ -173,7 +185,7 @@ bool OpenGLGraph::Initialize(int width, int height)
     }
 
     char userOGLversion[255];
-    strcpy(userOGLversion, (const char*)glGetString(GL_VERSION));
+    strcpy(userOGLversion, reinterpret_cast<const char*>(glGetString(GL_VERSION)));
 
     oglOk = glewIsSupported("GL_VERSION_2_0");
 
@@ -207,7 +219,7 @@ bool OpenGLGraph::Initialize(int width, int height)
     initialized = true;
 
     m_font = new GLFont();
-    m_font->loadFromArray((const char*)standardStaticFont, sizeof(standardStaticFont));
+    m_font->loadFromArray(reinterpret_cast<const char*>(standardStaticFont), sizeof(standardStaticFont));
     return true;
 }
 
@@ -594,8 +606,8 @@ void OpenGLGraph::CalculateGrid()
         }
         while (interval / divisor > 10 * xlines)
             divisor *= 10;
-        settings.gridXspacing = divisor * mult[int(0.5f + interval / xlines / divisor)];
-        settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
+        settings.gridXspacing = divisor * mult[static_cast<int>(0.5f + interval / xlines / divisor)];
+        settings.gridXstart = static_cast<int>(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
     }
     else
         settings.gridXspacing = interval;
@@ -614,8 +626,8 @@ void OpenGLGraph::CalculateGrid()
         }
         while (interval / divisor > 10 * ylines)
             divisor *= 10;
-        settings.gridYspacing = divisor * mult[int(0.5f + interval / ylines / divisor)];
-        settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
+        settings.gridYspacing = divisor * mult[static_cast<int>(0.5f + interval / ylines / divisor)];
+        settings.gridYstart = static_cast<int>(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
     }
     else
         settings.gridYspacing = interval;
@@ -683,7 +695,8 @@ void OpenGLGraph::Draw()
     //draw series data
 
     switchToDataView();
-    if (settings.useVBO && GLEW_VERSION_1_5)
+
+    if (settings.useVBO && IsGlew1_5())
     {
         for (unsigned int i = 0; i < series.size(); i++)
         {
@@ -1030,8 +1043,8 @@ void OpenGLGraph::OnMouseMove(int X, int Y)
         m_MouseCoord.y2 = Y;
         spanx = settings.visibleArea.x2 - settings.visibleArea.x1;
         spany = settings.visibleArea.y2 - settings.visibleArea.y1;
-        sx = 1 + ((float)(m_MouseCoord.x1 - m_MouseCoord.x2)) / settings.dataViewWidth;
-        sy = 1 + ((float)(m_MouseCoord.y1 - m_MouseCoord.y2)) / settings.dataViewHeight;
+        sx = 1 + static_cast<float>(m_MouseCoord.x1 - m_MouseCoord.x2) / settings.dataViewWidth;
+        sy = 1 + static_cast<float>(m_MouseCoord.y1 - m_MouseCoord.y2) / settings.dataViewHeight;
         Zoom(settings.visibleArea.x1 + spanx / 2, settings.visibleArea.y1 + spany / 2, m_lastSpanX * sx, m_lastSpanY * sy);
         break;
     default:
@@ -1673,7 +1686,7 @@ bool OpenGLGraph::SearchPeak()
 
 void OpenGLGraph::SetMarker(int id, float xValue, bool enabled, bool show)
 {
-    if (id >= 0 && id < (int)markers.size())
+    if (id >= 0 && id < static_cast<int>(markers.size()))
     {
         ChangeMarker(id, xValue);
         markers[id].used = enabled;
@@ -1683,7 +1696,7 @@ void OpenGLGraph::SetMarker(int id, float xValue, bool enabled, bool show)
 
 void OpenGLGraph::GetMarker(int id, float& xValue, float& yValue, bool& enabled, bool& show)
 {
-    if (id >= 0 && id < (int)markers.size())
+    if (id >= 0 && id < static_cast<int>(markers.size()))
     {
         xValue = markers[id].posX;
         yValue = markers[id].posY;

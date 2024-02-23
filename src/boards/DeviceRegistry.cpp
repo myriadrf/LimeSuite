@@ -1,17 +1,14 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/SDRDevice.h"
+#include "Logger.h"
 #include <mutex>
 #include <map>
 #include <memory>
 #include <iostream>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
-using namespace lime;
 
-#if 0
-    #define verbose_printf(...) printf(__VA_ARGS__)
-#else
-    #define verbose_printf(...)
-#endif
+using namespace lime;
+using namespace std::literals::string_literals;
 
 static std::mutex gRegistryMutex;
 static std::map<std::string, DeviceRegistryEntry*> registryEntries;
@@ -87,12 +84,12 @@ DeviceRegistryEntry::DeviceRegistryEntry(const std::string& name)
 {
     std::lock_guard<std::mutex> lock(gRegistryMutex);
     registryEntries[_name] = this;
-    verbose_printf("DeviceRegistry Added: %s\n", _name.c_str());
+    lime::debug("DeviceRegistry Added: "s + _name);
 }
 
 DeviceRegistryEntry::~DeviceRegistryEntry(void)
 {
     std::lock_guard<std::mutex> lock(gRegistryMutex);
     registryEntries.erase(_name);
-    verbose_printf("DeviceRegistry Removed: %s\n", _name.c_str());
+    lime::debug("DeviceRegistry Removed: "s + _name);
 }

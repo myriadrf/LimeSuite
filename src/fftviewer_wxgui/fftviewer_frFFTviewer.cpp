@@ -55,13 +55,13 @@ bool fftviewer_frFFTviewer::Initialize(SDRDevice* pDataPort)
     else
     {
         constexpr uint8_t modeChoicesItemCount = 2;
-        const std::array<wxString, modeChoicesItemCount> modeChoices{ "SISO", "MIMO" };
+        const std::array<const wxString, modeChoicesItemCount> modeChoices{ "SISO", "MIMO" };
         cmbMode->Set(modeChoicesItemCount, modeChoices.data());
         cmbMode->SetSelection(0);
         cmbMode->GetContainingSizer()->Layout(); // update the width of the box
 
         constexpr uint8_t channelVisibilityChoicesItemCount = 3;
-        const std::array<wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices{ "A", "B", "A&B" };
+        const std::array<const wxString, channelVisibilityChoicesItemCount> channelVisibilityChoices{ "A", "B", "A&B" };
         cmbChannelVisibility->Set(channelVisibilityChoicesItemCount, channelVisibilityChoices.data());
         cmbChannelVisibility->SetSelection(0);
         cmbChannelVisibility->GetContainingSizer()->Layout(); // update the width of the box
@@ -456,10 +456,10 @@ void fftviewer_frFFTviewer::StreamingLoop(
         pthis->device->StreamStart(chipIndex);
     } catch (std::logic_error& e)
     {
-        printf("%s\n", e.what());
+        lime::error("%s", e.what());
     } catch (std::runtime_error& e)
     {
-        printf("%s\n", e.what());
+        lime::error("%s", e.what());
     }
 
     // uint16_t regVal = 0;
@@ -563,7 +563,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
                 {
                     for (unsigned s = 0; s < fftSize; ++s)
                     {
-                        const float div = (float)fftCounter * fftSize * fftSize;
+                        const float div = static_cast<float>(fftCounter) * fftSize * fftSize;
                         localDataResults.fftBins[ch][s] /= div;
                     }
                 }

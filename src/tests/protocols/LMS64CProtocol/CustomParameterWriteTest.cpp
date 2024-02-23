@@ -55,9 +55,9 @@ TEST(LMS64CProtocol, CustomParameterWriteTestEmptyDoesNothing)
     EXPECT_CALL(mockPort, Write(_, PACKET_SIZE, _)).Times(0);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
-    int returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, {}, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, {}, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterWriteTestOneParameter)
@@ -79,9 +79,9 @@ TEST(LMS64CProtocol, CustomParameterWriteTestOneParameter)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, { { 16, 127.0, "C" } }, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, { { 16, 127.0, "C" } }, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterWriteTestSixteenParameters)
@@ -120,9 +120,9 @@ TEST(LMS64CProtocol, CustomParameterWriteTestSixteenParameters)
 
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(2);
 
-    int returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterWriteTestLowValue)
@@ -147,9 +147,9 @@ TEST(LMS64CProtocol, CustomParameterWriteTestLowValue)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, { { 9, 0.00127, "W" } }, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, { { 9, 0.00127, "W" } }, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterWriteTestHighValue)
@@ -174,9 +174,9 @@ TEST(LMS64CProtocol, CustomParameterWriteTestHighValue)
         .Times(1);
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
-    int returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, { { 4, 131268, "A" } }, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterWrite(mockPort, { { 4, 131268, "A" } }, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterWriteNotFullyWritten)

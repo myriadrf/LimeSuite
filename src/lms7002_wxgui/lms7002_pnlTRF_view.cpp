@@ -4,8 +4,12 @@
 #include "lms7002_gui_utilities.h"
 #include "wx/msgdlg.h"
 #include "lms7suiteEvents.h"
+#include "Logger.h"
+
 using namespace lime;
 using namespace LMS7002_WXGUI;
+using namespace std::literals::string_literals;
+
 static indexValueMap en_amphf_pdet_trfIndexValuePairs;
 
 lms7002_pnlTRF_view::lms7002_pnlTRF_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -432,7 +436,7 @@ void lms7002_pnlTRF_view::ParameterChangeHandler(wxCommandEvent& event)
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
     } catch (std::exception& e)
     {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        lime::error("Control element(ID = "s + std::to_string(event.GetId()) + ") don't have assigned LMS parameter."s);
         return;
     }
     long value = event.GetInt();

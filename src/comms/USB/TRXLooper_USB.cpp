@@ -8,6 +8,8 @@
 #include "TRXLooper_USB.h"
 #include "USBGeneric.h"
 
+using namespace std::literals::string_literals;
+
 namespace lime {
 
 TRXLooper_USB::TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt)
@@ -39,7 +41,7 @@ TRXLooper_USB::~TRXLooper_USB()
     }
 }
 
-void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
+OpStatus TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
 {
     mConfig = config;
 
@@ -53,7 +55,7 @@ void TRXLooper_USB::Setup(const lime::SDRDevice::StreamConfig& config)
         TxSetup();
     }
 
-    TRXLooper::Setup(config);
+    return TRXLooper::Setup(config);
 }
 
 int TRXLooper_USB::TxSetup()
@@ -118,16 +120,16 @@ void TRXLooper_USB::TransmitPacketsLoop()
     SamplesPacketType* srcPkt = nullptr;
 
     bool isBufferFull = false;
-    uint payloadSize = 0;
-    uint bytesUsed = 0;
-    uint packetsCreated = 0;
+    uint32_t payloadSize = 0;
+    uint32_t bytesUsed = 0;
+    uint32_t packetsCreated = 0;
 
     const bool packed = mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    uint samplesInPkt = (packed ? 1360 : 1020) / conversion.channelCount;
+    uint32_t samplesInPkt = (packed ? 1360 : 1020) / conversion.channelCount;
 
     const bool mimo = std::max(mConfig.channels.at(lime::TRXDir::Tx).size(), mConfig.channels.at(lime::TRXDir::Rx).size()) > 1;
     const int bytesForFrame = (packed ? 3 : 4) * (mimo ? 2 : 1);
-    uint maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
+    uint32_t maxPayloadSize = std::min(4080u, bytesForFrame * samplesInPkt);
 
     const uint8_t safeTxEndPt = txEndPt; // To make sure no undefined behaviour happens when killing the thread
 
@@ -158,7 +160,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             else
             {
                 // TODO: callback for Rx timeout
-                printf("Tx WaitForXfer timeout\n");
+                lime::error("Tx WaitForXfer timeout"s);
                 continue;
             }
         }
@@ -189,8 +191,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
             header->ignoreTimestamp(!srcPkt->useTimestamp);
 
-            const uint freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
-            uint transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint>(srcPkt->size()));
+            const uint32_t freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
+            uint32_t transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint32_t>(srcPkt->size()));
             transferCount = std::min(transferCount, samplesInPkt);
 
             if (transferCount > 0)
@@ -242,7 +244,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
             t1 = t2;
 
             float dataRate = 1000.0 * totalBytesSent / timePeriod.count();
-            printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
+            lime::info("Tx: %.3f MB/s", dataRate / 1000000.0);
             totalBytesSent = 0;
 
             mTx.stats.dataRate_Bps = dataRate;
@@ -336,13 +338,13 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
                 if (bytesReceived != bufferSize)
                 {
-                    printf("Recv %i, expected : %i\n", bytesReceived, bufferSize);
+                    lime::error("Recv %i, expected : %i", bytesReceived, bufferSize);
                 }
             }
             else
             {
                 // TODO: callback for Rx timeout
-                printf("Rx WaitForXfer timeout\n");
+                lime::error("Rx WaitForXfer timeout"s);
                 continue;
             }
         }
@@ -361,7 +363,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
             if (pkt->counter - expectedTS != 0)
             {
-                printf("Loss: transfer:%li packet:%i, exp: %li, got: %li, diff: %li, handle: %i\n",
+                lime::warning("Loss: transfer:%li packet:%i, exp: %li, got: %li, diff: %li, handle: %i",
                     stats.packets,
                     j,
                     expectedTS,
@@ -416,7 +418,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
             t1 = t2;
 
             float dataRate = 1000.0 * totalBytesReceived / timePeriod.count();
-            printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
+            lime::info("Rx: %.3f MB/s", dataRate / 1000000.0);
             mRx.stats.dataRate_Bps = dataRate;
 
             totalBytesReceived = 0;

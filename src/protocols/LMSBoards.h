@@ -44,7 +44,7 @@ enum eLMS_DEV {
     LMS_DEV_COUNT
 };
 
-const std::array<std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
+const std::array<const std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
     "EVB6",
     "DigiGreen",
     "DigiRed",
@@ -74,7 +74,7 @@ const std::array<std::string, LMS_DEV_COUNT> LMS_DEV_NAMES = { "UNKNOWN",
     "LimeSDR XTRX",
     "LimeSDR MMX8" };
 
-static inline const std::string& GetDeviceName(const eLMS_DEV device)
+static constexpr const std::string& GetDeviceName(const eLMS_DEV device)
 {
     if (LMS_DEV_UNKNOWN < device && device < LMS_DEV_COUNT)
     {
@@ -99,7 +99,7 @@ enum eEXP_BOARD {
     EXP_BOARD_COUNT
 };
 
-const std::array<std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
+const std::array<const std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
     "UNKNOWN",
     "UNSUPPORTED",
     "NOT AVAILABLE",
@@ -112,7 +112,7 @@ const std::array<std::string, EXP_BOARD_COUNT> EXP_BOARD_NAMES = {
     "Myriad7 Novena",
 };
 
-static inline const std::string& GetExpansionBoardName(const eEXP_BOARD board)
+static constexpr const std::string& GetExpansionBoardName(const eEXP_BOARD board)
 {
     if (EXP_BOARD_UNKNOWN < board && board < EXP_BOARD_COUNT)
     {

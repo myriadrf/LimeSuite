@@ -21,41 +21,41 @@ class LimeSDR : public LMS7002M_SDRDevice
         std::shared_ptr<ISerialPort> commsPort);
     virtual ~LimeSDR();
 
-    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) override;
+    virtual OpStatus Configure(const SDRConfig& config, uint8_t moduleIndex) override;
 
-    virtual int Init() override;
-    virtual void Reset() override;
+    virtual OpStatus Init() override;
+    virtual OpStatus Reset() override;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) override;
-    virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
+    virtual OpStatus SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) override;
 
-    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
+    virtual OpStatus SetSampleRate(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) override;
 
-    virtual void Synchronize(bool toChip) override;
     virtual void EnableCache(bool enable) override;
 
-    virtual int SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
+    virtual OpStatus SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
-    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
+    virtual OpStatus StreamSetup(const StreamConfig& config, uint8_t moduleIndex) override;
 
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
     virtual void* GetInternalChip(uint32_t index) override;
 
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIORead(uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIODirWrite(const uint8_t* buffer, const size_t bufLength) override;
+    virtual OpStatus GPIOWrite(const uint8_t* buffer, const size_t bufLength) override;
 
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) override;
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters) override;
 
   protected:
-    int EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
+    OpStatus EnableChannel(TRXDir dir, uint8_t channel, bool enabled);
     SDRDevice::Descriptor GetDeviceInfo();
     void ResetUSBFIFO();
-    static int UpdateFPGAInterface(void* userData);
+    static OpStatus UpdateFPGAInterface(void* userData);
 
   private:
     std::shared_ptr<USBGeneric> mStreamPort;

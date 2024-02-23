@@ -35,7 +35,7 @@ dlgMarkers::dlgMarkers(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 
 void dlgMarkers::BuildContent(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size)
 {
-    parent_graph = (OpenGLGraph*)parent;
+    parent_graph = static_cast<OpenGLGraph*>(parent);
     //(*Initialize(dlgMarkers)
     Create(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER, _T("id"));
     SetClientSize(wxDefaultSize);
@@ -56,7 +56,7 @@ void dlgMarkers::BuildContent(wxWindow* parent, wxWindowID id, const wxPoint& po
     FlexGridSizer1->Fit(this);
     FlexGridSizer1->SetSizeHints(this);
 
-    Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&dlgMarkers::OnbtnCloseClick);
+    Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&dlgMarkers::OnbtnCloseClick));
     //*)
 }
 
@@ -95,8 +95,8 @@ void dlgMarkers::AddMarker(int id)
     marker_valuesA.push_back(0);
     marker_valuesB.push_back(0);
     FlexGridSizer3->Add(StaticText4, 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
-    Connect(markerId, wxEVT_CHECKBOX, (wxObjectEventFunction)&dlgMarkers::OnMarkerChange);
-    Connect(markerId, wxEVT_COMMAND_TEXT_UPDATED, (wxObjectEventFunction)&dlgMarkers::OnMarkerChange);
+    Connect(markerId, wxEVT_CHECKBOX, reinterpret_cast<wxObjectEventFunction>(&dlgMarkers::OnMarkerChange));
+    Connect(markerId, wxEVT_COMMAND_TEXT_UPDATED, reinterpret_cast<wxObjectEventFunction>(&dlgMarkers::OnMarkerChange));
     pnl->SetSizer(FlexGridSizer3);
     sizerMarkerList->Add(pnl, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     pnl->Layout();

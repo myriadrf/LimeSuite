@@ -12,6 +12,7 @@
 #include "limesuite/config.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/complex.h"
+#include "limesuite/OpStatus.h"
 #include "limesuite/GainTypes.h"
 #include "limesuite/IComms.h"
 #include "limesuite/MemoryDevices.h"
@@ -113,7 +114,7 @@ class LIME_API SDRDevice
             std::size_t totalCount;
             std::size_t usedCount;
 
-            float ratio() { return static_cast<float>(usedCount) / totalCount; }
+            float ratio() const { return static_cast<float>(usedCount) / totalCount; }
         };
 
         StreamStats() { memset(this, 0, sizeof(StreamStats)); }
@@ -138,7 +139,7 @@ class LIME_API SDRDevice
     };
 
     // channels order and data transmission formats setup
-    struct StreamConfig {
+    struct LIME_API StreamConfig {
         struct Extras {
             Extras();
             bool usePoll;
@@ -288,43 +289,43 @@ class LIME_API SDRDevice
 
     virtual ~SDRDevice(){};
 
-    virtual void Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
+    virtual OpStatus Configure(const SDRConfig& config, uint8_t moduleIndex) = 0;
 
     /** @brief Returns SPI slave names and chip select IDs for use with SDRDevice::SPI() */
     virtual const Descriptor& GetDescriptor() const = 0;
 
-    virtual int Init() = 0;
-    virtual void Reset() = 0;
-    virtual void GetGPSLock(GPS_Lock* status) = 0;
+    virtual OpStatus Init() = 0;
+    virtual OpStatus Reset() = 0;
+    virtual OpStatus GetGPSLock(GPS_Lock* status) = 0;
 
-    virtual void EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
+    virtual OpStatus EnableChannel(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool enable) = 0;
 
     virtual double GetClockFreq(uint8_t clk_id, uint8_t channel) = 0;
-    virtual void SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
+    virtual OpStatus SetClockFreq(uint8_t clk_id, double freq, uint8_t channel) = 0;
 
     virtual double GetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
+    virtual OpStatus SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double frequency) = 0;
 
     virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index) = 0;
-    virtual void SetNCOFrequency(
+    virtual OpStatus SetNCOFrequency(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) = 0;
 
     virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
+    virtual OpStatus SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample) = 0;
 
-    virtual int SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
-    virtual int GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
+    virtual OpStatus SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value) = 0;
+    virtual OpStatus GetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double& value) = 0;
 
     virtual double GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
+    virtual OpStatus SetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double lpf) = 0;
 
     virtual uint8_t GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
+    virtual OpStatus SetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t path) = 0;
 
     virtual ChannelConfig::Direction::TestSignal GetTestSignal(uint8_t moduleIndex, TRXDir direction, uint8_t channel) = 0;
-    virtual void SetTestSignal(uint8_t moduleIndex,
+    virtual OpStatus SetTestSignal(uint8_t moduleIndex,
         TRXDir direction,
         uint8_t channel,
         ChannelConfig::Direction::TestSignal signalConfiguration,
@@ -332,13 +333,13 @@ class LIME_API SDRDevice
         int16_t dc_q = 0) = 0;
 
     virtual bool GetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
+    virtual OpStatus SetDCOffsetMode(uint8_t moduleIndex, TRXDir trx, uint8_t channel, bool isAutomatic) = 0;
 
     virtual complex64f_t GetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
+    virtual OpStatus SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset) = 0;
 
     virtual complex64f_t GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
-    virtual void SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
+    virtual OpStatus SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance) = 0;
 
     virtual bool GetCGENLocked(uint8_t moduleIndex) = 0;
     virtual double GetTemperature(uint8_t moduleIndex) = 0;
@@ -346,32 +347,34 @@ class LIME_API SDRDevice
     virtual bool GetSXLocked(uint8_t moduleIndex, TRXDir trx) = 0;
 
     virtual unsigned int ReadRegister(uint8_t moduleIndex, unsigned int address, bool useFPGA = false) = 0;
-    virtual void WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
+    virtual OpStatus WriteRegister(uint8_t moduleIndex, unsigned int address, unsigned int value, bool useFPGA = false) = 0;
 
-    virtual void LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
-    virtual void SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual OpStatus LoadConfig(uint8_t moduleIndex, const std::string& filename) = 0;
+    virtual OpStatus SaveConfig(uint8_t moduleIndex, const std::string& filename) = 0;
 
     virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey) = 0;
-    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
+    virtual OpStatus SetParameter(uint8_t moduleIndex, uint8_t channel, const std::string& parameterKey, uint16_t value) = 0;
 
     virtual uint16_t GetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb) = 0;
-    virtual void SetParameter(uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
+    virtual OpStatus SetParameter(
+        uint8_t moduleIndex, uint8_t channel, uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value) = 0;
 
-    virtual void Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
-    virtual void ConfigureGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
+    virtual OpStatus Calibrate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double bandwidth) = 0;
+    virtual OpStatus ConfigureGFIR(
+        uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings) = 0;
 
     virtual std::vector<double> GetGFIRCoefficients(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID) = 0;
-    virtual void SetGFIRCoefficients(
+    virtual OpStatus SetGFIRCoefficients(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, std::vector<double> coefficients) = 0;
-    virtual void SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
+    virtual OpStatus SetGFIR(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t gfirID, bool enabled) = 0;
 
-    virtual void Synchronize(bool toChip) = 0;
+    virtual OpStatus Synchronize(bool toChip) = 0;
     virtual void EnableCache(bool enable) = 0;
 
     virtual uint64_t GetHardwareTimestamp(uint8_t moduleIndex) = 0;
-    virtual void SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
+    virtual OpStatus SetHardwareTimestamp(uint8_t moduleIndex, const uint64_t now) = 0;
 
-    virtual int StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
+    virtual OpStatus StreamSetup(const StreamConfig& config, uint8_t moduleIndex) = 0;
     virtual void StreamStart(uint8_t moduleIndex) = 0;
     virtual void StreamStop(uint8_t moduleIndex) = 0;
 
@@ -381,30 +384,30 @@ class LIME_API SDRDevice
     virtual int StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) = 0;
 
-    virtual int UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+    virtual OpStatus UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
     {
-        return -1;
+        return OpStatus::NOT_IMPLEMENTED;
     }
 
-    virtual int SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) = 0;
-    virtual int I2CWrite(int address, const uint8_t* data, uint32_t length) = 0;
-    virtual int I2CRead(int addres, uint8_t* dest, uint32_t length) = 0;
+    virtual OpStatus SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count);
+    virtual OpStatus I2CWrite(int address, const uint8_t* data, uint32_t length);
+    virtual OpStatus I2CRead(int addres, uint8_t* dest, uint32_t length);
 
     /***********************************************************************
      * GPIO API
      **********************************************************************/
 
     /** \copydoc IComms::GPIOWrite() */
-    virtual int GPIOWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIOWrite(const uint8_t* buffer, const size_t bufLength);
 
     /** \copydoc IComms::GPIORead() */
-    virtual int GPIORead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIORead(uint8_t* buffer, const size_t bufLength);
 
     /** \copydoc IComms::GPIODirWrite() */
-    virtual int GPIODirWrite(const uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIODirWrite(const uint8_t* buffer, const size_t bufLength);
 
     /** \copydoc IComms::GPIODirRead() */
-    virtual int GPIODirRead(uint8_t* buffer, const size_t bufLength) { return -1; };
+    virtual OpStatus GPIODirRead(uint8_t* buffer, const size_t bufLength);
 
     /***********************************************************************
      * Aribtrary settings API
@@ -414,13 +417,13 @@ class LIME_API SDRDevice
     @param parameters A vector of parameters describing the parameter to write
     @return The operation success state
     */
-    virtual int CustomParameterWrite(const std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual OpStatus CustomParameterWrite(const std::vector<CustomParameterIO>& parameters);
 
     /** @brief Returns value of custom on board control
     @param parameters A vector of parameters describing the parameter to read
     @return The operation success state
     */
-    virtual int CustomParameterRead(std::vector<CustomParameterIO>& parameters) { return -1; };
+    virtual OpStatus CustomParameterRead(std::vector<CustomParameterIO>& parameters);
 
     /** @brief Sets callback function which gets called each time data is sent or received */
     virtual void SetDataLogCallback(DataCallbackType callback){};
@@ -429,14 +432,20 @@ class LIME_API SDRDevice
     virtual void* GetInternalChip(uint32_t index) = 0;
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
-    virtual bool UploadMemory(
+    virtual OpStatus UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
     {
-        return -1;
+        return OpStatus::NOT_IMPLEMENTED;
     };
 
-    virtual int MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data) { return -1; };
-    virtual int MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data) { return -1; };
+    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+    {
+        return OpStatus::NOT_IMPLEMENTED;
+    };
+    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+    {
+        return OpStatus::NOT_IMPLEMENTED;
+    };
 };
 
 } // namespace lime

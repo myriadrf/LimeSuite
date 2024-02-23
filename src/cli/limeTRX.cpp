@@ -10,6 +10,8 @@
 #include "kissFFT/kiss_fft.h"
 #include <condition_variable>
 #include <mutex>
+#include <getopt.h>
+
 // #define USE_GNU_PLOT 1
 #ifdef USE_GNU_PLOT
     #include "gnuPlotPipe.h"
@@ -18,12 +20,12 @@
 using namespace lime;
 using namespace std;
 
-std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurently
+std::mutex globalGnuPlotMutex; // Seems multiple plot pipes can't be used concurrently
 
 bool stopProgram(false);
 void intHandler(int dummy)
 {
-    //std::cerr << "Stoppping\n";
+    //std::cerr << "Stopping\n";
     stopProgram = true;
 }
 
@@ -62,7 +64,7 @@ static int printHelp(void)
     cerr << "    -s, --samplesCount\t\t Number of samples to receive" << endl;
     cerr << "    -t, --time\t\t Time duration in milliseconds to receive" << endl;
     cerr << "    -f, --fft\t\t Display Rx FFT plot" << endl;
-    cerr << "    --contellation\t\t Display IQ constellation plot" << endl;
+    cerr << "    --constellation\t\t Display IQ constellation plot" << endl;
     cerr << "    -l, --log\t\t Log verbosity: info, warning, error, verbose, debug" << endl;
     cerr << "    --mimo [channelCount]\t\t use multiple channels" << endl;
     cerr << "    --repeater [delaySamples]\t\t retransmit received samples with a delay" << endl;
@@ -80,7 +82,7 @@ enum Args {
     HELP = 'h',
     DEVICE = 'd',
     CHIP = 'c',
-    INPUT = 'i',
+    INPUTFILE = 'i',
     OUTPUT = 'o',
     SAMPLES_COUNT = 's',
     TIME = 't',
@@ -328,7 +330,7 @@ int main(int argc, char** argv)
     static struct option long_options[] = { { "help", no_argument, 0, Args::HELP },
         { "device", required_argument, 0, Args::DEVICE },
         { "chip", required_argument, 0, Args::CHIP },
-        { "input", required_argument, 0, Args::INPUT },
+        { "input", required_argument, 0, Args::INPUTFILE },
         { "output", required_argument, 0, Args::OUTPUT },
         { "looptx", no_argument, 0, Args::LOOPTX },
         { "samplesCount", required_argument, 0, Args::SAMPLES_COUNT },
@@ -380,7 +382,7 @@ int main(int argc, char** argv)
         case Args::LOOPTX:
             loopTx = true;
             break;
-        case Args::INPUT:
+        case Args::INPUTFILE:
             if (optarg != NULL)
             {
                 tx = true;
@@ -561,7 +563,7 @@ int main(int argc, char** argv)
         inputFile.seekg(0, std::ios_base::beg);
         cerr << "File size : " << cnt << " bytes." << endl;
         txData.resize(cnt / sizeof(complex16_t));
-        inputFile.read((char*)txData.data(), cnt);
+        inputFile.read(reinterpret_cast<char*>(txData.data()), cnt);
         inputFile.close();
     }
 
@@ -667,7 +669,7 @@ int main(int argc, char** argv)
         totalSamplesReceived += samplesRead;
         if (rxFilename)
         {
-            rxFile.write((char*)rxSamples[0], samplesRead * sizeof(lime::complex16_t));
+            rxFile.write(reinterpret_cast<char*>(rxSamples[0]), samplesRead * sizeof(lime::complex16_t));
         }
 
         t2 = std::chrono::high_resolution_clock::now();
@@ -684,7 +686,8 @@ int main(int argc, char** argv)
                     m_fftCalcIn[i].r = rxSamples[0][i].i / 32768.0;
                     m_fftCalcIn[i].i = rxSamples[0][i].q / 32768.0;
                 }
-                kiss_fft(m_fftCalcPlan, (kiss_fft_cpx*)&m_fftCalcIn, (kiss_fft_cpx*)&m_fftCalcOut);
+                kiss_fft(
+                    m_fftCalcPlan, reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcIn), reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcOut));
                 for (unsigned int i = 0; i < fftSize; ++i)
                 {
                     float amplitude =

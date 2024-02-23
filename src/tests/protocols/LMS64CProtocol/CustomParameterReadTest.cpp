@@ -56,9 +56,9 @@ TEST(LMS64CProtocol, CustomParameterReadTestEmptyDoesNothing)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(0);
 
     std::vector<CustomParameterIO> parameters;
-    int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterReadTestOneParameter)
@@ -87,9 +87,9 @@ TEST(LMS64CProtocol, CustomParameterReadTestOneParameter)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     std::vector<CustomParameterIO> parameters{ { 16, 0, "" } };
-    int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
     EXPECT_EQ(parameters[0].value, static_cast<uint16_t>(value));
     EXPECT_EQ(parameters[0].units, "");
 }
@@ -130,9 +130,9 @@ TEST(LMS64CProtocol, CustomParameterReadTestSixteenParameters)
 
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(2);
 
-    int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
 }
 
 TEST(LMS64CProtocol, CustomParameterReadCorrectPrefix)
@@ -161,9 +161,9 @@ TEST(LMS64CProtocol, CustomParameterReadCorrectPrefix)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     std::vector<CustomParameterIO> parameters{ { 16, 0, "" } };
-    int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
     EXPECT_EQ(parameters[0].value, value);
     EXPECT_EQ(parameters[0].units, "kA");
 }
@@ -194,9 +194,9 @@ TEST(LMS64CProtocol, CustomParameterReadTemperatureCorrection)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     std::vector<CustomParameterIO> parameters{ { 16, 0, "" } };
-    int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
     EXPECT_EQ(parameters[0].value, value / 10);
     EXPECT_EQ(parameters[0].units, "mC");
 }
@@ -227,9 +227,9 @@ TEST(LMS64CProtocol, CustomParameterReadUnknownUnits)
     EXPECT_CALL(mockPort, Read(_, PACKET_SIZE, _)).Times(1);
 
     std::vector<CustomParameterIO> parameters{ { 16, 0, "" } };
-    int returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
+    OpStatus returnValue = LMS64CProtocol::CustomParameterRead(mockPort, parameters, subdevice);
 
-    EXPECT_EQ(returnValue, 0);
+    EXPECT_EQ(returnValue, OpStatus::SUCCESS);
     EXPECT_EQ(parameters[0].value, value);
     EXPECT_EQ(parameters[0].units, "u unknown");
 }

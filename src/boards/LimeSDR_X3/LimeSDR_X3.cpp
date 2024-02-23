@@ -142,14 +142,14 @@ static inline void ValidateChannel(uint8_t channel)
 }
 
 // Callback for updating FPGA's interface clocks when LMS7002M CGEN is manually modified
-int LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
+OpStatus LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
 {
     constexpr int chipIndex = 0;
     assert(userData != nullptr);
     LimeSDR_X3* pthis = static_cast<LimeSDR_X3*>(userData);
     // don't care about cgen changes while doing Config(), to avoid unnecessary fpga updates
     if (pthis->mConfigInProgress)
-        return 0;
+        return OpStatus::SUCCESS;
     LMS7002M* soc = pthis->mLMSChips[chipIndex];
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
@@ -277,7 +277,7 @@ LimeSDR_X3::~LimeSDR_X3()
 }
 
 // Setup default register values specifically for onboard LMS1 chip
-int LimeSDR_X3::InitLMS1(bool skipTune)
+OpStatus LimeSDR_X3::InitLMS1(bool skipTune)
 {
     LMS1_PA_Enable(0, false);
     LMS1_PA_Enable(1, false);
@@ -286,9 +286,11 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     const std::vector<CustomParameterIO> params{ { cp_lms1_tx1dac.id, dacVal, "" }, { cp_lms1_tx2dac.id, dacVal, "" } };
     CustomParameterWrite(params);
 
+    OpStatus status;
     LMS7002M* lms = mLMSChips[0];
-    if (lms->ResetChip() != 0)
-        return -1;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
@@ -303,16 +305,19 @@ int LimeSDR_X3::InitLMS1(bool skipTune)
     // EnableChannel(true, 2*i+1, false);
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel, const bool enable)
@@ -425,7 +430,7 @@ static void EnableChannelLMS2(LMS7002M* chip, TRXDir dir, const uint8_t channel,
 }
 
 // Setup default register values specifically for onboard LMS2 chip
-int LimeSDR_X3::InitLMS2(bool skipTune)
+OpStatus LimeSDR_X3::InitLMS2(bool skipTune)
 {
     LMS2_PA_LNA_Enable(0, false, false);
     LMS2_PA_LNA_Enable(1, false, false);
@@ -435,9 +440,11 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
         uint16_t val;
     };
 
+    OpStatus status;
     LMS7002M* lms = mLMSChips[1];
-    if (lms->ResetChip() != 0)
-        return -1;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if(lms->CalibrateTxGain(0,nullptr) != 0)
     //     return -1;
@@ -446,33 +453,42 @@ int LimeSDR_X3::InitLMS2(bool skipTune)
     // EnableChannel(true, 2*i+1, false);
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     // if (SetRate(10e6,2)!=0)
     //     return -1;
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
 // TODO: Setup default register values specifically for onboard LMS3 chip
-int LimeSDR_X3::InitLMS3(bool skipTune)
+OpStatus LimeSDR_X3::InitLMS3(bool skipTune)
 {
     LMS7002M* lms = mLMSChips[2];
-    if (lms->ResetChip() != 0)
-        return -1;
+    OpStatus status;
+    status = lms->ResetChip();
+    if (status != OpStatus::SUCCESS)
+        return status;
 
     if (skipTune)
-        return 0;
+        return OpStatus::SUCCESS;
 
-    if (lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx)) != 0)
-        return -1;
-    if (lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx)) != 0)
-        return -1;
-    return 0;
+    status = lms->SetFrequencySX(TRXDir::Tx, lms->GetFrequencySX(TRXDir::Tx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    status = lms->SetFrequencySX(TRXDir::Rx, lms->GetFrequencySX(TRXDir::Rx));
+    if (status != OpStatus::SUCCESS)
+        return status;
+
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_X3::PreConfigure(const SDRConfig& cfg, uint8_t socIndex)
@@ -509,7 +525,7 @@ void LimeSDR_X3::PostConfigure(const SDRConfig& cfg, uint8_t socIndex)
     }
 }
 
-void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
+OpStatus LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
 {
     std::vector<std::string> errors;
     bool isValidConfig = LMS7002M_Validate(cfg, errors);
@@ -519,7 +535,7 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
         std::stringstream ss;
         for (const auto& err : errors)
             ss << err << std::endl;
-        throw std::logic_error(ss.str());
+        return ReportError(OpStatus::ERROR, ss.str().c_str());
     }
 
     bool rxUsed = false;
@@ -634,12 +650,12 @@ void LimeSDR_X3::Configure(const SDRConfig& cfg, uint8_t socIndex)
     } //try
     catch (std::logic_error& e)
     {
-        printf("LimeSDR_X3 config: %s\n", e.what());
-        throw;
+        return ReportError(OpStatus::ERROR, "LimeSDR_X3 config: %s", e.what());
     } catch (std::runtime_error& e)
     {
-        throw;
+        return OpStatus::ERROR;
     }
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig& cfg, int ch, uint8_t socIndex)
@@ -660,7 +676,7 @@ void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig&
 
     if (socIndex == 0)
     {
-        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != 0)
+        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != OpStatus::SUCCESS)
         {
             throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
         }
@@ -725,7 +741,7 @@ void LimeSDR_X3::SetLMSPath(const TRXDir dir, const SDRDevice::ChannelConfig::Di
         }
         else
         {
-            path = (dir == TRXDir::Rx) ? uint8_t(ePathLMS2_Rx::NONE) : uint8_t(ePathLMS2_Tx::NONE);
+            path = (dir == TRXDir::Rx) ? static_cast<uint8_t>(ePathLMS2_Rx::NONE) : static_cast<uint8_t>(ePathLMS2_Tx::NONE);
         }
 
         LMS2SetPath(dir, ch, path);
@@ -738,7 +754,7 @@ void LimeSDR_X3::SetLMSPath(const TRXDir dir, const SDRDevice::ChannelConfig::Di
     }
 }
 
-int LimeSDR_X3::Init()
+OpStatus LimeSDR_X3::Init()
 {
     struct regVal {
         uint16_t adr;
@@ -758,13 +774,19 @@ int LimeSDR_X3::Init()
     InitLMS1(skipTune);
     InitLMS2(skipTune);
     InitLMS3(skipTune);
-    return 0;
+    return OpStatus::SUCCESS;
 }
 
-void LimeSDR_X3::Reset()
+OpStatus LimeSDR_X3::Reset()
 {
+    OpStatus status = OpStatus::SUCCESS;
     for (uint32_t i = 0; i < mLMSChips.size(); ++i)
-        mLMS7002Mcomms[i]->ResetDevice();
+    {
+        status = mLMS7002Mcomms[i]->ResetDevice();
+        if (status != OpStatus::SUCCESS)
+            return status;
+    }
+    return status;
 }
 
 double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
@@ -795,7 +817,7 @@ double LimeSDR_X3::GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channe
     }
 }
 
-void LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
+OpStatus LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel, double sampleRate, uint8_t oversample)
 {
     if (moduleIndex == 0 && sampleRate > 0)
     {
@@ -822,6 +844,7 @@ void LimeSDR_X3::SetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel,
     {
         LMS3_SetSampleRate_ExternalDAC(sampleRate, sampleRate);
     }
+    return OpStatus::SUCCESS;
 }
 
 double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
@@ -831,14 +854,14 @@ double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
     return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel & 1);
 }
 
-void LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
+OpStatus LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
+    return chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
 }
 
-int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
+OpStatus LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
 {
     switch (chipSelect)
     {
@@ -855,7 +878,7 @@ int LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, u
     }
 }
 
-int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
+OpStatus LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
     // Allow multiple setup calls
     if (mStreamers.at(moduleIndex) != nullptr)
@@ -863,40 +886,29 @@ int LimeSDR_X3::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
         delete mStreamers.at(moduleIndex);
     }
 
-    try
+    mStreamers.at(moduleIndex) = new TRXLooper_PCIE(
+        mTRXStreamPorts.at(moduleIndex), mTRXStreamPorts.at(moduleIndex), mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
+    if (mCallback_logMessage)
+        mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
+    std::shared_ptr<LitePCIe> trxPort{ mTRXStreamPorts.at(moduleIndex) };
+    if (!trxPort->IsOpen())
     {
-        mStreamers.at(moduleIndex) = new TRXLooper_PCIE(
-            mTRXStreamPorts.at(moduleIndex), mTRXStreamPorts.at(moduleIndex), mFPGA, mLMSChips.at(moduleIndex), moduleIndex);
-        if (mCallback_logMessage)
-            mStreamers[moduleIndex]->SetMessageLogCallback(mCallback_logMessage);
-        std::shared_ptr<LitePCIe> trxPort{ mTRXStreamPorts.at(moduleIndex) };
-        if (!trxPort->IsOpen())
+        int dirFlag = 0;
+        if (config.channels.at(lime::TRXDir::Rx).size() > 0 && config.channels.at(lime::TRXDir::Tx).size() > 0)
+            dirFlag = O_RDWR;
+        else if (config.channels.at(lime::TRXDir::Rx).size() > 0)
+            dirFlag = O_RDONLY;
+        else if (config.channels.at(lime::TRXDir::Tx).size() > 0)
+            dirFlag = O_WRONLY;
+        if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
         {
-            int dirFlag = 0;
-            if (config.channels.at(lime::TRXDir::Rx).size() > 0 && config.channels.at(lime::TRXDir::Tx).size() > 0)
-                dirFlag = O_RDWR;
-            else if (config.channels.at(lime::TRXDir::Rx).size() > 0)
-                dirFlag = O_RDONLY;
-            else if (config.channels.at(lime::TRXDir::Tx).size() > 0)
-                dirFlag = O_WRONLY;
-            if (trxPort->Open(trxPort->GetPathName(), dirFlag | O_NOCTTY | O_CLOEXEC | O_NONBLOCK) != 0)
-            {
-                const std::string reason = "Failed to open device in stream start: " + trxPort->GetPathName();
-                throw std::runtime_error(reason);
-            }
+            const std::string reason = "Failed to open device in stream start: " + trxPort->GetPathName();
+            return ReportError(OpStatus::ERROR, reason.c_str());
         }
-        mStreamers[moduleIndex]->Setup(config);
-        mStreamConfig = config;
-        return 0;
-    } catch (std::logic_error& e)
-    {
-        printf("LimeSDR_X3::StreamSetup logic_error %s\n", e.what());
-        throw;
-    } catch (std::runtime_error& e)
-    {
-        printf("LimeSDR_X3::StreamSetup runtime_error %s\n", e.what());
-        throw;
     }
+    mStreamers[moduleIndex]->Setup(config);
+    mStreamConfig = config;
+    return OpStatus::SUCCESS;
 }
 
 void LimeSDR_X3::StreamStop(uint8_t moduleIndex)
@@ -1199,7 +1211,7 @@ void LimeSDR_X3::LMS2_SetSampleRate(double f_Hz, uint8_t oversample)
     double txClock = f_Hz;
 
     // Oversample is available only to Tx for LMS#2
-    oversample = std::min(oversample, uint8_t(2));
+    oversample = std::min<uint8_t>(oversample, 2);
     if (oversample == 2 || oversample == 0) // 0 is "auto", use max oversample
         txClock *= 2;
 
@@ -1226,17 +1238,17 @@ void LimeSDR_X3::LMS3_SetSampleRate_ExternalDAC(double chA_Hz, double chB_Hz)
         throw std::runtime_error("CDCM is not locked");
 }
 
-int LimeSDR_X3::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
+OpStatus LimeSDR_X3::CustomParameterWrite(const std::vector<CustomParameterIO>& parameters)
 {
     return mfpgaPort->CustomParameterWrite(parameters);
 }
 
-int LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
+OpStatus LimeSDR_X3::CustomParameterRead(std::vector<CustomParameterIO>& parameters)
 {
     return mfpgaPort->CustomParameterRead(parameters);
 }
 
-bool LimeSDR_X3::UploadMemory(
+OpStatus LimeSDR_X3::UploadMemory(
     eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
 {
     int progMode;
@@ -1251,33 +1263,33 @@ bool LimeSDR_X3::UploadMemory(
         progMode = 1;
         break;
     default:
-        return false;
+        return OpStatus::INVALID_VALUE;
     }
 
     return mfpgaPort->ProgramWrite(data, length, progMode, target, callback);
 }
 
-int LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
+OpStatus LimeSDR_X3::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
-        return -1;
+        return OpStatus::ERROR;
     }
 
     return mfpgaPort->MemoryWrite(region.address, data, region.size);
 }
 
-int LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
+OpStatus LimeSDR_X3::MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
 {
     if (storage == nullptr || storage->ownerDevice != this || storage->memoryDeviceType != eMemoryDevice::EEPROM)
     {
-        return -1;
+        return OpStatus::ERROR;
     }
 
     return mfpgaPort->MemoryRead(region.address, data, region.size);
 }
 
-int LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
+OpStatus LimeSDR_X3::UploadTxWaveform(const StreamConfig& config, uint8_t moduleIndex, const void** samples, uint32_t count)
 {
     return TRXLooper_PCIE::UploadTxWaveform(mFPGA, mTRXStreamPorts[moduleIndex], config, moduleIndex, samples, count);
 }

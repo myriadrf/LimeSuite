@@ -82,14 +82,20 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(
     FlexGridSizer1->Fit(this);
     FlexGridSizer1->SetSizeHints(this);
 
-    Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnOpenClick);
+    Connect(
+        ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnbtnOpenClick));
     Connect(btnStartStop->GetId(),
         wxEVT_COMMAND_BUTTON_CLICKED,
-        (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
-    Connect(ID_CHOICE2, wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&LMS_Programing_wxgui::OncmbDeviceSelect);
-    Connect(ID_PROGRAMING_FINISHED_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingFinished);
-    Connect(
-        ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingStatusUpdate);
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnbtnStartProgrammingClick));
+    Connect(ID_CHOICE2,
+        wxEVT_COMMAND_CHOICE_SELECTED,
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OncmbDeviceSelect));
+    Connect(ID_PROGRAMING_FINISHED_EVENT,
+        wxEVT_COMMAND_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnProgramingFinished));
+    Connect(ID_PROGRAMING_STATUS_EVENT,
+        wxEVT_COMMAND_THREAD,
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnProgramingStatusUpdate));
 }
 
 LMS_Programing_wxgui::~LMS_Programing_wxgui()
@@ -211,14 +217,16 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 
     Disconnect(btnStartStop->GetId(),
         wxEVT_COMMAND_BUTTON_CLICKED,
-        (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnbtnStartProgrammingClick));
     btnOpen->Disable();
     btnStartStop->SetLabel(_("Abort"));
 
     mAbortProgramming.store(false);
     //run programming in separate thread, to prevent GUI freeze
     mWorkerThread = std::thread(&LMS_Programing_wxgui::DoProgramming, this);
-    Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
+    Connect(btnStartStop->GetId(),
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnAbortProgramming));
 }
 
 /** @brief Change programming modes according to selected device
@@ -240,11 +248,12 @@ void LMS_Programing_wxgui::OnProgramingFinished(wxCommandEvent& event)
     mWorkerThread.join();
     wxMessageBox(event.GetString(), _("INFO"), wxICON_INFORMATION | wxOK);
     btnOpen->Enable(btnOpenEnb);
-    Disconnect(
-        btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
+    Disconnect(btnStartStop->GetId(),
+        wxEVT_COMMAND_BUTTON_CLICKED,
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnAbortProgramming));
     Connect(btnStartStop->GetId(),
         wxEVT_COMMAND_BUTTON_CLICKED,
-        (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
+        reinterpret_cast<wxObjectEventFunction>(&LMS_Programing_wxgui::OnbtnStartProgrammingClick));
     btnStartStop->SetLabel(_("Program"));
 }
 
@@ -275,21 +284,16 @@ void LMS_Programing_wxgui::DoProgramming()
     obj_ptr = this;
     auto memoryDevice = dataStorageEntries.at(cmbDevice->GetSelection());
 
-    int status;
-    try
-    {
-        status = memoryDevice->ownerDevice->UploadMemory(
-            memoryDevice->memoryDeviceType, 0, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
-    } catch (...)
-    {
-        status = -1;
-    }
+    OpStatus status;
+
+    status = memoryDevice->ownerDevice->UploadMemory(
+        memoryDevice->memoryDeviceType, 0, mProgramData.data(), mProgramData.size(), OnProgrammingCallback);
 
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);
     evt.SetEventType(wxEVT_COMMAND_THREAD);
-    evt.SetString(status == 0 ? _("Programming Completed!") : _("Programming failed!\n"));
+    evt.SetString(status == OpStatus::SUCCESS ? _("Programming Completed!") : _("Programming failed!"));
 
     wxPostEvent(this, evt);
     mProgrammingInProgress.store(false);

@@ -295,8 +295,8 @@ double SoapyLMS7::getGain(const int direction, const size_t channel) const
     TRXDir dir = direction == SOAPY_SDR_RX ? TRXDir::Rx : TRXDir::Tx;
 
     double gain = 0;
-    int returnValue = sdrDevice->GetGain(0, dir, channel, eGainTypes::UNKNOWN, gain);
-    if (returnValue != 0)
+    OpStatus returnValue = sdrDevice->GetGain(0, dir, channel, eGainTypes::UNKNOWN, gain);
+    if (returnValue != OpStatus::SUCCESS)
     {
         throw std::runtime_error(
             "SoapyLMS7::getGain(" + std::string{ dirName } + ", " + std::to_string(channel) + ") - failed to get gain");
@@ -327,8 +327,8 @@ double SoapyLMS7::getGain(const int direction, const size_t channel, const std::
     eGainTypes gainType = STRING_TO_GAIN_TYPES.at(name);
 
     double gain = 0;
-    int returnValue = sdrDevice->GetGain(0, dir, channel, gainType, gain);
-    if (returnValue != 0)
+    OpStatus returnValue = sdrDevice->GetGain(0, dir, channel, gainType, gain);
+    if (returnValue != OpStatus::SUCCESS)
     {
         throw std::runtime_error(
             "SoapyLMS7::getGain(" + std::string{ dirName } + ", " + std::to_string(channel) + ") - failed to get gain");
@@ -388,7 +388,6 @@ void SoapyLMS7::setFrequency(
     TRXDir dir = direction == SOAPY_SDR_TX ? TRXDir::Tx : TRXDir::Rx;
     if (name == "RF")
     {
-        const auto clkId = dir == TRXDir::Tx ? 2 : 1;
         try
         {
             sdrDevice->SetFrequency(0, dir, channel, frequency);
@@ -501,7 +500,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         throw std::runtime_error("SoapyLMS7::setSampleRate() failed with message " + std::string{ e.what() });
     }
 
-    sampleRate[bool(direction)] = rate;
+    sampleRate[static_cast<bool>(direction)] = rate;
     return;
 }
 
@@ -1128,8 +1127,8 @@ std::vector<std::string> SoapyLMS7::listGPIOBanks(void) const
 
 void SoapyLMS7::writeGPIO(const std::string&, const unsigned value)
 {
-    int r = sdrDevice->GPIOWrite(reinterpret_cast<const uint8_t*>(&value), sizeof(value));
-    if (r != 0)
+    OpStatus r = sdrDevice->GPIOWrite(reinterpret_cast<const uint8_t*>(&value), sizeof(value));
+    if (r != OpStatus::SUCCESS)
     {
         throw std::runtime_error("SoapyLMS7::writeGPIO() " + std::string(GetLastErrorMessage()));
     }
@@ -1138,8 +1137,8 @@ void SoapyLMS7::writeGPIO(const std::string&, const unsigned value)
 unsigned SoapyLMS7::readGPIO(const std::string&) const
 {
     unsigned buffer(0);
-    int r = sdrDevice->GPIORead(reinterpret_cast<uint8_t*>(&buffer), sizeof(buffer));
-    if (r != 0)
+    OpStatus r = sdrDevice->GPIORead(reinterpret_cast<uint8_t*>(&buffer), sizeof(buffer));
+    if (r != OpStatus::SUCCESS)
     {
         throw std::runtime_error("SoapyLMS7::readGPIO() " + std::string(GetLastErrorMessage()));
     }
@@ -1148,8 +1147,8 @@ unsigned SoapyLMS7::readGPIO(const std::string&) const
 
 void SoapyLMS7::writeGPIODir(const std::string&, const unsigned dir)
 {
-    int r = sdrDevice->GPIODirWrite(reinterpret_cast<const uint8_t*>(&dir), sizeof(dir));
-    if (r != 0)
+    OpStatus r = sdrDevice->GPIODirWrite(reinterpret_cast<const uint8_t*>(&dir), sizeof(dir));
+    if (r != OpStatus::SUCCESS)
     {
         throw std::runtime_error("SoapyLMS7::writeGPIODir() " + std::string(GetLastErrorMessage()));
     }
@@ -1158,8 +1157,8 @@ void SoapyLMS7::writeGPIODir(const std::string&, const unsigned dir)
 unsigned SoapyLMS7::readGPIODir(const std::string&) const
 {
     unsigned buffer(0);
-    int r = sdrDevice->GPIODirRead(reinterpret_cast<uint8_t*>(&buffer), sizeof(buffer));
-    if (r != 0)
+    OpStatus r = sdrDevice->GPIODirRead(reinterpret_cast<uint8_t*>(&buffer), sizeof(buffer));
+    if (r != OpStatus::SUCCESS)
     {
         throw std::runtime_error("SoapyLMS7::readGPIODir() " + std::string(GetLastErrorMessage()));
     }

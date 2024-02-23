@@ -149,10 +149,10 @@ static_assert(sizeof(txGainTable) / sizeof(TxGainRow) == 51, "missing tx gains r
 
 static inline int64_t ts_to_time(int64_t fs, int64_t ts)
 {
-    int n, r;
+    int64_t n, r;
     n = (ts / fs);
     r = (ts % fs);
-    return (int64_t)n * 1000000 + (((int64_t)r * 1000000) / fs);
+    return n * 1000000 + (r * 1000000 / fs);
 }
 
 struct PortChPair {
@@ -297,7 +297,7 @@ static bool OnStreamStatusChange(bool isTx, const SDRDevice::StreamStats* s, voi
 static TRXStatistics trxstats;
 static int trx_lms7002m_get_stats(TRXState* s, TRXStatistics* m)
 {
-    LimeState* lime = (LimeState*)s->opaque;
+    LimeState* lime = static_cast<LimeState*>(s->opaque);
     for (long p = 0; p < lime->deviceCount; ++p)
     {
         StreamStatus& stats = portStreamStates[p];
@@ -311,7 +311,7 @@ static int trx_lms7002m_get_stats(TRXState* s, TRXStatistics* m)
 /* Callback must allocate info buffer that will be displayed */
 static void trx_lms7002m_dump_info(TRXState* s, trx_printf_cb cb, void* opaque)
 {
-    LimeState* lime = (LimeState*)s->opaque;
+    LimeState* lime = static_cast<LimeState*>(s->opaque);
     std::stringstream ss;
     for (long p = 0; p < lime->deviceCount; ++p)
     {
@@ -332,7 +332,7 @@ static void trx_lms7002m_dump_info(TRXState* s, trx_printf_cb cb, void* opaque)
         // TODO: read FIFO usage
     }
     const int len = ss.str().length();
-    char* buffer = (char*)malloc(len + 1);
+    char* buffer = static_cast<char*>(malloc(len + 1));
     cb(buffer, "%s\n", ss.str().c_str());
 }
 
@@ -351,7 +351,7 @@ static void trx_lms7002m_write(
     meta.flush = (md->flags & TRX_WRITE_MD_FLAG_END_OF_BURST);
 
     // samples format conversion is done internally
-    LimeState* lime = (LimeState*)s->opaque;
+    LimeState* lime = static_cast<LimeState*>(s->opaque);
     int samplesConsumed =
         lime->device[port]->StreamTx(lime->chipIndex[port], reinterpret_cast<const lime::complex32f_t**>(samples), count, &meta);
     if (logVerbosity == LogLevel::DEBUG && samplesConsumed != count)
@@ -372,7 +372,7 @@ static void trx_lms7002m_write(
 // return number of samples produced
 static int trx_lms7002m_read(TRXState* s, trx_timestamp_t* ptimestamp, void** samples, int count, int port, TRXReadMetadata* md)
 {
-    LimeState* lime = (LimeState*)s->opaque;
+    LimeState* lime = static_cast<LimeState*>(s->opaque);
 
     SDRDevice::StreamMeta meta;
     meta.useTimestamp = false;
@@ -497,7 +497,7 @@ static int trx_lms7002m_get_sample_rate(TRXState* s1, TRXFraction* psample_rate,
 // !!! sometimes trx_lms7002m_write gets calls with samples count more than returned here
 static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 {
-    LimeState* lime = (LimeState*)s1->opaque;
+    LimeState* lime = static_cast<LimeState*>(s1->opaque);
     int txExpectedSamples = lime->samplesInPacket[0];
     if (lime->streamCfg[0].extraConfig.txSamplesInPacket > 0)
     {
@@ -509,7 +509,7 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 
 static int trx_lms7002m_get_abs_rx_power_func(TRXState* s1, float* presult, int channel_num)
 {
-    LimeState* s = (LimeState*)s1->opaque;
+    LimeState* s = static_cast<LimeState*>(s1->opaque);
     const PortChPair& pair = gMapTxChannelToPortCh[channel_num];
     if (s->rxPowerAvailable[pair.port][pair.ch])
     {
@@ -522,7 +522,7 @@ static int trx_lms7002m_get_abs_rx_power_func(TRXState* s1, float* presult, int 
 
 static int trx_lms7002m_get_abs_tx_power_func(TRXState* s1, float* presult, int channel_num)
 {
-    LimeState* s = (LimeState*)s1->opaque;
+    LimeState* s = static_cast<LimeState*>(s1->opaque);
     const PortChPair& pair = gMapTxChannelToPortCh[channel_num];
     if (s->txPowerAvailable[pair.port][pair.ch])
     {
@@ -537,9 +537,9 @@ static int trx_lms7002m_get_abs_tx_power_func(TRXState* s1, float* presult, int 
 //max gain ~70-76 (higher will probably degrade signal quality to much)
 static void trx_lms7002m_set_tx_gain_func(TRXState* s1, double gain, int channel_num)
 {
-    LimeState* lime = (LimeState*)s1->opaque;
+    LimeState* lime = static_cast<LimeState*>(s1->opaque);
     int row = gain;
-    if (row < 0 || row >= (int)(sizeof(txGainTable) / sizeof(TxGainRow)))
+    if (row < 0 || row >= static_cast<int>(sizeof(txGainTable) / sizeof(TxGainRow)))
         return;
 
     std::lock_guard<std::mutex> lk(gainsMutex);
@@ -560,9 +560,9 @@ static void trx_lms7002m_set_tx_gain_func(TRXState* s1, double gain, int channel
 
 static void trx_lms7002m_set_rx_gain_func(TRXState* s1, double gain, int channel_num)
 {
-    LimeState* lime = (LimeState*)s1->opaque;
+    LimeState* lime = static_cast<LimeState*>(s1->opaque);
     int row = gain;
-    if (row < 0 || row >= (int)(sizeof(rxGainTable) / sizeof(RxGainRow)))
+    if (row < 0 || row >= static_cast<int>(sizeof(rxGainTable) / sizeof(RxGainRow)))
         return;
 
     std::lock_guard<std::mutex> lk(gainsMutex);
@@ -583,7 +583,7 @@ static void trx_lms7002m_set_rx_gain_func(TRXState* s1, double gain, int channel
 
 static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
 {
-    LimeState* lime = (LimeState*)s1->opaque;
+    LimeState* lime = static_cast<LimeState*>(s1->opaque);
 
     try
     {
@@ -598,7 +598,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
             lime->tx_channel_count[p] = hostState->tx_port_channel_count[p];
             lime->rx_channel_count[p] = hostState->rx_port_channel_count[p];
 
-            const double samplingRate = (float)hostState->sample_rate[p].num / hostState->sample_rate[p].den;
+            const double samplingRate = static_cast<float>(hostState->sample_rate[p].num) / hostState->sample_rate[p].den;
             config.channel[0].rx.sampleRate = samplingRate;
             config.channel[0].tx.sampleRate = samplingRate;
             config.channel[0].rx.oversample = lime->rxOversample[p];
@@ -649,7 +649,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
                 }
                 else
                     sprintf(loFreqStr, "LO: %.3f MHz", freq / 1.0e6);
-                gMapRxChannelToPortCh[rxChannelOffset + ch] = { (uint8_t)p, (uint8_t)ch };
+                gMapRxChannelToPortCh[rxChannelOffset + ch] = { static_cast<uint8_t>(p), static_cast<uint8_t>(ch) };
                 Log(LogLevel::INFO,
                     "Port[%i] Rx CH[%i] %s, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
                     p,
@@ -696,7 +696,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
                 }
                 else
                     sprintf(loFreqStr, "LO: %.3f MHz", freq / 1.0e6);
-                gMapTxChannelToPortCh[txChannelOffset + ch] = { (uint8_t)p, (uint8_t)ch };
+                gMapTxChannelToPortCh[txChannelOffset + ch] = { static_cast<uint8_t>(p), static_cast<uint8_t>(ch) };
                 Log(LogLevel::INFO,
                     "Port[%i] Tx CH[%i] %s, SR: %.3f MHz BW: %.3f MHz | chipIndex: %i, path: %i('%s')\n",
                     p,
@@ -790,7 +790,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
             }
 
             stream.statusCallback = OnStreamStatusChange;
-            stream.userData = (void*)&portStreamStates[p];
+            stream.userData = static_cast<void*>(&portStreamStates[p]);
             stream.hintSampleRate = samplingRate;
 
             stream.extraConfig = lime->streamCfg[p].extraConfig;
@@ -801,7 +801,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
                 p,
                 stream.format == SDRDevice::StreamConfig::DataFormat::F32 ? "F32" : "I16",
                 stream.linkFormat == SDRDevice::StreamConfig::DataFormat::I12 ? "I12" : "I16");
-            if (portDevice->StreamSetup(stream, lime->chipIndex[p]) != 0)
+            if (portDevice->StreamSetup(stream, lime->chipIndex[p]) != OpStatus::SUCCESS)
             {
                 Log(LogLevel::ERROR, "Port%i stream setup failed.\n", p);
                 return -1;
@@ -830,7 +830,7 @@ static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* hostState)
 
 static void trx_lms7002m_end(TRXState* s1)
 {
-    LimeState* lime = (LimeState*)s1->opaque;
+    LimeState* lime = static_cast<LimeState*>(s1->opaque);
     for (int p = 0; p < lime->deviceCount; ++p)
     {
         SDRDevice* portDevice = lime->device[p];
@@ -959,7 +959,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
                 else
                     sprintf(configFilepath, "%s", filename);
 
-                if (chip->LoadConfig(configFilepath, false) != 0)
+                if (chip->LoadConfig(configFilepath, false) != OpStatus::SUCCESS)
                 {
                     Log(LogLevel::ERROR, "Error loading file: %s\n", filename);
                     return -1;
