@@ -393,9 +393,9 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
 
     deviceDescriptor.name = GetDeviceName(static_cast<eLMS_DEV>(info.deviceId));
     deviceDescriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(info.expansionBoardId));
-    deviceDescriptor.firmwareVersion = std::to_string(int(info.firmware));
-    deviceDescriptor.hardwareVersion = std::to_string(int(info.hardware));
-    deviceDescriptor.protocolVersion = std::to_string(int(info.protocol));
+    deviceDescriptor.firmwareVersion = std::to_string(info.firmware);
+    deviceDescriptor.hardwareVersion = std::to_string(info.hardware);
+    deviceDescriptor.protocolVersion = std::to_string(info.protocol);
     deviceDescriptor.serialNumber = info.boardSerialNumber;
 
     const uint32_t addrs[] = { 0x0000, 0x0001, 0x0002, 0x0003 };
@@ -407,9 +407,9 @@ SDRDevice::Descriptor LimeSDR::GetDeviceInfo(void)
     auto hwVersion = data[3] & 0x7F; //pkt.inBuffer[15]&0x7F;
 
     deviceDescriptor.gatewareTargetBoard = GetDeviceName(boardID);
-    deviceDescriptor.gatewareVersion = std::to_string(int(gatewareVersion));
-    deviceDescriptor.gatewareRevision = std::to_string(int(gatewareRevision));
-    deviceDescriptor.hardwareVersion = std::to_string(int(hwVersion));
+    deviceDescriptor.gatewareVersion = std::to_string(gatewareVersion);
+    deviceDescriptor.gatewareRevision = std::to_string(gatewareRevision);
+    deviceDescriptor.hardwareVersion = std::to_string(hwVersion);
 
     return deviceDescriptor;
 }

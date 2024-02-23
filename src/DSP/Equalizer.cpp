@@ -102,7 +102,7 @@ void Equalizer::Configure(const Equalizer::Config& state)
         const Config::CFR& cfr = state.cfr[ch];
         const Config::FIR& fir = state.fir[ch];
 
-        const bool useOversample = std::min(cfr.interpolation, uint8_t(2)) != 1;
+        const bool useOversample = std::min<uint8_t>(cfr.interpolation, 2) != 1;
 
         WriteRegister(TX_HB_BYP, !useOversample);
         WriteRegister(TX_HB_DEL, useOversample);
@@ -147,7 +147,7 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
     Filt_N = std::min(Filt_N, MaxFilt_N);
 
     for (i = 0; i < Filt_N; ++i)
-        w[i] = (uint16_t)(32768.0 * 0.25 * (1.0 - cos(2.0 * M_PI * i / (Filt_N - 1))));
+        w[i] = static_cast<uint16_t>(32768.0 * 0.25 * (1.0 - cos(2.0 * M_PI * i / (Filt_N - 1))));
 
     WriteRegister(SLEEP_CFR, 1);
     msb = lsb = 0;
@@ -180,11 +180,11 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
     msb = lsb = 0;
     i = j = 0;
     offset = 0;
-    while (i <= (uint16_t)((Filt_N / 2) - 1))
+    while (i <= static_cast<uint16_t>((Filt_N / 2) - 1))
     {
         addr = (2 << 15) + (maddressf1 << 6) + (msb << 4) + lsb;
         if (j >= offset)
-            data = w[(uint16_t)((Filt_N + 1) / 2 + i)];
+            data = w[static_cast<uint16_t>((Filt_N + 1) / 2 + i)];
         else
             data = 0;
         mosi.push_back((1 << 31) | addr << 16 | data);
@@ -205,7 +205,7 @@ void Equalizer::UpdateHannCoeff(uint16_t Filt_N)
 
     msb = lsb = 0;
     i = j = 0;
-    offset = (MaxFilt_N / 2) - ((uint16_t)((Filt_N + 1) / 2));
+    offset = (MaxFilt_N / 2) - (static_cast<uint16_t>((Filt_N + 1) / 2));
     while (i < Filt_N)
     {
         addr = (2 << 15) + (maddressf0 << 6) + (msb << 4) + lsb;
@@ -297,14 +297,14 @@ void Equalizer::SetFIRCoefficients(const int16_t* coefficients, uint16_t count)
     mosi.clear();
 
     msb = lsb = i = 0;
-    while (i <= (uint16_t)((Filt_N)-1))
+    while (i <= static_cast<uint16_t>((Filt_N)-1))
     {
         addr = (maddressf0 << 6) + (msb << 4) + lsb;
-        data = (uint16_t)coefficients[i];
+        data = static_cast<uint16_t>(coefficients[i]);
         mosi.push_back((1 << 31) | addr << 16 | data);
 
         addr = (maddressf1 << 6) + (msb << 4) + lsb;
-        data = (uint16_t)coefficients[i];
+        data = static_cast<uint16_t>(coefficients[i]);
         mosi.push_back((1 << 31) | addr << 16 | data);
         if (lsb >= NN) // 15
         {

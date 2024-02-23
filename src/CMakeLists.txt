@@ -68,7 +68,7 @@ set(LIME_SUITE_SOURCES
     include/limesuite/SDRDevice.cpp
 )
 
-SET_SOURCE_FILES_PROPERTIES( 
+SET_SOURCE_FILES_PROPERTIES(
     mcu_program/common_src/lms7002m_calibrations.c
     mcu_program/common_src/lms7002m_controls.c
     mcu_program/common_src/lms7002m_filters.c

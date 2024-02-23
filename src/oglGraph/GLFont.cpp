@@ -6,6 +6,18 @@
 #include <vector>
 using namespace std;
 
+static constexpr bool IsGlew1_5()
+{
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    return GLEW_VERSION_1_5;
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+}
+
 /** @brief Construct a new GLFont::GLFont object */
 GLFont::GLFont()
     : m_texID(0)
@@ -67,25 +79,25 @@ bool GLFont::load(const char* file)
     in.read(reserved, 16);
 
     unsigned char fontSize = 0;
-    in.read((char*)&fontSize, 1);
+    in.read(reinterpret_cast<char*>(&fontSize), sizeof(fontSize));
     m_fontSize = fontSize;
 
     unsigned short glyphCount = 0;
-    in.read((char*)&glyphCount, 2);
+    in.read(reinterpret_cast<char*>(&glyphCount), sizeof(glyphCount));
 
     for (int i = 0; i < m_glyphCount; ++i)
         m_glyphs[i].reset();
     GLGlyph tempGlyph;
     for (unsigned int i = 0; i < glyphCount; ++i)
     {
-        in.read((char*)&tempGlyph.id, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.width, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.height, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.u, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.v, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.offset_x, sizeof(short));
-        in.read((char*)&tempGlyph.offset_y, sizeof(short));
-        in.read((char*)&tempGlyph.advance_x, sizeof(short));
+        in.read(reinterpret_cast<char*>(&tempGlyph.id), sizeof(tempGlyph.id));
+        in.read(reinterpret_cast<char*>(&tempGlyph.width), sizeof(tempGlyph.width));
+        in.read(reinterpret_cast<char*>(&tempGlyph.height), sizeof(tempGlyph.height));
+        in.read(reinterpret_cast<char*>(&tempGlyph.u), sizeof(tempGlyph.u));
+        in.read(reinterpret_cast<char*>(&tempGlyph.v), sizeof(tempGlyph.v));
+        in.read(reinterpret_cast<char*>(&tempGlyph.offset_x), sizeof(tempGlyph.offset_x));
+        in.read(reinterpret_cast<char*>(&tempGlyph.offset_y), sizeof(tempGlyph.offset_y));
+        in.read(reinterpret_cast<char*>(&tempGlyph.advance_x), sizeof(tempGlyph.advance_x));
         tempGlyph.advance_x = tempGlyph.advance_x >> 6;
         m_glyphs[tempGlyph.id] = tempGlyph;
     }
@@ -94,14 +106,15 @@ bool GLFont::load(const char* file)
     unsigned short texHeight = 0;
     char bpp = 0;
 
-    in.read((char*)&texWidth, sizeof(unsigned short));
+    in.read(reinterpret_cast<char*>(&texWidth), sizeof(texWidth));
     m_texwidth = texWidth;
-    in.read((char*)&texHeight, sizeof(unsigned short));
+    in.read(reinterpret_cast<char*>(&texHeight), sizeof(texHeight));
     m_texheight = texHeight;
-    in.read(&bpp, sizeof(char));
+    in.read(&bpp, sizeof(bpp));
 
-    unsigned char* bitmap = new unsigned char[texWidth * texHeight];
-    in.read((char*)bitmap, texWidth * texHeight);
+    const int bitmapSize = texWidth * texHeight;
+    unsigned char* bitmap = new unsigned char[bitmapSize];
+    in.read(reinterpret_cast<char*>(bitmap), bitmapSize);
     in.close();
 
     glEnable(GL_TEXTURE_2D);
@@ -118,7 +131,7 @@ bool GLFont::load(const char* file)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    if (!m_vboID && GLEW_VERSION_1_5)
+    if (!m_vboID && IsGlew1_5())
     {
         glGenBuffers(1, &m_vboID);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
@@ -157,25 +170,25 @@ bool GLFont::loadFromArray(const char* array, unsigned int size)
     in.read(reserved, 16);
 
     unsigned char fontSize = 0;
-    in.read((char*)&fontSize, 1);
+    in.read(reinterpret_cast<char*>(&fontSize), sizeof(fontSize));
     m_fontSize = fontSize;
 
     unsigned short glyphCount = 0;
-    in.read((char*)&glyphCount, 2);
+    in.read(reinterpret_cast<char*>(&glyphCount), sizeof(glyphCount));
 
     for (int i = 0; i < m_glyphCount; ++i)
         m_glyphs[i].reset();
     GLGlyph tempGlyph;
     for (unsigned int i = 0; i < glyphCount; ++i)
     {
-        in.read((char*)&tempGlyph.id, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.width, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.height, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.u, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.v, sizeof(unsigned short));
-        in.read((char*)&tempGlyph.offset_x, sizeof(short));
-        in.read((char*)&tempGlyph.offset_y, sizeof(short));
-        in.read((char*)&tempGlyph.advance_x, sizeof(short));
+        in.read(reinterpret_cast<char*>(&tempGlyph.id), sizeof(tempGlyph.id));
+        in.read(reinterpret_cast<char*>(&tempGlyph.width), sizeof(tempGlyph.width));
+        in.read(reinterpret_cast<char*>(&tempGlyph.height), sizeof(tempGlyph.height));
+        in.read(reinterpret_cast<char*>(&tempGlyph.u), sizeof(tempGlyph.u));
+        in.read(reinterpret_cast<char*>(&tempGlyph.v), sizeof(tempGlyph.v));
+        in.read(reinterpret_cast<char*>(&tempGlyph.offset_x), sizeof(tempGlyph.offset_x));
+        in.read(reinterpret_cast<char*>(&tempGlyph.offset_y), sizeof(tempGlyph.offset_y));
+        in.read(reinterpret_cast<char*>(&tempGlyph.advance_x), sizeof(tempGlyph.advance_x));
         tempGlyph.advance_x = tempGlyph.advance_x >> 6;
         m_glyphs[tempGlyph.id] = tempGlyph;
     }
@@ -184,14 +197,15 @@ bool GLFont::loadFromArray(const char* array, unsigned int size)
     unsigned short texHeight = 0;
     char bpp = 0;
 
-    in.read((char*)&texWidth, sizeof(unsigned short));
+    in.read(reinterpret_cast<char*>(&texWidth), sizeof(texWidth));
     m_texwidth = texWidth;
-    in.read((char*)&texHeight, sizeof(unsigned short));
+    in.read(reinterpret_cast<char*>(&texHeight), sizeof(texHeight));
     m_texheight = texHeight;
-    in.read(&bpp, sizeof(char));
+    in.read(&bpp, sizeof(bpp));
 
-    unsigned char* bitmap = new unsigned char[texWidth * texHeight];
-    in.read((char*)bitmap, texWidth * texHeight);
+    const int bitmapSize = texWidth * texHeight;
+    unsigned char* bitmap = new unsigned char[bitmapSize];
+    in.read(reinterpret_cast<char*>(bitmap), bitmapSize);
 
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
@@ -207,7 +221,7 @@ bool GLFont::loadFromArray(const char* array, unsigned int size)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    if (!m_vboID && GLEW_VERSION_1_5)
+    if (!m_vboID && IsGlew1_5())
     {
         glGenBuffers(1, &m_vboID);
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
@@ -244,17 +258,19 @@ void GLFont::render_textWorldSpace(const char* text, float x, float y, float fon
     GLGlyph* g = NULL;
     glBindTexture(GL_TEXTURE_2D, m_texID);
 
-    if (GLEW_VERSION_1_5)
+    if (IsGlew1_5())
+    {
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
+    }
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 4 * sizeof(float), (char*)0);
-    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(float), (char*)0 + 2 * sizeof(float));
+    glVertexPointer(2, GL_FLOAT, 4 * sizeof(float), static_cast<char*>(0));
+    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(float), static_cast<char*>(0) + 2 * sizeof(float));
     const char* p;
     for (p = text; *p; ++p)
     {
-        g = &m_glyphs[(unsigned char)*p];
-        if ((char)*p == '\n')
+        g = &m_glyphs[static_cast<unsigned char>(*p)];
+        if (*p == '\n')
         {
             x = startx;
             y = y - lineHeight() * scale;
@@ -282,7 +298,7 @@ void GLFont::render_textWorldSpace(const char* text, float x, float y, float fon
         vbodata[14] = vbodata[6];
         vbodata[15] = vbodata[11];
 
-        //        if(GLEW_VERSION_1_5)
+        //        if(IsGlew1_5())
         //        {
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), NULL, GL_DYNAMIC_DRAW );
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), vbodata, GL_DYNAMIC_DRAW );
@@ -335,17 +351,19 @@ void GLFont::render_textScreenSpace(const char* text, float x, float y, float fo
     GLGlyph* g = NULL;
     glBindTexture(GL_TEXTURE_2D, m_texID);
 
-    if (GLEW_VERSION_1_5)
+    if (IsGlew1_5())
+    {
         glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
+    }
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 4 * sizeof(float), (char*)0);
-    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(float), (char*)0 + 2 * sizeof(float));
+    glVertexPointer(2, GL_FLOAT, 4 * sizeof(float), 0);
+    glTexCoordPointer(2, GL_FLOAT, 4 * sizeof(float), static_cast<char*>(0) + 2 * sizeof(float));
     const char* p;
     for (p = text; *p; ++p)
     {
-        g = &m_glyphs[(unsigned char)*p];
-        if ((char)*p == '\n')
+        g = &m_glyphs[static_cast<unsigned char>(*p)];
+        if (*p == '\n')
         {
             x = startx;
             y = y + lineHeight() * scale;
@@ -374,7 +392,7 @@ void GLFont::render_textScreenSpace(const char* text, float x, float y, float fo
         vbodata[14] = vbodata[6];
         vbodata[15] = vbodata[11];
 
-        //        if(GLEW_VERSION_1_5)
+        //        if(IsGlew1_5())
         //        {
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), (char*)0, GL_DYNAMIC_DRAW );
         //            glBufferData( GL_ARRAY_BUFFER, 16*sizeof(float), vbodata, GL_DYNAMIC_DRAW );
@@ -414,17 +432,17 @@ unsigned int GLFont::lineHeight() const
 }
 
 /**
-  @brief Gets the width of a given character.  
+  @brief Gets the width of a given character.
   @param c The character to get the width of.
   @return The width of @p c .
  */
 unsigned int GLFont::char_width(const char c) const
 {
-    return m_glyphs[(unsigned char)c].advance_x;
+    return m_glyphs[static_cast<unsigned char>(c)].advance_x;
 }
 
 /**
-  @brief Gets the width of a given string.  
+  @brief Gets the width of a given string.
   @param str The string to get the width of.
   @return The width of @p str .
  */
@@ -432,7 +450,7 @@ unsigned int GLFont::string_width(const char* str) const
 {
     unsigned int width = 0;
     for (unsigned int i = 0; i < strlen(str); ++i)
-        width += m_glyphs[(unsigned char)str[i]].advance_x;
+        width += m_glyphs[static_cast<unsigned char>(str[i])].advance_x;
     return width;
 }
 
@@ -454,10 +472,10 @@ void GLFont::getTextSize(const char* str, int& width, int& height, float fontSiz
     for (int i = 0; i < len; ++i)
     {
         if (i > len - 1)
-            width += m_glyphs[(unsigned char)str[i]].width;
+            width += m_glyphs[static_cast<unsigned char>(str[i])].width;
         else
-            width += m_glyphs[(unsigned char)str[i]].advance_x;
-        glyphH = m_glyphs[(unsigned char)str[i]].height;
+            width += m_glyphs[static_cast<unsigned char>(str[i])].advance_x;
+        glyphH = m_glyphs[static_cast<unsigned char>(str[i])].height;
         if (glyphH > height)
             height = glyphH;
     }

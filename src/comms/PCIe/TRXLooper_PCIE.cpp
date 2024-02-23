@@ -52,8 +52,8 @@ class AvgRmsCounter
     {
         if (counter == 0)
             return;
-        avg = avgAccumulator / (double)counter;
-        rms = sqrt(rmsAccumulator / (double)counter);
+        avg = avgAccumulator / static_cast<double>(counter);
+        rms = sqrt(rmsAccumulator / static_cast<double>(counter));
         avgAccumulator = 0;
         rmsAccumulator = 0;
         counter = 0;
@@ -82,16 +82,10 @@ class AvgRmsCounter
 
 static inline int64_t ts_to_us(int64_t fs, int64_t ts)
 {
-    int n, r;
+    int64_t n, r;
     n = (ts / fs);
     r = (ts % fs);
-    return (int64_t)n * 1000000 + (((int64_t)r * 1000000) / fs);
-}
-
-template<typename T> inline static T clamp(T value, T low, T high)
-{
-    assert(low <= high);
-    return value < low ? low : (value > high ? high : value);
+    return n * 1000000 + (r * 1000000 / fs);
 }
 
 TRXLooper_PCIE::TRXLooper_PCIE(
@@ -198,7 +192,7 @@ int TRXLooper_PCIE::TxSetup()
         mTx.packetsToBatch = mConfig.extraConfig.txMaxPacketsInBatch;
     }
 
-    mTx.packetsToBatch = clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
+    mTx.packetsToBatch = std::clamp<uint8_t>(mTx.packetsToBatch, 1, dma.bufferSize / packetSize);
 
     std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
     for (uint32_t i = 0; i < dmaBuffers.size(); ++i)
@@ -210,7 +204,7 @@ int TRXLooper_PCIE::TxSetup()
     mTxArgs.packetsToBatch = mTx.packetsToBatch;
     mTxArgs.samplesInPacket = samplesInPkt;
 
-    float bufferTimeDuration = float(samplesInPkt * mTx.packetsToBatch) / mConfig.hintSampleRate;
+    float bufferTimeDuration = samplesInPkt * mTx.packetsToBatch / mConfig.hintSampleRate;
     if (mCallback_logMessage)
     {
         char msg[256];
@@ -269,7 +263,7 @@ template<class T> class TxBufferManager
         header = reinterpret_cast<StreamHeader*>(mData);
         header->Clear();
         payloadSize = 0;
-        payloadPtr = (uint8_t*)header + sizeof(StreamHeader);
+        payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
     }
 
     inline bool hasSpace() const
@@ -288,7 +282,7 @@ template<class T> class TxBufferManager
             {
                 header = reinterpret_cast<StreamHeader*>(mData + bytesUsed);
                 header->Clear();
-                payloadPtr = (uint8_t*)header + sizeof(StreamHeader);
+                payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);
                 payloadSize = 0;
             }
 
@@ -320,7 +314,7 @@ template<class T> class TxBufferManager
 
             if (bytesUsed >= mCapacity - sizeof(StreamHeader))
                 sendBuffer = true; // not enough space for more packets, need to flush
-            if ((uint64_t)payloadPtr & 0xF)
+            if (reinterpret_cast<uint64_t>(payloadPtr) & 0xF)
                 sendBuffer = true; // next packets payload memory is not suitably aligned for vectorized filling
 
             if (sendBuffer)
@@ -375,8 +369,8 @@ void FPGATxState(FPGA* fpga)
         fpga->ReadRegisters(addrs, words, 4);
         pendingTxTS |= words[0];
         pendingTxTS |= words[1] << 16;
-        pendingTxTS |= (uint64_t)words[2] << 32;
-        pendingTxTS |= (uint64_t)words[3] << 48;
+        pendingTxTS |= static_cast<uint64_t>(words[2]) << 32;
+        pendingTxTS |= static_cast<uint64_t>(words[3]) << 48;
         if (i < 4)
             lime::debug("Buf%i: %08lX", i, pendingTxTS);
         else
@@ -709,7 +703,7 @@ int TRXLooper_PCIE::RxSetup()
         requestSamplesInPkt = mConfig.extraConfig.rxSamplesInPacket;
     }
 
-    int samplesInPkt = clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
+    int samplesInPkt = std::clamp(requestSamplesInPkt, 64, maxSamplesInPkt);
     int payloadSize = requestSamplesInPkt * sampleSize * chCount;
 
     // iqSamplesCount must be N*16, or N*8 depending on device BUS width
@@ -733,16 +727,16 @@ int TRXLooper_PCIE::RxSetup()
         mRx.packetsToBatch = mConfig.extraConfig.rxPacketsInBatch;
     }
 
-    mRx.packetsToBatch = clamp((int)mRx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
+    mRx.packetsToBatch = std::clamp<uint8_t>(mRx.packetsToBatch, 1, dma.bufferSize / packetSize);
 
     int irqPeriod = 16;
     float bufferTimeDuration = 0;
     if (mConfig.hintSampleRate > 0)
     {
-        bufferTimeDuration = float(samplesInPkt * mRx.packetsToBatch) / mConfig.hintSampleRate;
+        bufferTimeDuration = samplesInPkt * mRx.packetsToBatch / mConfig.hintSampleRate;
         irqPeriod = 80e-6 / bufferTimeDuration;
     }
-    irqPeriod = clamp(irqPeriod, 1, 16);
+    irqPeriod = std::clamp(irqPeriod, 1, 16);
     irqPeriod = 4;
 
     if (mCallback_logMessage)
@@ -841,7 +835,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         dma = mRxArgs.port->GetRxDMAState();
         if (dma.hwIndex != lastHwIndex)
         {
-            const int bytesTransferred = uint16_t(dma.hwIndex - lastHwIndex) * readSize;
+            const int bytesTransferred = (dma.hwIndex - lastHwIndex) * readSize;
             Bps += bytesTransferred;
             stats.bytesTransferred += bytesTransferred;
             lastHwIndex = dma.hwIndex;

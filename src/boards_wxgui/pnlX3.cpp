@@ -193,7 +193,8 @@ pnlX3::pnlX3(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
 
     btnLMS1Settings = new wxButton(this, wxNewId(), _T("Configure"));
     mainSizer->Add(btnLMS1Settings, 1, wxALIGN_LEFT | wxEXPAND, 5);
-    Connect(btnLMS1Settings->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&pnlX3::OnLMS1Configure);
+    Connect(
+        btnLMS1Settings->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&pnlX3::OnLMS1Configure));
     // end B.J.
 
     auto lms1Sizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("LMS1")), wxVERTICAL);
@@ -313,7 +314,8 @@ pnlX3::pnlX3(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
 
     btnLMS2Settings = new wxButton(this, wxNewId(), _T("Configure"));
     mainSizer2->Add(btnLMS2Settings, 1, wxALIGN_LEFT | wxEXPAND, 5);
-    Connect(btnLMS2Settings->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&pnlX3::OnLMS2Configure);
+    Connect(
+        btnLMS2Settings->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, reinterpret_cast<wxObjectEventFunction>(&pnlX3::OnLMS2Configure));
     // end B.J.
 
     auto lms2Sizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("LMS2")), wxVERTICAL);
@@ -573,8 +575,8 @@ void pnlX3::OnLMS1Configure(wxCommandEvent& event)
     int m_bLMS1ChA, m_bLMS1ChB = 0;
     Register chkLms1Tx1, cmbLms1Tx1Path, cmbLms1Rx1Path, chkLms1Tx2, cmbLms1Tx2Path, cmbLms1Rx2Path;
 
-    m_bLMS1ChA = (int)cbLMS1ChA->GetValue();
-    m_bLMS1ChB = (int)cbLMS1ChB->GetValue();
+    m_bLMS1ChA = static_cast<int>(cbLMS1ChA->GetValue());
+    m_bLMS1ChB = static_cast<int>(cbLMS1ChB->GetValue());
 
     // LMS#1 channel A
     chkLms1Tx1 = Register(0x00D2, 5, 5, 0); // positive logic
@@ -682,8 +684,8 @@ void pnlX3::OnLMS2Configure(wxCommandEvent& event)
     Register cmbLms2Trx1T, cmbLms2Trx1, cmbLms2Rx1In, cmbLms2Rx1C, cmbLms3Rx1, chkLms2Tx1, chkLms2Lna1;
     Register cmbLms2Trx2T, cmbLms2Trx2, cmbLms2Rx2In, cmbLms2Rx2C, chkLms2Tx2, chkLms2Lna2;
 
-    m_bLMS2ChA = (int)cbLMS2ChA->GetValue();
-    m_bLMS2ChB = (int)cbLMS2ChB->GetValue();
+    m_bLMS2ChA = static_cast<int>(cbLMS2ChA->GetValue());
+    m_bLMS2ChB = static_cast<int>(cbLMS2ChB->GetValue());
 
     // RF2 (log. 0), RF1 (log. 1)
     // LMS#2 channel A

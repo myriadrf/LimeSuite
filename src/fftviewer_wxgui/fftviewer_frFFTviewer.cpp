@@ -563,7 +563,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
                 {
                     for (unsigned s = 0; s < fftSize; ++s)
                     {
-                        const float div = (float)fftCounter * fftSize * fftSize;
+                        const float div = static_cast<float>(fftCounter) * fftSize * fftSize;
                         localDataResults.fftBins[ch][s] /= div;
                     }
                 }

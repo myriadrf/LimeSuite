@@ -914,18 +914,18 @@ void CDCM6208_panelgui::OnFreqEntry(wxCommandEvent& event)
         int return_val = -1;
 
         CDCM_Outputs Outputs = CDCM->GetOutputs();
-        if ((bool)m_Y0Y1_chk->GetValue())
-            Outputs.Y0Y1.requested_freq = std::stod((std::string)m_Y0Y1_FREQ_req->GetValue()) * 1e6;
-        if ((bool)m_Y2Y3_chk->GetValue())
-            Outputs.Y2Y3.requested_freq = std::stod((std::string)m_Y2Y3_FREQ_req->GetValue()) * 1e6;
-        if ((bool)m_Y4_chk->GetValue())
-            Outputs.Y4.requested_freq = std::stod((std::string)m_Y4_FREQ_req->GetValue()) * 1e6;
-        if ((bool)m_Y5_chk->GetValue())
-            Outputs.Y5.requested_freq = std::stod((std::string)m_Y5_FREQ_req->GetValue()) * 1e6;
-        if ((bool)m_Y6_chk->GetValue())
-            Outputs.Y6.requested_freq = std::stod((std::string)m_Y6_FREQ_req->GetValue()) * 1e6;
-        if ((bool)m_Y7_chk->GetValue())
-            Outputs.Y7.requested_freq = std::stod((std::string)m_Y7_FREQ_req->GetValue()) * 1e6;
+        if (static_cast<bool>(m_Y0Y1_chk->GetValue()))
+            Outputs.Y0Y1.requested_freq = std::stod(std::string{ m_Y0Y1_FREQ_req->GetValue() }) * 1e6;
+        if (static_cast<bool>(m_Y2Y3_chk->GetValue()))
+            Outputs.Y2Y3.requested_freq = std::stod(std::string{ m_Y2Y3_FREQ_req->GetValue() }) * 1e6;
+        if (static_cast<bool>(m_Y4_chk->GetValue()))
+            Outputs.Y4.requested_freq = std::stod(std::string{ m_Y4_FREQ_req->GetValue() }) * 1e6;
+        if (static_cast<bool>(m_Y5_chk->GetValue()))
+            Outputs.Y5.requested_freq = std::stod(std::string{ m_Y5_FREQ_req->GetValue() }) * 1e6;
+        if (static_cast<bool>(m_Y6_chk->GetValue()))
+            Outputs.Y6.requested_freq = std::stod(std::string{ m_Y6_FREQ_req->GetValue() }) * 1e6;
+        if (static_cast<bool>(m_Y7_chk->GetValue()))
+            Outputs.Y7.requested_freq = std::stod(std::string{ m_Y7_FREQ_req->GetValue() }) * 1e6;
 
         CDCM->SetOutputs(Outputs);
         return_val = CDCM->RecalculateFrequencies();
@@ -953,12 +953,12 @@ void CDCM6208_panelgui::onFP_chk(wxCommandEvent& event)
 {
     CDCM_Outputs Outputs = CDCM->GetOutputs();
 
-    Outputs.Y0Y1.used = (bool)m_Y0Y1_chk->GetValue();
-    Outputs.Y2Y3.used = (bool)m_Y2Y3_chk->GetValue();
-    Outputs.Y4.used = (bool)m_Y4_chk->GetValue();
-    Outputs.Y5.used = (bool)m_Y5_chk->GetValue();
-    Outputs.Y6.used = (bool)m_Y6_chk->GetValue();
-    Outputs.Y7.used = (bool)m_Y7_chk->GetValue();
+    Outputs.Y0Y1.used = static_cast<bool>(m_Y0Y1_chk->GetValue());
+    Outputs.Y2Y3.used = static_cast<bool>(m_Y2Y3_chk->GetValue());
+    Outputs.Y4.used = static_cast<bool>(m_Y4_chk->GetValue());
+    Outputs.Y5.used = static_cast<bool>(m_Y5_chk->GetValue());
+    Outputs.Y6.used = static_cast<bool>(m_Y6_chk->GetValue());
+    Outputs.Y7.used = static_cast<bool>(m_Y7_chk->GetValue());
     CDCM->SetOutputs(Outputs);
     CDCM->UpdateOutputFrequencies();
 
@@ -1033,7 +1033,7 @@ void CDCM6208_panelgui::UpdateGUI()
         m_VCOFREQ->SetForegroundColour(wxColour("#000000"));
 
     //Y0Y1 divider
-    str = std::to_string((int)Outputs.Y0Y1.divider_val);
+    str = std::to_string(static_cast<int>(Outputs.Y0Y1.divider_val));
     m_Y0Y1_DIV->SetValue(str);
     //Y0Y1 Frequency
     str = std::to_string(Outputs.Y0Y1.output_freq / 1e6);
@@ -1043,7 +1043,7 @@ void CDCM6208_panelgui::UpdateGUI()
     m_Y0Y1_FREQ_req->SetValue(str);
 
     //Y2Y3 divider
-    str = std::to_string((int)Outputs.Y2Y3.divider_val);
+    str = std::to_string(static_cast<int>(Outputs.Y2Y3.divider_val));
     m_Y2Y3_DIV->SetValue(str);
     //Y2Y3 Frequency
     str = std::to_string(Outputs.Y2Y3.output_freq / 1e6);

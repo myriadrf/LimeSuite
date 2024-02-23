@@ -320,7 +320,9 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         wxCommandEvent* evt = new wxCommandEvent(UPDATE_STATUS);
         constexpr unsigned fifoSize = 4 * 1024 * 1024;
         const unsigned send_cnt = buffer.size() > fifoSize / 2 ? fifoSize / 2 : buffer.size();
-        lms_stream_t tx_stream = { 0, true, uint32_t(cmbDevice->GetSelection() * 2), fifoSize, 0.5, lms_stream_t::LMS_FMT_I16 };
+        lms_stream_t tx_stream = {
+            0, true, static_cast<uint32_t>(cmbDevice->GetSelection() * 2), fifoSize, 0.5, lms_stream_t::LMS_FMT_I16
+        };
         if (LMS_SetupStream(lmsControl, &tx_stream) != 0)
         {
             evt = new wxCommandEvent(UPDATE_STATUS);

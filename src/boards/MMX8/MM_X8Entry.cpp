@@ -135,7 +135,7 @@ class LMS64C_FPGA_Over_PCIe_MMX8 : public lime::IComms
         const char* data, size_t length, int prog_mode, int target, ProgressCallback callback = nullptr) override
     {
         return LMS64CProtocol::ProgramWrite(
-            pipe, data, length, prog_mode, (LMS64CProtocol::ProgramWriteTarget)target, callback, subdeviceIndex);
+            pipe, data, length, prog_mode, static_cast<LMS64CProtocol::ProgramWriteTarget>(target), callback, subdeviceIndex);
     }
 
     OpStatus MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
