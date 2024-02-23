@@ -141,7 +141,8 @@ int FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned c
     std::vector<uint32_t> spiBuffer;
     if (useCache)
     {
-        static const int readonly_regs[] = { 0x000,
+        static constexpr std::array<int, 45> readonly_regs = {
+            0x000,
             0x001,
             0x002,
             0x003,
@@ -185,12 +186,12 @@ int FPGA::WriteRegisters(const uint32_t* addrs, const uint32_t* data, unsigned c
             0x10F,
             0x110,
             0x111,
-            0x114 };
+            0x114,
+        };
 
         for (unsigned i = 0; i < cnt; i++)
         {
-            auto endptr = readonly_regs + sizeof(readonly_regs) / sizeof(*readonly_regs);
-            if (std::find(readonly_regs, endptr, addrs[i]) != endptr)
+            if (std::find(readonly_regs.begin(), readonly_regs.end(), addrs[i]) != readonly_regs.end())
                 continue;
 
             auto result = regsCache.find(addrs[i]);
@@ -231,7 +232,8 @@ int FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
     std::vector<uint32_t> spiBuffer;
     if (useCache)
     {
-        static const int volatile_regs[] = { 0x021,
+        static constexpr std::array<int, 42> volatile_regs = {
+            0x021,
             0x022,
             0x060,
             0x065,
@@ -272,13 +274,13 @@ int FPGA::ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt)
             0x10F,
             0x110,
             0x111,
-            0x114 };
+            0x114,
+        };
 
         std::vector<uint32_t> reg_addr;
         for (unsigned i = 0; i < cnt; i++)
         {
-            auto endptr = volatile_regs + sizeof(volatile_regs) / sizeof(*volatile_regs);
-            if (std::find(volatile_regs, endptr, addrs[i]) == endptr)
+            if (std::find(volatile_regs.begin(), volatile_regs.end(), addrs[i]) == volatile_regs.end())
             {
                 auto result = regsCache.find(addrs[i]);
                 if (result != regsCache.end())
@@ -1190,7 +1192,7 @@ double FPGA::DetectRefClk(double fx3Clk)
 {
     verbose_printf("FPGA::DetectRefClk fx3Clk:%g\n", fx3Clk);
     const double fx3Cnt = 16777210; //fixed fx3 counter in FPGA
-    const double clkTbl[] = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
+    const std::array<double, 5> clkTbl = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
     if (WriteRegisters(addr, vals, 2) != 0)
@@ -1222,10 +1224,10 @@ double FPGA::DetectRefClk(double fx3Clk)
     double count = (vals2[0] | (vals2[1] << 16)); //cock counter
     count *= fx3Clk / fx3Cnt; //estimate ref clock based on FX3 Clock
     lime::debug("Estimated reference clock %1.4f MHz", count / 1e6);
-    unsigned i = 0;
+    std::size_t i = 0;
     double delta = 100e6;
 
-    while (i < sizeof(clkTbl) / sizeof(*clkTbl))
+    while (i < clkTbl.size())
         if (delta < fabs(count - clkTbl[i]))
             break;
         else
