@@ -16,7 +16,7 @@ set(LIMESDR_MINI_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIMESDR_MINI "Enable LimeSDR Mini support" ON "ENABLE_LIBRARY;ENABLE_USB_FTDI" OFF)
-add_feature_info(BoardLimeSDR_Mini ENABLE_LIMESDR_MINI "LimeSDR Mini board support")
+add_feature_info(LIMESDR_MINI ENABLE_LIMESDR_MINI "LimeSDR Mini board support")
 if (NOT ENABLE_LIMESDR_MINI)
     return()
 endif()
