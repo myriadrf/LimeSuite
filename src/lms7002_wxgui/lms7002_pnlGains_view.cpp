@@ -23,7 +23,7 @@ lms7002_pnlGains_view::lms7002_pnlGains_view(wxWindow* parent, wxWindowID id, co
 
     chkTRX_GAIN_SRC =
         new wxCheckBox(this, ID_EN_NEXTRX_RFE, wxT("Alternative TRX gain source"), wxDefaultPosition, wxDefaultSize, 0);
-    chkTRX_GAIN_SRC->SetToolTip(wxT("Enables the daisy chain LO buffer going from RXFE1  to RXFE2"));
+    chkTRX_GAIN_SRC->SetToolTip(wxT("Enables the daisy chain LO buffer going from RXFE1 to RXFE2"));
 
     fgSizer309->Add(chkTRX_GAIN_SRC, 0, wxALL, 5);
 
@@ -115,7 +115,7 @@ lms7002_pnlGains_view::lms7002_pnlGains_view(wxWindow* parent, wxWindowID id, co
 
     cmbLOSS_MAIN_TXPAD_TRF = new wxComboBox(
         sbSizer148->GetStaticBox(), ID_LOSS_MAIN_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0);
-    cmbLOSS_MAIN_TXPAD_TRF->SetToolTip(wxT("Controls the gain  output power of the TXPAD"));
+    cmbLOSS_MAIN_TXPAD_TRF->SetToolTip(wxT("Controls the gain output power of the TXPAD"));
 
     txSizer->Add(cmbLOSS_MAIN_TXPAD_TRF, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxALL | wxEXPAND, 0);
 

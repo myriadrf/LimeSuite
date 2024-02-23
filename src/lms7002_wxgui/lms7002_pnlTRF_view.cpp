@@ -279,7 +279,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view(wxWindow* parent, wxWindowID id, const 
 
     cmbLOSS_MAIN_TXPAD_TRF =
         new wxComboBox(this, ID_LOSS_MAIN_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0);
-    cmbLOSS_MAIN_TXPAD_TRF->SetToolTip(wxT("Controls the gain  output power of the TXPAD"));
+    cmbLOSS_MAIN_TXPAD_TRF->SetToolTip(wxT("Controls the gain output power of the TXPAD"));
 
     fgSizer34->Add(cmbLOSS_MAIN_TXPAD_TRF, 0, wxEXPAND, 0);
 
