@@ -59,7 +59,7 @@ struct LimePluginContext
     LimeParamProvider* config;
 
     /* Path of the config file, not terminating by / */
-    const char *currentWorkingDirectory;
+    std::string currentWorkingDirectory;
     HostLogCallbackType hostLog;
 };
 

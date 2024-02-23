@@ -37,7 +37,6 @@ RFNode::RFNode()
 LimePluginContext::LimePluginContext()
     : rfdev(LIME_MAX_UNIQUE_DEVICES)
     , config(nullptr)
-    , currentWorkingDirectory(nullptr)
 {
     ports.reserve(LIME_TRX_MAX_RF_PORT);
 }
@@ -345,7 +344,7 @@ static int LoadDevicesConfigurationFile(LimePluginContext* context)
 
         char configFilepath[512];
         if (filename[0] != '/') // is not global path
-            sprintf(configFilepath, "%s/%s", context->currentWorkingDirectory, filename.c_str());
+            sprintf(configFilepath, "%s/%s", context->currentWorkingDirectory.c_str(), filename.c_str());
         else
             sprintf(configFilepath, "%s", filename.c_str());
 
@@ -740,6 +739,10 @@ int LimePlugin_Setup(LimePluginContext* context, const LimeParams* params)
             stream.channels[TRXDir::Tx].resize(params->rf_ports[p].tx_channel_count);
             stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
             stream.format = SDRDevice::StreamConfig::DataFormat::I16;
+            stream.extraConfig.rxSamplesInPacket = 256;
+            stream.extraConfig.rxPacketsInBatch = 4;
+            stream.extraConfig.txMaxPacketsInBatch = 8;
+            stream.extraConfig.txSamplesInPacket = 256;
 
             // Initialize streams and map channels
             for (size_t ch = 0; ch < stream.channels[TRXDir::Rx].size(); ++ch)

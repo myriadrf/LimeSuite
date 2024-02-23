@@ -189,8 +189,10 @@ static int trx_lms7002m_get_sample_rate(TRXState* s1, TRXFraction* psample_rate,
     // workaround here assume that they are being configured in order 0,1,2...
     static int whichPort = 0;
     int p = whichPort;
-    double& rate = s->rfdev[p].config.channel[0].rx.sampleRate;
-
+    RFNode* node = s->ports[p].nodes[0];
+    if (!node || !node->device)
+        return -1;
+    double& rate = node->config.channel[0].rx.sampleRate;
     whichPort = (whichPort + 1); // mod, just in case.
 
     const float desiredSamplingRate = bandwidth * 1.536;
@@ -355,12 +357,14 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
     }
 
     LimePluginContext* lime = new LimePluginContext();
+    lime->currentWorkingDirectory = std::string(hostState->path);
     configProvider.Init(hostState);
 
     if (LimePlugin_Init(lime, LogCallback, &configProvider) != 0)
         return -1;
 
     // Set callbacks
+    hostState->opaque = lime;
     hostState->trx_end_func = trx_lms7002m_end;
     // hostState->trx_write_func = // Deprecated
     // hostState->trx_read_func = // Deprecated
