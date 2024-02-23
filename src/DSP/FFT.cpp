@@ -142,9 +142,9 @@ void FFT::ProcessLoop()
                 if (resultsCallback)
                 {
                     // to log scale
-                    for (uint i = 0; i < fftBins.size(); ++i)
+                    for (size_t i = 0; i < fftBins.size(); ++i)
                         avgOutput[i] = sqrt(avgOutput[i] / avgCount);
-                    for (uint i = 0; i < fftBins.size(); ++i)
+                    for (size_t i = 0; i < fftBins.size(); ++i)
                     {
                         fftBins[i] = avgOutput[i] > 0 ? 10 * log10(avgOutput[i]) : -150;
                     }
