@@ -57,6 +57,7 @@ struct LimePluginContext
     std::map<std::string, lime::SDRDevice*> uniqueDevices;
     std::vector<std::deque<int>> portAssignements;
     LimeParamProvider* config;
+    lime::SDRDevice::StreamConfig::DataFormat samplesFormat;
 
     /* Path of the config file, not terminating by / */
     std::string currentWorkingDirectory;

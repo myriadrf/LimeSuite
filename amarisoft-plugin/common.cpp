@@ -37,6 +37,7 @@ RFNode::RFNode()
 LimePluginContext::LimePluginContext()
     : rfdev(LIME_MAX_UNIQUE_DEVICES)
     , config(nullptr)
+    , samplesFormat(SDRDevice::StreamConfig::DataFormat::F32)
 {
     ports.reserve(LIME_TRX_MAX_RF_PORT);
 }
@@ -738,7 +739,7 @@ int LimePlugin_Setup(LimePluginContext* context, const LimeParams* params)
             stream.channels[TRXDir::Rx].resize(params->rf_ports[p].rx_channel_count);
             stream.channels[TRXDir::Tx].resize(params->rf_ports[p].tx_channel_count);
             stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
-            stream.format = SDRDevice::StreamConfig::DataFormat::I16;
+            stream.format = context->samplesFormat;
             stream.extraConfig.rxSamplesInPacket = 256;
             stream.extraConfig.rxPacketsInBatch = 4;
             stream.extraConfig.txMaxPacketsInBatch = 8;

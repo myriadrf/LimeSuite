@@ -36,7 +36,6 @@ public:
     {
         if (blockAccess)
         {
-
             return false;
         }
         char* ctemp = trx_get_param_string(state, varname);
@@ -154,7 +153,9 @@ static int trx_lms7002m_read(TRXState* s, trx_timestamp_t* ptimestamp, void** sa
     md->flags = 0;
 
     LimePluginContext* lime = (LimePluginContext*)s->opaque;
-    return LimePlugin_Read_complex32f(lime, reinterpret_cast<lime::complex32f_t**>(samples), count, port, meta);
+    int samplesGot = LimePlugin_Read_complex32f(lime, reinterpret_cast<lime::complex32f_t**>(samples), count, port, meta);
+    *ptimestamp = meta.timestamp; // if timestamp is not updated, amarisoft will freeze
+    return samplesGot;
 }
 
 // Return in *psample_rate the sample rate supported by the device
@@ -258,7 +259,7 @@ static int trx_lms7002m_get_sample_rate(TRXState* s1, TRXFraction* psample_rate,
 static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 {
     // LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
-    int txExpectedSamples = 512;//lime->samplesInPacket[0];
+    int txExpectedSamples = 256;//lime->samplesInPacket[0];
     // if (lime->streamExtras[0] && lime->streamExtras[0]->txSamplesInPacket > 0)
     // {
     //     txExpectedSamples = lime->streamExtras[0]->txSamplesInPacket;
@@ -358,6 +359,7 @@ int __attribute__((visibility("default"))) trx_driver_init(TRXState* hostState)
 
     LimePluginContext* lime = new LimePluginContext();
     lime->currentWorkingDirectory = std::string(hostState->path);
+    lime->samplesFormat = SDRDevice::StreamConfig::DataFormat::F32;
     configProvider.Init(hostState);
 
     if (LimePlugin_Init(lime, LogCallback, &configProvider) != 0)
