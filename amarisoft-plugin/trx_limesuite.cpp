@@ -17,7 +17,7 @@ extern "C" {
 using namespace std;
 using namespace lime;
 
-class AmarisoftParamProvider : public LimeParamProvider
+class AmarisoftParamProvider : public LimeSettingsProvider
 {
 public:
     AmarisoftParamProvider() : state(nullptr), blockAccess(false) {}
@@ -36,6 +36,7 @@ public:
     {
         if (blockAccess)
         {
+
             return false;
         }
         char* ctemp = trx_get_param_string(state, varname);
@@ -190,7 +191,7 @@ static int trx_lms7002m_get_sample_rate(TRXState* s1, TRXFraction* psample_rate,
     // workaround here assume that they are being configured in order 0,1,2...
     static int whichPort = 0;
     int p = whichPort;
-    RFNode* node = s->ports[p].nodes[0];
+    DevNode* node = s->ports[p].nodes[0];
     if (!node || !node->device)
         return -1;
     double& rate = node->config.channel[0].rx.sampleRate;
@@ -271,9 +272,9 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 static int trx_lms7002m_get_abs_rx_power_func(TRXState* s1, float* presult, int channel_num)
 {
     LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
-    if (lime->rxChannels[channel_num].parent->powerAvailable)
+    if (lime->rxChannels[channel_num].parent->rxSettings.powerAvailable)
     {
-        *presult = lime->rxChannels[channel_num].parent->power_dBm;
+        *presult = lime->rxChannels[channel_num].parent->rxSettings.power_dBm;
         return 0;
     }
     else
@@ -283,9 +284,9 @@ static int trx_lms7002m_get_abs_rx_power_func(TRXState* s1, float* presult, int 
 static int trx_lms7002m_get_abs_tx_power_func(TRXState* s1, float* presult, int channel_num)
 {
     LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
-    if (lime->txChannels[channel_num].parent->powerAvailable)
+    if (lime->txChannels[channel_num].parent->txSettings.powerAvailable)
     {
-        *presult = lime->txChannels[channel_num].parent->power_dBm;
+        *presult = lime->txChannels[channel_num].parent->txSettings.power_dBm;
         return 0;
     }
     else
@@ -297,20 +298,20 @@ static int trx_lms7002m_get_abs_tx_power_func(TRXState* s1, float* presult, int 
 static void trx_lms7002m_set_tx_gain_func(TRXState* s1, double gain, int channel_num)
 {
     LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
-    lms7002m_set_tx_gain_func(lime, gain, channel_num);
+    LimePlugin_SetTxGain(lime, gain, channel_num);
 }
 
 static void trx_lms7002m_set_rx_gain_func(TRXState* s1, double gain, int channel_num)
 {
     LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
-    lms7002m_set_rx_gain_func(lime, gain, channel_num);
+    LimePlugin_SetRxGain(lime, gain, channel_num);
 }
 
 static int trx_lms7002m_start(TRXState* s1, const TRXDriverParams* params)
 {
     LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
 
-    LimeParams state;
+    LimeRuntimeParameters state;
 
     int rxCount = params->rx_channel_count;
     int txCount = params->tx_channel_count;

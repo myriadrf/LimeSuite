@@ -10,10 +10,10 @@
 typedef void (*HostLogCallbackType)(lime::SDRDevice::LogLevel, const char*);
 
 /// Interface for providing parameters from configuration file
-class LimeParamProvider
+class LimeSettingsProvider
 {
 public:
-    virtual ~LimeParamProvider() {};
+    virtual ~LimeSettingsProvider() {};
 
     // return true if variable was found
     virtual bool GetString(std::string& dest, const char* varname) = 0;
@@ -23,27 +23,49 @@ public:
 };
 
 // Individual RF SOC device configuration
-struct RFNode {
-    RFNode();
+struct DevNode {
+public:
+    DevNode();
+
+    struct DirectionalSettings
+    {
+        std::string antenna;
+        std::string calibration;
+        double lo_override;
+        int oversample;
+        int power_dBm;
+        bool powerAvailable;
+        bool gfir_enable;
+        double gfir_bandwidth;
+    };
+
+    // settings from file
+    std::string handleString;
+    std::string iniFilename;
+    int maxChannelsToUse; // how many channels can be used from this chip
+    uint8_t chipIndex;
+    bool double_freq_conversion_to_lower_side;
+    DirectionalSettings rxSettings;
+    DirectionalSettings txSettings;
+
     lime::SDRDevice* device; // chip owner
     lime::SDRDevice::SDRConfig config;
     int portIndex;
-    int chipIndex;
     int devIndex;
-    int maxChannelsToUse; // how many channels can be used from this chip
-    int power_dBm;
-    bool powerAvailable;
     bool assignedToPort;
 };
 
 struct ChannelData {
-    RFNode* parent;
+    DevNode* parent;
     int chipChannel;
 };
 
 // Ports/Cells that can have combined multiple RF devices to act as one
 struct PortData {
-    std::vector<RFNode*> nodes;
+    // settings from file
+    std::string deviceNames;
+
+    std::vector<DevNode*> nodes;
     lime::StreamComposite* composite;
 };
 
@@ -53,10 +75,9 @@ struct LimePluginContext
     std::vector<ChannelData> rxChannels;
     std::vector<ChannelData> txChannels;
     std::vector<PortData> ports;
-    std::vector<RFNode> rfdev;
+    std::vector<DevNode> rfdev;
     std::map<std::string, lime::SDRDevice*> uniqueDevices;
-    std::vector<std::deque<int>> portAssignements;
-    LimeParamProvider* config;
+    LimeSettingsProvider* config;
     lime::SDRDevice::StreamConfig::DataFormat samplesFormat;
 
     /* Path of the config file, not terminating by / */
@@ -64,7 +85,7 @@ struct LimePluginContext
     HostLogCallbackType hostLog;
 };
 
-struct LimeParams
+struct LimeRuntimeParameters
 {
     struct ChannelParams
     {
@@ -86,12 +107,12 @@ struct LimeParams
     std::vector<PortParams> rf_ports;
 };
 
-void lms7002m_set_tx_gain_func(LimePluginContext* context, double gain, int channel_num);
-void lms7002m_set_rx_gain_func(LimePluginContext* context, double gain, int channel_num);
+void LimePlugin_SetTxGain(LimePluginContext* context, double gain, int channel_num);
+void LimePlugin_SetRxGain(LimePluginContext* context, double gain, int channel_num);
 
-// hostState should be allocated/freed by the host
-int LimePlugin_Init(LimePluginContext* hostState, HostLogCallbackType logFptr, LimeParamProvider* configProvider);
-int LimePlugin_Setup(LimePluginContext* context, const LimeParams* params);
+// context should be allocated/freed by the host
+int LimePlugin_Init(LimePluginContext* context, HostLogCallbackType logFptr, LimeSettingsProvider* configProvider);
+int LimePlugin_Setup(LimePluginContext* context, const LimeRuntimeParameters* params);
 int LimePlugin_Start(LimePluginContext* context);
 int LimePlugin_Stop(LimePluginContext* context);
 int LimePlugin_Destroy(LimePluginContext* context);
