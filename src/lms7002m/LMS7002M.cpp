@@ -24,11 +24,11 @@
     #pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
 #include "cpp-feather-ini-parser/INI.h"
-#include "lms_gfir.h"
 #ifdef __GNUC__
     #pragma GCC diagnostic pop
 #endif
 
+#include "lms_gfir.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/IComms.h"
 #include "LMS7002M_RegistersMap.h"
