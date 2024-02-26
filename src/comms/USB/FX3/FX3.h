@@ -44,19 +44,25 @@ class FX3 : public USBGeneric
         override;
 #endif
 
-    static constexpr int CTR_W_REQCODE = 0xC1;
-    static constexpr int CTR_W_VALUE = 0x0000;
-    static constexpr int CTR_W_INDEX = 0x0000;
+    static constexpr int CTR_W_REQCODE =
+        0xC1; ///< The request field of the setup packet for the write operation for a control transfer.
+    static constexpr int CTR_W_VALUE = 0x0000; ///< The value of the setup packet for the write operation for a control transfer.
+    static constexpr int CTR_W_INDEX = 0x0000; ///< The index of the setup packet for the write operation for a control transfer.
 
-    static constexpr int CTR_R_REQCODE = 0xC0;
-    static constexpr int CTR_R_VALUE = 0x0000;
-    static constexpr int CTR_R_INDEX = 0x0000;
+    static constexpr int CTR_R_REQCODE =
+        0xC0; ///< The request field of the setup packet for the read operation for a control transfer.
+    static constexpr int CTR_R_VALUE =
+        0x0000; ///< The value field of the setup packet for the read operation for a control transfer.
+    static constexpr int CTR_R_INDEX =
+        0x0000; ///< The index field of the setup packet for the read operation for a control transfer.
 
-    static constexpr uint8_t CONTROL_BULK_OUT_ADDRESS = 0x0F;
-    static constexpr uint8_t CONTROL_BULK_IN_ADDRESS = 0x8F;
+    static constexpr uint8_t CONTROL_BULK_OUT_ADDRESS =
+        0x0F; ///< The memory address for writing information via the bulk transfer protocol.
+    static constexpr uint8_t CONTROL_BULK_IN_ADDRESS =
+        0x8F; ///< THe memory address for reading information via the bulk transfer protocol.
 
-    static constexpr uint8_t STREAM_BULK_OUT_ADDRESS = 0x01;
-    static constexpr uint8_t STREAM_BULK_IN_ADDRESS = 0x81;
+    static constexpr uint8_t STREAM_BULK_OUT_ADDRESS = 0x01; ///< The memory address to which to write the samples to broadcast.
+    static constexpr uint8_t STREAM_BULK_IN_ADDRESS = 0x81; ///< The memory address from which to read the incoming samples.
 
   protected:
     virtual int GetUSBContextIndex() override;

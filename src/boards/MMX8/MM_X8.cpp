@@ -28,6 +28,7 @@ static double X8ReferenceClock = 30.72e6;
 /// @param spiLMS7002M The communications ports to the LMS7002M chips.
 /// @param spiFPGA The communications ports to the device's FPGA chips.
 /// @param trxStreams The communications ports to send and receive sample data.
+/// @param control The serial port communication of the device.
 /// @param adfComms The communications port to the device's ADF4002 chip.
 LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     std::vector<std::shared_ptr<IComms>>& spiFPGA,

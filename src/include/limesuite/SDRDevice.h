@@ -268,12 +268,17 @@ class LIME_API SDRDevice
                 /// @brief The enumeration describing the scale of the test signal.
                 enum class Scale : uint8_t { Full, Half };
 
-                complex16_t dcValue;
+                complex16_t dcValue; ///< The value to use when in DC mode.
                 Divide divide; ///< The current divide of the test signal.
                 Scale scale; ///< The current scale of the test signal.
                 bool enabled; ///< Denotes whether test mode is enabled or not.
                 bool dcMode; ///< The DC mode of the test mode.
 
+                /// @brief The constructor for the Test Signal storage class.
+                /// @param enabled Whether the test signal is enabled or not.
+                /// @param dcMode Whether the DC mode is enabled or not.
+                /// @param divide The divide mode of the test signal.
+                /// @param scale The scale of the dest signal.
                 TestSignal(bool enabled = false, bool dcMode = false, Divide divide = Divide::Div8, Scale scale = Scale::Half)
                     : dcValue(0, 0)
                     , divide(divide)

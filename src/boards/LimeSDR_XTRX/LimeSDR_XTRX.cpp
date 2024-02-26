@@ -110,6 +110,7 @@ OpStatus LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 /// @param spiRFsoc The communications port to the LMS7002M chip.
 /// @param spiFPGA The communications port to the device's FPGA.
 /// @param sampleStream The communications port to send and receive sample data.
+/// @param control The serial port communication of the device.
 /// @param refClk The reference clock of the device.
 LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc,
     std::shared_ptr<IComms> spiFPGA,

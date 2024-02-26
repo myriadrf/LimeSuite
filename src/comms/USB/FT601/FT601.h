@@ -43,7 +43,6 @@ class FT601 : public USBGeneric
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
-    virtual int GetUSBContextIndex() override;
 
     /**
       @brief Resets the stream buffers of the device.
@@ -61,6 +60,8 @@ class FT601 : public USBGeneric
     int FT_FlushPipe(unsigned char ep);
     uint32_t mUsbCounter;
 #endif
+
+    virtual int GetUSBContextIndex() override;
 };
 
 } // namespace lime
