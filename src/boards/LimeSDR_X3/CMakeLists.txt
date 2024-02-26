@@ -18,7 +18,7 @@ set(LIMESDR_X3_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIMESDR_X3 "Enable LimeSDR X3 board support" ON "ENABLE_LIBRARY;ENABLE_LITE_PCIE" OFF)
-add_feature_info(ENABLE_LIMESDR_X3 ENABLE_LIMESDR_X3 "LimeSDR X3 board support")
+add_feature_info(LIMESDR_X3 ENABLE_LIMESDR_X3 "LimeSDR X3 board support")
 if (NOT ENABLE_LIMESDR_X3)
     return()
 endif()

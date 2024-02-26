@@ -150,7 +150,7 @@ int TRXLooper_PCIE::TxSetup()
         mTx.packetsToBatch = mConfig.extraConfig.tx.packetsInBatch;
     }
 
-    mTx.packetsToBatch = std::clamp((int)mTx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
+    mTx.packetsToBatch = std::clamp<uint8_t>(mTx.packetsToBatch, 1, dma.bufferSize / packetSize);
 
     std::vector<uint8_t*> dmaBuffers(dma.bufferCount);
     for (uint32_t i = 0; i < dmaBuffers.size(); ++i)
@@ -162,7 +162,7 @@ int TRXLooper_PCIE::TxSetup()
     mTxArgs.packetsToBatch = mTx.packetsToBatch;
     mTxArgs.samplesInPacket = samplesInPkt;
 
-    float bufferTimeDuration = float(samplesInPkt * mTx.packetsToBatch) / mConfig.hintSampleRate;
+    float bufferTimeDuration = samplesInPkt * mTx.packetsToBatch / mConfig.hintSampleRate;
     if (mCallback_logMessage)
     {
         char msg[256];
@@ -528,13 +528,13 @@ int TRXLooper_PCIE::RxSetup()
         mRx.packetsToBatch = mConfig.extraConfig.rx.packetsInBatch;
     }
 
-    mRx.packetsToBatch = std::clamp((int)mRx.packetsToBatch, 1, (int)(dma.bufferSize / packetSize));
+    mRx.packetsToBatch = std::clamp<uint8_t>(mRx.packetsToBatch, 1, dma.bufferSize / packetSize);
 
     int irqPeriod = 16;
     float bufferTimeDuration = 0;
     if (mConfig.hintSampleRate > 0)
     {
-        bufferTimeDuration = float(samplesInPkt * mRx.packetsToBatch) / mConfig.hintSampleRate;
+        bufferTimeDuration = samplesInPkt * mRx.packetsToBatch / mConfig.hintSampleRate;
         irqPeriod = 80e-6 / bufferTimeDuration;
     }
     irqPeriod = std::clamp(irqPeriod, 1, 16);
@@ -636,7 +636,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         dma = mRxArgs.port->GetRxDMAState();
         if (dma.hwIndex != lastHwIndex)
         {
-            const int bytesTransferred = uint16_t(dma.hwIndex - lastHwIndex) * readSize;
+            const int bytesTransferred = (dma.hwIndex - lastHwIndex) * readSize;
             Bps += bytesTransferred;
             stats.bytesTransferred += bytesTransferred;
             lastHwIndex = dma.hwIndex;

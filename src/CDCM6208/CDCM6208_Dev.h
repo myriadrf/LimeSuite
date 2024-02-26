@@ -3,6 +3,9 @@
 #include "limesuite/config.h"
 #include "FPGA_common.h"
 
+#include <vector>
+#include <cstdint>
+
 #define CDCM_VCO_MIN_V1 2390 * 1e6
 #define CDCM_VCO_MAX_V1 2550 * 1e6
 #define CDCM_VCO_MIN_V2 2940 * 1e6
@@ -148,7 +151,7 @@ class LIME_API CDCM_Dev
       @param var The double to check.
       @return Whether the double is an integer or not.
      */
-    bool IsInteger(double var) { return var == (int64_t)var; }
+    bool IsInteger(double var) { return var == static_cast<int64_t>(var); }
     std::vector<CDCM_VCO> FindValidVCOFreqs(double lcm, int version);
     uint64_t FindGCD(uint64_t a, uint64_t b);
     int GetLowestFreqErr(std::vector<CDCM_VCO> input);

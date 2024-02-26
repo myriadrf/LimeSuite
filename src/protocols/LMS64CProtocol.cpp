@@ -238,9 +238,9 @@ void FirmwareToDescriptor(const FirmwareInfo& fw, SDRDevice::Descriptor& descrip
     }
     else
         descriptor.expansionName = GetExpansionBoardName(static_cast<eEXP_BOARD>(fw.expansionBoardId));
-    descriptor.firmwareVersion = std::to_string(int(fw.firmware));
-    descriptor.hardwareVersion = std::to_string(int(fw.hardware));
-    descriptor.protocolVersion = std::to_string(int(fw.protocol));
+    descriptor.firmwareVersion = std::to_string(fw.firmware);
+    descriptor.hardwareVersion = std::to_string(fw.hardware);
+    descriptor.protocolVersion = std::to_string(fw.protocol);
     descriptor.serialNumber = fw.boardSerialNumber;
 }
 
@@ -695,14 +695,14 @@ OpStatus MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size
         progView.SetChunkSize(std::min(dataLen - bytesSent, chunkSize));
 
         progView.SetAddress(address + bytesSent);
-        progView.SetDevice(3);
+        progView.SetDevice(ProgramWriteTarget::FPGA);
 
         progView.SetData(src, chunkSize);
         src += chunkSize;
 
-        if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
+        if (port.Write(reinterpret_cast<uint8_t*>(&packet), sizeof(packet), timeout_ms) != sizeof(packet))
             return OpStatus::IO_FAILURE;
-        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), timeout_ms) != sizeof(inPacket))
+        if (port.Read(reinterpret_cast<uint8_t*>(&inPacket), sizeof(inPacket), timeout_ms) != sizeof(inPacket))
             return OpStatus::IO_FAILURE;
 
         if (inPacket.status != STATUS_COMPLETED_CMD)
@@ -728,7 +728,7 @@ OpStatus MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t data
 
     LMS64CPacketMemoryWriteView writeView(&packet);
     writeView.SetMode(0);
-    writeView.SetDevice(3);
+    writeView.SetDevice(ProgramWriteTarget::FPGA);
 
     const size_t chunkSize = 32;
     static_assert(chunkSize <= writeView.GetMaxDataSize(), "chunk must fit into packet payload");
@@ -739,9 +739,9 @@ OpStatus MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t data
         writeView.SetAddress(address + bytesGot);
         writeView.SetChunkSize(std::min(dataLen - bytesGot, chunkSize));
 
-        if (port.Write((uint8_t*)&packet, sizeof(packet), timeout_ms) != sizeof(packet))
+        if (port.Write(reinterpret_cast<uint8_t*>(&packet), sizeof(packet), timeout_ms) != sizeof(packet))
             return OpStatus::IO_FAILURE;
-        if (port.Read((uint8_t*)&inPacket, sizeof(inPacket), timeout_ms) != sizeof(inPacket))
+        if (port.Read(reinterpret_cast<uint8_t*>(&inPacket), sizeof(inPacket), timeout_ms) != sizeof(inPacket))
             return OpStatus::IO_FAILURE;
 
         if (inPacket.status != STATUS_COMPLETED_CMD)

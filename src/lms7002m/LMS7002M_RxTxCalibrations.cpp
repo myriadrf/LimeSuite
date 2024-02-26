@@ -60,8 +60,8 @@ static uint8_t GetExtLoopPair(lime::LMS7002M& ctr, bool calibratingTx)
  */
 static inline int16_t signextIqCorr(const uint16_t regVal)
 {
-    int16_t signedPhase = int16_t(regVal << 4);
-    return int16_t(signedPhase) >> 4;
+    int16_t signedPhase = static_cast<int16_t>(regVal << 4);
+    return signedPhase >> 4;
 }
 
 const double TrxCalib_RF_LimitLow = 2.5e6;
@@ -187,7 +187,7 @@ OpStatus LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(OpStatus::INVALID_VALUE, "Tx Calibration: Device not connected");
     auto beginTime = std::chrono::high_resolution_clock::now();
     int status;
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
+    uint8_t ch = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7_MAC));
     if (ch == 0 || ch == 3)
         return ReportError(OpStatus::INVALID_VALUE, "Tx Calibration: Incorrect channel selection MAC %i", ch);
 
@@ -237,7 +237,8 @@ OpStatus LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
         if (status != MCU_BD::MCU_NO_ERROR)
-            return ReportError(OpStatus::INVALID_VALUE, "Tx Calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
+            return ReportError(
+                OpStatus::INVALID_VALUE, "Tx Calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache
@@ -283,11 +284,11 @@ OpStatus LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
 
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
+    uint8_t ch = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7_MAC));
     if (ch == 0 || ch == 3)
         return ReportError(OpStatus::INVALID_VALUE, "Rx Calibration: Incorrect channel selection MAC %i", ch);
     uint8_t channel = ch == 1 ? 0 : 1;
-    uint8_t lna = (uint8_t)Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
+    uint8_t lna = static_cast<uint8_t>(Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE));
     double rxFreq = GetFrequencySX(TRXDir::Rx);
 
     const char* lnaName;
@@ -354,7 +355,8 @@ OpStatus LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);
         int status = mcuControl->WaitForMCU(1000);
         if (status != MCU_BD::MCU_NO_ERROR)
-            return ReportError(OpStatus::INVALID_VALUE, "Rx calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
+            return ReportError(
+                OpStatus::INVALID_VALUE, "Rx calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache

@@ -108,7 +108,6 @@ class LIME_API Si5351C
   private:
     void FindVCO(Si5351_Channel* clocks, Si5351_PLL* plls, const unsigned long Fmin, const unsigned long Fmax);
     lime::II2C& comms;
-    int addrSi5351;
 
     Si5351_PLL PLL[2];
     Si5351_Channel CLK[8];

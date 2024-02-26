@@ -1,8 +1,8 @@
 #ifndef GNUPLOT_PIPE_H
 #define GNUPLOT_PIPE_H
 
-#include <cstdio>
-#include <cstdarg>
+#include <stdio.h>
+#include <stdarg.h>
 
 /// @brief A class to pipe data into GNUPlot
 class GNUPlotPipe

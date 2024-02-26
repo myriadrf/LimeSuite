@@ -86,10 +86,10 @@ struct GLG_color {
     unsigned int getColor4b()
     {
         unsigned int color = 0;
-        color |= (unsigned int)(255 * red) << 24;
-        color |= (unsigned int)(255 * green) << 16;
-        color |= (unsigned int)(255 * blue) << 8;
-        color |= (unsigned int)(255 * alpha);
+        color |= static_cast<unsigned int>(255 * red) << 24;
+        color |= static_cast<unsigned int>(255 * green) << 16;
+        color |= static_cast<unsigned int>(255 * blue) << 8;
+        color |= static_cast<unsigned int>(255 * alpha);
         return color;
     }
 
@@ -435,6 +435,8 @@ class OpenGLGraph : public wxGLCanvas
     bool m_currentlyDrawing;
     wxTimer* m_timer;
     wxGLContext* m_glContext;
+
+    static bool hasNotRecentEnoughOpenGLVersionWarningBeenThrownYet;
 };
 
 #endif

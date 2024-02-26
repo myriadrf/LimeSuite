@@ -40,7 +40,7 @@ template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const ui
 
     if (mimo) //uncompressed samples
     {
-        complex16_t* ptr = (complex16_t*)buffer;
+        const complex16_t* ptr = reinterpret_cast<const complex16_t*>(buffer);
         const int collected = bufLen / sizeof(complex16_t) / 2;
         for (int i = 0; i < collected; i++)
         {
@@ -98,10 +98,10 @@ int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataCo
         {
             bytesProduced = count * sizeof(complex16_t);
             if (!mimo)
-                complex32f_to_complex16((complex16_t*)buffer, src[0], count);
+                complex32f_to_complex16(reinterpret_cast<complex16_t*>(buffer), src[0], count);
             else
             {
-                complex32f_to_complex16_zip((complex16_t*)buffer, src[0], src[1], count);
+                complex32f_to_complex16_zip(reinterpret_cast<complex16_t*>(buffer), src[0], src[1], count);
                 bytesProduced *= 2;
             }
         }

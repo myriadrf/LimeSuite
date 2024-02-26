@@ -500,7 +500,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         throw std::runtime_error("SoapyLMS7::setSampleRate() failed with message " + std::string{ e.what() });
     }
 
-    sampleRate[bool(direction)] = rate;
+    sampleRate[static_cast<bool>(direction)] = rate;
     return;
 }
 

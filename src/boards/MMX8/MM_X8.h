@@ -26,6 +26,7 @@ class LimeSDR_MMX8 : public SDRDevice
     LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
         std::vector<std::shared_ptr<IComms>>& spiFPGA,
         std::vector<std::shared_ptr<LitePCIe>> trxStreams,
+        std::shared_ptr<ISerialPort> control,
         std::shared_ptr<ISPI> adfComms);
     virtual ~LimeSDR_MMX8();
 

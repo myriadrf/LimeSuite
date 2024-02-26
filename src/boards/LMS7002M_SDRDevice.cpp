@@ -3,6 +3,9 @@
 #include "DeviceExceptions.h"
 #include "FPGA_common.h"
 #include "limesuite/LMS7002M.h"
+#include "mcu_program/common_src/lms7002m_calibrations.h"
+#include "mcu_program/common_src/lms7002m_filters.h"
+#include "lms7002m/MCU_BD.h"
 #include "LMSBoards.h"
 #include "Logger.h"
 #include "TRXLooper.h"
@@ -968,6 +971,12 @@ void LMS7002M_SDRDevice::StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStat
     }
 }
 
+OpStatus LMS7002M_SDRDevice::UploadMemory(
+    eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
+{
+    return OpStatus::NOT_IMPLEMENTED;
+}
+
 OpStatus LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex)
 {
     double fpgaTxPLL = soc.GetReferenceClk_TSP(TRXDir::Tx);
@@ -1068,6 +1077,154 @@ void LMS7002M_SDRDevice::SetGainInformationInDescriptor(RFSOCDescriptor& descrip
     descriptor.gainRange[TRXDir::Rx][eGainTypes::UNKNOWN] = Range(-12, 61);
     descriptor.gainRange[TRXDir::Tx][eGainTypes::UNKNOWN] = Range(-12, 64);
 #endif
+}
+
+OpStatus LMS7002M_SDRDevice::LMS7002LOConfigure(LMS7002M* chip, const SDRDevice::SDRConfig& cfg)
+{
+    bool rxUsed = false;
+    bool txUsed = false;
+    for (int i = 0; i < 2; ++i)
+    {
+        const SDRDevice::ChannelConfig& ch = cfg.channel[i];
+        rxUsed |= ch.rx.enabled;
+        txUsed |= ch.tx.enabled;
+    }
+
+    OpStatus status = OpStatus::SUCCESS;
+    if (cfg.referenceClockFreq != 0)
+    {
+        status = chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq);
+        if (status != OpStatus::SUCCESS)
+            return status;
+    }
+
+    const bool tddMode = cfg.channel[0].rx.centerFrequency == cfg.channel[0].tx.centerFrequency;
+    chip->EnableSXTDD(tddMode);
+    // Rx PLL is not used in TDD mode
+    if (!tddMode && rxUsed && cfg.channel[0].rx.centerFrequency > 0)
+    {
+        status = chip->SetFrequencySX(TRXDir::Rx, cfg.channel[0].rx.centerFrequency);
+        if (status != OpStatus::SUCCESS)
+            return status;
+    }
+    if (txUsed && cfg.channel[0].tx.centerFrequency > 0)
+    {
+        status = chip->SetFrequencySX(TRXDir::Tx, cfg.channel[0].tx.centerFrequency);
+        if (status != OpStatus::SUCCESS)
+            return status;
+    }
+    return status;
+}
+
+OpStatus LMS7002M_SDRDevice::LMS7002ChannelConfigure(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex)
+{
+    const SDRDevice::ChannelConfig& ch = config;
+    chip->SetActiveChannel((channelIndex & 1) ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA);
+
+    chip->EnableChannel(TRXDir::Rx, channelIndex, ch.rx.enabled);
+    chip->SetPathRFE(static_cast<LMS7002M::PathRFE>(ch.rx.path));
+    if (static_cast<LMS7002M::PathRFE>(ch.rx.path) == LMS7002M::PathRFE::LB1 ||
+        static_cast<LMS7002M::PathRFE>(ch.rx.path) == LMS7002M::PathRFE::LB2)
+    {
+        // TODO: confirm which should be used for loopback
+        if (ch.rx.lpf > 0)
+            chip->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 3); // baseband loopback
+        else
+            chip->Modify_SPI_Reg_bits(LMS7_INPUT_CTL_PGA_RBB, 2); // LPF bypass
+    }
+
+    chip->EnableChannel(TRXDir::Tx, channelIndex, ch.tx.enabled);
+    chip->SetBandTRF(ch.tx.path);
+
+    for (const auto& gain : ch.rx.gain)
+    {
+        SetGain(0, TRXDir::Rx, channelIndex, gain.first, gain.second);
+    }
+
+    for (const auto& gain : ch.tx.gain)
+    {
+        SetGain(0, TRXDir::Tx, channelIndex, gain.first, gain.second);
+    }
+    // TODO: set GFIR filters...
+    return OpStatus::SUCCESS;
+}
+
+OpStatus LMS7002M_SDRDevice::LMS7002ChannelCalibration(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex)
+{
+    int i = channelIndex;
+    auto enumChannel = i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB;
+    chip->SetActiveChannel(enumChannel);
+    const SDRDevice::ChannelConfig& ch = config;
+
+    // TODO: Don't configure GFIR when external ADC/DAC is used
+    if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, enumChannel, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != OpStatus::SUCCESS)
+        return lime::ReportError(OpStatus::ERROR, "Rx ch%i GFIR config failed", i);
+    if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, enumChannel, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != OpStatus::SUCCESS)
+        return lime::ReportError(OpStatus::ERROR, "Tx ch%i GFIR config failed", i);
+
+    if (ch.rx.calibrate && ch.rx.enabled)
+    {
+        SetupCalibrations(chip, ch.rx.sampleRate);
+        int status = CalibrateRx(false, false);
+        if (status != MCU_BD::MCU_NO_ERROR)
+            return lime::ReportError(OpStatus::ERROR, "Rx ch%i DC/IQ calibration failed: %s", i, MCU_BD::MCUStatusMessage(status));
+    }
+    if (ch.tx.calibrate && ch.tx.enabled)
+    {
+        SetupCalibrations(chip, ch.tx.sampleRate);
+        int status = CalibrateTx(false);
+        if (status != MCU_BD::MCU_NO_ERROR)
+            return lime::ReportError(OpStatus::ERROR, "Rx ch%i DC/IQ calibration failed: %s", i, MCU_BD::MCUStatusMessage(status));
+    }
+    if (ch.rx.lpf > 0 && ch.rx.enabled)
+    {
+        SetupCalibrations(chip, ch.rx.sampleRate);
+        int status = TuneRxFilter(ch.rx.lpf);
+        if (status != MCU_BD::MCU_NO_ERROR)
+            return lime::ReportError(OpStatus::ERROR, "Rx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status));
+    }
+    if (ch.tx.lpf > 0 && ch.tx.enabled)
+    {
+        SetupCalibrations(chip, ch.tx.sampleRate);
+        int status = TuneTxFilter(ch.tx.lpf);
+        if (status != MCU_BD::MCU_NO_ERROR)
+            return lime::ReportError(OpStatus::ERROR, "Tx ch%i filter calibration failed: %s", i, MCU_BD::MCUStatusMessage(status));
+    }
+    return OpStatus::SUCCESS;
+}
+
+OpStatus LMS7002M_SDRDevice::LMS7002TestSignalConfigure(
+    LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex)
+{
+    const SDRDevice::ChannelConfig& ch = config;
+    chip->Modify_SPI_Reg_bits(LMS7_INSEL_RXTSP, ch.rx.testSignal.enabled ? 1 : 0);
+    if (ch.rx.testSignal.enabled)
+    {
+        const SDRDevice::ChannelConfig::Direction::TestSignal& signal = ch.rx.testSignal;
+        bool fullscale = signal.scale == SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full;
+        bool div4 = signal.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, fullscale ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_RXTSP, div4 ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, signal.dcMode ? 1 : 0);
+        chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
+        // LMS7_TSGMODE_RXTSP change resets DC values
+        return chip->LoadDC_REG_IQ(TRXDir::Rx, signal.dcValue.real(), signal.dcValue.imag());
+    }
+
+    chip->Modify_SPI_Reg_bits(LMS7_INSEL_TXTSP, ch.tx.testSignal.enabled ? 1 : 0);
+    if (ch.tx.testSignal.enabled)
+    {
+        const SDRDevice::ChannelConfig::Direction::TestSignal& signal = ch.tx.testSignal;
+        bool fullscale = signal.scale == SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full;
+        bool div4 = signal.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFC_TXTSP, fullscale ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_TXTSP, div4 ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_TXTSP, signal.dcMode ? 1 : 0);
+        chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
+        // LMS7_TSGMODE_TXTSP change resets DC values
+        return chip->LoadDC_REG_IQ(TRXDir::Tx, signal.dcValue.real(), signal.dcValue.imag());
+    }
+    return OpStatus::SUCCESS;
 }
 
 } // namespace lime

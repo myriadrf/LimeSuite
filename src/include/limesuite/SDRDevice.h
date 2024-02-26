@@ -21,6 +21,7 @@
 namespace lime {
 
 struct DeviceNode;
+class OEMTestReporter;
 
 /// @brief Class for holding information about an SDR (Software Defined Radio) device.
 /// SDRDevice can have multiple modules (RF chips), that can operate independently.
@@ -262,32 +263,23 @@ class LIME_API SDRDevice
             /// @brief The structure holding the status of the test signal the device can produce.
             struct TestSignal {
                 /// @brief The enumeration describing the divide mode of the test signal.
-                enum class Divide : uint8_t {
-                    Div8 = 1U,
-                    Div4 = 2U,
-                };
+                enum class Divide : uint8_t { Div8, Div4 };
 
                 /// @brief The enumeration describing the scale of the test signal.
-                enum class Scale : uint8_t {
-                    Half = 0U,
-                    Full = 1U,
-                };
+                enum class Scale : uint8_t { Full, Half };
 
-                bool enabled; ///< Denotes whether test mode is enabled or not.
-                bool dcMode; ///< The DC mode of the test mode.
+                complex16_t dcValue;
                 Divide divide; ///< The current divide of the test signal.
                 Scale scale; ///< The current scale of the test signal.
+                bool enabled; ///< Denotes whether test mode is enabled or not.
+                bool dcMode; ///< The DC mode of the test mode.
 
-                /// @brief Constructs the TestSignal struct
-                /// @param enabled Denotes whether test mode is enabled or not (default false)
-                /// @param dcMode The DC mode of the test mode (default false)
-                /// @param divide The current divide of the test signal (default Div8)
-                /// @param scale The current scale of the test signal (default Half)
                 TestSignal(bool enabled = false, bool dcMode = false, Divide divide = Divide::Div8, Scale scale = Scale::Half)
-                    : enabled(enabled)
-                    , dcMode(dcMode)
+                    : dcValue(0, 0)
                     , divide(divide)
                     , scale(scale)
+                    , enabled(enabled)
+                    , dcMode(dcMode)
                 {
                 }
             };
@@ -827,30 +819,21 @@ class LIME_API SDRDevice
     /// @param callback The callback to call for status updates.
     /// @return The success status of the operation.
     virtual OpStatus UploadMemory(
-        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
-    {
-        return OpStatus::NOT_IMPLEMENTED;
-    };
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback);
 
     /// @brief Writes given data into a given memory address in EEPROM memory.
     /// @param storage The storage device to write to.
     /// @param region Information of the region in which to write the data to.
     /// @param data The data to write into the specified memory.
     /// @return The operation success state.
-    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
-    {
-        return OpStatus::NOT_IMPLEMENTED;
-    };
+    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data);
 
     /// @brief Reads data from a given memory address in EEPROM memory.
     /// @param storage The storage device to read from.
     /// @param region Information of the region from which to read the memory.
     /// @param data The storage buffer for the data being read.
     /// @return The operation success state.
-    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
-    {
-        return OpStatus::NOT_IMPLEMENTED;
-    };
+    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data);
 };
 
 } // namespace lime

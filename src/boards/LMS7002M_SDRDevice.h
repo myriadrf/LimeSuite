@@ -112,6 +112,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual void* GetInternalChip(uint32_t index) override;
 
+    virtual OpStatus UploadMemory(
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
+
     /// @copydoc FPGA::ReadRegister()
     virtual int ReadFPGARegister(uint32_t address);
     /// @copydoc FPGA::WriteRegister()
@@ -120,6 +123,11 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
   protected:
     static OpStatus UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& fpga, uint8_t chipIndex);
     void SetGainInformationInDescriptor(RFSOCDescriptor& descriptor);
+
+    OpStatus LMS7002LOConfigure(LMS7002M* chip, const SDRDevice::SDRConfig& config);
+    OpStatus LMS7002ChannelConfigure(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex);
+    OpStatus LMS7002ChannelCalibration(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex);
+    OpStatus LMS7002TestSignalConfigure(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex);
 
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;

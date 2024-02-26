@@ -32,6 +32,7 @@ static double X8ReferenceClock = 30.72e6;
 LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     std::vector<std::shared_ptr<IComms>>& spiFPGA,
     std::vector<std::shared_ptr<LitePCIe>> trxStreams,
+    std::shared_ptr<ISerialPort> control,
     std::shared_ptr<ISPI> adfComms)
     : mTRXStreamPorts(trxStreams)
 {
@@ -68,7 +69,7 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     desc.customParameters.push_back(cp_vctcxo_dac);
     for (size_t i = 0; i < mSubDevices.size(); ++i)
     {
-        mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i], X8ReferenceClock);
+        mSubDevices[i] = new LimeSDR_XTRX(spiLMS7002M[i], spiFPGA[i], trxStreams[i], control, X8ReferenceClock);
         const SDRDevice::Descriptor& subdeviceDescriptor = mSubDevices[i]->GetDescriptor();
 
         for (const auto& soc : subdeviceDescriptor.rfSOC)

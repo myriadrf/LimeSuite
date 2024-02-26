@@ -13,9 +13,9 @@ set_package_properties(SoapySDR PROPERTIES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_SOAPY_LMS7 "Enable LMS7 SoapySDR bindings" ON "ENABLE_LIBRARY;SoapySDR_FOUND" OFF)
-add_feature_info(SoapySDRLMS7 ENABLE_SOAPY_LMS7 "SoapySDR bindings for LMS7")
-if (NOT ENABLE_SOAPY_LMS7)
+cmake_dependent_option(ENABLE_SOAPYSDR "Enable LimeSuite SoapySDR bindings" ON "ENABLE_LIBRARY;SoapySDR_FOUND" OFF)
+add_feature_info(SOAPYSDR ENABLE_SOAPYSDR "SoapySDR bindings for LimeSuite")
+if (NOT ENABLE_SOAPYSDR)
     return()
 endif()
 

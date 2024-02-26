@@ -686,7 +686,7 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
 
     if (mimo) //uncompressed samples
     {
-        complex16_t* ptr = (complex16_t*)buffer;
+        const complex16_t* ptr = reinterpret_cast<const complex16_t*>(buffer);
         const int collected = bufLen / sizeof(complex16_t) / 2;
         for (int i = 0; i < collected; i++)
         {
@@ -737,7 +737,7 @@ int FPGA::FPGAPacketPayload2SamplesFloat(
         return collected;
     }
 
-    complex16_t* src = (complex16_t*)buffer;
+    const complex16_t* src = reinterpret_cast<const complex16_t*>(buffer);
     if (mimo) //uncompressed samples
     {
         const int collected = bufLen / sizeof(complex16_t) / 2;
@@ -791,7 +791,7 @@ int FPGA::Samples2FPGAPacketPayloadFloat(
         return b;
     }
 
-    complex16_t* dest = (complex16_t*)buffer;
+    complex16_t* dest = reinterpret_cast<complex16_t*>(buffer);
     if (mimo)
     {
         for (int src = 0; src < samplesCount; ++src)
@@ -862,7 +862,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
     OpStatus status = OpStatus::SUCCESS;
 
     const uint32_t addr = 0x002A;
-    uint32_t val = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; // msbit 1=SPI write
+    uint32_t val = (1 << 31) | (0x0020u << 16) | 0xFFFD; // msbit 1=SPI write
     WriteLMS7002MSPI(&val, 1);
     ReadLMS7002MSPI(&addr, &val, 1);
     bool bypassTx = (val & 0xF0) == 0x00;
@@ -943,7 +943,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     dataWr[0] = 0x0020;
     ReadLMS7002MSPI(dataWr.data(), &reg20, 1);
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     ReadLMS7002MSPI(spiAddr.data(), dataRdA.data(), bakRegCnt);
@@ -956,7 +956,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         bypassRx = (val & 0x0F) == 0x0D;
     }
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFE; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     for (int i = 0; i < bakRegCnt; ++i)
@@ -964,7 +964,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             dataRdB.push_back(spiAddr[i]);
     ReadLMS7002MSPI(dataRdB.data(), dataRdB.data(), dataRdB.size());
 
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFF; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     {
@@ -976,7 +976,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         WriteLMS7002MSPI(dataWr.data(), setRegCnt);
     }
 
@@ -1027,7 +1027,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | spiData[i]; //msbit 1=SPI write
         WriteLMS7002MSPI(dataWr.data(), setRegCnt);
     }
 
@@ -1066,23 +1066,23 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     }
 
     //Restore registers
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFD; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
     for (int i = 0; i < bakRegCnt; ++i)
-        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdA[i]; //msbit 1=SPI write
+        dataWr[i] = (1 << 31) | (spiAddr[i] << 16) | dataRdA[i]; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), bakRegCnt);
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | 0xFFFE; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
 
     int k = 0;
     for (int i = 0; i < bakRegCnt; ++i)
         if (spiAddr[i] >= 0x100)
         {
-            dataWr[k] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdB[k]; //msbit 1=SPI write
+            dataWr[k] = (1 << 31) | (spiAddr[i] << 16) | dataRdB[k]; //msbit 1=SPI write
             k++;
         }
     WriteLMS7002MSPI(dataWr.data(), k);
-    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+    dataWr[0] = (1 << 31) | (0x0020u << 16) | reg20; //msbit 1=SPI write
     WriteLMS7002MSPI(dataWr.data(), 1);
     WriteRegister(0x000A, reg_000A);
     return status;

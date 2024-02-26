@@ -114,7 +114,7 @@ template<class T> class TxBufferManager
 
             if (bytesUsed >= mCapacity - sizeof(StreamHeader))
                 sendBuffer = true; // not enough space for more packets, need to flush
-            if ((uint64_t)payloadPtr & 0xF)
+            if (reinterpret_cast<uint64_t>(payloadPtr) & 0xF)
                 sendBuffer = true; // next packets payload memory is not suitably aligned for vectorized filling
 
             if (sendBuffer)

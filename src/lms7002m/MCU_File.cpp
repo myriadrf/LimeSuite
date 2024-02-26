@@ -161,7 +161,7 @@ void MCU_File::ReadHex(unsigned long limit)
                 {
                     throw "Hex line data corrupt!"s;
                 }
-                checkSum += (unsigned char)tmp;
+                checkSum += static_cast<unsigned char>(tmp);
             }
             if (checkSum != 0)
             {
@@ -204,7 +204,7 @@ void MCU_File::ReadHex(unsigned long limit)
                             }
                             continue;
                         }
-                        m_chunks.back().m_bytes.push_back((unsigned char)tmp);
+                        m_chunks.back().m_bytes.push_back(static_cast<unsigned char>(tmp));
                     }
                 }
                 break;
@@ -269,7 +269,7 @@ void MCU_File::ReadHex(unsigned long limit)
                     throw "Address field must be zero in extended linear address record!"s;
                 }
                 sscanf(&szLine[9], "%4lx", &startAddress);
-                addressBase = ((unsigned long)startAddress) << 16;
+                addressBase = startAddress << 16;
                 linear = true;
                 break;
 
@@ -321,7 +321,7 @@ void MCU_File::ReadHex(unsigned long limit)
                 {
                     throw "Hex line data corrupt!"s;
                 }
-                checkSum += (unsigned char)tmp;
+                checkSum += static_cast<unsigned char>(tmp);
             }
             if (checkSum != 255)
             {
@@ -335,10 +335,10 @@ void MCU_File::ReadHex(unsigned long limit)
                 {
                     char header[256];
                     uint8_t i = 0;
-                    for (i = 0; uint8_t(i + 3) < count; ++i)
+                    for (i = 0; static_cast<uint8_t>(i + 3) < count; ++i)
                     {
                         sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
-                        header[i] = (char)tmp;
+                        header[i] = static_cast<char>(tmp);
                     }
                     header[i] = 0;
                     if (i > 0)
@@ -373,8 +373,8 @@ void MCU_File::ReadHex(unsigned long limit)
                         m_chunks.push_back(MemBlock());
                         m_chunks.back().m_startAddress = startAddress;
                     }
-                    unsigned char i = 0;
-                    for (i = uint8_t(type - '1'); uint8_t(i + 3) < count; ++i)
+                    uint8_t i = 0;
+                    for (i = static_cast<uint8_t>(type - '1'); static_cast<uint8_t>(i + 3) < count; ++i)
                     {
                         sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
                         if (startAddress + i > limit)
@@ -388,7 +388,7 @@ void MCU_File::ReadHex(unsigned long limit)
                             }
                             continue;
                         }
-                        m_chunks.back().m_bytes.push_back((unsigned char)tmp);
+                        m_chunks.back().m_bytes.push_back(static_cast<unsigned char>(tmp));
                     }
                 }
                 break;

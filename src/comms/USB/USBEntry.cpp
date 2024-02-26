@@ -5,7 +5,7 @@ using namespace lime;
 
 #ifdef __unix__
 libusb_context* USBEntry::ctx{ nullptr };
-uint USBEntry::ctxRefCount{ 0 };
+uint32_t USBEntry::ctxRefCount{ 0 };
 #endif
 
 USBEntry::USBEntry(const std::string& name, const std::set<VidPid>& deviceIds)

@@ -37,7 +37,7 @@ int ADF4002::UploadConfig()
 
     std::vector<uint32_t> dataWr;
     for (int i = 0; i < 12; i += 3)
-        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i + 1] << 8 | data[i + 2]);
+        dataWr.push_back(static_cast<uint32_t>(data[i]) << 16 | static_cast<uint32_t>(data[i + 1]) << 8 | data[i + 2]);
 
     // ADF4002 needs to be writen 4 values of 24 bits
     mComms->SPI(dataWr.data(), nullptr, 4);
@@ -96,7 +96,7 @@ void ADF4002::MakeData()
     m_registers[0x00] = 0x00;
     //R Value LSB
     itmp = txtRCnt;
-    btmp = (char)itmp;
+    btmp = static_cast<char>(itmp);
     btmp = btmp << 2;
     m_registers[0x00] |= btmp;
     //Addr
@@ -107,20 +107,20 @@ void ADF4002::MakeData()
     //======= register addr 0x01 =======
     m_registers[0x01] = 0x00;
     //R Value MSB
-    btmp = (char)(itmp >> 6);
+    btmp = static_cast<char>((itmp >> 6));
     btmp = btmp << 0;
     m_registers[0x01] |= btmp;
 
     //======= register addr 0x02 =======
     m_registers[0x02] = 0x00;
     //Anti-Backlash
-    btmp = (char)cmbABW;
+    btmp = static_cast<char>(cmbABW);
     if (btmp > 0)
         btmp++;
     btmp = btmp << 0;
     m_registers[0x02] |= btmp;
     //Lock Detact Precision
-    btmp = (char)cmbLDP;
+    btmp = static_cast<char>(cmbLDP);
     btmp = btmp << 4;
     m_registers[0x02] |= btmp;
 
@@ -135,7 +135,7 @@ void ADF4002::MakeData()
     m_registers[0x04] = 0x00;
     //N Value LSB
     itmp = txtNCnt;
-    btmp = (char)itmp;
+    btmp = static_cast<char>(itmp);
     btmp = btmp << 0;
     m_registers[0x04] |= btmp;
 
@@ -143,11 +143,11 @@ void ADF4002::MakeData()
     m_registers[0x05] = 0x00;
     //N Value MSB
     itmp = txtNCnt;
-    btmp = (char)(itmp >> 8);
+    btmp = static_cast<char>((itmp >> 8));
     btmp = btmp << 0;
     m_registers[0x05] |= btmp;
     //CP Gain
-    btmp = (char)cmbCPG;
+    btmp = static_cast<char>(cmbCPG);
     btmp = btmp << 5;
     m_registers[0x05] |= btmp;
 
@@ -158,55 +158,55 @@ void ADF4002::MakeData()
     btmp = btmp << 0;
     m_registers[0x06] |= btmp;
     //Counter Reset
-    btmp = (char)rgrCR_f;
+    btmp = static_cast<char>(rgrCR_f);
     btmp = btmp << 2;
     m_registers[0x06] |= btmp;
     //PD 1
-    btmp = (char)rgrPD1_f;
+    btmp = static_cast<char>(rgrPD1_f);
     btmp = btmp << 3;
     m_registers[0x06] |= btmp;
     //Muxout Control
-    btmp = (char)cmbMOC_f;
+    btmp = static_cast<char>(cmbMOC_f);
     btmp = btmp << 4;
     m_registers[0x06] |= btmp;
     //PD Polarity
-    btmp = (char)rgrPDP_f;
+    btmp = static_cast<char>(rgrPDP_f);
     btmp = btmp << 7;
     m_registers[0x06] |= btmp;
 
     //======= register addr 0x07 =======
     m_registers[0x07] = 0x00;
     //CP State
-    btmp = (char)rgrCPS_f;
+    btmp = static_cast<char>(rgrCPS_f);
     btmp = btmp << 0;
     m_registers[0x07] |= btmp;
     //Fastlock
-    btmp = (char)cmbFL_f;
+    btmp = static_cast<char>(cmbFL_f);
     if (btmp > 0)
         btmp++;
     btmp = btmp << 1;
     m_registers[0x07] |= btmp;
     //Timer Counter
-    btmp = (char)cmbTC_f;
+    btmp = static_cast<char>(cmbTC_f);
     btmp = btmp << 3;
     m_registers[0x07] |= btmp;
     //Current Setting 1 MSB
-    btmp = (char)cmbCS1_f;
+    btmp = static_cast<char>(cmbCS1_f);
     btmp = btmp << 7;
     m_registers[0x07] |= btmp;
 
     //======= register addr 0x08 =======
     m_registers[0x08] = 0x00;
     //Current Setting 1 LSB
-    btmp = (char)cmbCS1_f;
+    btmp = static_cast<char>(cmbCS1_f);
     btmp = btmp >> 1;
     m_registers[0x08] |= btmp;
     //Current Setting 2
-    btmp = (char)cmbCS2_f;
+    btmp = static_cast<char>(cmbCS2_f);
     btmp = btmp << 2;
     m_registers[0x08] |= btmp;
     //PD 2
-    btmp = (char)rgrPD2_f;
+    btmp = static_cast<char>(rgrPD2_f);
     btmp = btmp << 5;
     m_registers[0x08] |= btmp;
 
@@ -217,55 +217,55 @@ void ADF4002::MakeData()
     btmp = btmp << 0;
     m_registers[0x09] |= btmp;
     //Counter Reset
-    btmp = (char)rgrCR_i;
+    btmp = static_cast<char>(rgrCR_i);
     btmp = btmp << 2;
     m_registers[0x09] |= btmp;
     //PD 1
-    btmp = (char)rgrPD1_i;
+    btmp = static_cast<char>(rgrPD1_i);
     btmp = btmp << 3;
     m_registers[0x09] |= btmp;
     //Muxout Control
-    btmp = (char)cmbMOC_i;
+    btmp = static_cast<char>(cmbMOC_i);
     btmp = btmp << 4;
     m_registers[0x09] |= btmp;
     //PD Polarity
-    btmp = (char)rgrPDP_i;
+    btmp = static_cast<char>(rgrPDP_i);
     btmp = btmp << 7;
     m_registers[0x09] |= btmp;
 
     //======= register addr 0x0A =======
     m_registers[0x0A] = 0x00;
     //CP State
-    btmp = (char)rgrCPS_i;
+    btmp = static_cast<char>(rgrCPS_i);
     btmp = btmp << 0;
     m_registers[0x0A] |= btmp;
     //Fastlock
-    btmp = (char)cmbFL_i;
+    btmp = static_cast<char>(cmbFL_i);
     if (btmp > 0)
         btmp++;
     btmp = btmp << 1;
     m_registers[0x0A] |= btmp;
     //Timer Counter
-    btmp = (char)cmbTC_i;
+    btmp = static_cast<char>(cmbTC_i);
     btmp = btmp << 3;
     m_registers[0x0A] |= btmp;
     //Current Setting 1 MSB
-    btmp = (char)cmbCS1_i;
+    btmp = static_cast<char>(cmbCS1_i);
     btmp = btmp << 7;
     m_registers[0x0A] |= btmp;
 
     //======= register addr 0x0B =======
     m_registers[0x0B] = 0x00;
     //Current Setting 1 LSB
-    btmp = (char)cmbCS1_i;
+    btmp = static_cast<char>(cmbCS1_i);
     btmp = btmp >> 1;
     m_registers[0x0B] |= btmp;
     //Current Setting 2
-    btmp = (char)cmbCS2_i;
+    btmp = static_cast<char>(cmbCS2_i);
     btmp = btmp << 2;
     m_registers[0x0B] |= btmp;
     //PD 2
-    btmp = (char)rgrPD2_i;
+    btmp = static_cast<char>(rgrPD2_i);
     btmp = btmp << 5;
     m_registers[0x0B] |= btmp;
 
@@ -312,8 +312,8 @@ void ADF4002::CalculateRN()
     };
 
     Fcomp = (x + y) / 1000000.0;
-    int R = (int)((txtFref / Fcomp) + 0.5);
-    int N = (int)((txtFvco / Fcomp) + 0.5);
+    int R = std::round(txtFref / Fcomp);
+    int N = std::round(txtFvco / Fcomp);
 
     txtRCnt = R;
     txtNCnt = N;

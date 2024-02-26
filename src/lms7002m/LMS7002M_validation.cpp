@@ -66,7 +66,8 @@ bool LMS7002M_Validate(const SDRDevice::SDRConfig& cfg, std::vector<std::string>
         if (ch.tx.enabled && !InRange(ch.tx.centerFrequency, minLO, maxLO))
             errors.push_back(strFormat("Tx ch%i LO (%g) out of range [%g:%g]", i, ch.tx.centerFrequency, minLO, maxLO));
 
-        if (ch.rx.enabled && !InRange(ch.rx.path, 0, 3))
+        // TODO: make warning if rx loopback selection does not work with tx output
+        if (ch.rx.enabled && !InRange(ch.rx.path, 0, 5))
             errors.push_back(strFormat("Rx ch%i invalid path(%i)", i, ch.rx.path));
 
         if (ch.tx.enabled && !InRange(ch.tx.path, 0, 2))
