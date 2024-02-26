@@ -336,7 +336,7 @@ void FX3::AbortEndpointXfers(uint8_t endPointAddr)
         std::scoped_lock lock{ FX3mutex };
         USBTransferContext_FX3* FX3context = &static_cast<USBTransferContext_FX3*>(contexts)[i];
 
-        if (FX3context->used && FX3context->EndPt->Address == endPointAddr)
+        if (FX3context->isTransferUsed && FX3context->EndPt->Address == endPointAddr)
         {
             FX3context->EndPt->Abort();
         }
