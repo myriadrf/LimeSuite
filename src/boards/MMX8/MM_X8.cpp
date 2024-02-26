@@ -710,7 +710,7 @@ OpStatus LimeSDR_MMX8::UploadMemory(
         int progMode = 1;
         LMS64CProtocol::ProgramWriteTarget target;
         target = LMS64CProtocol::ProgramWriteTarget::FPGA;
-        return mMainFPGAcomms->ProgramWrite(data, length, progMode, target, callback);
+        return mMainFPGAcomms->ProgramWrite(data, length, progMode, static_cast<int>(target), callback);
     }
 
     SDRDevice* dev = mSubDevices.at(moduleIndex);

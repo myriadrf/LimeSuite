@@ -571,7 +571,7 @@ OpStatus LimeSDR_XTRX::UploadMemory(
         return OpStatus::INVALID_VALUE;
     }
 
-    return fpgaPort->ProgramWrite(data, length, progMode, target, callback);
+    return fpgaPort->ProgramWrite(data, length, progMode, static_cast<int>(target), callback);
 }
 
 OpStatus LimeSDR_XTRX::MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
