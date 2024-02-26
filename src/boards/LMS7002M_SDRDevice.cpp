@@ -1157,9 +1157,11 @@ OpStatus LMS7002M_SDRDevice::LMS7002ChannelCalibration(LMS7002M* chip, const SDR
     const SDRDevice::ChannelConfig& ch = config;
 
     // TODO: Don't configure GFIR when external ADC/DAC is used
-    if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, enumChannel, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != OpStatus::SUCCESS)
+    if (ch.rx.enabled &&
+        chip->SetGFIRFilter(TRXDir::Rx, enumChannel, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != OpStatus::SUCCESS)
         return lime::ReportError(OpStatus::ERROR, "Rx ch%i GFIR config failed", i);
-    if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, enumChannel, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != OpStatus::SUCCESS)
+    if (ch.tx.enabled &&
+        chip->SetGFIRFilter(TRXDir::Tx, enumChannel, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != OpStatus::SUCCESS)
         return lime::ReportError(OpStatus::ERROR, "Tx ch%i GFIR config failed", i);
 
     if (ch.rx.calibrate && ch.rx.enabled)
