@@ -242,7 +242,7 @@ find_package(Doxygen OPTIONAL_COMPONENTS dot mscgen dia)
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_API_DOXYGEN "Enable LMS API Doxygen documentation" ON "DOXYGEN_FOUND" OFF)
-add_feature_info(LimeSuiteDocAPI ENABLE_API_DOXYGEN "LMS API Doxygen documentation")
+add_feature_info(API_DOXYGEN ENABLE_API_DOXYGEN "LMS API Doxygen documentation")
 if (ENABLE_API_DOXYGEN)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/DoxyfileAPI.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
   add_custom_target(docAPI ALL

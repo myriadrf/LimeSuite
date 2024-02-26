@@ -1,7 +1,7 @@
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_CLI "Enable command line programs" ON "ENABLE_LIBRARY" ON)
-add_feature_info(ENABLE_CLI ENABLE_CLI "LimeSuite command line interface tools")
+add_feature_info(CLI ENABLE_CLI "LimeSuite command line interface tools")
 if (NOT ENABLE_CLI)
     return()
 endif()

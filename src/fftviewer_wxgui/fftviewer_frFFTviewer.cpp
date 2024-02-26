@@ -429,7 +429,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
 
     // TODO: check if actually needed
     /*std::vector<std::vector<complex32f_t>> txPattern(2);
-    for (uint i = 0; i < txPattern.size(); ++i)
+    for (uint32_t i = 0; i < txPattern.size(); ++i)
     {
         txPattern[i].resize(fftSize);
         float srcI[8]; // = {1.0, 0.0, -1.0, 0.0};
@@ -503,7 +503,11 @@ void fftviewer_frFFTviewer::StreamingLoop(
                     uint32_t samplesToCopy = min(samplesPopped, samplesToCapture);
                     if (samplesToCopy <= 0)
                         break;
-                    memcpy((captureBuffer[ch].data() + samplesCaptured), buffers[ch], samplesToCopy * sizeof(complex32f_t));
+                    for (uint32_t i = 0; i < samplesToCopy; ++i)
+                    {
+                        captureBuffer[ch][samplesCaptured + i].i = buffers[ch][i].i * 32767;
+                        captureBuffer[ch][samplesCaptured + i].q = buffers[ch][i].q * 32767;
+                    }
                     samplesToCapture -= samplesToCopy;
                     samplesCaptured += samplesToCopy;
                 }

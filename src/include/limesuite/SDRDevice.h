@@ -21,6 +21,7 @@
 namespace lime {
 
 struct DeviceNode;
+class OEMTestReporter;
 /// SDRDevice can have multiple modules (RF chips), that can operate independently
 
 class LIME_API SDRDevice
@@ -214,26 +215,21 @@ class LIME_API SDRDevice
             };
 
             struct TestSignal {
-                enum class Divide : uint8_t {
-                    Div8 = 1U,
-                    Div4 = 2U,
-                };
+                enum class Divide : uint8_t { Div8, Div4 };
+                enum class Scale : uint8_t { Full, Half };
 
-                enum class Scale : uint8_t {
-                    Half = 0U,
-                    Full = 1U,
-                };
-
-                bool enabled;
-                bool dcMode;
+                complex16_t dcValue;
                 Divide divide;
                 Scale scale;
+                bool enabled;
+                bool dcMode;
 
                 TestSignal(bool enabled = false, bool dcMode = false, Divide divide = Divide::Div8, Scale scale = Scale::Half)
-                    : enabled(enabled)
-                    , dcMode(dcMode)
+                    : dcValue(0, 0)
                     , divide(divide)
                     , scale(scale)
+                    , enabled(enabled)
+                    , dcMode(dcMode)
                 {
                 }
             };
@@ -432,20 +428,12 @@ class LIME_API SDRDevice
     virtual void* GetInternalChip(uint32_t index) = 0;
 
     typedef bool (*UploadMemoryCallback)(size_t bsent, size_t btotal, const char* statusMessage);
-    virtual OpStatus UploadMemory(
-        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback)
-    {
-        return OpStatus::NOT_IMPLEMENTED;
-    };
 
-    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data)
-    {
-        return OpStatus::NOT_IMPLEMENTED;
-    };
-    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data)
-    {
-        return OpStatus::NOT_IMPLEMENTED;
-    };
+    virtual OpStatus UploadMemory(
+        eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback);
+
+    virtual OpStatus MemoryWrite(std::shared_ptr<DataStorage> storage, Region region, const void* data);
+    virtual OpStatus MemoryRead(std::shared_ptr<DataStorage> storage, Region region, void* data);
 };
 
 } // namespace lime

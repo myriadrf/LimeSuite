@@ -695,7 +695,7 @@ OpStatus MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size
         progView.SetChunkSize(std::min(dataLen - bytesSent, chunkSize));
 
         progView.SetAddress(address + bytesSent);
-        progView.SetDevice(3);
+        progView.SetDevice(ProgramWriteTarget::FPGA);
 
         progView.SetData(src, chunkSize);
         src += chunkSize;
@@ -728,7 +728,7 @@ OpStatus MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t data
 
     LMS64CPacketMemoryWriteView writeView(&packet);
     writeView.SetMode(0);
-    writeView.SetDevice(3);
+    writeView.SetDevice(ProgramWriteTarget::FPGA);
 
     const size_t chunkSize = 32;
     static_assert(chunkSize <= writeView.GetMaxDataSize(), "chunk must fit into packet payload");

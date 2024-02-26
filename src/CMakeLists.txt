@@ -9,7 +9,7 @@ FILE(GLOB LIME_SUITE_PUBLIC_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CM
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_HEADERS "Enable install headers" ON "TRUE" OFF)
-add_feature_info(LimeSuiteHeaders ENABLE_HEADERS "The lime suite headers")
+add_feature_info(HEADERS ENABLE_HEADERS "The lime suite headers")
 if (ENABLE_HEADERS)
     install(
         FILES ${LIME_SUITE_PUBLIC_HEADERS}
@@ -54,6 +54,7 @@ set(LIME_SUITE_SOURCES
     EnumToString.cpp
 
     DSP/Equalizer.cpp
+    DSP/FFT.cpp
     memory/MemoryPool.cpp
 
     mcu_program/spi.cpp
@@ -62,7 +63,6 @@ set(LIME_SUITE_SOURCES
     mcu_program/common_src/lms7002m_filters.c
 
     API/LMS_APIWrapper.cpp
-
     include/limesuite/commonTypes.cpp
     include/limesuite/OpStatus.cpp
     include/limesuite/SDRDevice.cpp
@@ -111,7 +111,7 @@ include(CMakeDependentOption)
 add_subdirectory(vectorization)
 
 option(ENABLE_LIBRARY "Enable build library" ON)
-add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
+add_feature_info(LIBRARY ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(${MAIN_LIBRARY_NAME} ${LIME_SUITE_SOURCES})
     target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIME_SUITE_LIBRARIES} samplesConversion)
@@ -248,7 +248,7 @@ set(LMS7SUITE_GUI_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_GUI "Enable build GUI" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
-add_feature_info(${GUI_EXECUTABLE_NAME} ENABLE_GUI "GUI Application for LimeSuite")
+add_feature_info(GUI ENABLE_GUI "GUI Application for LimeSuite")
 if (ENABLE_GUI)
 
     include_directories(lms7002_wxgui)

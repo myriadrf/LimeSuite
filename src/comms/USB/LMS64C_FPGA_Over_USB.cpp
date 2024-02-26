@@ -53,3 +53,13 @@ OpStatus LMS64C_FPGA_Over_USB::ProgramWrite(const char* data, size_t length, int
     return LMS64CProtocol::ProgramWrite(
         *pipe, data, length, prog_mode, static_cast<LMS64CProtocol::ProgramWriteTarget>(target), callback);
 }
+
+OpStatus LMS64C_FPGA_Over_USB::MemoryWrite(uint32_t address, const void* data, uint32_t dataLength)
+{
+    return LMS64CProtocol::MemoryWrite(*pipe, address, data, dataLength);
+}
+
+OpStatus LMS64C_FPGA_Over_USB::MemoryRead(uint32_t address, void* data, uint32_t dataLength)
+{
+    return LMS64CProtocol::MemoryRead(*pipe, address, data, dataLength);
+}
