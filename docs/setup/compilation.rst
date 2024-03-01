@@ -14,7 +14,7 @@ Components needed to compile LimeSuiteGUI2:
 - `libusb`_
 
 .. note::
-    If you are on Ubuntu 22.04, there also exists a script `install_dependencies.sh` to install all the needed dependencies.
+    If you are on Ubuntu 22.04, there also exists a script ``install_dependencies.sh`` to install all the needed dependencies.
 
 Compilation
 -----------
@@ -28,7 +28,7 @@ In the root directory of the repository run these commands:
     cmake .. # Generate make file
     make # Compile the program
 
-After a successful compilation the resulting binaries are placed in the `build/bin/` directory
+After a successful compilation the resulting binaries are placed in the ``build/bin/`` directory
 located in the root directory of the repository.
 
 Testing
@@ -62,8 +62,8 @@ To generate a web-based testing code coverage report, in the root directory of t
     cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF # Generate make file with static libraries and without optimizations
     make LimeSuite2Test_coverage # Generate the coverage report with lcov
 
-After generating the report it can be found in the `build/LimeSuite2Test_coverage`
-directory and opening the `index.html` file with a browser.
+After generating the report it can be found in the ``build/LimeSuite2Test_coverage``
+directory and opening the ``index.html`` file with a browser.
 
 Docker
 ^^^^^^

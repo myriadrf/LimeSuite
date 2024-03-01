@@ -28,12 +28,12 @@ To set up the environment, run these commands:
     pip install -r requirements.txt # Install all the required dependencies for the generation
 
 .. note::
-    One should run these commands in the `docs` directory.
+    One should run these commands in the ``docs`` directory.
 
 Generation
 ----------
 
-In the `docs` directory, located in the root directory of the repository, while in the venv, run these commands:
+In the ``docs`` directory, located in the root directory of the repository, while in the venv, run these commands:
 
 .. code-block:: bash
 
@@ -45,10 +45,10 @@ In the `docs` directory, located in the root directory of the repository, while 
 .. important:: 
     These commands or the script must be run in the venv, otherwise it will fail.
 
-For ease of convenience, there is also a `generate_docs.sh` script located in the `docs` directory.
+For ease of convenience, there is also a ``generate_docs.sh`` script located in the ``docs`` directory.
 
 After a successful generation the resulting documentation pages will be located in 
-`docs/_build/html` directory.
+``docs/_build/html`` directory.
 
 Docker
 ------
