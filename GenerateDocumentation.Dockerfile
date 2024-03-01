@@ -31,12 +31,10 @@ COPY docs/requirements.txt docs/requirements.txt
 
 RUN pip install -r docs/requirements.txt
 
-COPY Desktop/ Desktop/
 COPY external/ external/
 COPY cmake/ cmake/
-COPY amarisoft-plugin/ amarisoft-plugin/
 COPY udev-rules/ udev-rules/
-COPY SoapyLMS7/ SoapyLMS7/
+COPY plugins/ plugins/
 COPY Changelog.txt Changelog.txt
 COPY CMakeLists.txt CMakeLists.txt
 COPY src/ src/
