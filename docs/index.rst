@@ -6,6 +6,7 @@
    setup/index
    graphs/index
    doxygen/index
+   tools/index
 
 Introduction
 ============
