@@ -423,15 +423,6 @@ OpStatus LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uin
     uint8_t hbd_ovr = 7; // decimation ratio is 2^(1+hbd_ovr), HBD_OVR_RXTSP=7 - bypass
     uint8_t hbi_ovr = 7; // interpolation ratio is 2^(1+hbi_ovr), HBI_OVR_TXTSP=7 - bypass
     double cgenFreq = f_Hz * 4; // AI AQ BI BQ
-    // TODO:
-    // for (uint8_t i = 0; i < GetNumChannels(false) ;i++)
-    // {
-    //     if (rx_channels[i].cF_offset_nco != 0.0 || tx_channels[i].cF_offset_nco != 0.0)
-    //     {
-    //         bypass = false;
-    //         break;
-    //     }
-    // }
     if (!bypass)
     {
         if (oversample == 0)
@@ -448,14 +439,22 @@ OpStatus LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uin
             rxDecimation = pow(2, hbd_ovr + 1);
         }
         cgenFreq *= 2 << hbd_ovr;
+        rxDecimation = 2 << hbd_ovr;
+
+        if (txInterpolation == 0)
+        {
+            int txMultiplier = std::log2(lime::LMS7002M::CGEN_MAX_FREQ / cgenFreq);
+            txInterpolation = rxDecimation << txMultiplier;
+        }
+
         if (txInterpolation >= rxDecimation)
         {
             hbi_ovr = hbd_ovr + std::log2(txInterpolation / rxDecimation);
             txInterpolation = pow(2, hbi_ovr + 1);
         }
         else
-            throw std::logic_error(
-                strFormat("Rx decimation(2^%i) > Tx interpolation(2^%i) currently not supported", hbd_ovr, hbi_ovr));
+            return lime::ReportError(
+                OpStatus::NOT_SUPPORTED, "Rx decimation(2^%i) > Tx interpolation(2^%i) currently not supported", hbd_ovr, hbi_ovr);
     }
     lime::info("Sampling rate set(%.3f MHz): CGEN:%.3f MHz, Decim: 2^%i, Interp: 2^%i",
         f_Hz / 1e6,
@@ -474,6 +473,22 @@ OpStatus LimeSDR_XTRX::LMS1_SetSampleRate(double f_Hz, uint8_t rxDecimation, uin
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd_ovr);
     mLMSChip->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi_ovr);
+
+    if (f_Hz >= 122e6)
+    {
+        // LimeLight & Pad
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(DIQ2_DS), 1);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(LML1_SISODDR), 1);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(LML2_SISODDR), 1);
+        // CDS
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), 0);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML), 1);
+        // LDO
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(PD_LDO_DIGIp1), 0);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(PD_LDO_DIGIp2), 0);
+        mLMSChip->Modify_SPI_Reg_bits(LMS7param(RDIV_DIGIp2), 140);
+    }
+
     return mLMSChip->SetInterfaceFrequency(cgenFreq, hbi_ovr, hbd_ovr);
 }
 

@@ -2949,17 +2949,17 @@ OpStatus LMS7002M::DownloadAll()
     @return 0-success, other-failure
     Sets interpolation and decimation, changes MCLK sources and TSP clock dividers accordingly to selected interpolation and decimation
 */
-OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation)
+OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t hbi, const uint8_t hbd)
 {
     OpStatus status;
-    status = Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    status = Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), hbd);
     if (status != OpStatus::SUCCESS)
         return status;
-    Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
+    Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), hbi);
 
     auto siso = Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
     int mclk2src = Get_SPI_Reg_bits(LMS7param(MCLK2SRC));
-    if (decimation == 7 || (decimation == 0 && siso == 0)) //bypass
+    if (hbd == 7 || (hbd == 0 && siso == 0)) //bypass
     {
         Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), false);
@@ -2967,7 +2967,7 @@ OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t 
     }
     else
     {
-        uint8_t divider = static_cast<uint8_t>(std::pow(2.0, decimation + siso));
+        uint8_t divider = static_cast<uint8_t>(std::pow(2.0, hbd + siso));
         if (divider > 1)
             Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), (divider / 2) - 1);
         else
@@ -2978,14 +2978,14 @@ OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t 
 
     if (Get_SPI_Reg_bits(LMS7param(RX_MUX)) == 0)
     {
-        bool mimoBypass = (decimation == 7) && (siso == 0);
+        bool mimoBypass = (hbd == 7) && (siso == 0);
         Modify_SPI_Reg_bits(LMS7param(RXRDCLK_MUX), mimoBypass ? 3 : 1);
         Modify_SPI_Reg_bits(LMS7param(RXWRCLK_MUX), mimoBypass ? 1 : 2);
     }
 
     siso = Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
     int mclk1src = Get_SPI_Reg_bits(LMS7param(MCLK1SRC));
-    if (interpolation == 7 || (interpolation == 0 && siso == 0)) //bypass
+    if (hbi == 7 || (hbi == 0 && siso == 0)) //bypass
     {
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
@@ -2993,7 +2993,7 @@ OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t 
     }
     else
     {
-        uint8_t divider = static_cast<uint8_t>(std::pow(2.0, interpolation + siso));
+        uint8_t divider = static_cast<uint8_t>(std::pow(2.0, hbi + siso));
         if (divider > 1)
             Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), (divider / 2) - 1);
         else
@@ -3004,7 +3004,7 @@ OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t 
 
     if (Get_SPI_Reg_bits(LMS7param(TX_MUX)) == 0)
     {
-        bool mimoBypass = (interpolation == 7) && (siso == 0);
+        bool mimoBypass = (hbi == 7) && (siso == 0);
         Modify_SPI_Reg_bits(LMS7param(TXRDCLK_MUX), mimoBypass ? 0 : 2);
         Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }

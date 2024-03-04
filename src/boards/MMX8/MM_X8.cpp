@@ -582,23 +582,54 @@ SDRDevice::ChannelConfig::Direction::TestSignal LimeSDR_MMX8::GetTestSignal(uint
 
 OpStatus LimeSDR_MMX8::StreamSetup(const StreamConfig& config, uint8_t moduleIndex)
 {
-    return mSubDevices[moduleIndex]->StreamSetup(config, 0);
+    OpStatus ret = mSubDevices[moduleIndex]->StreamSetup(config, 0);
+    if (ret != OpStatus::SUCCESS)
+        return ret;
+    // X8 board has two stage stream start.
+    // start stream for expected subdevices, they will wait for secondary enable from main fpga register
+    mSubDevices[moduleIndex]->StreamStart(0);
+    return ret;
 }
 
 void LimeSDR_MMX8::StreamStart(uint8_t moduleIndex)
 {
-    mSubDevices[moduleIndex]->StreamStart(0);
+    std::vector<uint8_t> index;
+    index.push_back(moduleIndex);
+    StreamStart(index);
+}
 
+void LimeSDR_MMX8::StreamStart(const std::vector<uint8_t> moduleIndexes)
+{
     FPGA tempFPGA(mMainFPGAcomms, nullptr);
-    tempFPGA.StartStreaming();
+    int interface_ctrl_000A = tempFPGA.ReadRegister(0x000A);
+    uint16_t mask = 0;
+    for (uint8_t moduleIndex : moduleIndexes)
+    {
+        mask |= (1 << (2 * moduleIndex));
+    }
+    tempFPGA.WriteRegister(0x000A, interface_ctrl_000A & ~mask);
+    tempFPGA.WriteRegister(0x000A, interface_ctrl_000A | mask);
 }
 
 void LimeSDR_MMX8::StreamStop(uint8_t moduleIndex)
 {
-    mSubDevices[moduleIndex]->StreamStop(0);
+    std::vector<uint8_t> index;
+    index.push_back(moduleIndex);
+    StreamStop(index);
+}
 
+void LimeSDR_MMX8::StreamStop(const std::vector<uint8_t> moduleIndexes)
+{
     FPGA tempFPGA(mMainFPGAcomms, nullptr);
-    tempFPGA.StopStreaming();
+    int interface_ctrl_000A = tempFPGA.ReadRegister(0x000A);
+    uint16_t mask = 0;
+    for (uint8_t moduleIndex : moduleIndexes)
+    {
+        mask |= (1 << (2 * moduleIndex));
+    }
+    tempFPGA.WriteRegister(0x000A, interface_ctrl_000A & ~mask);
+    for (uint8_t moduleIndex : moduleIndexes)
+        mSubDevices[moduleIndex]->StreamStop(0);
 }
 
 int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
