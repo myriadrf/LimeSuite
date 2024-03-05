@@ -663,8 +663,14 @@ OpStatus FPGA::SetDirectClocking(int clockIndex)
     return OpStatus::SUCCESS;
 }
 
-/** @brief Parses FPGA packet payload into samples
-*/
+/** @brief Parses FPGA packet payload into samples.
+  @param buffer The buffer to parse.
+  @param bufLen The length of the buffer to parse.
+  @param mimo Whether the payload contains multiple (two) channels.
+  @param compressed Whether the samples are in 12-bit (true) or 16-bit (false) integer format.
+  @param samples The output buffer of the samples.
+  @return The amount of samples parsed.
+ */
 int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t* const* samples)
 {
     if (compressed) //compressed samples
@@ -714,8 +720,14 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
     return bufLen / sizeof(complex16_t);
 }
 
-/** @brief Parses FPGA packet payload into samples
-*/
+/** @brief Parses FPGA packet payload into samples.
+  @param buffer The buffer to parse.
+  @param bufLen The length of the buffer to parse.
+  @param mimo Whether the payload contains multiple (two) channels.
+  @param compressed Whether the samples are in 12-bit (true) or 16-bit (false) integer format.
+  @param samples The output buffer of the samples.
+  @return The amount of samples parsed.
+ */
 int FPGA::FPGAPacketPayload2SamplesFloat(
     const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t* const* samples)
 {
@@ -867,6 +879,11 @@ int FPGA::Samples2FPGAPacketPayload(
 }
 
 /// @brief Configures FPGA PLLs to LimeLight interface frequency.
+/// @param txRate_Hz The transmit rate (in Hz).
+/// @param rxRate_Hz The receive rate (in Hz).
+/// @param txPhase The transmit phase offset (in degrees).
+/// @param rxPhase The receive phase offset (in degrees).
+/// @param chipIndex The chip to configure.
 /// @return The operation status.
 OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int chipIndex)
 {
@@ -918,14 +935,17 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
     return status;
 }
 
-/** @brief Configures FPGA PLLs to LimeLight interface frequency
-*/
-OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+/// @brief Configures FPGA PLLs to LimeLight interface frequency.
+/// @param txRate_Hz The transmit rate (in Hz).
+/// @param rxRate_Hz The receive rate (in Hz).
+/// @param chipIndex The chip to configure.
+/// @return The operation status.
+OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
 {
-    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz channel:%i", txRate_Hz / 1e6, rxRate_Hz / 1e6, channel);
-    SelectModule(channel);
+    lime::debug("FPGA::SetInterfaceFreq tx:%.3f MHz rx:%.3f MHz channel:%i", txRate_Hz / 1e6, rxRate_Hz / 1e6, chipIndex);
+    SelectModule(chipIndex);
     //PrintStackTrace();
-    const int pll_ind = (channel == 1) ? 2 : 0;
+    const int pll_ind = (chipIndex == 1) ? 2 : 0;
     const int txPLLindex = pll_ind;
     const int rxPLLindex = txPLLindex + 1;
     OpStatus status = OpStatus::SUCCESS;

@@ -326,6 +326,7 @@ void ADF4002::CalculateRN()
 }
 
 /** @brief Writes configuration to chip
+ * @param data The data to write to the chip.
 */
 void ADF4002::GetConfig(unsigned char data[12])
 {
