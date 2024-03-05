@@ -415,9 +415,8 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
-    double t = 0.0;
-    int status = -1; // TODO: LMS_GetChipTemperature(sdrDevice, 0, &t);
-    if (status != 0)
+    double t = soc->GetTemperature();
+    if (t == 0)
         wxMessageBox(_("Failed to read chip temperature"), _("Warning"));
     txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));
 }

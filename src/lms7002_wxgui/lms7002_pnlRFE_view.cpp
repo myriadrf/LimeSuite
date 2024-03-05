@@ -123,16 +123,16 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
             auto rows = {
                 make_tuple(LMS7param(EN_INSHSW_LB1_RFE),
                     wxT("input of loopback 1"),
-                    wxT("Enables the input shorting switch at the input  of the loopback 1 (in parallel with LNAL mixer)")),
+                    wxT("Enables the input shorting switch at the input of the loopback 1 (in parallel with LNAL mixer)")),
                 make_tuple(LMS7param(EN_INSHSW_LB2_RFE),
                     wxT("input of loopback 2"),
-                    wxT("Enables the input shorting switch at the input  of the loopback 2 (in parallel with LNAW mixer)")),
+                    wxT("Enables the input shorting switch at the input of the loopback 2 (in parallel with LNAW mixer)")),
                 make_tuple(LMS7param(EN_INSHSW_L_RFE),
                     wxT("input of LNAL"),
-                    wxT("Enables the input shorting switch at the input  of the LNAL")),
+                    wxT("Enables the input shorting switch at the input of the LNAL")),
                 make_tuple(LMS7param(EN_INSHSW_W_RFE),
                     wxT("input of LNAW"),
-                    wxT("Enables the input shorting switch at the input  of the LNAW"))
+                    wxT("Enables the input shorting switch at the input of the LNAW"))
             };
             for (const auto& row : rows)
                 sbSizerInputShorting->Add(
@@ -183,7 +183,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
         fgSizer43->Add(chkEN_NEXTRX_RFE = NewCheckBox(this,
                            LMS7param(EN_NEXTRX_RFE),
                            wxT("Enable Rx MIMO mode"),
-                           wxT("Enables the daisy chain LO buffer going from RXFE1  to RXFE2")),
+                           wxT("Enables the daisy chain LO buffer going from RXFE1 to RXFE2")),
             1,
             wxALIGN_LEFT | wxALIGN_TOP,
             5);

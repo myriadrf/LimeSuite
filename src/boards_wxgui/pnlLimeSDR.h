@@ -7,10 +7,6 @@
 class wxFlexGridSizer;
 class wxCheckBox;
 
-namespace lime {
-class IConnection;
-}
-
 class pnlGPIO;
 
 class pnlLimeSDR : public wxPanel

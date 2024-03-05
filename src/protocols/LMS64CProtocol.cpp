@@ -60,10 +60,12 @@ void LMS64CPacketMemoryWriteView::SetAddress(int addr)
     packet->payload[9] = addr & 0xFF;
 }
 
-void LMS64CPacketMemoryWriteView::SetDevice(int device)
+void LMS64CPacketMemoryWriteView::SetDevice(LMS64CProtocol::ProgramWriteTarget device)
 {
-    packet->payload[10] = (device >> 8) & 0xFF;
-    packet->payload[11] = device & 0xFF;
+    auto targetAsInteger = static_cast<int>(device);
+
+    packet->payload[10] = (targetAsInteger >> 8) & 0xFF;
+    packet->payload[11] = targetAsInteger & 0xFF;
 }
 
 void LMS64CPacketMemoryWriteView::SetData(const uint8_t* src, size_t len)
@@ -435,7 +437,7 @@ OpStatus ProgramWrite(ISerialPort& port,
     eCMD_LMS cmd;
     if (device == ProgramWriteTarget::HPM || device == ProgramWriteTarget::FX3)
         cmd = CMD_MEMORY_WR;
-    else if (device == FPGA)
+    else if (device == ProgramWriteTarget::FPGA)
         cmd = CMD_ALTERA_FPGA_GW_WR;
     else
     {
@@ -514,7 +516,7 @@ OpStatus ProgramWrite(ISerialPort& port,
     }
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
-    if ((device == 2 && prog_mode == 2) == false)
+    if ((device == ProgramWriteTarget::FPGA && prog_mode == 2) == false)
         lime::log(LogLevel::INFO,
             "Programming finished, %li bytes sent! %li ms",
             length,
