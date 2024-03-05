@@ -28,26 +28,6 @@ struct LMS64CPacket {
     uint8_t payload[payloadSize];
 };
 
-/** @brief Class for interacting with the EEPROM management packets */
-class LMS64CPacketMemoryWriteView
-{
-  public:
-    LMS64CPacketMemoryWriteView(LMS64CPacket* pkt);
-    void SetMode(int mode);
-    void SetChunkIndex(int index);
-    void SetChunkSize(int size);
-    void SetAddress(int size);
-    void SetDevice(int device);
-    void SetData(const uint8_t* src, size_t len);
-
-    void GetData(uint8_t* dest, size_t len) const;
-    static constexpr size_t GetMaxDataSize();
-
-  private:
-    LMS64CPacketMemoryWriteView() = delete;
-    LMS64CPacket* packet;
-};
-
 namespace LMS64CProtocol {
 
 enum eCMD_LMS {
@@ -125,12 +105,10 @@ enum eCMD_STATUS {
     STATUS_COUNT
 };
 
-enum ProgramWriteTarget {
+enum class ProgramWriteTarget : uint8_t {
     HPM,
-    FX3, //
-    FPGA, // prog_modes: 0-bitstream to FPGA, 1-to FLASH, 2-bitstream from FLASH
-
-    PROGRAM_WRITE_TARGET_COUNT
+    FX3,
+    FPGA = 3u,
 };
 
 struct FirmwareInfo {
@@ -174,5 +152,25 @@ OpStatus MemoryWrite(ISerialPort& port, uint32_t address, const void* data, size
 OpStatus MemoryRead(ISerialPort& port, uint32_t address, void* data, size_t dataLen, uint32_t subDevice = 0);
 
 } // namespace LMS64CProtocol
+
+/** @brief Class for interacting with the EEPROM management packets */
+class LMS64CPacketMemoryWriteView
+{
+  public:
+    LMS64CPacketMemoryWriteView(LMS64CPacket* pkt);
+    void SetMode(int mode);
+    void SetChunkIndex(int index);
+    void SetChunkSize(int size);
+    void SetAddress(int size);
+    void SetDevice(LMS64CProtocol::ProgramWriteTarget device);
+    void SetData(const uint8_t* src, size_t len);
+
+    void GetData(uint8_t* dest, size_t len) const;
+    static constexpr size_t GetMaxDataSize();
+
+  private:
+    LMS64CPacketMemoryWriteView() = delete;
+    LMS64CPacket* packet;
+};
 
 } // namespace lime

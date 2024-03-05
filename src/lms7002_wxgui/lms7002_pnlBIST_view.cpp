@@ -41,7 +41,7 @@ lms7002_pnlBIST_view::lms7002_pnlBIST_view(wxWindow* parent, wxWindowID id, cons
     fgSizer194->Add(chkSDM_TSTO_SXR, 0, 0, 5);
 
     chkBENT = new wxCheckBox(sbSizer123->GetStaticBox(), ID_BENT, wxT("Enable SXT BIST"), wxDefaultPosition, wxDefaultSize, 0);
-    chkBENT->SetToolTip(wxT("enables transmitter  BIST"));
+    chkBENT->SetToolTip(wxT("enables transmitter BIST"));
 
     fgSizer194->Add(chkBENT, 0, flags, 0);
 

@@ -15,11 +15,11 @@ FPGA_Mini::FPGA_Mini(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms700
 {
 }
 
-OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
+OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int chipIndex)
 {
     OpStatus status = OpStatus::SUCCESS;
 
-    FPGA_PLL_clock clocks[4];
+    std::vector<FPGA_PLL_clock> clocks(4);
     if ((txRate_Hz >= 5e6) && (rxRate_Hz >= 5e6))
     {
         clocks[0].bypass = false;
@@ -43,7 +43,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double 
         clocks[3].findPhase = false;
         clocks[3].phaseShift_deg = rxPhase;
 
-        status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
+        status = SetPllFrequency(0, rxRate_Hz, clocks);
         return status;
     }
 
@@ -109,9 +109,10 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
 
     bool rxPhaseSearchSuccess = false;
     bool txPhaseSearchSuccess = false;
-    lime::FPGA::FPGA_PLL_clock clocks[4];
+    std::vector<FPGA_PLL_clock> clocks(4);
 
-    for (int i = 0; i < 10; i++) //attempt phase search 10 times
+    const int pllRetryConfigCount = 2;
+    for (int i = 0; i < pllRetryConfigCount; i++) // attempt multiple times
     {
         clocks[0].index = 3;
         clocks[0].outFrequency = rxRate_Hz;
@@ -120,7 +121,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
         clocks[1] = clocks[0];
         clocks[2] = clocks[0];
         clocks[3] = clocks[0];
-        if (SetPllFrequency(0, rxRate_Hz, clocks, 4) == OpStatus::SUCCESS)
+        if (SetPllFrequency(0, rxRate_Hz, clocks) == OpStatus::SUCCESS)
         {
             rxPhaseSearchSuccess = true;
             break;
@@ -141,7 +142,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
 
         lms7002mPort->SPI(dataWr.data(), nullptr, setRegCnt);
 
-        for (int i = 0; i < 10; i++) //attempt phase search 10 times
+        for (int i = 0; i < pllRetryConfigCount; i++)
         {
             clocks[0].index = 1;
             clocks[0].outFrequency = txRate_Hz;
@@ -151,7 +152,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
             clocks[2] = clocks[0];
             clocks[3] = clocks[0];
             WriteRegister(0x000A, 0x0200);
-            if (SetPllFrequency(0, txRate_Hz, clocks, 4) == OpStatus::SUCCESS)
+            if (SetPllFrequency(0, txRate_Hz, clocks) == OpStatus::SUCCESS)
             {
                 txPhaseSearchSuccess = true;
                 break;
@@ -182,11 +183,7 @@ OpStatus FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int cha
     WriteRegister(0x000A, 0);
 
     if (!rxPhaseSearchSuccess || !txPhaseSearchSuccess)
-    {
-        SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz);
-        // TODO: should SetInterfaceFreq override failure?
-        return OpStatus::ERROR;
-    }
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz);
     return OpStatus::SUCCESS;
 }
 

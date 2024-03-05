@@ -28,7 +28,7 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view(wxWindow* parent, wxWindowID id, const 
 
     chkPD_RX_AFE1 =
         new wxCheckBox(sbSizerPowerDowns->GetStaticBox(), ID_PD_RX_AFE1, wxT("ADC ch. 1"), wxDefaultPosition, wxDefaultSize, 0);
-    chkPD_RX_AFE1->SetToolTip(wxT("Power down control for the ADC of  channel 1"));
+    chkPD_RX_AFE1->SetToolTip(wxT("Power down control for the ADC of channel 1"));
 
     fgSizer64->Add(chkPD_RX_AFE1, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
 

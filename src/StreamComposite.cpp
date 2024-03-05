@@ -1,5 +1,5 @@
 #include "limesuite/StreamComposite.h"
-
+#include <assert.h>
 namespace lime {
 
 StreamComposite::StreamComposite(const std::vector<StreamAggregate>& aggregate)
@@ -12,14 +12,14 @@ OpStatus StreamComposite::StreamSetup(const SDRDevice::StreamConfig& config)
     mActiveAggregates.clear();
     SDRDevice::StreamConfig subConfig = config;
 
-    subConfig.channels.at(TRXDir::Rx).clear();
-    subConfig.channels.at(TRXDir::Tx).clear();
-
     std::size_t rxNeed = config.channels.at(TRXDir::Rx).size();
     std::size_t txNeed = config.channels.at(TRXDir::Tx).size();
 
     for (auto& aggregate : mAggregate)
     {
+        subConfig.channels.at(TRXDir::Rx).clear();
+        subConfig.channels.at(TRXDir::Tx).clear();
+        assert(aggregate.device);
         const SDRDevice::Descriptor& desc = aggregate.device->GetDescriptor();
         std::size_t aggregateChannelCount = aggregate.channels.size();
 
@@ -59,16 +59,20 @@ OpStatus StreamComposite::StreamSetup(const SDRDevice::StreamConfig& config)
 
 void StreamComposite::StreamStart()
 {
+    std::unordered_map<SDRDevice*, std::vector<uint8_t>> groups;
     for (auto& a : mActiveAggregates)
-        a.device->StreamStart(a.streamIndex);
-
-    // TODO: synchronized start
+        groups[a.device].push_back(a.streamIndex);
+    for (auto& g : groups)
+        g.first->StreamStart(g.second);
 }
 
 void StreamComposite::StreamStop()
 {
+    std::unordered_map<SDRDevice*, std::vector<uint8_t>> groups;
     for (auto& a : mActiveAggregates)
-        a.device->StreamStop(a.streamIndex);
+        groups[a.device].push_back(a.streamIndex);
+    for (auto& g : groups)
+        g.first->StreamStop(g.second);
 }
 
 template<class T> uint32_t StreamComposite::StreamRx(T** samples, uint32_t count, SDRDevice::StreamMeta* meta)

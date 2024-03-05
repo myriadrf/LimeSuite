@@ -59,7 +59,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     endif()
 endif()
 
-add_library(trx_limesuite trx_limesuite.cpp)
+add_library(trx_limesuite trx_limesuite.cpp common.cpp)
 target_link_libraries(trx_limesuite LimeSuite2)
 
 #remove lib prefix, Amarisoft searches for trx_*.so

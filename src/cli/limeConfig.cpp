@@ -8,6 +8,29 @@
 using namespace std;
 using namespace lime;
 
+static std::vector<int> ParseIntArray(const std::string& str)
+{
+    std::vector<int> numbers;
+    size_t parsed = 0;
+    while (parsed < str.length())
+    {
+        try
+        {
+            int nr = stoi(&str[parsed]);
+            numbers.push_back(nr);
+            size_t next = str.find_first_of(',', parsed);
+            if (next == string::npos)
+                return numbers;
+            else
+                parsed = next + 1;
+        } catch (...)
+        {
+            return numbers;
+        }
+    }
+    return numbers;
+}
+
 static SDRDevice::LogLevel logVerbosity = SDRDevice::LogLevel::ERROR;
 static SDRDevice::LogLevel strToLogLevel(const char* str)
 {
@@ -87,9 +110,9 @@ enum Args {
 int main(int argc, char** argv)
 {
     char* devName = nullptr;
-    int moduleId = 0;
     bool initializeBoard = false;
     char* iniFilename = nullptr;
+    std::vector<int> chipIndexes;
 
     SDRDevice::SDRConfig config;
     config.channel[0].rx.oversample = 2;
@@ -131,7 +154,15 @@ int main(int argc, char** argv)
             break;
         case Args::CHIP:
             if (optarg != NULL)
-                moduleId = stoi(optarg);
+                chipIndexes = ParseIntArray(optarg);
+
+            if (chipIndexes.empty())
+            {
+                cerr << "Invalid chip index" << endl;
+                return -1;
+            }
+            else
+                cerr << "Chip count " << chipIndexes.size() << endl;
             break;
         case Args::LOG:
             if (optarg != NULL)
@@ -241,24 +272,40 @@ int main(int argc, char** argv)
                 configFilepath = iniFilename;
             }
 
-            LMS7002M* chip = static_cast<LMS7002M*>(device->GetInternalChip(moduleId));
-            if (!chip)
+            for (int moduleId : chipIndexes)
             {
-                DeviceRegistry::freeDevice(device);
-                cerr << "Failed to get internal chip: " << moduleId << endl;
-                return EXIT_FAILURE;
-            }
-            if (chip->LoadConfig(configFilepath) != OpStatus::SUCCESS)
-            {
-                cerr << "Error loading file: " << configFilepath << endl;
-                return EXIT_FAILURE;
-            }
+                LMS7002M* chip = static_cast<LMS7002M*>(device->GetInternalChip(moduleId));
+                if (!chip)
+                {
+                    DeviceRegistry::freeDevice(device);
+                    cerr << "Failed to get internal chip: " << moduleId << endl;
+                    return EXIT_FAILURE;
+                }
+                if (chip->LoadConfig(configFilepath) != OpStatus::SUCCESS)
+                {
+                    cerr << "Error loading file: " << configFilepath << endl;
+                    return EXIT_FAILURE;
+                }
 
-            for (int i = 0; i < device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)
-                config.channel[i] = config.channel[0];
+                // set all channels to identical configuration
+                for (int i = 0; i < device->GetDescriptor().rfSOC[moduleId].channelCount; ++i)
+                    config.channel[i] = config.channel[0];
+            }
         }
-        device->Configure(config, moduleId);
+        for (int moduleId : chipIndexes)
+        {
+            if (device->Configure(config, moduleId) != OpStatus::SUCCESS)
+            {
+                cerr << "Failed to configure device (chip" << moduleId << ")" << std::endl;
+                return EXIT_FAILURE;
+            }
+        }
     } catch (std::runtime_error& e)
+    {
+        DeviceRegistry::freeDevice(device);
+        cerr << "Config failed: " << e.what() << endl;
+        return EXIT_FAILURE;
+    } catch (std::logic_error& e)
     {
         DeviceRegistry::freeDevice(device);
         cerr << "Config failed: " << e.what() << endl;

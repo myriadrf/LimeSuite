@@ -7,10 +7,6 @@
 class wxStaticText;
 class wxCheckBox;
 
-namespace lime {
-class IConnection;
-}
-
 class pnlGPIO : public wxPanel
 {
   public:

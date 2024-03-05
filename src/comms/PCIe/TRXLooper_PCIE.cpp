@@ -544,8 +544,8 @@ int TRXLooper_PCIE::RxSetup()
     {
         char msg[256];
         sprintf(msg,
-            "Stream%i usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus",
-            chipId,
+            "%s usePoll:%i rxSamplesInPkt:%i rxPacketsInBatch:%i, DMA_ReadSize:%i, batchSizeInTime:%gus\n",
+            mRxArgs.port->GetPathName().c_str(),
             usePoll ? 1 : 0,
             samplesInPkt,
             mRx.packetsToBatch,

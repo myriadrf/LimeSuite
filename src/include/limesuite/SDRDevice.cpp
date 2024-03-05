@@ -94,3 +94,15 @@ OpStatus SDRDevice::MemoryRead(std::shared_ptr<DataStorage> storage, Region regi
 {
     return OpStatus::NOT_IMPLEMENTED;
 }
+
+void SDRDevice::StreamStart(const std::vector<uint8_t> moduleIndexes)
+{
+    for (uint8_t i : moduleIndexes)
+        StreamStart(i);
+};
+
+void SDRDevice::StreamStop(const std::vector<uint8_t> moduleIndexes)
+{
+    for (uint8_t i : moduleIndexes)
+        StreamStop(i);
+};

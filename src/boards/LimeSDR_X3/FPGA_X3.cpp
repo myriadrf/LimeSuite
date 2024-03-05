@@ -17,45 +17,49 @@ FPGA_X3::FPGA_X3(std::shared_ptr<ISPI> fpgaSPI, std::shared_ptr<ISPI> lms7002mSP
 {
 }
 
-OpStatus FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase)
+OpStatus FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int chipIndex)
 {
-    FPGA::FPGA_PLL_clock clocks[2];
-
     lime::debug("FPGA_X3"s);
     lime::info("Phases : tx phase %f rx phase %f", txPhase, rxPhase);
+    const int txPLLindex = 0;
+    const int rxPLLindex = 1;
 
-    clocks[0].index = 0;
-    clocks[0].outFrequency = rxRate_Hz;
-    clocks[1].index = 1;
-    clocks[1].outFrequency = rxRate_Hz;
-    clocks[1].phaseShift_deg = rxPhase;
-    if (FPGA_X3::SetPllFrequency(1, rxRate_Hz, clocks, 2) != OpStatus::SUCCESS)
+    std::vector<FPGA_PLL_clock> rxClocks(2);
+    rxClocks[0].index = 0;
+    rxClocks[0].outFrequency = rxRate_Hz;
+    rxClocks[1].index = 1;
+    rxClocks[1].outFrequency = rxRate_Hz;
+    rxClocks[1].phaseShift_deg = rxPhase;
+    if (FPGA_X3::SetPllFrequency(rxPLLindex, rxRate_Hz, rxClocks) != OpStatus::SUCCESS)
         return OpStatus::ERROR;
 
-    clocks[0].index = 0;
-    clocks[0].outFrequency = txRate_Hz;
-    clocks[1].index = 1;
-    clocks[1].outFrequency = txRate_Hz;
-    clocks[1].phaseShift_deg = txPhase;
-    if (FPGA_X3::SetPllFrequency(0, txRate_Hz, clocks, 2) != OpStatus::SUCCESS) //B.J.
+    std::vector<FPGA_PLL_clock> txClocks(2);
+    txClocks[0].index = 0;
+    txClocks[0].outFrequency = txRate_Hz;
+    txClocks[1].index = 1;
+    txClocks[1].outFrequency = txRate_Hz;
+    txClocks[1].phaseShift_deg = txPhase;
+    if (FPGA_X3::SetPllFrequency(txPLLindex, txRate_Hz, txClocks) != OpStatus::SUCCESS)
         return OpStatus::ERROR;
 
     return OpStatus::SUCCESS;
 }
 
-OpStatus FPGA_X3::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
+OpStatus FPGA_X3::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, std::vector<FPGA_PLL_clock>& clocks)
 {
-    //Xilinx boards have different phase control mechanism
-    double phase = clocks[1].phaseShift_deg;
+    // Xilinx boards have different phase control mechanism
+    double phase = clocks.at(1).phaseShift_deg;
     WriteRegister(0x0020, phase);
-    return FPGA::SetPllFrequency(pllIndex, inputFreq, clocks, clockCount);
+    return FPGA::SetPllFrequency(pllIndex, inputFreq, clocks);
 }
 
-OpStatus FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+OpStatus FPGA_X3::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipIndex)
 {
-    if (channel == 1 || channel == 2)
+    // only first (LMS1) chip uses internal ADC/DAC, other chips use external ADC/DAC
+    if (chipIndex == 0)
+        return FPGA::SetInterfaceFreq(txRate_Hz, rxRate_Hz, chipIndex);
+    else
         return OpStatus::SUCCESS;
-    return FPGA::SetInterfaceFreq(txRate_Hz, rxRate_Hz, channel);
 }
 
 } //namespace lime
