@@ -445,7 +445,6 @@ OpStatus FPGA::SetPllClock(uint8_t clockIndex, int nSteps, bool waitLock, bool d
     @param pllIndex Index of FPGA PLL.
     @param inputFreq Input frequency.
     @param clocks List of clocks to configure.
-    @param clockCount Number of clocks to configure.
     @return The operation status.
 */
 OpStatus FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, std::vector<FPGA_PLL_clock>& clocks)

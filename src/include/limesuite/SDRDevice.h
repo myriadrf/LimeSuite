@@ -715,12 +715,16 @@ class LIME_API SDRDevice
     /// @param moduleIndex The index of the device to start the streams on.
     virtual void StreamStart(uint8_t moduleIndex) = 0;
 
+    /// @brief Starts all the set up streams on the devices.
+    /// @param moduleIndexes The indices of the devices to start the streams on.
     virtual void StreamStart(const std::vector<uint8_t> moduleIndexes);
 
     /// @brief Stops all the set up streams on the device.
     /// @param moduleIndex The index of the device to stop the streams on.
     virtual void StreamStop(uint8_t moduleIndex) = 0;
 
+    /// @brief Stops all the set up streams on the devices.
+    /// @param moduleIndexes The indices of the devices to stop the streams on.
     virtual void StreamStop(const std::vector<uint8_t> moduleIndexes);
 
     /// @brief Reveives samples from all the active streams in the device.
