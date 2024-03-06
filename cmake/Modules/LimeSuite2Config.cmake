@@ -27,13 +27,13 @@ endif ()
 ## locate the library
 ########################################################################
 find_library(
-  LIMESUITE_LIBRARY LimeSuite
+  LIMESUITE_LIBRARY LimeSuite2
   PATHS ${LIMESUITE_ROOT}/lib${LIB_SUFFIX}
   PATH_SUFFIXES ${CMAKE_LIBRARY_ARCHITECTURE}
   NO_DEFAULT_PATH
   )
 if(NOT LIMESUITE_LIBRARY)
-  message(FATAL_ERROR "cannot find LimeSuite library in ${LIMESUITE_ROOT}/lib${LIB_SUFFIX}")
+  message(FATAL_ERROR "cannot find LimeSuite2 library in ${LIMESUITE_ROOT}/lib${LIB_SUFFIX}")
 endif()
 set(LimeSuite_LIBRARIES ${LIMESUITE_LIBRARY})
 
@@ -46,13 +46,13 @@ find_path(
   NO_DEFAULT_PATH
 )
 if(NOT LIMESUITE_INCLUDE_DIR)
-  message(FATAL_ERROR "cannot find LimeSuite includes in ${LIMESUITE_ROOT}/include")
+  message(FATAL_ERROR "cannot find LimeSuite2 includes in ${LIMESUITE_ROOT}/include")
 endif()
 set(LimeSuite_INCLUDE_DIRS ${LIMESUITE_INCLUDE_DIR})
 
 ########################################################################
 ## create import library target
 ########################################################################
-add_library(LimeSuite SHARED IMPORTED)
-set_property(TARGET LimeSuite PROPERTY IMPORTED_LOCATION ${LIMESUITE_LIBRARY})
-set_property(TARGET LimeSuite PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${LIMESUITE_INCLUDE_DIR})
+add_library(LimeSuite2 SHARED IMPORTED)
+set_property(TARGET LimeSuite2 PROPERTY IMPORTED_LOCATION ${LIMESUITE_LIBRARY})
+set_property(TARGET LimeSuite2 PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${LIMESUITE_INCLUDE_DIR})
