@@ -3,7 +3,7 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  GPIO example
  */
-#include <lime/LimeSuite.h>
+#include <limesuite/LimeSuite.h>
 #include <iostream>
 #include <chrono>
 #include <thread>

@@ -1,7 +1,7 @@
 #ifndef __lms7002_dlgVCOfrequencies__
 #define __lms7002_dlgVCOfrequencies__
 
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 #include "lms7002_wxgui.h"
 
 class lms7002_dlgVCOfrequencies : public wxDialog

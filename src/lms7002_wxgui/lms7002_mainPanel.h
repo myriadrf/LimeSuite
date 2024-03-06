@@ -1,7 +1,6 @@
 #ifndef __lms7002_mainPanel__
 #define __lms7002_mainPanel__
 
-#include "lime/LimeSuite.h"
 #include "lms7002_wxgui.h"
 #include <unordered_map>
 #include "ILMS7002MTab.h"

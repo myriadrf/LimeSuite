@@ -17,7 +17,7 @@ if (ENABLE_HEADERS)
         DESTINATION include/limesuite
     )
     install(
-        FILES lime/LimeSuite.h;Logger.h
+        FILES Logger.h
         DESTINATION include/limesuite
     )
 

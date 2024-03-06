@@ -3,7 +3,7 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  RX example
  */
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 #include <iostream>
 #include <chrono>
 #ifdef USE_GNU_PLOT

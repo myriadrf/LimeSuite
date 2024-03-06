@@ -1,7 +1,7 @@
 #ifndef PNL_BUFFERS_H
 #define PNL_BUFFERS_H
 
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 #include <wx/panel.h>
 class wxCheckBox;
 

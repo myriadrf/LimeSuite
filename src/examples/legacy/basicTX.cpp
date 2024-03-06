@@ -6,7 +6,7 @@
 #include <iostream>
 #include <chrono>
 #include <math.h>
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 
 using namespace std;
 

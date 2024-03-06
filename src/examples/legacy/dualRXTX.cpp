@@ -3,7 +3,7 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  Dual channel RX/TX example
  */
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 #include <iostream>
 #include <chrono>
 #ifdef USE_GNU_PLOT

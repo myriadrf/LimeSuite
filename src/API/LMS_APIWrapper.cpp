@@ -1,5 +1,5 @@
 #include "CommonFunctions.h"
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 #include "limesuite/commonTypes.h"
 #include "limesuite/DeviceHandle.h"
 #include "limesuite/DeviceRegistry.h"

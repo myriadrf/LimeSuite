@@ -5,6 +5,7 @@
 #ifndef FPGA_CONTROLS_WXGUI_H
 #define FPGA_CONTROLS_WXGUI_H
 
+#include "limesuite/LimeSuite.h"
 #include <wx/frame.h>
 #include <wx/timer.h>
 #include <wx/wx.h>
@@ -15,7 +16,6 @@ class wxStaticBoxSizer;
 class wxToggleButton;
 class wxCheckBox;
 
-#include "lime/LimeSuite.h"
 #include <vector>
 #include <atomic>
 #include <thread>

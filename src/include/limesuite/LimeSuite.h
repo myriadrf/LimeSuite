@@ -1,5 +1,5 @@
 /**
- * @file lime/LimeSuite.h
+ * @file limesuite/LimeSuite.h
  *
  * @brief LMS API library
  *

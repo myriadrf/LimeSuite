@@ -2,7 +2,7 @@
 #define lms7002_pnlRFE_view_h
 
 #include <map>
-#include "lime/LimeSuite.h"
+#include "limesuite/LimeSuite.h"
 #include "ILMS7002MTab.h"
 
 class lms7002_pnlRFE_view : public ILMS7002MTab

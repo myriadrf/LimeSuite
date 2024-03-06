@@ -9,7 +9,6 @@
 #include <wx/spinctrl.h>
 #undef ERROR
 
-#include "lime/LimeSuite.h"
 #include "pnluLimeSDR.h"
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
