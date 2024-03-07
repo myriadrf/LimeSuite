@@ -19,7 +19,7 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = 'Lime Suite NG'
-copyright = '2021, 2023 MyriadRF Contributors'
+copyright = '2021, 2024 MyriadRF Contributors'
 author = 'Lime Microsystems'
 
 # The full version, including alpha/beta/rc tags
