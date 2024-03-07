@@ -77,7 +77,7 @@ struct DeviceTreeItemData : public wxTreeItemData {
 };
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame(wxWindow* parent)
-    : wxFrame(parent, wxNewId(), _("LimeSuite"))
+    : wxFrame(parent, wxNewId(), _("Lime Suite NG"))
     , lmsControl(nullptr)
 {
     obj_ptr = this;

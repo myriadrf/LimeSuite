@@ -1,12 +1,12 @@
 Compilation guide
 =================
 
-This page describes how to compile LimeSuiteGUI2 on Linux.
+This page describes how to compile Lime Suite NG on Linux.
 
 Prerequisites
 -------------
 
-Components needed to compile LimeSuiteGUI2:
+Components needed to compile Lime Suite NG:
 
 - `GCC`_
 - `CMake`_

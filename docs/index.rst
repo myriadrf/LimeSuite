@@ -11,4 +11,4 @@
 Introduction
 ============
 
-This is the documentation for the LimeSuiteGUI2.
+This is the documentation for the Lime Suite NG.
