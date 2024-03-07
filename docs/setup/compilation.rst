@@ -14,7 +14,8 @@ Components needed to compile Lime Suite NG:
 - `libusb`_
 
 .. note::
-    If you are on Ubuntu 22.04, there also exists a script ``install_dependencies.sh`` to install all the needed dependencies.
+    If you are on Ubuntu 20.04 or newer or Debian 11 or newer,
+    there also exists a script ``install_dependencies.sh`` to install all the needed dependencies.
 
 Compilation
 -----------
@@ -28,8 +29,21 @@ In the root directory of the repository run these commands:
     cmake .. # Generate make file
     make # Compile the program
 
+.. note::
+    Append ``-j <number>`` to the ``make`` command to use more than one CPU core to greatly speed up compilation times.
+    To automatically use all the cores available on your CPU use ``-j $(nproc)``.
+
 After a successful compilation the resulting binaries are placed in the ``build/bin/`` directory
 located in the root directory of the repository.
+
+Installing the built software
+-----------------------------
+
+Continuing on from the previous command block, in the ``build`` folder, execute:
+
+.. code-block:: bash
+
+    sudo make install
 
 Testing
 -------

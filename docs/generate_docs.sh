@@ -4,7 +4,7 @@
 # Usage:
 # ./generate_docs.sh - to just regenerate the main docs
 # ./generate_docs.sh clean - to clean all the build files
-# ./generate_docs.sh rebuild - to rebuild the doxygen definitions
+# ./generate_docs.sh rebuild - to rebuild the Doxygen definitions
 # ./generate_docs.sh clean rebuild - to clean the build files and rebuild the definitions
 
 set -e
