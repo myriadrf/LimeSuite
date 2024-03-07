@@ -792,13 +792,14 @@ OpStatus LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
 {
     lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
+    bool div4 = signalConfiguration.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
     switch (direction)
     {
     case TRXDir::Rx:
         if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_RXTSP), signalConfiguration.enabled, true) != OpStatus::SUCCESS)
             return ReportError(OpStatus::IO_FAILURE, "Failed to set Rx test signal.");
 
-        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), static_cast<uint8_t>(signalConfiguration.divide));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), div4 ? 2 : 1);
         lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), static_cast<uint8_t>(signalConfiguration.scale));
         lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP), signalConfiguration.dcMode);
         break;
@@ -806,7 +807,7 @@ OpStatus LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
         if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), signalConfiguration.enabled, true) != OpStatus::SUCCESS)
             return ReportError(OpStatus::IO_FAILURE, "Failed to set Tx test signal.");
 
-        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), static_cast<uint8_t>(signalConfiguration.divide));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), div4 ? 2 : 1);
         lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), static_cast<uint8_t>(signalConfiguration.scale));
         lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), signalConfiguration.dcMode);
         break;
@@ -1209,7 +1210,7 @@ OpStatus LMS7002M_SDRDevice::LMS7002TestSignalConfigure(
         bool fullscale = signal.scale == SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full;
         bool div4 = signal.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
         chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, fullscale ? 1 : 0);
-        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_RXTSP, div4 ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_RXTSP, div4 ? 2 : 1);
         chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, signal.dcMode ? 1 : 0);
         chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
         // LMS7_TSGMODE_RXTSP change resets DC values
@@ -1223,7 +1224,7 @@ OpStatus LMS7002M_SDRDevice::LMS7002TestSignalConfigure(
         bool fullscale = signal.scale == SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full;
         bool div4 = signal.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
         chip->Modify_SPI_Reg_bits(LMS7_TSGFC_TXTSP, fullscale ? 1 : 0);
-        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_TXTSP, div4 ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_TXTSP, div4 ? 2 : 1);
         chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_TXTSP, signal.dcMode ? 1 : 0);
         chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
         // LMS7_TSGMODE_TXTSP change resets DC values
