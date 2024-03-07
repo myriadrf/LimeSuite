@@ -96,7 +96,7 @@ class LIME_API Si5351C
 
     Si5351C(II2C& i2c_comms);
     ~Si5351C();
-    bool LoadRegValuesFromFile(std::string FName);
+    void LoadRegValuesFromFile(std::string FName);
 
     void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
     void SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled = true, bool inverted = false);

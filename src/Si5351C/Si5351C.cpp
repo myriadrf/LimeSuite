@@ -573,7 +573,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
     @brief Loads register values for Si5356A from file
     @param FName input filename
 */
-bool Si5351C::LoadRegValuesFromFile(string FName)
+void Si5351C::LoadRegValuesFromFile(string FName)
 {
     fstream fin;
     fin.open(FName, ios::in);
@@ -587,16 +587,15 @@ bool Si5351C::LoadRegValuesFromFile(string FName)
     while (!fin.eof())
     {
         fin.getline(line, len);
-        if (line[0] == '#')
-            continue;
         if (strcmp(line, "#END_PROFILE") == 0)
             break;
+        if (line[0] == '#')
+            continue;
         sscanf(line, "%i,%x", &addr, &value);
         m_newConfiguration[addr] = value;
     }
 
     fin.close();
-    return false;
 }
 
 /** @brief Calculates multisynth dividers and VCO frequencies
