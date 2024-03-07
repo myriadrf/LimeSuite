@@ -925,7 +925,9 @@ int MCU_BD::RunInstr_MCU(unsigned short* pPCVAL)
     return retval;
 }
 
-/** @brief Returns information about programming or reading data progress
+/** 
+ * @brief Returns information about programming or reading data progress
+ * @returns The structure containing information about the progress info.
 */
 MCU_BD::ProgressInfo MCU_BD::GetProgressInfo() const
 {

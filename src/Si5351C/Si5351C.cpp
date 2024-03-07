@@ -526,7 +526,9 @@ Si5351C::~Si5351C()
 {
 }
 
-/** @brief Sends Configuration to Si5351C
+/** 
+ * @brief Sends Configuration to Si5351C
+ * @return The status code of the operation
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
