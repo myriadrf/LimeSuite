@@ -606,14 +606,14 @@ complex64f_t LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, ui
     auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
     lms->GetDCOffset(trx, I, Q);
-    return { I, Q };
+    return complex64f_t(I, Q);
 }
 
 OpStatus LMS7002M_SDRDevice::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset)
 {
     auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
-    return lms->SetDCOffset(trx, offset.i, offset.q);
+    return lms->SetDCOffset(trx, offset.real(), offset.imag());
 }
 
 complex64f_t LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
@@ -629,7 +629,7 @@ complex64f_t LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, u
 
 OpStatus LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance)
 {
-    std::complex<double> bal{ balance.i, balance.q };
+    std::complex<double> bal{ balance.real(), balance.imag() };
     double gain = std::abs(bal);
 
     double gainI = 1.0;
@@ -943,12 +943,22 @@ int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t* const* dest, 
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
+int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex12_t* const* dest, uint32_t count, StreamMeta* meta)
+{
+    return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
+}
+
 int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
 int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+{
+    return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
+}
+
+int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }

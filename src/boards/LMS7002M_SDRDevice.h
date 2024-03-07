@@ -101,8 +101,10 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
 
     virtual int StreamRx(uint8_t moduleIndex, complex32f_t* const* samples, uint32_t count, StreamMeta* meta) override;
     virtual int StreamRx(uint8_t moduleIndex, complex16_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual int StreamRx(uint8_t moduleIndex, complex12_t* const* samples, uint32_t count, StreamMeta* meta) override;
     virtual int StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual int StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual int StreamTx(uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback) override;

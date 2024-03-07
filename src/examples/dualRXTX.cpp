@@ -137,7 +137,7 @@ int main(int argc, char** argv)
         // process samples
         for (int n = 0; n < samplesRead; ++n)
         {
-            float amplitude = pow(rxSamples[0][n].i, 2) + pow(rxSamples[0][n].q, 2);
+            float amplitude = pow(rxSamples[0][n].real(), 2) + pow(rxSamples[0][n].imag(), 2);
             if (amplitude > maxSignalAmplitude)
                 maxSignalAmplitude = amplitude;
         }
@@ -168,7 +168,7 @@ int main(int argc, char** argv)
             for (std::size_t c = 0; c < stream.channels.at(TRXDir::Rx).size(); ++c)
             {
                 for (uint32_t n = 0; n < samplesInBuffer; ++n)
-                    gp.writef("%f %f\n", rxSamples[c][n].i, rxSamples[c][n].q);
+                    gp.writef("%f %f\n", rxSamples[c][n].real(), rxSamples[c][n].imag());
                 gp.write("e\n");
                 gp.flush();
             }

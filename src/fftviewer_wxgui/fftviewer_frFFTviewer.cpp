@@ -394,7 +394,7 @@ void fftviewer_frFFTviewer::StreamingLoop(
     for (int i = 0; i < channelsCount; ++i)
         buffers[i] = new complex32f_t[fftSize];
 
-    vector<complex16_t> captureBuffer[cMaxChCount];
+    vector<complex32f_t> captureBuffer[cMaxChCount];
     uint32_t samplesToCapture = 0;
     uint32_t samplesCaptured = 0;
     if (pthis->captureSamples.load() == true)
@@ -522,8 +522,8 @@ void fftviewer_frFFTviewer::StreamingLoop(
                     {
                         if (fftEnabled)
                             localDataResults.fftBins[ch][i] = 0;
-                        localDataResults.samplesI[ch][i] = buffers[ch][i].i;
-                        localDataResults.samplesQ[ch][i] = buffers[ch][i].q;
+                        localDataResults.samplesI[ch][i] = buffers[ch][i].real();
+                        localDataResults.samplesQ[ch][i] = buffers[ch][i].imag();
                     }
                 if (fftEnabled)
                 {
@@ -531,16 +531,16 @@ void fftviewer_frFFTviewer::StreamingLoop(
                     {
                         for (unsigned i = 0; i < fftSize; ++i)
                         {
-                            m_fftCalcIn[i].r = buffers[ch][i].i;
-                            m_fftCalcIn[i].i = buffers[ch][i].q;
+                            m_fftCalcIn[i].r = buffers[ch][i].real();
+                            m_fftCalcIn[i].i = buffers[ch][i].imag();
                         }
                     }
                     else
                     {
                         for (unsigned i = 0; i < fftSize; ++i)
                         {
-                            m_fftCalcIn[i].r = buffers[ch][i].i * wndCoef[i];
-                            m_fftCalcIn[i].i = buffers[ch][i].q * wndCoef[i];
+                            m_fftCalcIn[i].r = buffers[ch][i].real() * wndCoef[i];
+                            m_fftCalcIn[i].i = buffers[ch][i].imag() * wndCoef[i];
                         }
                     }
 

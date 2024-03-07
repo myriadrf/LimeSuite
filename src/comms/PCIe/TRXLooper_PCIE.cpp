@@ -298,7 +298,8 @@ template<class T> class TxBufferManager
             transferCount = std::min(transferCount, maxSamplesInPkt);
             if (transferCount > 0)
             {
-                int samplesDataSize = Interleave(src, transferCount, conversion, payloadPtr);
+                int samplesDataSize = Interleave(payloadPtr, src->front(), transferCount, conversion);
+                src->pop(transferCount);
                 payloadPtr = payloadPtr + samplesDataSize;
                 payloadSize += samplesDataSize;
                 bytesUsed += samplesDataSize;
@@ -928,7 +929,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 ++mTx.stats.loss;
 
             const int payloadSize = packetSize - 16;
-            const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
+            const int samplesProduced = Deinterleave(outputPkt->back(), pkt->data, payloadSize, conversion);
+            outputPkt->SetSize(outputPkt->size() + samplesProduced);
             expectedTS = pkt->counter + samplesProduced;
         }
         stats.packets += srcPktCount;

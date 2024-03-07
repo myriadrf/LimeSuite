@@ -13,6 +13,7 @@ set(LIME_TEST_SUITE_SOURCES
     protocols/LMS64CProtocol/GPIOReadTest.cpp
     protocols/LMS64CProtocol/GPIOWriteTest.cpp
     protocols/LMS64CProtocol/LMS7002M_SPITest.cpp
+    protocols/BufferInterleavingTest.cpp
 )
 
 if (ENABLE_LIMESDR_X3)

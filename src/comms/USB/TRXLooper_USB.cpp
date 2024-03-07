@@ -197,7 +197,8 @@ void TRXLooper_USB::TransmitPacketsLoop()
 
             if (transferCount > 0)
             {
-                int samplesDataSize = Interleave(srcPkt, transferCount, conversion, payloadPtr);
+                int samplesDataSize = Interleave(payloadPtr, srcPkt->front(), transferCount, conversion);
+                srcPkt->pop(transferCount);
 
                 payloadPtr += samplesDataSize;
                 payloadSize += samplesDataSize;
@@ -385,7 +386,8 @@ void TRXLooper_USB::ReceivePacketsLoop()
                 payloadSize = 4080;
             }
 
-            const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
+            const int samplesProduced = Deinterleave(outputPkt->back(), pkt->data, payloadSize, conversion);
+            outputPkt->SetSize(outputPkt->size() + samplesProduced);
             expectedTS = pkt->counter + samplesProduced;
             mRx.lastTimestamp.store(expectedTS, std::memory_order_relaxed);
             stats.timestamp = expectedTS;

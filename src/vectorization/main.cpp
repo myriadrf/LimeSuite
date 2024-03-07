@@ -21,8 +21,8 @@ void TestDeinterleaving()
 
     for (int i = 0; i < inputSize; ++i)
     {
-        src[i].i = dist(mt);
-        src[i].q = dist(mt);
+        src[i].real(dist(mt));
+        src[i].imag(dist(mt));
     }
 
     auto t1 = chrono::high_resolution_clock::now();
@@ -33,7 +33,7 @@ void TestDeinterleaving()
     uint64_t counterSlow = 0;
     while ((t2 - t1) < milliseconds(1000))
     {
-        complex16_to_complex32f(destA, src, inputSize);
+        PathSelection(destA, src, inputSize);
         ++counterSlow;
         t2 = chrono::high_resolution_clock::now();
     }
@@ -44,7 +44,7 @@ void TestDeinterleaving()
     counterSlow = 0;
     while ((t2 - t1) < milliseconds(1000))
     {
-        complex16_to_complex32f_unzip(destA, destB, src, inputSize);
+        PathSelectionUnzip(destA, destB, src, inputSize);
         ++counterSlow;
         t2 = chrono::high_resolution_clock::now();
     }
@@ -64,10 +64,10 @@ void TestInterleaving()
 
     for (int i = 0; i < inputSize; ++i)
     {
-        srcA[i].i = dist(mt);
-        srcA[i].q = dist(mt);
-        srcB[i].i = dist(mt);
-        srcB[i].q = dist(mt);
+        srcA[i].real(dist(mt));
+        srcA[i].imag(dist(mt));
+        srcB[i].real(dist(mt));
+        srcB[i].imag(dist(mt));
     }
 
     auto t1 = chrono::high_resolution_clock::now();
@@ -78,7 +78,7 @@ void TestInterleaving()
     uint64_t counterSlow = 0;
     while ((t2 - t1) < milliseconds(1000))
     {
-        complex32f_to_complex16(dest, srcA, inputSize);
+        PathSelection(dest, srcA, inputSize);
         ++counterSlow;
         t2 = chrono::high_resolution_clock::now();
     }
@@ -89,7 +89,7 @@ void TestInterleaving()
     counterSlow = 0;
     while ((t2 - t1) < milliseconds(1000))
     {
-        complex32f_to_complex16_zip(dest, srcA, srcB, inputSize / 2);
+        PathSelectionZip(dest, srcA, srcB, inputSize / 2);
         ++counterSlow;
         t2 = chrono::high_resolution_clock::now();
     }

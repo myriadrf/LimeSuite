@@ -716,6 +716,48 @@ int TRXLooper::StreamRx(lime::complex16_t* const* dest, uint32_t count, SDRDevic
     return samplesProduced;
 }
 
+int TRXLooper::StreamRx(lime::complex12_t* const* dest, uint32_t count, SDRDevice::StreamMeta* meta)
+{
+    bool timestampSet = false;
+    uint32_t samplesProduced = 0;
+    const bool useChannelB = mConfig.channels.at(lime::TRXDir::Rx).size() > 1;
+    bool firstIteration = true;
+
+    //auto start = high_resolution_clock::now();
+    while (samplesProduced < count)
+    {
+        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 250))
+            return samplesProduced;
+        if (!timestampSet && meta)
+        {
+            meta->timestamp = mRx.stagingPacket->timestamp;
+            timestampSet = true;
+        }
+
+        int expectedCount = count - samplesProduced;
+        const int samplesToCopy = std::min(expectedCount, mRx.stagingPacket->size());
+
+        lime::complex12_t* const* src = reinterpret_cast<lime::complex12_t* const*>(mRx.stagingPacket->front());
+
+        memcpy(&dest[0][samplesProduced], src[0], samplesToCopy * sizeof(complex12_t));
+        if (useChannelB)
+            memcpy(&dest[1][samplesProduced], src[1], samplesToCopy * sizeof(complex12_t));
+        mRx.stagingPacket->pop(samplesToCopy);
+        samplesProduced += samplesToCopy;
+
+        if (mRx.stagingPacket->empty())
+        {
+            mRx.memPool->Free(mRx.stagingPacket);
+            mRx.stagingPacket = nullptr;
+        }
+
+        // int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+        // if(duration > 300) // TODO: timeout duration in meta
+        //     return samplesProduced;
+    }
+    return samplesProduced;
+}
+
 int TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const bool useChannelB = mConfig.channels.at(lime::TRXDir::Tx).size() > 1;
@@ -797,6 +839,60 @@ int TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count,
         {
             mTx.stagingPacket = SamplesPacketType::ConstructSamplesPacket(
                 mTx.memPool->Allocate(outputPktSize), samplesInPkt * packetsToBatch, sizeof(complex16_t));
+            if (!mTx.stagingPacket)
+                break;
+            mTx.stagingPacket->Reset();
+            mTx.stagingPacket->timestamp = ts;
+            mTx.stagingPacket->useTimestamp = useTimestamp;
+        }
+
+        int consumed = mTx.stagingPacket->push(src, samplesRemaining);
+        src[0] += consumed;
+        if (useChannelB)
+            src[1] += consumed;
+
+        samplesRemaining -= consumed;
+        ts += consumed;
+
+        if (mTx.stagingPacket->isFull() || flush)
+        {
+            if (samplesRemaining == 0)
+                mTx.stagingPacket->flush = flush;
+
+            if (!mTx.fifo->push(mTx.stagingPacket))
+                break;
+            mTx.stagingPacket = nullptr;
+        }
+    }
+    return count - samplesRemaining;
+}
+
+int TRXLooper::StreamTx(const lime::complex12_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+{
+    const bool useChannelB = mConfig.channels.at(lime::TRXDir::Tx).size() > 1;
+    const bool useTimestamp = meta ? meta->useTimestamp : false;
+    const bool flush = meta && meta->flush;
+    int64_t ts = meta ? meta->timestamp : 0;
+
+    int samplesRemaining = count;
+    const int samplesInPkt = mTx.samplesInPkt;
+    const int packetsToBatch = mTx.packetsToBatch;
+    const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * sizeof(complex12_t);
+
+    if (mTx.stagingPacket && mTx.stagingPacket->timestamp + mTx.stagingPacket->size() != meta->timestamp)
+    {
+        if (!mTx.fifo->push(mTx.stagingPacket))
+            return 0;
+        mTx.stagingPacket = nullptr;
+    }
+
+    const lime::complex12_t* src[2] = { samples[0], useChannelB ? samples[1] : nullptr };
+    while (samplesRemaining)
+    {
+        if (!mTx.stagingPacket)
+        {
+            mTx.stagingPacket = SamplesPacketType::ConstructSamplesPacket(
+                mTx.memPool->Allocate(outputPktSize), samplesInPkt * packetsToBatch, sizeof(complex12_t));
             if (!mTx.stagingPacket)
                 break;
             mTx.stagingPacket->Reset();

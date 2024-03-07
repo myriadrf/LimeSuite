@@ -5,16 +5,14 @@
 
 namespace lime {
 
-template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const uint8_t* buffer, int bufLen, DestType** samples);
-
 struct DataConversion {
     SDRDevice::StreamConfig::DataFormat srcFormat;
     SDRDevice::StreamConfig::DataFormat destFormat;
     uint8_t channelCount;
 };
 
-int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t length, TRXLooper::SamplesPacketType* output);
-int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataConversion& fmt, uint8_t* buffer);
+int Deinterleave(void** dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt);
+int Interleave(uint8_t* dest, const void* const* src, uint32_t count, const DataConversion& fmt);
 
 } // namespace lime
 

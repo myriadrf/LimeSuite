@@ -33,8 +33,10 @@ class TRXLooper
 
     virtual int StreamRx(lime::complex32f_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
     virtual int StreamRx(lime::complex16_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual int StreamRx(lime::complex12_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
     virtual int StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
     virtual int StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual int StreamTx(const lime::complex12_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
     void SetMessageLogCallback(SDRDevice::LogCallbackType callback) { mCallback_logMessage = callback; }
 
