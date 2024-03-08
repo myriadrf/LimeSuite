@@ -5,6 +5,7 @@
    Introduction <self>
    about/index
    setup/index
+   migration/index
    graphs/index
    doxygen/index
    tools/index
