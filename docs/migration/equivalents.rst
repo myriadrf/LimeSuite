@@ -79,12 +79,12 @@ This section of the documentation provides the porting guide to change from the 
      - ``lime::SDRDevice::GetTemperature()``
    * - ``LMS_SetSampleRateDir()``
      - Loop for every channel and set ``lime::SDRDevice::ChannelConfig::Direction::sampleRate``
-       located at ``lime::SDRDevice::SDRConfig::channel`` for every channel, which is later passed to ``lime::SDRDevice::Configure()``
+       located at ``lime::SDRDevice::SDRConfig::channel``, which is later passed to ``lime::SDRDevice::Configure()``
    * - ``LMS_SetNCOFrequency()``
      - + ``lime::SDRDevice::SetNCOFrequency()``
        + ``lime::SDRDevice::ChannelConfig::Direction::NCOoffset`` located at ``lime::SDRDevice::SDRConfig::channel``, which is later passed to ``lime::SDRDevice::Configure()``
 
-         Important note: it is an offset from the center frequency, not the frequency of the NCO itself.
+         Important change if switching to the variable version: it is an offset from the center frequency, not the frequency of the NCO itself.
    * - ``LMS_GetNCOFrequency()``
      - ``lime::SDRDevice::GetNCOFrequency()``
    * - ``LMS_SetNCOPhase()``
