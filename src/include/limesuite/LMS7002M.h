@@ -632,7 +632,7 @@ class LIME_API LMS7002M
     /*!
      * @brief Uploads given FIR coefficients to chip
      * @param dir Transmitter or receiver selection
-     * @param gfirIndex GIR index from 0 to 2
+     * @param gfirIndex GFIR index from 0 to 2
      * @param coef array of coefficients (normalized from -1 to 1)
      * @param coefCount number of coefficients
      * @return The status of the operation
