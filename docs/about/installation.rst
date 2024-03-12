@@ -4,7 +4,7 @@ Installing Lime Suite NG
 The recommended way to install Lime Suite NG is to install the package provided by the repository.
 
 ..
-    TODO: If this becomes very bloated, split each section into separate files
+    If this becomes very bloated, split each section into separate files
 
 Ubuntu/Debian
 -------------
@@ -16,3 +16,8 @@ To install Lime Suite NG run these commands:
 .. code-block:: bash
 
     sudo apt install limesuiteng
+
+Building from source
+--------------------
+
+Use the instructions provided in the :ref:`compilation_rst`.
