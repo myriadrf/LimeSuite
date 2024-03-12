@@ -32,11 +32,7 @@ jobs:
         run: |
           cd ${{github.workspace}}/docs
           source venv/bin/activate
-          cmake -S .. -B ../build
-          make --no-print-directory -C ../build -j"$(nproc)" doc
-          breathe-apidoc --generate class --members --force --output-dir apidoc ../build/xml/
-          python add_undoc_members.py
-          make -j"$(nproc)" html
+          ./generate_docs.sh
 
       - name: Test hyperlinks
         run: |
