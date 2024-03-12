@@ -61,10 +61,6 @@ the distribution and urgency of the package.
 The Makefile according to which the package is built.
 This file usually includes calls to ``dh_*`` commands, which come from the ``debhelper`` package.
 
-More information
-^^^^^^^^^^^^^^^^
-- `Required files under the 'debian' directory <https://www.debian.org/doc/manuals/maint-guide/dreq.en.html>`_
-
 Building the package
 --------------------
 
@@ -80,11 +76,6 @@ different ``glibc`` requirements and newer versions of ``glibc`` being compatibl
 programs built for older versions.
 
 Packages built in Debian will still most likely work on Ubuntu and vice-versa.
-
-More information
-^^^^^^^^^^^^^^^^
-
-- `Building the package <https://www.debian.org/doc/manuals/maint-guide/build.en.html>`_
 
 Generated files
 ---------------
@@ -149,11 +140,6 @@ pre-removal (``prerm``) and post-removal (``postrm``) stages.
 
 This archive contains all the files that would end up installed in the system when installing these packages,
 in the locations that they would end up in, relative to the root directory.
-
-More information
-""""""""""""""""
-
-`What is the format of a Debian binary package? <https://www.debian.org/doc/manuals/debian-faq/pkg-basics.en.html#deb-format>`_
 
 Debian package files with debug symbols for the binaries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -233,10 +219,19 @@ To run the Docker script, use this command:
 
     docker build -o <output_folder> -f DebPackage<version>.Dockerfile .
 
+More information
+----------------
+
+Some more expanded information from each section:
+
+- `Required files under the 'debian' directory <https://www.debian.org/doc/manuals/maint-guide/dreq.en.html>`__
+- `Building the package <https://www.debian.org/doc/manuals/maint-guide/build.en.html>`__
+- `What is the format of a Debian binary package? <https://www.debian.org/doc/manuals/debian-faq/pkg-basics.en.html#deb-format>`__
+
 More reading
 ------------
 
 Helpful sources for starting out:
 
-- `Basics of the Debian package management system <https://www.debian.org/doc/manuals/debian-faq/pkg-basics.en.html>`_
-- `Debian New Maintainers' Guide <https://www.debian.org/doc/manuals/maint-guide/index.en.html>`_
+- `Basics of the Debian package management system <https://www.debian.org/doc/manuals/debian-faq/pkg-basics.en.html>`__
+- `Debian New Maintainers' Guide <https://www.debian.org/doc/manuals/maint-guide/index.en.html>`__

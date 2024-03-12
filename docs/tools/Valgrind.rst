@@ -49,8 +49,8 @@ This will generate a suppression for each error the tool finds.
 By saving the supressions into a file one can then use those suppressions in the future
 by supplying the file it's saved in by using the ``--supressions=<filename>`` option.
 
-More information
-""""""""""""""""
+More information about suppression
+""""""""""""""""""""""""""""""""""
 
 - `Suppressing errors <https://valgrind.org/docs/manual/manual-core.html#manual-core.suppress>`_
 
