@@ -1,10 +1,10 @@
 Current status
 ==============
 
-The devices currently supported include:
+The devices currently supported in the Lime Suite NG software include:
 
 ..
-    TODO: update if something changes
+    TODO: Update if something changes
     TODO: Add MMX8 link when it exists
 
 - `LimeSDR-USB`_
@@ -17,7 +17,7 @@ The devices currently supported include:
 Hardware planned to be supported:
 
 ..
-    TODO: update if something changes
+    TODO: Update if something changes
 
 - TBD
 
