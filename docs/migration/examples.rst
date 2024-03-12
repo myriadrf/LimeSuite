@@ -9,9 +9,11 @@ Example ``dualRXTX`` written with the new API
 
 .. literalinclude:: ../../src/examples/dualRXTX.cpp
   :language: cpp
+  :linenos:
 
 Example ``dualRXTX`` written with the old API
 ---------------------------------------------
 
 .. literalinclude:: ../../src/examples/legacy/dualRXTX.cpp
   :language: cpp
+  :linenos:
