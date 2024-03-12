@@ -1,7 +1,7 @@
-API wrapper notes
-=================
+LMS API notes
+=============
 
-This is the table for all the known/expected changes to the legacy API.
+This is the table for all the known/expected changes to the older LMS API.
 
 ..
   TODO: Correct this whenever code changes

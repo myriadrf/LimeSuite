@@ -1,13 +1,13 @@
-Function equivalents
-====================
+LMS API and SDRDevice API function equivalents
+==============================================
 
 This section of the documentation provides the porting guide to change from the old LMS API to the new SDRDevice API.
 
-.. list-table:: Table 1: LMS API and SDRDevice API function exchange table.
+.. list-table:: Table 1: LMS API and SDRDevice API function equivalency table.
    :header-rows: 1
 
-   * - LMS API
-     - SDRDevice API
+   * - LMS API (old)
+     - SDRDevice API (new)
    * - ``LMS_GetDeviceList()``
      - ``lime::DeviceRegistry::enumerate()``
    * - ``LMS_Open()``
