@@ -1,9 +1,9 @@
-API migration
-=============
+API changes and migrations
+==========================
 
-This section contains information about how to migrate existing programs using the older LimeSuite LMS API to the newer SDRDevice API.
+This section contains information about how to migrate existing programs using the legacy LimeSuite LMS API to the newer SDRDevice API.
 
 .. toctree::
-   :glob:
 
-   *
+   LMS/index
+   SDRDevice/index

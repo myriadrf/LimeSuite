@@ -1,7 +1,7 @@
 LMS API changes
 ===============
 
-This is the table noting all the known differences to the functionality of the older LMS API.
+This is the table noting all the known differences to the functionality of the legacy LMS API included in Lime Suite NG compared to the previous iteration of LimeSuite (version 23.11.0).
 
 ..
   TODO: Correct this whenever code changes

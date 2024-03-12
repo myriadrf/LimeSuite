@@ -9,8 +9,8 @@ This section of the documentation provides the porting guide to change from the 
 .. list-table:: Table 1: LMS API and SDRDevice API function equivalency table.
    :header-rows: 1
 
-   * - LMS API (old)
-     - SDRDevice API (new)
+   * - LMS API (legacy)
+     - SDRDevice API
    * - ``LMS_GetDeviceList()``
      - ``lime::DeviceRegistry::enumerate()``
    * - ``LMS_Open()``
