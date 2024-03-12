@@ -135,8 +135,8 @@ The file contains MD5 checksums for every file in the ``data.tar`` archive.
 The scripts to run during the pre-installation (``preinst``), post-installation (``postinst``),
 pre-removal (``prerm``) and post-removal (``postrm``) stages.
 
-`data.tar`
-""""""""""
+``data.tar``
+""""""""""""
 
 This archive contains all the files that would end up installed in the system when installing these packages,
 in the locations that they would end up in, relative to the root directory.
