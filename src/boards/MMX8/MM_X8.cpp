@@ -649,6 +649,11 @@ uint32_t LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex16_t* const* d
     return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
 }
 
+uint32_t LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex12_t* const* dest, uint32_t count, StreamMeta* meta)
+{
+    return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
+}
+
 uint32_t LimeSDR_MMX8::StreamTx(
     uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
@@ -657,6 +662,12 @@ uint32_t LimeSDR_MMX8::StreamTx(
 
 uint32_t LimeSDR_MMX8::StreamTx(
     uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+{
+    return mSubDevices[moduleIndex]->StreamTx(0, samples, count, meta);
+}
+
+uint32_t LimeSDR_MMX8::StreamTx(
+    uint8_t moduleIndex, const lime::complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamTx(0, samples, count, meta);
 }

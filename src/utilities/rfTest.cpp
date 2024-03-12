@@ -171,8 +171,8 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
             float ampl = 1.0; //(j+1)*(1.0/(txPacketCount+1));
             for (int k = 0; k < samplesInPkt; ++k)
             {
-                txPattern[i][j * samplesInPkt + k].i = src[k & 3] * ampl;
-                txPattern[i][j * samplesInPkt + k].q = src[(k + 1) & 3] * ampl;
+                txPattern[i][j * samplesInPkt + k].real(src[k & 3] * ampl);
+                txPattern[i][j * samplesInPkt + k].imag(src[(k + 1) & 3] * ampl);
             }
         }
     }
@@ -290,9 +290,9 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
             int cnt = 100;
             for (int j = 0; j < cnt; ++j)
             {
-                float i = dest[0][j * 20].i;
+                float i = dest[0][j * 20].real();
                 sumi += i * i;
-                float q = dest[0][j * 20].q;
+                float q = dest[0][j * 20].imag();
                 sumq += q * q;
             }
             float rmsI = sqrt(sumi / cnt);
@@ -359,8 +359,8 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
             //float ampl = (j+1)*(1.0/(txPacketCount));
             for (int k = 0; k < samplesInPkt; ++k)
             {
-                txPattern[i][j * samplesInPkt + k].i = src[k & 3];
-                txPattern[i][j * samplesInPkt + k].q = src[(k + 1) & 3];
+                txPattern[i][j * samplesInPkt + k].real(src[k & 3]);
+                txPattern[i][j * samplesInPkt + k].imag(src[(k + 1) & 3]);
             }
         }
     }
@@ -422,12 +422,12 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
                     return false;
                 }
             }
-            float i = dest[0][0].i;
-            float q = dest[0][0].q;
+            float i = dest[0][0].real();
+            float q = dest[0][0].imag();
             float rxAmpl = sqrt(pow(i, 2) + pow(q, 2));
 
-            i = src[0][0].i;
-            q = src[0][0].q;
+            i = src[0][0].real();
+            q = src[0][0].imag();
             float txAmpl = sqrt(pow(i, 2) + pow(q, 2));
             printf("meta: %li, RxTS now:%li background amplitude: ~%g, %i Tx packets sent with target TS: %li, amplitude: %g\n\n",
                 rxMeta.timestamp,
@@ -442,8 +442,8 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
         {
             for (uint32_t j = 0; j < samplesRead; ++j)
             {
-                float i = dest[0][j].i;
-                float q = dest[0][j].q;
+                float i = dest[0][j].real();
+                float q = dest[0][j].imag();
                 float ampl = sqrt(pow(i, 2) + pow(q, 2));
                 if (ampl > 0.2)
                 {

@@ -98,7 +98,8 @@ template<class T> class TxBufferManager
             transferCount = std::min(transferCount, maxSamplesInPkt);
             if (transferCount > 0)
             {
-                int samplesDataSize = Interleave(src, transferCount, conversion, payloadPtr);
+                int samplesDataSize = Interleave(payloadPtr, src->front(), transferCount, conversion);
+                src->pop(transferCount);
                 payloadPtr = payloadPtr + samplesDataSize;
                 payloadSize += samplesDataSize;
                 bytesUsed += samplesDataSize;

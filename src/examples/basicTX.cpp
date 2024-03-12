@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
 
     // Use first available device
-    SDRDevice* device = DeviceRegistry::makeDevice(handles.at(0));
+    SDRDevice* device = DeviceRegistry::makeDevice(handles.at(1));
     if (!device)
     {
         std::cout << "Failed to connect to device" << std::endl;
@@ -114,8 +114,8 @@ int main(int argc, char** argv)
             float ampl = 0.8;
             for (int k = 0; k < samplesInPkt; ++k)
             {
-                txPattern[i][j * samplesInPkt + k].q = src[k & 3] * ampl;
-                txPattern[i][j * samplesInPkt + k].i = src[(k + 1) & 3] * ampl;
+                txPattern[i][j * samplesInPkt + k].imag(src[k & 3] * ampl);
+                txPattern[i][j * samplesInPkt + k].real(src[(k + 1) & 3] * ampl);
             }
         }
     }

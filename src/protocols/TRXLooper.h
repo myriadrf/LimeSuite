@@ -37,8 +37,10 @@ class TRXLooper
 
     virtual uint32_t StreamRx(lime::complex32f_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
     virtual uint32_t StreamRx(lime::complex16_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamRx(lime::complex12_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
     virtual uint32_t StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
     virtual uint32_t StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamTx(const lime::complex12_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
     /// @brief Sets the callback to use for message logging.
     /// @param callback The new callback to use.

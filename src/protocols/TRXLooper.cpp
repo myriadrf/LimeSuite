@@ -321,6 +321,12 @@ uint32_t TRXLooper::StreamRx(complex16_t* const* samples, uint32_t count, SDRDev
     return StreamRxTemplate<complex16_t>(samples, count, meta);
 }
 
+/// @copydoc TRXLooper::StreamRx()
+uint32_t TRXLooper::StreamRx(lime::complex12_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta)
+{
+    return StreamRxTemplate<complex12_t>(samples, count, meta);
+}
+
 template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     const bool useChannelB = mConfig.channels.at(lime::TRXDir::Tx).size() > 1;
@@ -403,6 +409,12 @@ uint32_t TRXLooper::StreamTx(const lime::complex32f_t* const* samples, uint32_t 
 
 /// @copydoc TRXLooper::StreamTx()
 uint32_t TRXLooper::StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
+{
+    return StreamTxTemplate(samples, count, meta);
+}
+
+/// @copydoc TRXLooper::StreamTx()
+uint32_t TRXLooper::StreamTx(const lime::complex12_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta)
 {
     return StreamTxTemplate(samples, count, meta);
 }

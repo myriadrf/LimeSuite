@@ -736,6 +736,8 @@ class LIME_API SDRDevice
     virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
     /// @copydoc SDRDevice::StreamRx()
     virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
+    /// @copydoc SDRDevice::StreamRx()
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex12_t* const* samples, uint32_t count, StreamMeta* meta) = 0;
 
     /// @brief Transmits packets from all the active streams in the device.
     /// @param moduleIndex The index of the device to transmit the samples with.
@@ -748,6 +750,9 @@ class LIME_API SDRDevice
     /// @copydoc SDRDevice::StreamTx()
     virtual uint32_t StreamTx(
         uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
+    /// @copydoc SDRDevice::StreamRx()
+    virtual uint32_t StreamTx(
+        uint8_t moduleIndex, const lime::complex12_t* const* samples, uint32_t count, const StreamMeta* meta) = 0;
 
     /// @brief Retrieves the current stream statistics.
     /// @param moduleIndex The index of the device to retrieve the status from.

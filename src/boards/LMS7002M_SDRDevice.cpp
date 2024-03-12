@@ -608,14 +608,14 @@ complex64f_t LMS7002M_SDRDevice::GetDCOffset(uint8_t moduleIndex, TRXDir trx, ui
     auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
     lms->GetDCOffset(trx, I, Q);
-    return { I, Q };
+    return complex64f_t(I, Q);
 }
 
 OpStatus LMS7002M_SDRDevice::SetDCOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& offset)
 {
     auto lms = mLMSChips.at(moduleIndex);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (channel % 2) + 1);
-    return lms->SetDCOffset(trx, offset.i, offset.q);
+    return lms->SetDCOffset(trx, offset.real(), offset.imag());
 }
 
 complex64f_t LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
@@ -631,7 +631,7 @@ complex64f_t LMS7002M_SDRDevice::GetIQBalance(uint8_t moduleIndex, TRXDir trx, u
 
 OpStatus LMS7002M_SDRDevice::SetIQBalance(uint8_t moduleIndex, TRXDir trx, uint8_t channel, const complex64f_t& balance)
 {
-    std::complex<double> bal{ balance.i, balance.q };
+    std::complex<double> bal{ balance.real(), balance.imag() };
     double gain = std::abs(bal);
 
     double gainI = 1.0;
@@ -794,13 +794,14 @@ OpStatus LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
 {
     lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
+    bool div4 = signalConfiguration.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
     switch (direction)
     {
     case TRXDir::Rx:
         if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_RXTSP), signalConfiguration.enabled, true) != OpStatus::SUCCESS)
             return ReportError(OpStatus::IO_FAILURE, "Failed to set Rx test signal.");
 
-        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), static_cast<uint8_t>(signalConfiguration.divide));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP), div4 ? 2 : 1);
         lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), static_cast<uint8_t>(signalConfiguration.scale));
         lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP), signalConfiguration.dcMode);
         break;
@@ -808,7 +809,7 @@ OpStatus LMS7002M_SDRDevice::SetTestSignal(uint8_t moduleIndex,
         if (lms->Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), signalConfiguration.enabled, true) != OpStatus::SUCCESS)
             return ReportError(OpStatus::IO_FAILURE, "Failed to set Tx test signal.");
 
-        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), static_cast<uint8_t>(signalConfiguration.divide));
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), div4 ? 2 : 1);
         lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), static_cast<uint8_t>(signalConfiguration.scale));
         lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), signalConfiguration.dcMode);
         break;
@@ -945,6 +946,11 @@ uint32_t LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t* const* d
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
+uint32_t LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex12_t* const* dest, uint32_t count, StreamMeta* meta)
+{
+    return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
+}
+
 uint32_t LMS7002M_SDRDevice::StreamTx(
     uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
@@ -953,6 +959,12 @@ uint32_t LMS7002M_SDRDevice::StreamTx(
 
 uint32_t LMS7002M_SDRDevice::StreamTx(
     uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+{
+    return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
+}
+
+uint32_t LMS7002M_SDRDevice::StreamTx(
+    uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
@@ -1206,7 +1218,7 @@ OpStatus LMS7002M_SDRDevice::LMS7002TestSignalConfigure(
         bool fullscale = signal.scale == SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full;
         bool div4 = signal.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
         chip->Modify_SPI_Reg_bits(LMS7_TSGFC_RXTSP, fullscale ? 1 : 0);
-        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_RXTSP, div4 ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_RXTSP, div4 ? 2 : 1);
         chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_RXTSP, signal.dcMode ? 1 : 0);
         chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
         // LMS7_TSGMODE_RXTSP change resets DC values
@@ -1220,7 +1232,7 @@ OpStatus LMS7002M_SDRDevice::LMS7002TestSignalConfigure(
         bool fullscale = signal.scale == SDRDevice::ChannelConfig::Direction::TestSignal::Scale::Full;
         bool div4 = signal.divide == SDRDevice::ChannelConfig::Direction::TestSignal::Divide::Div4;
         chip->Modify_SPI_Reg_bits(LMS7_TSGFC_TXTSP, fullscale ? 1 : 0);
-        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_TXTSP, div4 ? 1 : 0);
+        chip->Modify_SPI_Reg_bits(LMS7_TSGFCW_TXTSP, div4 ? 2 : 1);
         chip->Modify_SPI_Reg_bits(LMS7_TSGMODE_TXTSP, signal.dcMode ? 1 : 0);
         chip->SPI_write(0x040C, 0x01FF); // DC.. bypasss
         // LMS7_TSGMODE_TXTSP change resets DC values

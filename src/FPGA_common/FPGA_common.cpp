@@ -9,6 +9,7 @@
 #include <cmath>
 #include <thread>
 #include <vector>
+#include "samplesConversion.h"
 
 #ifndef NDEBUG
     #define ASSERT_WARNING(cond, message) \
@@ -675,30 +676,20 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
 {
     if (compressed) //compressed samples
     {
-        int16_t sample;
+        const complex12_t* src = reinterpret_cast<const complex12_t*>(buffer);
         int collected = 0;
-        for (int b = 0; b < bufLen; collected++)
+        int samplesToProcess = bufLen / sizeof(complex12_t);
+        for (int b = 0; b < samplesToProcess; collected++)
         {
             //I sample
-            sample = buffer[b++];
-            sample |= (buffer[b] << 8);
-            sample <<= 4;
-            samples[0][collected].i = sample >> 4;
-            //Q sample
-            sample = buffer[b++];
-            sample |= buffer[b++] << 8;
-            samples[0][collected].q = sample >> 4;
+            Rescale(samples[0][collected], *src);
+            ++b;
+            ++src;
             if (mimo)
             {
-                //I sample
-                sample = buffer[b++];
-                sample |= (buffer[b] << 8);
-                sample <<= 4;
-                samples[1][collected].i = sample >> 4;
-                //Q sample
-                sample = buffer[b++];
-                sample |= buffer[b++] << 8;
-                samples[1][collected].q = sample >> 4;
+                Rescale(samples[1][collected], *src);
+                ++b;
+                ++src;
             }
         }
         return collected;
@@ -731,33 +722,21 @@ int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo
 int FPGA::FPGAPacketPayload2SamplesFloat(
     const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t* const* samples)
 {
-    const float normalizationAmplitude = compressed ? 2048 : 32768;
     if (compressed) //compressed samples
     {
-        int16_t sample;
+        const complex12_t* src = reinterpret_cast<const complex12_t*>(buffer);
         int collected = 0;
-        for (int b = 0; b < bufLen; collected++)
+        int samplesToProcess = bufLen / sizeof(complex12_t);
+        for (int b = 0; b < samplesToProcess; collected++)
         {
-            //I sample
-            sample = buffer[b++];
-            sample |= (buffer[b] << 8);
-            sample <<= 4;
-            samples[0][collected].i = (sample >> 4) / normalizationAmplitude;
-            //Q sample
-            sample = buffer[b++];
-            sample |= buffer[b++] << 8;
-            samples[0][collected].q = (sample >> 4) / normalizationAmplitude;
+            Rescale(samples[0][collected], *src);
+            ++b;
+            ++src;
             if (mimo)
             {
-                //I sample
-                sample = buffer[b++];
-                sample |= (buffer[b] << 8);
-                sample <<= 4;
-                samples[1][collected].i = (sample >> 4) / normalizationAmplitude;
-                //Q sample
-                sample = buffer[b++];
-                sample |= buffer[b++] << 8;
-                samples[1][collected].q = (sample >> 4) / normalizationAmplitude;
+                Rescale(samples[1][collected], *src);
+                ++b;
+                ++src;
             }
         }
         return collected;
@@ -769,11 +748,9 @@ int FPGA::FPGAPacketPayload2SamplesFloat(
         const int collected = bufLen / sizeof(complex16_t) / 2;
         for (int i = 0; i < collected; i++)
         {
-            samples[0][i].i = (*src).i / normalizationAmplitude;
-            samples[0][i].q = (*src).q / normalizationAmplitude;
+            Rescale(samples[0][i], *src);
             ++src;
-            samples[1][i].i = (*src).i / normalizationAmplitude;
-            samples[1][i].q = (*src).q / normalizationAmplitude;
+            Rescale(samples[1][i], *src);
             ++src;
         }
         return collected;
@@ -783,8 +760,7 @@ int FPGA::FPGAPacketPayload2SamplesFloat(
         const int collected = bufLen / sizeof(complex16_t);
         for (int i = 0; i < collected; i++)
         {
-            samples[0][i].i = (*src).i / normalizationAmplitude;
-            samples[0][i].q = (*src).q / normalizationAmplitude;
+            Rescale(samples[0][i], *src);
             ++src;
         }
         return collected;
@@ -794,27 +770,16 @@ int FPGA::FPGAPacketPayload2SamplesFloat(
 int FPGA::Samples2FPGAPacketPayloadFloat(
     const complex32f_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer)
 {
-    const float amplitude = compressed ? 2047 : 32767;
     if (compressed)
     {
-        int b = 0;
+        complex12_t* dest = reinterpret_cast<complex12_t*>(buffer);
         for (int src = 0; src < samplesCount; ++src)
         {
-            int16_t i = samples[0][src].i * amplitude;
-            int16_t q = samples[0][src].q * amplitude;
-            buffer[b++] = i;
-            buffer[b++] = ((i >> 8) & 0x0F) | (q << 4);
-            buffer[b++] = q >> 4;
+            Rescale(dest[src], samples[0][src]);
             if (mimo)
-            {
-                int16_t i = samples[1][src].i * amplitude;
-                int16_t q = samples[1][src].q * amplitude;
-                buffer[b++] = i;
-                buffer[b++] = ((i >> 8) & 0x0F) | (q << 4);
-                buffer[b++] = q >> 4;
-            }
+                Rescale(dest[src], samples[1][src]);
         }
-        return b;
+        return samplesCount * sizeof(complex12_t);
     }
 
     complex16_t* dest = reinterpret_cast<complex16_t*>(buffer);
@@ -822,11 +787,9 @@ int FPGA::Samples2FPGAPacketPayloadFloat(
     {
         for (int src = 0; src < samplesCount; ++src)
         {
-            (*dest).i = samples[0][src].i * amplitude;
-            (*dest).q = samples[0][src].q * amplitude;
+            Rescale(*dest, samples[0][src]);
             ++dest;
-            (*dest).i = samples[1][src].i * amplitude;
-            (*dest).q = samples[1][src].q * amplitude;
+            Rescale(*dest, samples[1][src]);
             ++dest;
         }
         return samplesCount * sizeof(complex16_t) * 2;
@@ -834,11 +797,7 @@ int FPGA::Samples2FPGAPacketPayloadFloat(
     else
     {
         for (int src = 0; src < samplesCount; ++src)
-        {
-            (*dest).i = samples[0][src].i * amplitude;
-            (*dest).q = samples[0][src].q * amplitude;
-            ++dest;
-        }
+            Rescale(dest[src], samples[0][src]);
         return samplesCount * sizeof(complex16_t);
     }
 }
@@ -848,20 +807,18 @@ int FPGA::Samples2FPGAPacketPayload(
 {
     if (compressed)
     {
-        int b = 0;
+        complex12_t* dest = reinterpret_cast<complex12_t*>(buffer);
         for (int src = 0; src < samplesCount; ++src)
         {
-            buffer[b++] = samples[0][src].i;
-            buffer[b++] = ((samples[0][src].i >> 8) & 0x0F) | (samples[0][src].q << 4);
-            buffer[b++] = samples[0][src].q >> 4;
+            Rescale(*dest, samples[0][src]);
+            ++dest;
             if (mimo)
             {
-                buffer[b++] = samples[1][src].i;
-                buffer[b++] = ((samples[1][src].i >> 8) & 0x0F) | (samples[1][src].q << 4);
-                buffer[b++] = samples[1][src].q >> 4;
+                Rescale(*dest, samples[1][src]);
+                ++dest;
             }
         }
-        return b;
+        return samplesCount * sizeof(complex12_t);
     }
 
     if (mimo)

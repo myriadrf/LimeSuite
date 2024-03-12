@@ -729,7 +729,8 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
                 ++mTx.stats.loss;
 
             const int payloadSize = packetSize - 16;
-            const int samplesProduced = Deinterleave(conversion, pkt->data, payloadSize, outputPkt);
+            const int samplesProduced = Deinterleave(outputPkt->back(), pkt->data, payloadSize, conversion);
+            outputPkt->SetSize(outputPkt->size() + samplesProduced);
             expectedTS = pkt->counter + samplesProduced;
         }
         stats.packets += srcPktCount;

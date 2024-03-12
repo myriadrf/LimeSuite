@@ -166,8 +166,8 @@ template<uint8_t chCount> class SamplesPacket
             T* samples = reinterpret_cast<T*>(head[c]);
             for (int i = 0; i < samplesCount; ++i)
             {
-                samples[i].i *= iScale;
-                samples[i].q *= qScale;
+                samples[i].real(samples[i].real() * iScale);
+                samples[i].imag(samples[i].imag() * qScale);
             }
         }
     }

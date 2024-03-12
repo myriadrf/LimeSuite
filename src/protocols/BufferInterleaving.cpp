@@ -5,115 +5,96 @@
 
 namespace lime {
 
-template<class DestType, bool mimo, bool compressed> int ParseRxPayload(const uint8_t* buffer, int bufLen, DestType** samples)
+template<class SrcT, class DestT>
+static int DeinterleaveMIMO(DestT* const* dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
 {
-    if (compressed) //compressed samples
-    {
-        int16_t sample;
-        int collected = 0;
-        for (int b = 0; b < bufLen; collected++)
-        {
-            //I sample
-            sample = buffer[b++];
-            sample |= (buffer[b] << 8);
-            sample <<= 4;
-            samples[0][collected].i = sample >> 4;
-            //Q sample
-            sample = buffer[b++];
-            sample |= buffer[b++] << 8;
-            samples[0][collected].q = sample >> 4;
-            if (mimo)
-            {
-                //I sample
-                sample = buffer[b++];
-                sample |= (buffer[b] << 8);
-                sample <<= 4;
-                samples[1][collected].i = sample >> 4;
-                //Q sample
-                sample = buffer[b++];
-                sample |= buffer[b++] << 8;
-                samples[1][collected].q = sample >> 4;
-            }
-        }
-        return collected;
-    }
-
-    if (mimo) //uncompressed samples
-    {
-        const complex16_t* ptr = reinterpret_cast<const complex16_t*>(buffer);
-        const int collected = bufLen / sizeof(complex16_t) / 2;
-        for (int i = 0; i < collected; i++)
-        {
-            samples[0][i] = *ptr++;
-            samples[1][i] = *ptr++;
-        }
-        return collected;
-    }
-    else
-        memcpy(samples[0], buffer, bufLen);
-    return bufLen / sizeof(complex16_t);
-}
-
-int Deinterleave(const DataConversion& fmt, const uint8_t* buffer, uint32_t length, TRXLooper::SamplesPacketType* output)
-{
+    int samplesProduced = length / sizeof(SrcT);
     const bool mimo = fmt.channelCount > 1;
-    const bool compressed = fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    int samplesProduced;
-    if (fmt.destFormat == SDRDevice::StreamConfig::DataFormat::F32)
-    {
-        complex32f_t* const* dest = reinterpret_cast<complex32f_t* const*>(output->back());
-        if (!compressed)
-        {
-            samplesProduced = length / sizeof(complex16_t);
-            if (!mimo)
-                complex16_to_complex32f(dest[0], reinterpret_cast<const complex16_t*>(buffer), length / sizeof(complex16_t));
-            else
-            {
-                complex16_to_complex32f_unzip(
-                    dest[0], dest[1], reinterpret_cast<const complex16_t*>(buffer), length / sizeof(complex16_t));
-                samplesProduced /= 2;
-            }
-        }
-        else
-            samplesProduced = FPGA::FPGAPacketPayload2SamplesFloat(buffer, length, mimo, compressed, dest);
-    }
+    if (!mimo)
+        PathSelection(dest[0], reinterpret_cast<const SrcT*>(buffer), length / sizeof(SrcT));
     else
     {
-        complex16_t* const* dest = reinterpret_cast<complex16_t* const*>(output->back());
-        samplesProduced = FPGA::FPGAPacketPayload2Samples(buffer, length, mimo, compressed, dest);
+        PathSelectionUnzip(dest[0], dest[1], reinterpret_cast<const SrcT*>(buffer), length / sizeof(SrcT));
+        samplesProduced /= 2;
     }
-    output->SetSize(output->size() + samplesProduced);
     return samplesProduced;
 }
 
-int Interleave(TRXLooper::SamplesPacketType* input, uint32_t count, const DataConversion& fmt, uint8_t* buffer)
+template<class DestT>
+static int DeinterleaveCompressionType(DestT* const* dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
 {
-    const bool mimo = fmt.channelCount > 1;
-    const bool compressed = fmt.destFormat == SDRDevice::StreamConfig::DataFormat::I12;
-    int bytesProduced;
-    if (fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::F32)
+    const bool compressed = fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    if (!compressed)
+        return DeinterleaveMIMO<complex16_t>(dest, buffer, length, fmt);
+    else
+        return DeinterleaveMIMO<complex12packed_t>(dest, buffer, length, fmt);
+}
+
+int Deinterleave(void* const* dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
+{
+    int samplesProduced;
+    switch (fmt.destFormat)
     {
-        const complex32f_t* const* src = reinterpret_cast<const complex32f_t* const*>(input->front());
-        if (!compressed)
-        {
-            bytesProduced = count * sizeof(complex16_t);
-            if (!mimo)
-                complex32f_to_complex16(reinterpret_cast<complex16_t*>(buffer), src[0], count);
-            else
-            {
-                complex32f_to_complex16_zip(reinterpret_cast<complex16_t*>(buffer), src[0], src[1], count);
-                bytesProduced *= 2;
-            }
-        }
-        else
-            bytesProduced = FPGA::Samples2FPGAPacketPayloadFloat(src, count, mimo, compressed, buffer);
+    default:
+    case SDRDevice::StreamConfig::DataFormat::I16:
+        samplesProduced =
+            DeinterleaveCompressionType<complex16_t>(reinterpret_cast<complex16_t* const*>(dest), buffer, length, fmt);
+        break;
+    case SDRDevice::StreamConfig::DataFormat::F32:
+        samplesProduced =
+            DeinterleaveCompressionType<complex32f_t>(reinterpret_cast<complex32f_t* const*>(dest), buffer, length, fmt);
+        break;
+    case SDRDevice::StreamConfig::DataFormat::I12:
+        samplesProduced =
+            DeinterleaveCompressionType<complex12_t>(reinterpret_cast<complex12_t* const*>(dest), buffer, length, fmt);
+        break;
     }
+    return samplesProduced;
+}
+
+template<class DestT, class SrcT>
+static int InterleaveMIMO(uint8_t* buffer, const SrcT* const* input, uint32_t count, const DataConversion& fmt)
+{
+    DestT* dest = reinterpret_cast<DestT*>(buffer);
+    int bytesProduced = count * sizeof(DestT);
+    const bool mimo = fmt.channelCount > 1;
+    if (!mimo)
+        PathSelection(dest, input[0], count);
     else
     {
-        const complex16_t* const* src = reinterpret_cast<const complex16_t* const*>(input->front());
-        bytesProduced = FPGA::Samples2FPGAPacketPayload(src, count, mimo, compressed, buffer);
+        PathSelectionZip(dest, input[0], input[1], count);
+        bytesProduced *= 2;
     }
-    input->pop(count);
+    return bytesProduced;
+}
+
+template<class SrcT>
+static int InterleaveCompressionType(uint8_t* dest, const SrcT* const* src, uint32_t count, const DataConversion& fmt)
+{
+    const bool compressed = fmt.destFormat == SDRDevice::StreamConfig::DataFormat::I12;
+    if (!compressed)
+        return InterleaveMIMO<complex16_t>(dest, src, count, fmt);
+    else
+        return InterleaveMIMO<complex12packed_t>(dest, src, count, fmt);
+}
+
+int Interleave(uint8_t* dest, const void* const* src, uint32_t count, const DataConversion& fmt)
+{
+    int bytesProduced;
+    switch (fmt.srcFormat)
+    {
+    default:
+    case SDRDevice::StreamConfig::DataFormat::I16:
+        bytesProduced = InterleaveCompressionType<complex16_t>(dest, reinterpret_cast<const complex16_t* const*>(src), count, fmt);
+        break;
+    case SDRDevice::StreamConfig::DataFormat::F32:
+        bytesProduced =
+            InterleaveCompressionType<complex32f_t>(dest, reinterpret_cast<const complex32f_t* const*>(src), count, fmt);
+        break;
+    case SDRDevice::StreamConfig::DataFormat::I12:
+        bytesProduced = InterleaveCompressionType<complex12_t>(dest, reinterpret_cast<const complex12_t* const*>(src), count, fmt);
+        break;
+    }
     return bytesProduced;
 }
 

@@ -779,10 +779,9 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t* device, lms_stream_t* str
         break;
     case lms_stream_t::LMS_LINK_FMT_I12:
     case lms_stream_t::LMS_LINK_FMT_DEFAULT:
+    default:
         config.linkFormat = lime::SDRDevice::StreamConfig::DataFormat::I12;
         break;
-    default:
-        return lime::error("Setup stream failed: invalid link data format.");
     }
 
     // TODO: check functionality
@@ -986,9 +985,12 @@ API_EXPORT int CALL_CONV LMS_RecvStream(
     case lms_stream_t::LMS_FMT_F32:
         samplesProduced = ReceiveStream<lime::complex32f_t>(stream, samples, sample_count, meta, timeout_ms);
         break;
-    case lms_stream_t::LMS_FMT_I16:
     case lms_stream_t::LMS_FMT_I12:
+        samplesProduced = ReceiveStream<lime::complex12_t>(stream, samples, sample_count, meta, timeout_ms);
+        break;
+    case lms_stream_t::LMS_FMT_I16:
         samplesProduced = ReceiveStream<lime::complex16_t>(stream, samples, sample_count, meta, timeout_ms);
+        break;
     default:
         break;
     }
@@ -1097,9 +1099,12 @@ API_EXPORT int CALL_CONV LMS_SendStream(
     case lms_stream_t::LMS_FMT_F32:
         samplesSent = SendStream<lime::complex32f_t>(stream, samples, sample_count, meta, timeout_ms);
         break;
-    case lms_stream_t::LMS_FMT_I16:
     case lms_stream_t::LMS_FMT_I12:
+        samplesSent = SendStream<lime::complex12_t>(stream, samples, sample_count, meta, timeout_ms);
+        break;
+    case lms_stream_t::LMS_FMT_I16:
         samplesSent = SendStream<lime::complex16_t>(stream, samples, sample_count, meta, timeout_ms);
+        break;
     default:
         break;
     }

@@ -2,23 +2,26 @@
 #define LIME_COMPLEX_H
 
 #include <cstdint>
+#include <type_traits>
+#include <complex>
 
 namespace lime {
 
-/// @brief Structure to hold a 12 bit integer complex number.
-struct complex12compressed_t {
-    constexpr complex12compressed_t()
-        : complex12compressed_t(0, 0)
+/** @brief Structure to hold a 12 bit packed integer complex number.
+    Used only for data transfering to hardware.
+*/
+struct complex12packed_t {
+    constexpr complex12packed_t()
+        : complex12packed_t(0, 0)
     {
     }
 
     /// @brief Constructs the 12 bit compressed complex number.
     /// @param i The I value of the number.
     /// @param q The Q value of the number.
-    constexpr complex12compressed_t(int16_t i, int16_t q)
-        : data{ 0, 0, 0 }
+    constexpr complex12packed_t(int16_t i, int16_t q)
+        : data{ uint8_t(i), uint8_t((q << 4) | ((i >> 8) & 0x0F)), uint8_t(q >> 4) }
     {
-        Set(i, q);
     }
 
     /// @copydoc POD_complex_t::real()
@@ -44,7 +47,6 @@ struct complex12compressed_t {
     {
         int16_t value = data[1];
         value |= (data[2] << 8);
-        value <<= 4;
         value >>= 4;
         return value;
     }
@@ -67,6 +69,7 @@ struct complex12compressed_t {
   private:
     uint8_t data[3];
 };
+static_assert(std::is_trivially_copyable<complex12packed_t>::value == true);
 
 /// @brief Complex number structure for plain data types (int, float...)
 /// @tparam T The type of the number to hold.
@@ -115,52 +118,34 @@ template<class T> struct POD_complex_t {
 };
 
 /** @brief Structure to hold a 16 bit integer complex number. */
-struct complex16_t : public POD_complex_t<int16_t> {
-    constexpr complex16_t()
-        : complex16_t(0, 0)
-    {
-    }
+using complex16_t = POD_complex_t<int16_t>;
+static_assert(std::is_trivially_copyable<complex16_t>::value == true);
+
+/** @brief Structure to hold a 12 bit integer complex number.
+    Stored as 16 bit, but the actual used values range should be of 12bits
+*/
+// Inheriting complex16_t instead of using alias of POD_complex_t<int16_t> to
+// differentiate types for templating
+class complex12_t : public complex16_t
+{
+    constexpr complex12_t()
+        : complex16_t(){};
 
     /// @brief Constructs the 16 bit integer complex number.
     /// @param re The I (real) component of the number.
     /// @param im The Q (imaginary) component of the number.
-    constexpr complex16_t(int16_t re, int16_t im)
-        : POD_complex_t<int16_t>(re, im)
-    {
-    }
+    constexpr complex12_t(int16_t real, int16_t imag)
+        : complex16_t(real, imag){};
 };
+static_assert(std::is_trivially_copyable<complex12_t>::value == true);
 
 /** @brief Structure to hold a 32 bit float complex number. */
-struct complex32f_t : public POD_complex_t<float> {
-    constexpr complex32f_t()
-        : complex32f_t(0, 0)
-    {
-    }
-
-    /// @brief Constructs the 32 bit floating-point complex number.
-    /// @param re The I (real) component of the number.
-    /// @param im The Q (imaginary) component of the number.
-    constexpr complex32f_t(float re, float im)
-        : POD_complex_t<float>(re, im)
-    {
-    }
-};
+using complex32f_t = POD_complex_t<float>;
+static_assert(std::is_trivially_copyable<complex32f_t>::value == true);
 
 /** @brief Structure to hold a 64 bit float complex number. */
-struct complex64f_t : public POD_complex_t<double> {
-    constexpr complex64f_t()
-        : complex64f_t(0, 0)
-    {
-    }
-
-    /// @brief Constructs the 64 bit floating-point complex number.
-    /// @param re The I (real) component of the number.
-    /// @param im The Q (imaginary) component of the number.
-    constexpr complex64f_t(double re, double im)
-        : POD_complex_t<double>(re, im)
-    {
-    }
-};
+using complex64f_t = POD_complex_t<double>;
+static_assert(std::is_trivially_copyable<complex64f_t>::value == true);
 
 } // namespace lime
 
