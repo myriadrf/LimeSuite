@@ -12,11 +12,15 @@ The current differences from LimeSuite are:
 
 ..
     TODO: Update later on of more differences are noted
+    TODO: Add MMX8 link when it exists
 
 - PCIe device support. This includes:
-    + LimeSDR XTRX,
-    + LimeSDR X3,
+    + `LimeSDR XTRX`_,
+    + `LimeSDR X3`_,
     + LimeSDR MMX8.
 - Revamped UI
     + Connection menu moved to the main screen
     + A device tree is now being displayed.
+
+.. _LimeSDR XTRX: https://limesdr-xtrx.myriadrf.org/
+.. _LimeSDR X3: https://limesdr-x3.myriadrf.org/
