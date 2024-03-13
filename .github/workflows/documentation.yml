@@ -3,7 +3,13 @@ name: Documentation
 on:
   push:
     branches: [master, litepcie-update]
+    paths:
+      - 'docs/**'
+      - 'src/examples/**/dualRXTX.cpp'
   pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/examples/**/dualRXTX.cpp'
 
 jobs:
   build:
