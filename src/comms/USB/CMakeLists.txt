@@ -6,6 +6,10 @@ set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/comms/USB)
 include(${THIS_SOURCE_DIR}/FT601/CMakeLists.txt)
 include(${THIS_SOURCE_DIR}/FX3/CMakeLists.txt)
 
+if(NOT(ENABLE_USB_FTDI OR ENABLE_USB_FX3))
+    return()
+endif()
+
 set(COMMS_USB_SOURCES
     ${THIS_SOURCE_DIR}/LMS64C_FPGA_Over_USB.cpp
     ${THIS_SOURCE_DIR}/LMS64C_LMS7002M_Over_USB.cpp
