@@ -11,6 +11,8 @@
 #include <vector>
 #include "samplesConversion.h"
 
+using namespace std;
+
 #ifndef NDEBUG
     #define ASSERT_WARNING(cond, message) \
         if (!cond) \
@@ -356,8 +358,8 @@ OpStatus FPGA::ResetTimestamp()
 
 OpStatus FPGA::WaitTillDone(uint16_t pollAddr, uint16_t doneMask, uint16_t errorMask, const std::string& title)
 {
-    const auto timeout = std::chrono::seconds(3);
-    auto t1 = std::chrono::high_resolution_clock::now();
+    const auto timeout = chrono::seconds(3);
+    auto t1 = chrono::high_resolution_clock::now();
     bool done = false;
     uint16_t error = 0;
     if (!title.empty())
@@ -850,6 +852,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
         txPhase,
         rxPhase,
         chipIndex);
+    SelectModule(chipIndex);
     OpStatus status = OpStatus::SUCCESS;
 
     const uint32_t addr = 0x002A;
@@ -931,7 +934,7 @@ OpStatus FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int chipInde
     }
 
     if (!phaseSearch)
-        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz);
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, chipIndex);
 
     std::vector<uint32_t> dataRdA;
     std::vector<uint32_t> dataRdB;
