@@ -23,8 +23,6 @@ static double X8ReferenceClock = 30.72e6;
 
 /// @brief Constructs the LimeSDR_MMX8 object.
 ///
-/// Do not perform any unnecessary configuring to device in constructor, so you
-/// could read back it's state for debugging purposes
 /// @param spiLMS7002M The communications ports to the LMS7002M chips.
 /// @param spiFPGA The communications ports to the device's FPGA chips.
 /// @param trxStreams The communications ports to send and receive sample data.
@@ -37,6 +35,9 @@ LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     std::shared_ptr<ISPI> adfComms)
     : mTRXStreamPorts(trxStreams)
 {
+    /// Do not perform any unnecessary configuring to device in constructor, so you
+    /// could read back it's state for debugging purposes
+
     mMainFPGAcomms = spiFPGA[8];
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_MMX8);

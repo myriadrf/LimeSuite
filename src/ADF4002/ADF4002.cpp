@@ -325,8 +325,8 @@ void ADF4002::CalculateRN()
     lblFvco = dFvco;
 }
 
-/** @brief Writes configuration to chip
- * @param data The data to write to the chip.
+/** @brief Gets the configuration from chip
+ * @param data The data to read from the chip.
 */
 void ADF4002::GetConfig(unsigned char data[12])
 {

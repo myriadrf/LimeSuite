@@ -156,8 +156,6 @@ OpStatus LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
 
 /// @brief Constructs a new LimeSDR_X3 object
 ///
-/// Do not perform any unnecessary configuring to device in constructor, so you
-/// could read back it's state for debugging purposes
 /// @param spiLMS7002M The communications port to the LMS7002M chips.
 /// @param spiFPGA The communications port to the device's FPGA.
 /// @param trxStreams The communications ports to send and receive sample data.
@@ -171,6 +169,8 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     , mfpgaPort(spiFPGA)
     , mConfigInProgress(false)
 {
+    /// Do not perform any unnecessary configuring to device in constructor, so you
+    /// could read back it's state for debugging purposes
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo fw;

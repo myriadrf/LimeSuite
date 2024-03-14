@@ -105,8 +105,6 @@ OpStatus LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
 
 /// @brief Constructs a new LimeSDR_XTRX object
 ///
-/// Do not perform any unnecessary configuring to device in constructor, so you
-/// could read back it's state for debugging purposes.
 /// @param spiRFsoc The communications port to the LMS7002M chip.
 /// @param spiFPGA The communications port to the device's FPGA.
 /// @param sampleStream The communications port to send and receive sample data.
@@ -124,6 +122,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc,
     , mSerialPort(control)
     , mConfigInProgress(false)
 {
+    /// Do not perform any unnecessary configuring to device in constructor, so you
+    /// could read back it's state for debugging purposes.
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_XTRX);
 
