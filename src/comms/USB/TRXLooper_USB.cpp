@@ -191,11 +191,11 @@ void TRXLooper_USB::TransmitPacketsLoop()
             {
                 header->Clear();
                 ++packetsCreated;
-                header->counter = srcPkt->metadata.timestamp;
+                header->counter = srcPkt->timestamp;
                 bytesUsed += sizeof(StreamHeader);
             }
 
-            header->ignoreTimestamp(!srcPkt->metadata.waitForTimestamp);
+            header->ignoreTimestamp(!srcPkt->useTimestamp);
 
             const uint32_t freeSpace = std::min(maxPayloadSize - payloadSize, bufferSize - bytesUsed);
             uint32_t transferCount = std::min(freeSpace / bytesForFrame, static_cast<uint32_t>(srcPkt->size()));
@@ -234,7 +234,7 @@ void TRXLooper_USB::TransmitPacketsLoop()
                 payloadSize = 0;
                 packetsCreated = 0;
 
-                mTx.stats.timestamp = srcPkt->metadata.timestamp;
+                mTx.stats.timestamp = srcPkt->timestamp;
 
                 header = reinterpret_cast<StreamHeader*>(&buffers[bufferIndex * bufferSize]);
                 payloadPtr = reinterpret_cast<uint8_t*>(header) + sizeof(StreamHeader);

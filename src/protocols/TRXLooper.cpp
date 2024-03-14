@@ -265,14 +265,12 @@ template<class T> uint32_t TRXLooper::StreamRxTemplate(T* const* dest, uint32_t 
     //auto start = high_resolution_clock::now();
     while (samplesProduced < count)
     {
-        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 250))
-        {
+        if (!mRx.stagingPacket && !mRx.fifo->pop(&mRx.stagingPacket, firstIteration, 2000))
             return samplesProduced;
-        }
 
         if (!timestampSet && meta)
         {
-            meta->timestamp = mRx.stagingPacket->metadata.timestamp;
+            meta->timestamp = mRx.stagingPacket->timestamp;
             timestampSet = true;
         }
 
@@ -340,12 +338,10 @@ template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, 
     const int packetsToBatch = mTx.packetsToBatch;
     const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * sizeof(T);
 
-    if (mTx.stagingPacket && mTx.stagingPacket->metadata.timestamp + mTx.stagingPacket->size() != meta->timestamp)
+    if (mTx.stagingPacket && mTx.stagingPacket->timestamp + mTx.stagingPacket->size() != meta->timestamp)
     {
         if (!mTx.fifo->push(mTx.stagingPacket))
-        {
             return 0;
-        }
 
         mTx.stagingPacket = nullptr;
     }
@@ -359,21 +355,17 @@ template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, 
                 mTx.memPool->Allocate(outputPktSize), samplesInPkt * packetsToBatch, sizeof(T));
 
             if (!mTx.stagingPacket)
-            {
                 break;
-            }
 
             mTx.stagingPacket->Reset();
-            mTx.stagingPacket->metadata.timestamp = ts;
-            mTx.stagingPacket->metadata.waitForTimestamp = useTimestamp;
+            mTx.stagingPacket->timestamp = ts;
+            mTx.stagingPacket->useTimestamp = useTimestamp;
         }
 
         int consumed = mTx.stagingPacket->push(src, samplesRemaining);
         src[0] += consumed;
         if (useChannelB)
-        {
             src[1] += consumed;
-        }
 
         samplesRemaining -= consumed;
         ts += consumed;
@@ -381,14 +373,10 @@ template<class T> uint32_t TRXLooper::StreamTxTemplate(const T* const* samples, 
         if (mTx.stagingPacket->isFull() || flush)
         {
             if (samplesRemaining == 0)
-            {
-                mTx.stagingPacket->metadata.flushPartialPacket = flush;
-            }
+                mTx.stagingPacket->flush = flush;
 
             if (!mTx.fifo->push(mTx.stagingPacket))
-            {
                 break;
-            }
 
             mTx.stagingPacket = nullptr;
         }

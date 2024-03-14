@@ -290,10 +290,10 @@ void TRXLooper_PCIE::TransmitPacketsLoop()
             }
 
             // drop old packets before forming, Rx is needed to get current timestamp
-            if (srcPkt->metadata.waitForTimestamp && mConfig.channels.at(lime::TRXDir::Rx).size() > 0)
+            if (srcPkt->useTimestamp && mConfig.channels.at(lime::TRXDir::Rx).size() > 0)
             {
                 int64_t rxNow = mRx.lastTimestamp.load(std::memory_order_relaxed);
-                const int64_t txAdvance = srcPkt->metadata.timestamp - rxNow;
+                const int64_t txAdvance = srcPkt->timestamp - rxNow;
                 if (mConfig.hintSampleRate)
                 {
                     int64_t timeAdvance = ts_to_us(mConfig.hintSampleRate, txAdvance);
@@ -713,7 +713,7 @@ void TRXLooper_PCIE::ReceivePacketsLoop()
         uint8_t* buffer = dmaBuffers[dma.swIndex % bufferCount];
         const FPGA_RxDataPacket* pkt = reinterpret_cast<const FPGA_RxDataPacket*>(buffer);
         if (outputPkt)
-            outputPkt->metadata.timestamp = pkt->counter;
+            outputPkt->timestamp = pkt->counter;
 
         const int srcPktCount = mRxArgs.packetsToBatch;
         for (int i = 0; i < srcPktCount; ++i)

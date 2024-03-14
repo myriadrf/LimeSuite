@@ -4,8 +4,6 @@
 #include <cassert>
 #include <cstring>
 
-#include "limesuite/SDRDevice.h"
-
 namespace lime {
 
 /**
@@ -113,7 +111,7 @@ template<uint8_t chCount> class SamplesPacket
         for (uint8_t i = 0; i < chCount; ++i)
             head[i] += toPop * frameSize;
         offset += toPop;
-        metadata.timestamp += toPop; // Also offset timestamp
+        timestamp += toPop; // Also offset timestamp
         return toPop;
     }
 
@@ -172,6 +170,10 @@ template<uint8_t chCount> class SamplesPacket
         }
     }
 
+    uint64_t timestamp; ///< The timestamp of the packet.
+    bool useTimestamp; ///< Whether to use the timestamp or not.
+    bool flush; ///< Whether to flush the whole packet early or not.
+
   private:
     uint8_t* head[chCount];
     uint8_t* tail[chCount];
@@ -181,9 +183,6 @@ template<uint8_t chCount> class SamplesPacket
     uint32_t length;
     uint32_t mCapacity;
     uint8_t frameSize;
-
-  public:
-    SDRDevice::StreamMeta metadata; ///< The stream metadata of the packet.
 };
 
 } // namespace lime

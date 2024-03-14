@@ -86,11 +86,11 @@ template<class T> class TxBufferManager
                 payloadSize = 0;
             }
 
-            header->ignoreTimestamp(!src->metadata.waitForTimestamp);
+            header->ignoreTimestamp(!src->useTimestamp);
             if (payloadSize == 0)
             {
                 ++packetsCreated;
-                header->counter = src->metadata.timestamp;
+                header->counter = src->timestamp;
                 bytesUsed += sizeof(StreamHeader);
             }
             const uint32_t freeSpace = std::min(maxPayloadSize - payloadSize, mCapacity - bytesUsed - 16);
@@ -138,7 +138,7 @@ template<class T> class TxBufferManager
         }
         if (!hasSpace())
             return true;
-        return src->metadata.flushPartialPacket || sendBuffer;
+        return src->flush || sendBuffer;
     }
 
     /// @brief Gets the current size of the transfer.
