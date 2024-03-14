@@ -43,6 +43,11 @@ constexpr std::array<std::array<float_type, 2>, 3> LMS7002M::gVCO_frequency_tabl
 };
 constexpr std::array<float_type, 2> LMS7002M::gCGEN_VCO_frequencies{ 1930e6, 2940e6 };
 
+constexpr LMS7002M::Channel IntToChannel(int channel)
+{
+    return channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+}
+
 /// Define for parameter enumeration if prefix might be needed
 extern std::vector<std::reference_wrapper<const LMS7Parameter>> LMS7parameterList;
 
@@ -144,7 +149,7 @@ class ChannelScope
     {
         assert(index < 2);
         mStoredValue = chip->GetActiveChannel(!useCache);
-        auto expectedChannel = index > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+        auto expectedChannel = IntToChannel(index);
         if (mStoredValue == expectedChannel)
             return;
 
@@ -283,7 +288,7 @@ OpStatus LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool e
 {
     ChannelScope scope(this, channel, false);
 
-    const Channel ch = channel > 0 ? Channel::ChB : Channel::ChA;
+    const Channel ch = IntToChannel(channel);
 
     const bool isTx = dir == TRXDir::Tx;
     //--- LML ---
@@ -1358,7 +1363,7 @@ OpStatus LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainN
         txModeNCO = Get_SPI_Reg_bits(LMS7param(MODE_TX), true);
         for (int ch = 0; ch < 2; ++ch)
         {
-            this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
+            this->SetActiveChannel(IntToChannel(ch));
             for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
                 rxNCO[ch].push_back(GetNCOFrequency(TRXDir::Rx, i, false));
             for (int i = 0; i < 16 && txModeNCO == 0; ++i)
@@ -1402,7 +1407,7 @@ OpStatus LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainN
     //recalculate NCO
     for (int ch = 0; ch < 2 && retainNCOfrequencies; ++ch)
     {
-        this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
+        this->SetActiveChannel(IntToChannel(ch));
         for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
             SetNCOFrequency(TRXDir::Rx, i, rxNCO[ch][i]);
         for (int i = 0; i < 16 && txModeNCO == 0; ++i)
