@@ -93,9 +93,9 @@ set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/vectorization
 )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
-list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/limesuite/VersionInfo.in.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/include/limesuite/VersionInfo.cpp @ONLY)
+list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/include/limesuite/VersionInfo.cpp)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/SystemResources.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/SystemResources.cpp @ONLY)

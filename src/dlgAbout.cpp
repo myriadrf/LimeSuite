@@ -1,5 +1,5 @@
 #include "dlgAbout.h"
-#include "VersionInfo.h"
+#include "limesuite/VersionInfo.h"
 #include "resources/splash.h"
 dlgAbout::dlgAbout(wxWindow* parent)
     : dlgAbout_view(parent)

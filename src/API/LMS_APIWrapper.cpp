@@ -5,9 +5,9 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/GainTypes.h"
 #include "limesuite/SDRDevice.h"
+#include "limesuite/VersionInfo.h"
 #include "Logger.h"
 #include "MemoryPool.h"
-#include "VersionInfo.h"
 
 #include <algorithm>
 #include <array>
