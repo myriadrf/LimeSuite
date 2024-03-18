@@ -14,7 +14,7 @@ template<uint8_t chCount> class SamplesPacket
 {
   public:
     /** The size of the structure that holds the sample packet information. */
-    static constexpr int headerSize = sizeof(SamplesPacket<chCount>);
+    static constexpr int headerSize = 3 * sizeof(uint8_t*) * chCount + sizeof(uint64_t) + sizeof(uint32_t)*4; // TODO: should be sizeof(SamplesPacket<chCount>), but MSVC can't compile
 
     /**
       @brief Constructs the sample packet class.
@@ -170,9 +170,8 @@ template<uint8_t chCount> class SamplesPacket
         }
     }
 
+  public:
     uint64_t timestamp; ///< The timestamp of the packet.
-    bool useTimestamp; ///< Whether to use the timestamp or not.
-    bool flush; ///< Whether to flush the whole packet early or not.
 
   private:
     uint8_t* head[chCount];
@@ -183,6 +182,9 @@ template<uint8_t chCount> class SamplesPacket
     uint32_t length;
     uint32_t mCapacity;
     uint8_t frameSize;
+  public:
+    bool useTimestamp; ///< Whether to use the timestamp or not.
+    bool flush; ///< Whether to flush the whole packet early or not.
 };
 
 } // namespace lime
