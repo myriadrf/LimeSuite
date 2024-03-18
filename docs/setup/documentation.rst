@@ -40,6 +40,7 @@ In the `docs` folder, located in the root folder of the repository, while in the
     cmake -S .. -B ../build # Generate the make file for the suite.
     make --no-print-directory -C ../build doc # Build Doxygen documentation
     breathe-apidoc --generate class --members --force --output-dir apidoc ../build/xml/ # Generate the class API pages
+    python add_undoc_members.py # Add a flag to add all undocumented members into the page
     make html # Generate the documentation itself
 
 .. important:: 

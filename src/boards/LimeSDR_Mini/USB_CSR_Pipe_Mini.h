@@ -10,10 +10,14 @@ namespace lime {
 class USB_CSR_Pipe_Mini : public USB_CSR_Pipe
 {
   public:
+    /**
+      @brief Constructs a new USB_CSR_Pipe_Mini object
+      @param port The FT601 communications port to use.
+     */
     explicit USB_CSR_Pipe_Mini(FT601& port);
 
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
+    virtual int Write(const uint8_t* data, std::size_t length, int timeout_ms) override;
+    virtual int Read(uint8_t* data, std::size_t length, int timeout_ms) override;
 
   protected:
     FT601& port;

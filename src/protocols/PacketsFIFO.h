@@ -38,35 +38,33 @@ namespace lime {
 template<class T> class PacketsFIFO
 {
   public:
-    std::condition_variable canRead;
-    std::condition_variable canWrite;
-    std::mutex mwr;
-    std::mutex mrd;
-
     ///---------------------------------------------------------------------------
-    /// @brief Constructor. Asserts when the underlying type is not lock free
-    PacketsFIFO(size_t fixedSize)
+    /// @brief Constructor. Asserts when the underlying type is not lock free.
+    /// @param fixedSize The maximum size of the queue.
+    PacketsFIFO(std::size_t fixedSize)
         : RingBufferSize(fixedSize + 1)
     {
         m_ringBuffer.resize(RingBufferSize);
 #ifndef NDEBUG
-        std::atomic<size_t> test;
+        std::atomic<std::size_t> test;
         assert(test.is_lock_free());
 #endif
     }
 
     PacketsFIFO(const PacketsFIFO& src) = delete;
 
-    virtual ~PacketsFIFO() {}
+    virtual ~PacketsFIFO()
+    {
+    }
 
     ///---------------------------------------------------------------------------
-    /// @brief  Returns whether the queue is empty
-    /// @return True when empty
+    /// @brief  Returns whether the queue is empty.
+    /// @return True when empty.
     bool empty() const noexcept
     {
         bool isEmpty = false;
-        const size_t readPosition = m_readPosition.load();
-        const size_t writePosition = m_writePosition.load();
+        const std::size_t readPosition = m_readPosition.load();
+        const std::size_t writePosition = m_writePosition.load();
 
         if (readPosition == writePosition)
         {
@@ -77,17 +75,17 @@ template<class T> class PacketsFIFO
     }
 
     ///---------------------------------------------------------------------------
-    /// @brief  Pushes an element to the queue
-    /// @param  element  The element to add
-    /// @param wait Whether to wait or now
-    /// @param timeout The timeout (in ms) to wait for
-    /// @return True when the element was added, false when the queue is full
+    /// @brief Pushes an element to the queue.
+    /// @param element  The element to add.
+    /// @param wait Whether to wait or now.
+    /// @param timeout The timeout (in ms) to wait for.
+    /// @return True when the element was added, false when the queue is full.
     bool push(const T element, bool wait = false, int timeout = 250)
     {
         std::unique_lock<std::mutex> lk(mwr);
-        const size_t oldWritePosition = m_writePosition.load();
-        const size_t newWritePosition = getPositionAfter(oldWritePosition);
-        const size_t readPosition = m_readPosition.load();
+        const std::size_t oldWritePosition = m_writePosition.load();
+        const std::size_t newWritePosition = getPositionAfter(oldWritePosition);
+        const std::size_t readPosition = m_readPosition.load();
 
         if (newWritePosition == readPosition)
         {
@@ -114,11 +112,11 @@ template<class T> class PacketsFIFO
     }
 
     ///---------------------------------------------------------------------------
-    /// @brief  Pops an element from the queue
-    /// @param  element The returned element
-    /// @param wait Whether to wait or now
-    /// @param timeout The timeout (in ms) to wait for
-    /// @return True when succeeded, false when the queue is empty
+    /// @brief Pops an element from the queue.
+    /// @param element The returned element.
+    /// @param wait Whether to wait or now.
+    /// @param timeout The timeout (in ms) to wait for.
+    /// @return True when succeeded, false when the queue is empty.
     bool pop(T* element, bool wait = false, int timeout = 250)
     {
         std::unique_lock<std::mutex> lk(mwr);
@@ -141,7 +139,7 @@ template<class T> class PacketsFIFO
             }
         }
 
-        const size_t readPosition = m_readPosition.load();
+        const std::size_t readPosition = m_readPosition.load();
         *element = (m_ringBuffer[readPosition]);
         m_readPosition.store(getPositionAfter(readPosition));
         canWrite.notify_one();
@@ -149,11 +147,11 @@ template<class T> class PacketsFIFO
     }
 
     ///---------------------------------------------------------------------------
-    /// @brief Clears the content from the queue
+    /// @brief Clears the content from the queue.
     void clear() noexcept
     {
-        const size_t readPosition = m_readPosition.load();
-        const size_t writePosition = m_writePosition.load();
+        const std::size_t readPosition = m_readPosition.load();
+        const std::size_t writePosition = m_writePosition.load();
 
         if (readPosition != writePosition)
         {
@@ -162,24 +160,27 @@ template<class T> class PacketsFIFO
     }
 
     ///---------------------------------------------------------------------------
-    /// @brief  Returns the maximum size of the queue
-    /// @return The maximum number of elements the queue can hold
-    constexpr uint32_t max_size() const noexcept { return RingBufferSize - 1; }
+    /// @brief  Returns the maximum size of the queue.
+    /// @return The maximum number of elements the queue can hold.
+    constexpr std::size_t max_size() const noexcept
+    {
+        return RingBufferSize - 1;
+    }
 
     ///---------------------------------------------------------------------------
-    /// @brief  Returns the actual number of elements in the queue
-    /// @return The actual size or 0 when empty
-    uint32_t size() const noexcept
+    /// @brief  Returns the actual number of elements in the queue.
+    /// @return The actual size or 0 when empty.
+    std::size_t size() const noexcept
     {
-        const size_t readPosition = m_readPosition.load();
-        const size_t writePosition = m_writePosition.load();
+        const std::size_t readPosition = m_readPosition.load();
+        const std::size_t writePosition = m_writePosition.load();
 
         if (readPosition == writePosition)
         {
             return 0;
         }
 
-        size_t size = 0;
+        std::size_t size = 0;
         if (writePosition < readPosition)
         {
             size = RingBufferSize - readPosition + writePosition;
@@ -192,14 +193,22 @@ template<class T> class PacketsFIFO
         return size;
     }
 
-    size_t getPositionAfter(size_t pos) noexcept { return ((pos + 1 == RingBufferSize) ? 0 : pos + 1); }
-
   private:
     // A lock-free queue is basically a ring buffer.
-    size_t RingBufferSize;
+    std::size_t RingBufferSize;
     std::vector<T> m_ringBuffer;
-    std::atomic<size_t> m_readPosition = { 0 };
-    std::atomic<size_t> m_writePosition = { 0 };
+    std::atomic<std::size_t> m_readPosition = { 0 };
+    std::atomic<std::size_t> m_writePosition = { 0 };
+
+    std::condition_variable canRead;
+    std::condition_variable canWrite;
+    std::mutex mwr;
+    std::mutex mrd;
+
+    constexpr std::size_t getPositionAfter(std::size_t pos) const noexcept
+    {
+        return ((pos + 1 == RingBufferSize) ? 0 : pos + 1);
+    }
 };
 
 } // namespace lime

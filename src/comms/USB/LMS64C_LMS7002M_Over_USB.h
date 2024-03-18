@@ -11,6 +11,10 @@ namespace lime {
 class LMS64C_LMS7002M_Over_USB : public IComms
 {
   public:
+    /**
+      @brief Constructs a new LMS64C_LMS7002M_Over_USB object
+      @param dataPort The USB communications pipe to use.
+     */
     LMS64C_LMS7002M_Over_USB(std::shared_ptr<USB_CSR_Pipe> dataPort);
 
     virtual OpStatus SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;

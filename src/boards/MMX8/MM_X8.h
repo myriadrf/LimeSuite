@@ -27,7 +27,7 @@ class LimeSDR_MMX8 : public SDRDevice
         std::vector<std::shared_ptr<IComms>>& spiFPGA,
         std::vector<std::shared_ptr<LitePCIe>> trxStreams,
         std::shared_ptr<ISerialPort> control,
-        ISPI* adfComms);
+        std::shared_ptr<ISPI> adfComms);
     virtual ~LimeSDR_MMX8();
 
     virtual OpStatus Configure(const SDRConfig& config, uint8_t socIndex) override;
@@ -120,14 +120,14 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual void StreamStop(uint8_t moduleIndex) override;
     virtual void StreamStop(const std::vector<uint8_t> moduleIndexes) override;
 
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, lime::complex12_t* const* samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamTx(
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex16_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, lime::complex12_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamTx(
         uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(
+    virtual uint32_t StreamTx(
         uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(
+    virtual uint32_t StreamTx(
         uint8_t moduleIndex, const lime::complex12_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 

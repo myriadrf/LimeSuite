@@ -135,6 +135,11 @@ static const std::vector<std::pair<uint16_t, uint16_t>> lms7002defaultsOverrides
     { 0x040C, 0x00FB }
 };
 
+/// @brief Constructs a new LimeSDR_Mini object
+/// @param spiLMS The communications port to the LMS7002M chip.
+/// @param spiFPGA The communications port to the device's FPGA.
+/// @param streamPort The communications port to send and receive sample data.
+/// @param commsPort The communications port for direct communications with the device.
 LimeSDR_Mini::LimeSDR_Mini(std::shared_ptr<IComms> spiLMS,
     std::shared_ptr<IComms> spiFPGA,
     std::shared_ptr<USBGeneric> streamPort,
@@ -243,7 +248,7 @@ OpStatus LimeSDR_Mini::Configure(const SDRConfig& cfg, uint8_t moduleIndex = 0)
 
         if (cfg.referenceClockFreq != 0)
         {
-            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
+            mLMSChips[0]->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq);
         }
 
         if (rxUsed)
@@ -312,7 +317,7 @@ OpStatus LimeSDR_Mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-    if (lms->CalibrateTxGain(0, nullptr) != OpStatus::SUCCESS)
+    if (lms->CalibrateTxGain() != OpStatus::SUCCESS)
         return OpStatus::ERROR;
 
     lms->EnableChannel(TRXDir::Tx, 0, false);
@@ -358,12 +363,12 @@ OpStatus LimeSDR_Mini::Reset()
 
 double LimeSDR_Mini::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
-    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel);
+    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 OpStatus LimeSDR_Mini::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    return mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
+    return mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 OpStatus LimeSDR_Mini::Synchronize(bool toChip)
@@ -379,16 +384,6 @@ OpStatus LimeSDR_Mini::Synchronize(bool toChip)
     }
     else
         return mLMSChips[0]->DownloadAll();
-}
-
-void LimeSDR_Mini::EnableCache(bool enable)
-{
-    mLMSChips[0]->EnableValuesCache(enable);
-
-    if (mFPGA)
-    {
-        mFPGA->EnableValuesCache(enable);
-    }
 }
 
 OpStatus LimeSDR_Mini::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
@@ -656,11 +651,6 @@ void LimeSDR_Mini::StreamStop(uint8_t moduleIndex)
 
     delete mStreamers[0];
     mStreamers[0] = nullptr;
-}
-
-void* LimeSDR_Mini::GetInternalChip(uint32_t index)
-{
-    return mLMSChips.at(index);
 }
 
 OpStatus LimeSDR_Mini::GPIODirRead(uint8_t* buffer, const size_t bufLength)

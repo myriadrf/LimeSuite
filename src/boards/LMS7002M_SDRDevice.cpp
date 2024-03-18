@@ -422,7 +422,9 @@ OpStatus LMS7002M_SDRDevice::ConfigureGFIR(
     uint8_t moduleIndex, TRXDir trx, uint8_t channel, ChannelConfig::Direction::GFIRFilter settings)
 {
     LMS7002M* lms = mLMSChips.at(moduleIndex);
-    return lms->SetGFIRFilter(trx, channel, settings.enabled, settings.bandwidth);
+    LMS7002M::Channel enumChannel = channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+
+    return lms->SetGFIRFilter(trx, enumChannel, settings.enabled, settings.bandwidth);
 }
 
 OpStatus LMS7002M_SDRDevice::SetGain(uint8_t moduleIndex, TRXDir direction, uint8_t channel, eGainTypes gain, double value)
@@ -934,32 +936,35 @@ void LMS7002M_SDRDevice::StreamStop(uint8_t moduleIndex)
     mStreamers[moduleIndex] = nullptr;
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
+uint32_t LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t* const* dest, uint32_t count, StreamMeta* meta)
+uint32_t LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex16_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex12_t* const* dest, uint32_t count, StreamMeta* meta)
+uint32_t LMS7002M_SDRDevice::StreamRx(uint8_t moduleIndex, complex12_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamRx(dest, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
+uint32_t LMS7002M_SDRDevice::StreamTx(
+    uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+uint32_t LMS7002M_SDRDevice::StreamTx(
+    uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
 
-int LMS7002M_SDRDevice::StreamTx(uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
+uint32_t LMS7002M_SDRDevice::StreamTx(
+    uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mStreamers[moduleIndex]->StreamTx(samples, count, meta);
 }
@@ -1004,7 +1009,7 @@ OpStatus LMS7002M_SDRDevice::UpdateFPGAInterfaceFrequency(LMS7002M& soc, FPGA& f
     OpStatus status = fpga.SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipIndex);
     if (status != OpStatus::SUCCESS)
         return status;
-    soc.ResetLogicregisters();
+    soc.ResetLogicRegisters();
     return OpStatus::SUCCESS;
 }
 
@@ -1100,7 +1105,7 @@ OpStatus LMS7002M_SDRDevice::LMS7002LOConfigure(LMS7002M* chip, const SDRDevice:
     OpStatus status = OpStatus::SUCCESS;
     if (cfg.referenceClockFreq != 0)
     {
-        status = chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq, 0);
+        status = chip->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, cfg.referenceClockFreq);
         if (status != OpStatus::SUCCESS)
             return status;
     }
@@ -1159,13 +1164,16 @@ OpStatus LMS7002M_SDRDevice::LMS7002ChannelConfigure(LMS7002M* chip, const SDRDe
 OpStatus LMS7002M_SDRDevice::LMS7002ChannelCalibration(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex)
 {
     int i = channelIndex;
-    chip->SetActiveChannel(i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB);
+    auto enumChannel = i == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB;
+    chip->SetActiveChannel(enumChannel);
     const SDRDevice::ChannelConfig& ch = config;
 
     // TODO: Don't configure GFIR when external ADC/DAC is used
-    if (ch.rx.enabled && chip->SetGFIRFilter(TRXDir::Rx, i, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != OpStatus::SUCCESS)
+    if (ch.rx.enabled &&
+        chip->SetGFIRFilter(TRXDir::Rx, enumChannel, ch.rx.gfir.enabled, ch.rx.gfir.bandwidth) != OpStatus::SUCCESS)
         return lime::ReportError(OpStatus::ERROR, "Rx ch%i GFIR config failed", i);
-    if (ch.tx.enabled && chip->SetGFIRFilter(TRXDir::Tx, i, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != OpStatus::SUCCESS)
+    if (ch.tx.enabled &&
+        chip->SetGFIRFilter(TRXDir::Tx, enumChannel, ch.tx.gfir.enabled, ch.tx.gfir.bandwidth) != OpStatus::SUCCESS)
         return lime::ReportError(OpStatus::ERROR, "Tx ch%i GFIR config failed", i);
 
     if (ch.rx.calibrate && ch.rx.enabled)

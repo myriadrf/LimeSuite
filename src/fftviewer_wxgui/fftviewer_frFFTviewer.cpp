@@ -473,8 +473,8 @@ void fftviewer_frFFTviewer::StreamingLoop(
 
     pthis->mStreamRunning.store(true);
     SDRDevice::StreamMeta txMeta;
-    txMeta.useTimestamp = syncTx;
-    txMeta.flush = true;
+    txMeta.waitForTimestamp = syncTx;
+    txMeta.flushPartialPacket = true;
     int fftCounter = 0;
 
     SDRDevice::StreamMeta rxMeta;

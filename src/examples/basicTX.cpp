@@ -128,15 +128,15 @@ int main(int argc, char** argv)
 
     SDRDevice::StreamMeta txMeta;
     txMeta.timestamp = 0;
-    txMeta.useTimestamp = true;
-    txMeta.flush = true;
+    txMeta.waitForTimestamp = true;
+    txMeta.flushPartialPacket = true;
 
-    int totalSamplesSent = 0;
+    uint32_t totalSamplesSent = 0;
 
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram) //run for 10 seconds
     {
-        int samplesToSend = samplesInPkt * txPacketCount;
-        int samplesSent = device->StreamTx(chipIndex, src, samplesToSend, &txMeta);
+        uint32_t samplesToSend = samplesInPkt * txPacketCount;
+        uint32_t samplesSent = device->StreamTx(chipIndex, src, samplesToSend, &txMeta);
         if (samplesSent < 0)
         {
             printf("Failure to send\n");

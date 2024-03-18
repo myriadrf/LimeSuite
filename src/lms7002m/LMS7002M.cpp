@@ -38,8 +38,15 @@
 
 using namespace lime;
 
-float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, { 6306e6, 7714e6 } };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = { 1930e6, 2940e6 };
+constexpr std::array<std::array<float_type, 2>, 3> LMS7002M::gVCO_frequency_table{
+    { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, { 6306e6, 7714e6 } }
+};
+constexpr std::array<float_type, 2> LMS7002M::gCGEN_VCO_frequencies{ 1930e6, 2940e6 };
+
+constexpr LMS7002M::Channel IntToChannel(int channel)
+{
+    return channel > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+}
 
 /// Define for parameter enumeration if prefix might be needed
 extern std::vector<std::reference_wrapper<const LMS7Parameter>> LMS7parameterList;
@@ -61,10 +68,57 @@ const std::vector<LMS7002M::ReadOnlyRegister> LMS7002M::readOnlyRegisters{
     { 0x040F, 0x0000 },
 };
 
+const std::map<LMS7002M::MemorySection, std::array<uint16_t, 2>> LMS7002M::MemorySectionAddresses{
+    { LMS7002M::MemorySection::LimeLight, { 0x0020, 0x002F } },
+    { LMS7002M::MemorySection::EN_DIR, { 0x0081, 0x0081 } },
+    { LMS7002M::MemorySection::AFE, { 0x0082, 0x0082 } },
+    { LMS7002M::MemorySection::BIAS, { 0x0084, 0x0084 } },
+    { LMS7002M::MemorySection::XBUF, { 0x0085, 0x0085 } },
+    { LMS7002M::MemorySection::CGEN, { 0x0086, 0x008C } },
+    { LMS7002M::MemorySection::LDO, { 0x0092, 0x00A7 } },
+    { LMS7002M::MemorySection::BIST, { 0x00A8, 0x00AC } },
+    { LMS7002M::MemorySection::CDS, { 0x00AD, 0x00AE } },
+    { LMS7002M::MemorySection::TRF, { 0x0100, 0x0104 } },
+    { LMS7002M::MemorySection::TBB, { 0x0105, 0x010B } },
+    { LMS7002M::MemorySection::RFE, { 0x010C, 0x0114 } },
+    { LMS7002M::MemorySection::RBB, { 0x0115, 0x011A } },
+    { LMS7002M::MemorySection::SX, { 0x011C, 0x0124 } },
+    { LMS7002M::MemorySection::TRX_GAIN, { 0x0125, 0x0126 } },
+    { LMS7002M::MemorySection::TxTSP, { 0x0200, 0x020C } },
+    { LMS7002M::MemorySection::TxNCO, { 0x0240, 0x0261 } },
+    { LMS7002M::MemorySection::TxGFIR1, { 0x0280, 0x02A7 } },
+    { LMS7002M::MemorySection::TxGFIR2, { 0x02C0, 0x02E7 } },
+    { LMS7002M::MemorySection::TxGFIR3a, { 0x0300, 0x0327 } },
+    { LMS7002M::MemorySection::TxGFIR3b, { 0x0340, 0x0367 } },
+    { LMS7002M::MemorySection::TxGFIR3c, { 0x0380, 0x03A7 } },
+    { LMS7002M::MemorySection::RxTSP, { 0x0400, 0x040F } },
+    { LMS7002M::MemorySection::RxNCO, { 0x0440, 0x0461 } },
+    { LMS7002M::MemorySection::RxGFIR1, { 0x0480, 0x04A7 } },
+    { LMS7002M::MemorySection::RxGFIR2, { 0x04C0, 0x04E7 } },
+    { LMS7002M::MemorySection::RxGFIR3a, { 0x0500, 0x0527 } },
+    { LMS7002M::MemorySection::RxGFIR3b, { 0x0540, 0x0567 } },
+    { LMS7002M::MemorySection::RxGFIR3c, { 0x0580, 0x05A7 } },
+    { LMS7002M::MemorySection::RSSI_DC_CALIBRATION, { 0x05C0, 0x05CC } },
+    { LMS7002M::MemorySection::RSSI_PDET_TEMP_CONFIG, { 0x0600, 0x0606 } },
+    { LMS7002M::MemorySection::RSSI_DC_CONFIG, { 0x0640, 0x0641 } },
+};
+
 /** @brief Switches LMS7002M SPI to requested channel and restores previous channel when going out of scope */
 class ChannelScope
 {
   public:
+    /**
+   * @brief Saves the current channel and restores it at scope exit.
+   * @param chip The chip to use.
+   * @param useCache Whether to use caching or not.
+   */
+    ChannelScope(LMS7002M* chip, bool useCache = false)
+        : mChip(chip)
+        , mStoredValue(chip->GetActiveChannel(!useCache))
+        , mNeedsRestore(true)
+    {
+    }
+
     /**
       @brief Convenient constructor when using explicit MAC value.
       @param chip The chip to use.
@@ -73,13 +127,13 @@ class ChannelScope
      */
     ChannelScope(LMS7002M* chip, LMS7002M::Channel mac, bool useCache = false)
         : mChip(chip)
+        , mStoredValue(chip->GetActiveChannel(!useCache))
         , mNeedsRestore(false)
     {
-        mStoredValue = chip->GetActiveChannel(!useCache);
         if (mStoredValue == mac)
             return;
 
-        chip->SetActiveChannel(mac);
+        mChip->SetActiveChannel(mac);
         mNeedsRestore = true;
     }
 
@@ -95,7 +149,7 @@ class ChannelScope
     {
         assert(index < 2);
         mStoredValue = chip->GetActiveChannel(!useCache);
-        auto expectedChannel = index > 0 ? LMS7002M::Channel::ChB : LMS7002M::Channel::ChA;
+        auto expectedChannel = IntToChannel(index);
         if (mStoredValue == expectedChannel)
             return;
 
@@ -198,74 +252,8 @@ LMS7002M::LMS7002M(std::shared_ptr<ISPI> port)
     , controlPort(port)
     , _cachedRefClockRate(30.72e6)
 {
-    mCalibrationByMCU = true;
     opt_gain_tbb[0] = -1;
     opt_gain_tbb[1] = -1;
-    //memory intervals for registers tests and calibration algorithms
-    MemorySectionAddresses[LimeLight][0] = 0x0020;
-    MemorySectionAddresses[LimeLight][1] = 0x002F;
-    MemorySectionAddresses[EN_DIR][0] = 0x0081;
-    MemorySectionAddresses[EN_DIR][1] = 0x0081;
-    MemorySectionAddresses[AFE][0] = 0x0082;
-    MemorySectionAddresses[AFE][1] = 0x0082;
-    MemorySectionAddresses[BIAS][0] = 0x0084;
-    MemorySectionAddresses[BIAS][1] = 0x0084;
-    MemorySectionAddresses[XBUF][0] = 0x0085;
-    MemorySectionAddresses[XBUF][1] = 0x0085;
-    MemorySectionAddresses[CGEN][0] = 0x0086;
-    MemorySectionAddresses[CGEN][1] = 0x008C;
-    MemorySectionAddresses[LDO][0] = 0x0092;
-    MemorySectionAddresses[LDO][1] = 0x00A7;
-    MemorySectionAddresses[BIST][0] = 0x00A8;
-    MemorySectionAddresses[BIST][1] = 0x00AC;
-    MemorySectionAddresses[CDS][0] = 0x00AD;
-    MemorySectionAddresses[CDS][1] = 0x00AE;
-    MemorySectionAddresses[TRF][0] = 0x0100;
-    MemorySectionAddresses[TRF][1] = 0x0104;
-    MemorySectionAddresses[TBB][0] = 0x0105;
-    MemorySectionAddresses[TBB][1] = 0x010B;
-    MemorySectionAddresses[RFE][0] = 0x010C;
-    MemorySectionAddresses[RFE][1] = 0x0114;
-    MemorySectionAddresses[RBB][0] = 0x0115;
-    MemorySectionAddresses[RBB][1] = 0x011A;
-    MemorySectionAddresses[SX][0] = 0x011C;
-    MemorySectionAddresses[SX][1] = 0x0124;
-    MemorySectionAddresses[TRX_GAIN][0] = 0x0125;
-    MemorySectionAddresses[TRX_GAIN][1] = 0x0126;
-    MemorySectionAddresses[TxTSP][0] = 0x0200;
-    MemorySectionAddresses[TxTSP][1] = 0x020C;
-    MemorySectionAddresses[TxNCO][0] = 0x0240;
-    MemorySectionAddresses[TxNCO][1] = 0x0261;
-    MemorySectionAddresses[TxGFIR1][0] = 0x0280;
-    MemorySectionAddresses[TxGFIR1][1] = 0x02A7;
-    MemorySectionAddresses[TxGFIR2][0] = 0x02C0;
-    MemorySectionAddresses[TxGFIR2][1] = 0x02E7;
-    MemorySectionAddresses[TxGFIR3a][0] = 0x0300;
-    MemorySectionAddresses[TxGFIR3a][1] = 0x0327;
-    MemorySectionAddresses[TxGFIR3b][0] = 0x0340;
-    MemorySectionAddresses[TxGFIR3b][1] = 0x0367;
-    MemorySectionAddresses[TxGFIR3c][0] = 0x0380;
-    MemorySectionAddresses[TxGFIR3c][1] = 0x03A7;
-    MemorySectionAddresses[RxTSP][0] = 0x0400;
-    MemorySectionAddresses[RxTSP][1] = 0x040F;
-    MemorySectionAddresses[RxNCO][0] = 0x0440;
-    MemorySectionAddresses[RxNCO][1] = 0x0461;
-    MemorySectionAddresses[RxGFIR1][0] = 0x0480;
-    MemorySectionAddresses[RxGFIR1][1] = 0x04A7;
-    MemorySectionAddresses[RxGFIR2][0] = 0x04C0;
-    MemorySectionAddresses[RxGFIR2][1] = 0x04E7;
-    MemorySectionAddresses[RxGFIR3a][0] = 0x0500;
-    MemorySectionAddresses[RxGFIR3a][1] = 0x0527;
-    MemorySectionAddresses[RxGFIR3b][0] = 0x0540;
-    MemorySectionAddresses[RxGFIR3b][1] = 0x0567;
-    MemorySectionAddresses[RxGFIR3c][0] = 0x0580;
-    MemorySectionAddresses[RxGFIR3c][1] = 0x05A7;
-    MemorySectionAddresses[RSSI_DC_CALIBRATION][0] = 0x05C0;
-    MemorySectionAddresses[RSSI_DC_CALIBRATION][1] = 0x05CC;
-    MemorySectionAddresses[RSSI_PDET_TEMP_CONFIG][0] = 0x0600;
-    MemorySectionAddresses[RSSI_PDET_TEMP_CONFIG][1] = 0x0606;
-    MemorySectionAddresses[RSSI_DC_CONFIG][0] = 0x0640;
-    MemorySectionAddresses[RSSI_DC_CONFIG][1] = 0x0641;
 
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     mcuControl = new MCU_BD();
@@ -298,10 +286,9 @@ size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
 
 OpStatus LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool enable)
 {
-    ChannelScope scope(this, channel);
+    ChannelScope scope(this, channel, false);
 
-    const Channel ch = this->GetActiveChannel();
-    this->SetActiveChannel(channel > 0 ? Channel::ChB : Channel::ChA);
+    const Channel ch = IntToChannel(channel);
 
     const bool isTx = dir == TRXDir::Tx;
     //--- LML ---
@@ -437,9 +424,6 @@ OpStatus LMS7002M::EnableChannel(TRXDir dir, const uint8_t channel, const bool e
     return OpStatus::SUCCESS;
 }
 
-/** @brief Sends reset signal to chip, after reset enables B channel controls
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::ResetChip()
 {
     OpStatus status;
@@ -495,7 +479,6 @@ OpStatus LMS7002M::LoadConfigLegacyFile(const std::string& filename)
 
     uint16_t addr = 0;
     uint16_t value = 0;
-    Channel ch = this->GetActiveChannel(); //remember used channel
     OpStatus status;
     typedef INI<std::string, std::string, std::string> ini_t;
     ini_t parser(filename, true);
@@ -519,6 +502,8 @@ OpStatus LMS7002M::LoadConfigLegacyFile(const std::string& filename)
     std::vector<uint16_t> dataToWrite;
     if (fileVersion == 1)
     {
+        ChannelScope scope(this);
+
         if (parser.select("Reference clocks"))
         {
             this->SetReferenceClk_SX(TRXDir::Rx, parser.get("SXR reference frequency MHz", 30.72) * 1e6);
@@ -658,17 +643,11 @@ OpStatus LMS7002M::LoadConfigLegacyFile(const std::string& filename)
                 }
             }
         }
-        this->SetActiveChannel(ch);
         return OpStatus::SUCCESS;
     }
     return ReportError(OpStatus::INVALID_VALUE, "LoadConfigLegacyFile(%s) - invalid format", filename.c_str());
 }
 
-/** @brief Reads configuration file and uploads registers to chip
-    @param filename Configuration source file
-    @param tuneDynamicValues Whether to tune the dynamic values or not
-    @return 0 - success, other - failure
-*/
 OpStatus LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValues)
 {
     std::ifstream f(filename);
@@ -681,7 +660,6 @@ OpStatus LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValue
 
     uint16_t addr = 0;
     uint16_t value = 0;
-    Channel ch = this->GetActiveChannel(); //remember used channel
 
     OpStatus status;
     typedef INI<std::string, std::string, std::string> ini_t;
@@ -710,6 +688,7 @@ OpStatus LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValue
 
     if (fileVersion == 1)
     {
+        ChannelScope scope(this);
         if (parser.select("lms7002_registers_a") == true)
         {
             ini_t::sectionsit_t section = parser.sections.find("lms7002_registers_a");
@@ -768,14 +747,13 @@ OpStatus LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValue
             if (status != OpStatus::SUCCESS && controlPort != nullptr)
                 return status;
         }
-        this->SetActiveChannel(ch);
 
         parser.select("reference_clocks");
         this->SetReferenceClk_SX(TRXDir::Rx, parser.get("sxr_ref_clk_mhz", 30.72) * 1e6);
         this->SetReferenceClk_SX(TRXDir::Tx, parser.get("sxt_ref_clk_mhz", 30.72) * 1e6);
     }
 
-    ResetLogicregisters();
+    ResetLogicRegisters();
 
     if (tuneDynamicValues)
     {
@@ -796,7 +774,7 @@ OpStatus LMS7002M::LoadConfig(const std::string& filename, bool tuneDynamicValue
     return OpStatus::SUCCESS;
 }
 
-OpStatus LMS7002M::ResetLogicregisters()
+OpStatus LMS7002M::ResetLogicRegisters()
 {
     const uint16_t x0020_value = SPI_read(0x0020); //reset logic registers
     const uint16_t addr[] = { 0x0020, 0x0020 };
@@ -809,10 +787,6 @@ OpStatus LMS7002M::ResetLogicregisters()
     return SPI_write_batch(addr, values, 2);
 }
 
-/** @brief Reads all registers from chip and saves to file
-    @param filename destination filename
-    @return 0-success, other failure
-*/
 OpStatus LMS7002M::SaveConfig(const std::string& filename)
 {
     std::ofstream fout;
@@ -824,12 +798,13 @@ OpStatus LMS7002M::SaveConfig(const std::string& filename)
     char addr[80];
     char value[80];
 
-    Channel ch = this->GetActiveChannel();
+    ChannelScope scope(this);
 
     std::vector<uint16_t> addrToRead;
-    for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
-        for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
+    for (const auto& memorySectionPair : MemorySectionAddresses)
+        for (uint16_t addr = memorySectionPair.second[0]; addr <= memorySectionPair.second[1]; ++addr)
             addrToRead.push_back(addr);
+
     std::vector<uint16_t> dataReceived;
     dataReceived.resize(addrToRead.size(), 0);
 
@@ -861,9 +836,9 @@ OpStatus LMS7002M::SaveConfig(const std::string& filename)
 
     fout << "[lms7002_registers_b]" << std::endl;
     addrToRead.clear(); //add only B channel addresses
-    for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
-        if (i != RSSI_DC_CALIBRATION)
-            for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
+    for (const auto& memorySectionPair : MemorySectionAddresses)
+        if (memorySectionPair.first != MemorySection::RSSI_DC_CALIBRATION)
+            for (uint16_t addr = memorySectionPair.second[0]; addr <= memorySectionPair.second[1]; ++addr)
                 if (addr >= 0x0100)
                     addrToRead.push_back(addr);
 
@@ -875,8 +850,6 @@ OpStatus LMS7002M::SaveConfig(const std::string& filename)
         sprintf(value, "0x%04X", dataReceived[i]);
         fout << addr << "=" << value << std::endl;
     }
-
-    this->SetActiveChannel(ch); //retore previously used channel
 
     fout << "[reference_clocks]" << std::endl;
     fout << "sxt_ref_clk_mhz=" << this->GetReferenceClk_SX(TRXDir::Tx) / 1e6 << std::endl;
@@ -1199,7 +1172,7 @@ OpStatus LMS7002M::SetTBBIAMP_dB(const float_type gain, const Channel channel)
     int ind = this->GetActiveChannelIndex() % 2;
     if (opt_gain_tbb[ind] <= 0)
     {
-        status = CalibrateTxGain(0, nullptr);
+        status = CalibrateTxGain();
         if (status != OpStatus::SUCCESS) //set optimal BB gain
             return status;
         if (std::fabs(gain) < 0.2) // optimal gain = ~0dB
@@ -1221,7 +1194,7 @@ float_type LMS7002M::GetTBBIAMP_dB(const Channel channel)
 
     if (opt_gain_tbb[ind] <= 0)
     {
-        if (CalibrateTxGain(0, nullptr) != OpStatus::SUCCESS)
+        if (CalibrateTxGain() != OpStatus::SUCCESS)
             return 0.0;
         Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), g_current, true); //restore
     }
@@ -1307,7 +1280,7 @@ int LMS7002M::GetBandTRF(void)
 
 OpStatus LMS7002M::SetPath(TRXDir direction, uint8_t channel, uint8_t path)
 {
-    ChannelScope scope(this, channel);
+    ChannelScope scope(this, channel, false);
 
     if (direction == TRXDir::Tx)
     {
@@ -1323,9 +1296,6 @@ OpStatus LMS7002M::SetReferenceClk_SX(TRXDir dir, float_type freq_Hz)
     return OpStatus::SUCCESS;
 }
 
-/**	@brief Returns reference clock in Hz used for SXT or SXR
-	@param dir transmitter or receiver selection
-*/
 float_type LMS7002M::GetReferenceClk_SX(TRXDir dir)
 {
     return _cachedRefClockRate;
@@ -1333,7 +1303,7 @@ float_type LMS7002M::GetReferenceClk_SX(TRXDir dir)
 
 OpStatus LMS7002M::SetNCOFrequencies(TRXDir dir, const float_type* freq_Hz, uint8_t count, float_type phaseOffset)
 {
-    for (unsigned i = 0; i < 16 && i < count; i++)
+    for (uint8_t i = 0; i < 16 && i < count; i++)
     {
         OpStatus status = SetNCOFrequency(dir, i, freq_Hz[i]);
         if (status != OpStatus::SUCCESS)
@@ -1355,9 +1325,6 @@ std::vector<float_type> LMS7002M::GetNCOFrequencies(TRXDir dir, float_type* phas
     return ncos;
 }
 
-/**	@return Current CLKGEN frequency in Hz
-    Returned frequency depends on reference clock used for Receiver
-*/
 float_type LMS7002M::GetFrequencyCGEN()
 {
     float_type dMul =
@@ -1367,10 +1334,6 @@ float_type LMS7002M::GetFrequencyCGEN()
     return dMul * (((gINT >> 4) + 1 + gFRAC / 1048576.0));
 }
 
-/** @brief Returns TSP reference frequency
-    @param dir TxTSP or RxTSP selection
-    @return TSP reference frequency in Hz
-*/
 float_type LMS7002M::GetReferenceClk_TSP(TRXDir dir)
 {
     float_type cgenFreq = GetFrequencyCGEN();
@@ -1381,12 +1344,6 @@ float_type LMS7002M::GetReferenceClk_TSP(TRXDir dir)
         return dir == TRXDir::Tx ? cgenFreq : clklfreq / 4.0;
 }
 
-/** @brief Sets CLKGEN frequency, calculations use receiver'r reference clock
-    @param freq_Hz desired frequency in Hz
-    @param retainNCOfrequencies recalculate NCO coefficients to keep currently set frequencies
-    @param output if not null outputs calculated CGEN parameters
-    @return 0-succes, other-cannot deliver desired frequency
-*/
 OpStatus LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies, CGEN_details* output)
 {
     if (freq_Hz > CGEN_MAX_FREQ)
@@ -1406,7 +1363,7 @@ OpStatus LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainN
         txModeNCO = Get_SPI_Reg_bits(LMS7param(MODE_TX), true);
         for (int ch = 0; ch < 2; ++ch)
         {
-            this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
+            this->SetActiveChannel(IntToChannel(ch));
             for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
                 rxNCO[ch].push_back(GetNCOFrequency(TRXDir::Rx, i, false));
             for (int i = 0; i < 16 && txModeNCO == 0; ++i)
@@ -1450,7 +1407,7 @@ OpStatus LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainN
     //recalculate NCO
     for (int ch = 0; ch < 2 && retainNCOfrequencies; ++ch)
     {
-        this->SetActiveChannel((ch == 0) ? Channel::ChA : Channel::ChB);
+        this->SetActiveChannel(IntToChannel(ch));
         for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
             SetNCOFrequency(TRXDir::Rx, i, rxNCO[ch][i]);
         for (int i = 0; i < 16 && txModeNCO == 0; ++i)
@@ -1485,9 +1442,6 @@ bool LMS7002M::GetSXLocked(TRXDir dir)
     return (Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true) & 0x3) == 2;
 }
 
-/** @brief Performs VCO tuning operations for CLKGEN
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::TuneCGENVCO()
 {
 #ifndef NDEBUG
@@ -1533,10 +1487,6 @@ OpStatus LMS7002M::TuneCGENVCO()
     return OpStatus::ERROR;
 }
 
-/** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
-    @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
     if (module == VCO_Module::VCO_CGEN)
@@ -1555,7 +1505,7 @@ OpStatus LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     uint8_t lsb; //SWC lsb index
     uint8_t msb; //SWC msb index
 
-    Channel ch = this->GetActiveChannel(); //remember used channel
+    ChannelScope scope(this);
 
     if (module != VCO_Module::VCO_CGEN) //set addresses to SX module
     {
@@ -1590,7 +1540,6 @@ OpStatus LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
         if (cmphl == 3) //VCO too high
         {
-            this->SetActiveChannel(ch); //restore previously used channel
             lime::debug("TuneVCO(%s) - attempted VCO too high", moduleName);
             return OpStatus::ERROR;
         }
@@ -1599,7 +1548,6 @@ OpStatus LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
         if (cmphl == 0) //VCO too low
         {
-            this->SetActiveChannel(ch); //restore previously used channel
             lime::debug("TuneVCO(%s) - attempted VCO too low", moduleName);
             return OpStatus::ERROR;
         }
@@ -1699,7 +1647,6 @@ OpStatus LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     }
     std::this_thread::sleep_for(settlingTime);
     cmphl = static_cast<uint8_t>(Get_SPI_Reg_bits(addrCMP, 13, 12, true));
-    this->SetActiveChannel(ch); //restore previously used channel
     if (cmphl == 2)
     {
         lime::debug("TuneVCO(%s) - confirmed lock with final csw=%i, cmphl=%i", moduleName, finalCSW, cmphl);
@@ -1709,45 +1656,21 @@ OpStatus LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     return OpStatus::ERROR;
 }
 
-/** @brief Returns given parameter value from chip register
-    @param param LMS7002M control parameter
-    @param fromChip read directly from chip
-    @return parameter value
-*/
 uint16_t LMS7002M::Get_SPI_Reg_bits(const LMS7Parameter& param, bool fromChip)
 {
     return Get_SPI_Reg_bits(param.address, param.msb, param.lsb, fromChip);
 }
 
-/** @brief Returns given parameter value from chip register
-    @param address register address
-    @param msb most significant bit index
-    @param lsb least significant bit index
-    @param fromChip read directly from chip
-    @return register bits from selected interval, shifted to right by lsb bits
-*/
 uint16_t LMS7002M::Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip)
 {
     return (SPI_read(address, fromChip) & (~(~0u << (msb + 1)))) >> lsb; //shift bits to LSB
 }
 
-/** @brief Change given parameter value
-    @param param LMS7002M control parameter
-    @param fromChip read initial value directly from chip
-    @param value new parameter value
-*/
 OpStatus LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter& param, const uint16_t value, bool fromChip)
 {
     return Modify_SPI_Reg_bits(param.address, param.msb, param.lsb, value, fromChip);
 }
 
-/** @brief Change given parameter value
-    @param address register address
-    @param msb Most significant byte
-    @param lsb Least significant byte
-    @param value new bits value, the value is shifted left by lsb bits
-    @param fromChip read initial value directly from chip
-*/
 OpStatus LMS7002M::Modify_SPI_Reg_bits(
     const uint16_t address, const uint8_t msb, const uint8_t lsb, const uint16_t value, bool fromChip)
 {
@@ -1786,9 +1709,6 @@ OpStatus LMS7002M::Modify_SPI_Reg_mask(
     return status;
 }
 
-/** @brief Get parameter by name
-    @param name parameter name
-*/
 const LMS7Parameter& LMS7002M::GetParam(const std::string& name)
 {
     for (const LMS7Parameter& parameter : LMS7parameterList)
@@ -1802,12 +1722,6 @@ const LMS7Parameter& LMS7002M::GetParam(const std::string& name)
     throw std::logic_error("Parameter " + name + " not found");
 }
 
-/** @brief Sets SX frequency
-    @param dir Rx/Tx module selection
-    @param freq_Hz desired frequency in Hz
-    @param output if not null outputs intermediate calculation values
-    @return 0-success, other-cannot deliver requested frequency
-*/
 OpStatus LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* output)
 {
     static std::map<float_type, int8_t> tuning_cache_sel_vco;
@@ -1850,7 +1764,7 @@ OpStatus LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* ou
     integerPart = static_cast<uint16_t>(VCOfreq / divider - 4);
     fractionalPart = static_cast<uint32_t>((VCOfreq / divider - static_cast<uint32_t>(VCOfreq / divider)) * 1048576);
 
-    Channel ch = this->GetActiveChannel();
+    ChannelScope scope(this);
     this->SetActiveChannel(dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
     Modify_SPI_Reg_bits(LMS7param(EN_INTONLY_SDM), 0);
     Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
@@ -1896,7 +1810,6 @@ OpStatus LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* ou
         if (cmphl == 2)
         {
             lime::info("Fast Tune success; vco=%d value=%d", tuning_cache_sel_vco[freq_Hz], tuning_cache_csw_value[freq_Hz]);
-            this->SetActiveChannel(ch); //restore used channel
             if (output)
             {
                 output->success = true;
@@ -1973,20 +1886,12 @@ OpStatus LMS7002M::SetFrequencySX(TRXDir dir, float_type freq_Hz, SX_details* ou
         tuning_cache_csw_value[freq_Hz] = csw_value;
     }
 
-    this->SetActiveChannel(ch); //restore used channel
-
     if (canDeliverFrequency == false)
         return ReportError(
             OpStatus::ERROR, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", dir == TRXDir::Tx ? "T" : "R", freq_Hz / 1e6);
     return OpStatus::SUCCESS;
 }
 
-/** @brief Sets SX frequency with Reference clock spur cancelation
-    @param dir Rx/Tx module selection
-    @param freq_Hz desired frequency in Hz
-    @param BW BW
-    @return 0-success, other-cannot deliver requested frequency
-*/
 OpStatus LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq_Hz, float_type BW)
 {
     const float BWOffset = 2e6;
@@ -2054,9 +1959,6 @@ OpStatus LMS7002M::SetFrequencySXWithSpurCancelation(TRXDir dir, float_type freq
     return OpStatus::SUCCESS;
 }
 
-/**	@brief Returns currently set SXR/SXT frequency
-	@return SX frequency Hz
-*/
 float_type LMS7002M::GetFrequencySX(TRXDir dir)
 {
     ChannelScope(this, dir == TRXDir::Tx ? Channel::ChSXT : Channel::ChSXR);
@@ -2072,12 +1974,6 @@ float_type LMS7002M::GetFrequencySX(TRXDir dir)
     return dMul;
 }
 
-/** @brief Sets chosen NCO's frequency
-    @param dir transmitter or receiver selection
-    @param index NCO index from 0 to 15
-    @param freq_Hz desired NCO frequency
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz)
 {
     if (index > 15)
@@ -2096,12 +1992,6 @@ OpStatus LMS7002M::SetNCOFrequency(TRXDir dir, uint8_t index, float_type freq_Hz
     return OpStatus::SUCCESS;
 }
 
-/** @brief Returns chosen NCO's frequency in Hz
-    @param dir transmitter or receiver selection
-    @param index NCO index from 0 to 15
-    @param fromChip read frequency directly from chip or local registers
-    @return NCO frequency in Hz
-*/
 float_type LMS7002M::GetNCOFrequency(TRXDir dir, uint8_t index, bool fromChip)
 {
     if (index > 15)
@@ -2114,11 +2004,6 @@ float_type LMS7002M::GetNCOFrequency(TRXDir dir, uint8_t index, bool fromChip)
     return refClk_Hz * (fcw / 4294967296.0);
 }
 
-/** @brief Sets chosen NCO phase offset angle when memory table MODE is 0
-@param dir transmitter or receiver selection
-@param angle_deg phase offset angle in degrees
-@return 0-success, other-failure
-*/
 OpStatus LMS7002M::SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg)
 {
     uint16_t addr = dir == TRXDir::Tx ? 0x0241 : 0x0441;
@@ -2127,12 +2012,6 @@ OpStatus LMS7002M::SetNCOPhaseOffsetForMode0(TRXDir dir, float_type angle_deg)
     return OpStatus::SUCCESS;
 }
 
-/** @brief Sets chosen NCO's phase offset angle
-    @param dir transmitter or receiver selection
-    @param index PHO index from 0 to 15
-    @param angle_deg phase offset angle in degrees
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::SetNCOPhaseOffset(TRXDir dir, uint8_t index, float_type angle_deg)
 {
     if (index > 15)
@@ -2151,7 +2030,7 @@ OpStatus LMS7002M::SetNCOPhases(TRXDir dir, const float_type* angles_deg, uint8_
 
     if (angles_deg != nullptr)
     {
-        for (unsigned i = 0; i < 16; i++)
+        for (uint8_t i = 0; i < 16 && i < count; i++)
         {
             status = SetNCOPhaseOffset(dir, i, angles_deg[i]);
             if (status != OpStatus::SUCCESS)
@@ -2168,11 +2047,6 @@ std::vector<float_type> LMS7002M::GetNCOPhases(TRXDir dir, float_type* frequency
     return angles_deg;
 }
 
-/** @brief Returns chosen NCO's phase offset angle in radians
-    @param dir transmitter or receiver selection
-    @param index PHO index from 0 to 15
-    @return phase offset angle in degrees
-*/
 float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
 {
     if (index > 15)
@@ -2183,15 +2057,6 @@ float_type LMS7002M::GetNCOPhaseOffset_Deg(TRXDir dir, uint8_t index)
     return angle;
 }
 
-/** @brief Uploads given FIR coefficients to chip
-    @param dir Transmitter or receiver selection
-    @param gfirIndex GIR index from 0 to 2
-    @param coef array of coefficients (normalized from -1 to 1)
-    @param coefCount number of coefficients
-    @return 0-success, other-failure
-
-    This function does not change GFIR*_L or GFIR*_N parameters, they have to be set manually
-*/
 OpStatus LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const float_type* coef, uint8_t coefCount)
 {
     if (gfirIndex > 2)
@@ -2249,13 +2114,6 @@ OpStatus LMS7002M::SetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, const floa
     return SPI_write_batch(addrs, reinterpret_cast<const uint16_t*>(words), actualCoefCount, true);
 }
 
-/** @brief Returns currently loaded FIR coefficients.
-    @param dir Transmitter or receiver selection.
-    @param GFIR_index GFIR index from 0 to 2.
-    @param coef Array of returned coefficients (normalized from -1 to 1)
-    @param coefCount Number of coefficients to read.
-    @return 0-success, other-failure.
-*/
 OpStatus LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type* coef, uint8_t coefCount)
 {
     OpStatus status = OpStatus::ERROR;
@@ -2305,12 +2163,6 @@ OpStatus LMS7002M::GetGFIRCoefficients(TRXDir dir, uint8_t gfirIndex, float_type
     return status;
 }
 
-/** @brief Write given data value to whole register
-    @param address SPI address
-    @param data new register value
-    @param toChip whether we're writing to the chip or not
-    @return 0-succes, other-failure
-*/
 OpStatus LMS7002M::SPI_write(uint16_t address, uint16_t data, bool toChip)
 {
     if (address == 0x0640 || address == 0x0641)
@@ -2329,23 +2181,18 @@ OpStatus LMS7002M::SPI_write(uint16_t address, uint16_t data, bool toChip)
         return this->SPI_write_batch(&address, &data, 1, toChip);
 }
 
-/** @brief Reads whole register value from given address
-    @param address SPI address
-    @param status operation status(optional)
-    @param fromChip read value directly from chip
-    @return register value
-*/
 uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, OpStatus* status)
 {
     fromChip |= !useCache;
     //registers containing read only registers, which values can change
-    static const std::unordered_set<uint16_t> volatileRegs = { 0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
+    static const std::unordered_set<uint16_t> volatileRegs = {
+        0x0000,
+        0x0001,
+        0x0002,
+        0x0003,
+        0x0004,
+        0x0005,
+        0x0006,
         0x002F,
         0x008C,
         0x00A8,
@@ -2366,7 +2213,8 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, OpStatus* status)
         0x05C7,
         0x05C8,
         0x05C9,
-        0x05CA };
+        0x05CA,
+    };
     if (volatileRegs.find(address) != volatileRegs.end())
         fromChip = true;
 
@@ -2405,13 +2253,6 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, OpStatus* status)
     return 0;
 }
 
-/** @brief Batches multiple register writes into least amount of transactions
-    @param spiAddr spi register addresses to be written
-    @param spiData registers data to be written
-    @param cnt number of registers to write
-    @param toChip force write to chip
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip)
 {
     toChip |= !useCache;
@@ -2457,12 +2298,6 @@ OpStatus LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiD
     return OpStatus::SUCCESS;
 }
 
-/** @brief Batches multiple register reads into least amount of transactions
-    @param spiAddr SPI addresses to read
-    @param spiData array for read data
-    @param cnt number of registers to read
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt)
 {
     if (!controlPort)
@@ -2498,9 +2333,6 @@ OpStatus LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, ui
     return OpStatus::SUCCESS;
 }
 
-/** @brief Performs registers test by writing known data and confirming readback data
-    @return 0-registers test passed, other-failure
-*/
 OpStatus LMS7002M::RegistersTest(const std::string& fileName)
 {
     char chex[16];
@@ -2508,12 +2340,12 @@ OpStatus LMS7002M::RegistersTest(const std::string& fileName)
         return ReportError(OpStatus::IO_FAILURE, "No device connected");
 
     OpStatus status;
-    Channel ch = this->GetActiveChannel();
+    ChannelScope scope(this);
 
     //backup both channel data for restoration after test
     std::vector<uint16_t> ch1Addresses;
-    for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
-        for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
+    for (const auto& memorySectionPair : MemorySectionAddresses)
+        for (uint16_t addr = memorySectionPair.second[0]; addr <= memorySectionPair.second[1]; ++addr)
             ch1Addresses.push_back(addr);
     std::vector<uint16_t> ch1Data;
     ch1Data.resize(ch1Addresses.size(), 0);
@@ -2525,8 +2357,8 @@ OpStatus LMS7002M::RegistersTest(const std::string& fileName)
         return status;
 
     std::vector<uint16_t> ch2Addresses;
-    for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
-        for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
+    for (const auto& memorySectionPair : MemorySectionAddresses)
+        for (uint16_t addr = memorySectionPair.second[0]; addr <= memorySectionPair.second[1]; ++addr)
             if (addr >= 0x0100)
                 ch2Addresses.push_back(addr);
     std::vector<uint16_t> ch2Data;
@@ -2547,34 +2379,37 @@ OpStatus LMS7002M::RegistersTest(const std::string& fileName)
     std::stringstream ss;
 
     //check single channel memory sections
-    std::vector<MemorySection> modulesToCheck = { AFE,
-        BIAS,
-        XBUF,
-        CGEN,
-        BIST,
-        CDS,
-        TRF,
-        TBB,
-        RFE,
-        RBB,
-        SX,
-        TxTSP,
-        TxNCO,
-        TxGFIR1,
-        TxGFIR2,
-        TxGFIR3a,
-        TxGFIR3b,
-        TxGFIR3c,
-        RxTSP,
-        RxNCO,
-        RxGFIR1,
-        RxGFIR2,
-        RxGFIR3a,
-        RxGFIR3b,
-        RxGFIR3c,
-        LimeLight,
-        LDO };
-    const std::string moduleNames[] = { "AFE",
+    std::vector<MemorySection> modulesToCheck = {
+        MemorySection::AFE,
+        MemorySection::BIAS,
+        MemorySection::XBUF,
+        MemorySection::CGEN,
+        MemorySection::BIST,
+        MemorySection::CDS,
+        MemorySection::TRF,
+        MemorySection::TBB,
+        MemorySection::RFE,
+        MemorySection::RBB,
+        MemorySection::SX,
+        MemorySection::TxTSP,
+        MemorySection::TxNCO,
+        MemorySection::TxGFIR1,
+        MemorySection::TxGFIR2,
+        MemorySection::TxGFIR3a,
+        MemorySection::TxGFIR3b,
+        MemorySection::TxGFIR3c,
+        MemorySection::RxTSP,
+        MemorySection::RxNCO,
+        MemorySection::RxGFIR1,
+        MemorySection::RxGFIR2,
+        MemorySection::RxGFIR3a,
+        MemorySection::RxGFIR3b,
+        MemorySection::RxGFIR3c,
+        MemorySection::LimeLight,
+        MemorySection::LDO,
+    };
+    const std::string moduleNames[] = {
+        "AFE",
         "BIAS",
         "XBUF",
         "CGEN",
@@ -2600,7 +2435,8 @@ OpStatus LMS7002M::RegistersTest(const std::string& fileName)
         "RxGFIR3b",
         "RxGFIR3c",
         "LimeLight",
-        "LDO" };
+        "LDO",
+    };
 
     const uint16_t patterns[] = { 0xAAAA, 0x5555 };
     const uint8_t patternsCount = 2;
@@ -2610,8 +2446,8 @@ OpStatus LMS7002M::RegistersTest(const std::string& fileName)
     for (unsigned i = 0; i < modulesToCheck.size(); ++i)
     {
         bool moduleTestsSuccess = true;
-        uint16_t startAddr = MemorySectionAddresses[modulesToCheck[i]][0];
-        uint16_t endAddr = MemorySectionAddresses[modulesToCheck[i]][1];
+        uint16_t startAddr = MemorySectionAddresses.at(modulesToCheck[i]).at(0);
+        uint16_t endAddr = MemorySectionAddresses.at(modulesToCheck[i]).at(1);
         uint8_t channelCount = startAddr >= 0x0100 ? 2 : 1;
         for (int cc = 1; cc <= channelCount; ++cc)
         {
@@ -2636,7 +2472,6 @@ OpStatus LMS7002M::RegistersTest(const std::string& fileName)
     SPI_write_batch(&ch1Addresses[0], &ch1Data[0], ch1Addresses.size(), true);
     this->SetActiveChannel(Channel::ChB);
     SPI_write_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size(), true);
-    this->SetActiveChannel(ch);
 
     if (!fileName.empty())
     {
@@ -2741,15 +2576,12 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
     SPI_write(0x010E, valToSend);
 }
 
-/** @brief Sets given module registers to default values
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::SetDefaults(MemorySection module)
 {
     OpStatus status;
     std::vector<uint16_t> addrs;
     std::vector<uint16_t> values;
-    for (uint32_t address = MemorySectionAddresses[module][0]; address <= MemorySectionAddresses[module][1]; ++address)
+    for (uint16_t address = MemorySectionAddresses.at(module).at(0); address <= MemorySectionAddresses.at(module).at(1); ++address)
     {
         addrs.push_back(address);
         values.push_back(mRegistersMap->GetDefaultValue(address));
@@ -2764,15 +2596,12 @@ void LMS7002M::ModifyRegistersDefaults(const std::vector<std::pair<uint16_t, uin
         mRegistersMap->SetDefaultValue(addrValuePair.first, addrValuePair.second);
 }
 
-/** @brief Reads all chip configuration and checks if it matches with local registers copy
-*/
 bool LMS7002M::IsSynced()
 {
     if (!controlPort)
         return false;
-    bool isSynced = true;
 
-    Channel ch = this->GetActiveChannel();
+    ChannelScope scope(this);
 
     std::vector<uint16_t> addrToRead = mRegistersMap->GetUsedAddresses(0);
     std::vector<uint16_t> dataReceived;
@@ -2809,8 +2638,7 @@ bool LMS7002M::IsSynced()
         if (dataReceived[i] != regValue)
         {
             lime::debug("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X", addrToRead[i], regValue, dataReceived[i]);
-            isSynced = false;
-            goto isSyncedEnding;
+            return false;
         }
     }
 
@@ -2846,24 +2674,19 @@ bool LMS7002M::IsSynced()
         if (dataReceived[i] != regValue)
         {
             lime::debug("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X", addrToRead[i], regValue, dataReceived[i]);
-            isSynced = false;
-            goto isSyncedEnding;
+            return false;
         }
     }
-isSyncedEnding:
-    this->SetActiveChannel(ch); //restore previously used channel
-    return isSynced;
+
+    return true;
 }
 
-/** @brief Writes all registers from host to chip
-
-*/
 OpStatus LMS7002M::UploadAll()
 {
     if (!controlPort)
         return ReportError(OpStatus::IO_FAILURE, "No device connected");
 
-    Channel ch = this->GetActiveChannel(); //remember used channel
+    ChannelScope scope(this);
 
     OpStatus status;
 
@@ -2900,21 +2723,17 @@ OpStatus LMS7002M::UploadAll()
     status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
     if (status != OpStatus::SUCCESS)
         return status;
-    this->SetActiveChannel(ch); //restore last used channel
 
     return OpStatus::SUCCESS;
 }
 
-/** @brief Reads all registers from the chip to host
-
-*/
 OpStatus LMS7002M::DownloadAll()
 {
     if (!controlPort)
         return ReportError(OpStatus::IO_FAILURE, "No device connected");
 
     OpStatus status;
-    Channel ch = this->GetActiveChannel(false);
+    ChannelScope scope(this, true);
 
     std::vector<uint16_t> addrToRead = mRegistersMap->GetUsedAddresses(0);
     std::vector<uint16_t> dataReceived;
@@ -2940,15 +2759,9 @@ OpStatus LMS7002M::DownloadAll()
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
         mRegistersMap->SetValue(1, addrToRead[i], dataReceived[i]);
 
-    this->SetActiveChannel(ch); //retore previously used channel
-
     return OpStatus::SUCCESS;
 }
 
-/** @brief Configures interfaces for desired frequency
-    @return 0-success, other-failure
-    Sets interpolation and decimation, changes MCLK sources and TSP clock dividers accordingly to selected interpolation and decimation
-*/
 OpStatus LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t hbi, const uint8_t hbd)
 {
     OpStatus status;
@@ -3025,46 +2838,48 @@ void LMS7002M::ConfigureLML_RF2BB(
     const LMLSampleSource s0, const LMLSampleSource s1, const LMLSampleSource s2, const LMLSampleSource s3)
 {
     //map a sample source to a position
-    std::map<LMLSampleSource, int> m;
-    m[LMLSampleSource::AI] = 1;
-    m[LMLSampleSource::AQ] = 0;
-    m[LMLSampleSource::BI] = 3;
-    m[LMLSampleSource::BQ] = 2;
+    const std::map<LMLSampleSource, uint16_t> m{
+        { LMLSampleSource::AI, 1 },
+        { LMLSampleSource::AQ, 0 },
+        { LMLSampleSource::BI, 3 },
+        { LMLSampleSource::BQ, 2 },
+    };
 
     //load the same config on both LMLs
     //only one will get used based on direction
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_S3S), m[s3]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_S2S), m[s2]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_S1S), m[s1]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_S0S), m[s0]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S3S), m.at(s3));
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S2S), m.at(s2));
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S1S), m.at(s1));
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S0S), m.at(s0));
 
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), m[s3]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), m[s2]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), m[s1]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), m[s0]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), m.at(s3));
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), m.at(s2));
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), m.at(s1));
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), m.at(s0));
 }
 
 void LMS7002M::ConfigureLML_BB2RF(
     const LMLSampleSource s0, const LMLSampleSource s1, const LMLSampleSource s2, const LMLSampleSource s3)
 {
     //map a sample source to a position
-    std::map<LMLSampleSource, int> m;
-    m[s3] = 2;
-    m[s2] = 3;
-    m[s0] = 1;
-    m[s1] = 0;
+    const std::map<LMLSampleSource, uint16_t> m{
+        { s3, 2 },
+        { s2, 3 },
+        { s0, 1 },
+        { s1, 0 },
+    };
 
     //load the same config on both LMLs
     //only one will get used based on direction
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_BQP), m[LMLSampleSource::BQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_BIP), m[LMLSampleSource::BI]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_AQP), m[LMLSampleSource::AQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML1_AIP), m[LMLSampleSource::AI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_BQP), m.at(LMLSampleSource::BQ));
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_BIP), m.at(LMLSampleSource::BI));
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_AQP), m.at(LMLSampleSource::AQ));
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_AIP), m.at(LMLSampleSource::AI));
 
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_BQP), m[LMLSampleSource::BQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_BIP), m[LMLSampleSource::BI]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_AQP), m[LMLSampleSource::AQ]);
-    this->Modify_SPI_Reg_bits(LMS7param(LML2_AIP), m[LMLSampleSource::AI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_BQP), m.at(LMLSampleSource::BQ));
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_BIP), m.at(LMLSampleSource::BI));
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_AQP), m.at(LMLSampleSource::AQ));
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_AIP), m.at(LMLSampleSource::AI));
 }
 
 OpStatus LMS7002M::SetRxDCRemoval(const bool enable)
@@ -3159,7 +2974,7 @@ void LMS7002M::EnableValuesCache(bool enabled)
     useCache = enabled;
 }
 
-bool LMS7002M::IsValuesCacheEnabled()
+bool LMS7002M::IsValuesCacheEnabled() const
 {
     return useCache;
 }
@@ -3167,11 +2982,6 @@ bool LMS7002M::IsValuesCacheEnabled()
 MCU_BD* LMS7002M::GetMCUControls() const
 {
     return mcuControl;
-}
-
-void LMS7002M::EnableCalibrationByMCU(bool enabled)
-{
-    mCalibrationByMCU = enabled;
 }
 
 float_type LMS7002M::GetTemperature()
@@ -3204,13 +3014,14 @@ void LMS7002M::SetLogCallback(std::function<void(const char*, LogType)> callback
 
 OpStatus LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const bool copySX)
 {
-    Channel ch = this->GetActiveChannel(); //remember used channel
+    ChannelScope scope(this);
 
     std::vector<uint16_t> addrToWrite;
     addrToWrite = mRegistersMap->GetUsedAddresses(1);
     if (!copySX)
     {
-        for (uint32_t address = MemorySectionAddresses[SX][0]; address <= MemorySectionAddresses[SX][1]; ++address)
+        const auto& SXMemoryAddresses = MemorySectionAddresses.at(MemorySection::SX);
+        for (uint32_t address = SXMemoryAddresses.at(0); address <= SXMemoryAddresses.at(1); ++address)
             addrToWrite.erase(std::find(addrToWrite.begin(), addrToWrite.end(), address));
     }
     for (auto address : addrToWrite)
@@ -3220,7 +3031,7 @@ OpStatus LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, c
     }
     if (controlPort)
         UploadAll();
-    this->SetActiveChannel(ch);
+
     return OpStatus::SUCCESS;
 }
 
@@ -3277,7 +3088,7 @@ OpStatus LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     return OpStatus::SUCCESS;
 }
 
-double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
+double LMS7002M::GetClockFreq(ClockID clk_id)
 {
     switch (clk_id)
     {
@@ -3299,7 +3110,7 @@ double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
     }
 }
 
-OpStatus LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
+OpStatus LMS7002M::SetClockFreq(ClockID clk_id, double freq)
 {
     switch (clk_id)
     {
@@ -3347,7 +3158,7 @@ float_type LMS7002M::GetSampleRate(TRXDir dir)
     return interface_Hz;
 }
 
-OpStatus LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double bandwidth)
+OpStatus LMS7002M::SetGFIRFilter(TRXDir dir, Channel ch, bool enabled, double bandwidth)
 {
     ChannelScope scope(this, ch);
     const bool bypassFIR = !enabled;
@@ -3364,7 +3175,7 @@ OpStatus LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double b
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), bypassFIR);
         const bool sisoDDR = Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
         const bool clockIsNotInverted = !(enabled | sisoDDR);
-        if (ch % 2)
+        if (ch == LMS7002M::Channel::ChB)
         {
             Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), clockIsNotInverted);
             Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled ? 3 : 0);
@@ -3455,7 +3266,7 @@ OpStatus LMS7002M::SetGFIRFilter(TRXDir dir, unsigned ch, bool enabled, double b
     ss << std::endl;
     lime::info(ss.str());
 
-    return ResetLogicregisters();
+    return ResetLogicRegisters();
 }
 
 void LMS7002M::SetOnCGENChangeCallback(CGENChangeCallbackType callback, void* userData)

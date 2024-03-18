@@ -75,10 +75,19 @@ struct CDCM_Outputs {
     CDCM_Output Y7{ false, false, 0, 0, 0, 0, 30.72e6, 0 }; ///< The value of the Y7 output
 };
 
-/** @brief Class for controlling the CDCM6208 2:8 Clock Generator, Jitter Cleaner With Fractional Dividers */
+/** @brief Class for controlling the CDCM6208 2:8 Clock Generator, Jitter Cleaner With Fractional Dividers.
+ *
+ * More information: https://www.ti.com/product/CDCM6208
+ */
 class LIME_API CDCM_Dev
 {
   public:
+    /**
+    @brief Constructs a new CDCM_Dev object.
+
+    @param comms The communications path to use.
+    @param SPI_BASE_ADDR The base address for the API interface.
+   */
     CDCM_Dev(std::shared_ptr<lime::ISPI> comms, uint16_t SPI_BASE_ADDR);
 
     int Init(double primaryFreq, double secondaryFreq);

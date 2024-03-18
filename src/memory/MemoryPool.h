@@ -20,7 +20,10 @@ class MemoryPool
 
     void* Allocate(int size);
     void Free(void* ptr);
-    int32_t MaxAllocSize() const { return mBlockSize; };
+
+    /// @brief Gets the maximum possible allocation size of this memory pool.
+    /// @return The maximum amount of memory (in bytes) this pool can allocate.
+    constexpr int32_t MaxAllocSize() const { return mBlockSize; };
 
   private:
     std::string name;

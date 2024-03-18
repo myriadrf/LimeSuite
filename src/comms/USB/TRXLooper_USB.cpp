@@ -12,6 +12,12 @@ using namespace std::literals::string_literals;
 
 namespace lime {
 
+/// @brief Constructs a TRXLooper_USB object.
+/// @param comms The USB communications interface to use.
+/// @param f The FPGA to use.
+/// @param chip The LMS7002M chip to use.
+/// @param rxEndPt The endpoint for receiving the stream data from the USB communications.
+/// @param txEndPt The endpoint for transmitting the stream data to the USB communications.
 TRXLooper_USB::TRXLooper_USB(std::shared_ptr<USBGeneric> comms, FPGA* f, LMS7002M* chip, uint8_t rxEndPt, uint8_t txEndPt)
     : TRXLooper(f, chip, 0)
     , comms(comms)
@@ -297,7 +303,7 @@ void TRXLooper_USB::ReceivePacketsLoop()
 
     const int samplesInPkt =
         (mConfig.linkFormat == SDRDevice::StreamConfig::DataFormat::I16 ? 1020 : 1360) / conversion.channelCount;
-    const int outputSampleSize =
+    const uint8_t outputSampleSize =
         mConfig.format == SDRDevice::StreamConfig::DataFormat::F32 ? sizeof(complex32f_t) : sizeof(complex16_t);
     const int32_t outputPktSize = SamplesPacketType::headerSize + packetsToBatch * samplesInPkt * outputSampleSize;
 

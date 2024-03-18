@@ -8,17 +8,22 @@
 #define ADF_MODULE_H
 
 #include "limesuite/config.h"
-
 #include "limesuite/IComms.h"
+
+#include <memory>
 
 namespace lime {
 
+/** @brief The class for controlling the ADF4002 frequency synthesizer.
+ * 
+ * More information: https://www.analog.com/en/products/adf4002.html
+ */
 class LIME_API ADF4002
 {
   public:
     ADF4002();
     ~ADF4002();
-    void Initialize(ISPI* comms, double refClkHz);
+    void Initialize(std::shared_ptr<ISPI> comms, double refClkHz);
     int UploadConfig();
 
     void SetFrefFvco(double Fref, double Fvco, int& rcount, int& ncount);
@@ -67,7 +72,7 @@ class LIME_API ADF4002
     double lblFvco;
 
   protected:
-    ISPI* mComms;
+    std::shared_ptr<ISPI> mComms;
     unsigned char m_registers[12];
 };
 

@@ -338,7 +338,7 @@ int SoapyLMS7::readStream(
     }
 
     SDRDevice::StreamMeta metadata;
-    const int64_t cmdTicks =
+    const uint64_t cmdTicks =
         ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0) ? SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate[SOAPY_SDR_RX]) : 0;
 
     int status = 0;
@@ -364,7 +364,7 @@ int SoapyLMS7::readStream(
         return SOAPY_SDR_STREAM_ERROR;
     }
 
-    const int64_t expectedTime(cmdTicks + status);
+    const uint64_t expectedTime(cmdTicks + status);
 
     if (metadata.timestamp < expectedTime)
     {
@@ -373,7 +373,7 @@ int SoapyLMS7::readStream(
     }
 
     // The command had a time, so we need to compare it to received time
-    if ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0 and metadata.useTimestamp)
+    if ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0 and metadata.waitForTimestamp)
     {
         // Our request time is now late, clear command and return error code
         if (cmdTicks < metadata.timestamp)
@@ -408,17 +408,17 @@ int SoapyLMS7::readStream(
         if (icstream->numElems == 0)
         {
             icstream->hasCmd = false;
-            metadata.flush = true;
+            metadata.flushPartialPacket = true;
         }
     }
 
     // Output metadata
-    if (metadata.flush)
+    if (metadata.flushPartialPacket)
     {
         flags |= SOAPY_SDR_END_BURST;
     }
 
-    if (metadata.useTimestamp)
+    if (metadata.waitForTimestamp)
     {
         flags |= SOAPY_SDR_HAS_TIME;
     }
@@ -447,8 +447,8 @@ int SoapyLMS7::writeStream(SoapySDR::Stream* stream,
     // Input metadata
     SDRDevice::StreamMeta metadata;
     metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate[SOAPY_SDR_RX]);
-    metadata.useTimestamp = (flags & SOAPY_SDR_HAS_TIME);
-    metadata.flush = (flags & SOAPY_SDR_END_BURST);
+    metadata.waitForTimestamp = (flags & SOAPY_SDR_HAS_TIME);
+    metadata.flushPartialPacket = (flags & SOAPY_SDR_END_BURST);
 
     int status = 0;
     switch (icstream->streamConfig.format)

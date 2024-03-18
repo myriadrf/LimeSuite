@@ -2,7 +2,6 @@
  * LimeMicroSystem transceiver driver
  * Copyright (C) 2015-2018 Amarisoft/LimeMicroSystems
  */
-
 #include "common.h"
 
 #include <stdarg.h>
@@ -132,8 +131,8 @@ static void trx_lms7002m_write(
 
     SDRDevice::StreamMeta meta;
     meta.timestamp = timestamp;
-    meta.useTimestamp = true;
-    meta.flush = (md->flags & TRX_WRITE_MD_FLAG_END_OF_BURST);
+    meta.waitForTimestamp = true;
+    meta.flushPartialPacket = (md->flags & TRX_WRITE_MD_FLAG_END_OF_BURST);
 
     // samples format conversion is done internally
     LimePluginContext* lime = static_cast<LimePluginContext*>(s->opaque);
@@ -147,8 +146,8 @@ static void trx_lms7002m_write(
 static int trx_lms7002m_read(TRXState* s, trx_timestamp_t* ptimestamp, void** samples, int count, int port, TRXReadMetadata* md)
 {
     SDRDevice::StreamMeta meta;
-    meta.useTimestamp = false;
-    meta.flush = false;
+    meta.waitForTimestamp = false;
+    meta.flushPartialPacket = false;
     md->flags = 0;
 
     LimePluginContext* lime = static_cast<LimePluginContext*>(s->opaque);
@@ -259,9 +258,9 @@ static int trx_lms7002m_get_tx_samples_per_packet_func(TRXState* s1)
 {
     // LimePluginContext* lime = static_cast<LimePluginContext*>(s1->opaque);
     int txExpectedSamples = 256; //lime->samplesInPacket[0];
-    // if (lime->streamExtras[0] && lime->streamExtras[0]->txSamplesInPacket > 0)
+    // if (lime->streamExtras[0] && lime->streamExtras[0]->tx.samplesInPacket > 0)
     // {
-    //     txExpectedSamples = lime->streamExtras[0]->txSamplesInPacket;
+    //     txExpectedSamples = lime->streamExtras[0]->tx.samplesInPacket;
     // }
     // Log(LogLevel::DEBUG, "Hardware expected samples count in Tx packet : %i", txExpectedSamples);
     return txExpectedSamples;

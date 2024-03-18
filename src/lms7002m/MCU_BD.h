@@ -106,11 +106,11 @@ class LIME_API MCU_BD
     OperationStatus writeIRAM(const uint8_t* addr, const uint8_t* values, const uint8_t count);
 
     void Wait_CLK_Cycles(int data);
-    // The IRAM content
+    /// The IRAM content
     unsigned char m_IRAM[256];
-    // The SFR content
+    /// The SFR content
     unsigned char m_SFR[256];
-    // The program memory code
+    /// The program memory code
     unsigned char byte_array[MCU_PROGRAM_SIZE];
 
     void mSPI_write(unsigned short addr_reg, unsigned short data_reg);

@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "LitePCIeMock.h"
-#include "comms/PCIe/PCIeCommon.h"
+#include "comms/PCIe/PCIE_CSR_Pipe.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;

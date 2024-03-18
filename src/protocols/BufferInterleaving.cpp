@@ -6,7 +6,7 @@
 namespace lime {
 
 template<class SrcT, class DestT>
-static int DeinterleaveMIMO(DestT** dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
+static int DeinterleaveMIMO(DestT* const* dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
 {
     int samplesProduced = length / sizeof(SrcT);
     const bool mimo = fmt.channelCount > 1;
@@ -21,7 +21,7 @@ static int DeinterleaveMIMO(DestT** dest, const uint8_t* buffer, uint32_t length
 }
 
 template<class DestT>
-static int DeinterleaveCompressionType(DestT** dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
+static int DeinterleaveCompressionType(DestT* const* dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
 {
     const bool compressed = fmt.srcFormat == SDRDevice::StreamConfig::DataFormat::I12;
     if (!compressed)
@@ -30,20 +30,23 @@ static int DeinterleaveCompressionType(DestT** dest, const uint8_t* buffer, uint
         return DeinterleaveMIMO<complex12packed_t>(dest, buffer, length, fmt);
 }
 
-int Deinterleave(void** dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
+int Deinterleave(void* const* dest, const uint8_t* buffer, uint32_t length, const DataConversion& fmt)
 {
     int samplesProduced;
     switch (fmt.destFormat)
     {
     default:
     case SDRDevice::StreamConfig::DataFormat::I16:
-        samplesProduced = DeinterleaveCompressionType<complex16_t>(reinterpret_cast<complex16_t**>(dest), buffer, length, fmt);
+        samplesProduced =
+            DeinterleaveCompressionType<complex16_t>(reinterpret_cast<complex16_t* const*>(dest), buffer, length, fmt);
         break;
     case SDRDevice::StreamConfig::DataFormat::F32:
-        samplesProduced = DeinterleaveCompressionType<complex32f_t>(reinterpret_cast<complex32f_t**>(dest), buffer, length, fmt);
+        samplesProduced =
+            DeinterleaveCompressionType<complex32f_t>(reinterpret_cast<complex32f_t* const*>(dest), buffer, length, fmt);
         break;
     case SDRDevice::StreamConfig::DataFormat::I12:
-        samplesProduced = DeinterleaveCompressionType<complex12_t>(reinterpret_cast<complex12_t**>(dest), buffer, length, fmt);
+        samplesProduced =
+            DeinterleaveCompressionType<complex12_t>(reinterpret_cast<complex12_t* const*>(dest), buffer, length, fmt);
         break;
     }
     return samplesProduced;

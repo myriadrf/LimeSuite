@@ -6,12 +6,14 @@ using namespace lime;
 
 SDRDevice::StreamConfig::Extras::Extras()
     : usePoll{ true }
-    , rxSamplesInPacket{ 0 }
-    , rxPacketsInBatch{ 0 }
-    , txMaxPacketsInBatch{ 0 }
-    , txSamplesInPacket{ 0 }
     , negateQ{ false }
     , waitPPS{ false }
+{
+}
+
+SDRDevice::StreamConfig::Extras::PacketTransmission::PacketTransmission()
+    : samplesInPacket{ 0 }
+    , packetsInBatch{ 0 }
 {
 }
 

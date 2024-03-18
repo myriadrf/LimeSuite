@@ -184,7 +184,7 @@ void USBGeneric::Disconnect()
 
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
-        if (contexts[i].used)
+        if (contexts[i].isTransferUsed)
         {
             AbortEndpointXfers(contexts[i].transfer->endpoint);
         }
@@ -299,7 +299,7 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
     if (status != 0)
     {
         lime::error("BEGIN DATA TRANSFER %s", libusb_error_name(status));
-        contexts[i].used = false;
+        contexts[i].isTransferUsed = false;
         return -1;
     }
 
@@ -308,10 +308,10 @@ int USBGeneric::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPoint
     return 0;
 }
 
-bool USBGeneric::WaitForXfer(int contextHandle, uint32_t timeout_ms)
+bool USBGeneric::WaitForXfer(int contextHandle, int32_t timeout_ms)
 {
 #ifdef __unix__
-    if (contextHandle >= 0 && contexts[contextHandle].used == true)
+    if (contextHandle >= 0 && contexts[contextHandle].isTransferUsed == true)
     {
         // Blocking not to waste CPU
         std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
@@ -325,10 +325,10 @@ bool USBGeneric::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 int USBGeneric::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
 {
 #ifdef __unix__
-    if (contextHandle >= 0 && contexts[contextHandle].used == true)
+    if (contextHandle >= 0 && contexts[contextHandle].isTransferUsed == true)
     {
         length = contexts[contextHandle].bytesXfered;
-        contexts[contextHandle].used = false;
+        contexts[contextHandle].isTransferUsed = false;
         contexts[contextHandle].Reset();
         return length;
     }
@@ -347,7 +347,7 @@ void USBGeneric::AbortEndpointXfers(uint8_t endPointAddr)
 #ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
-        if (contexts[i].used && contexts[i].transfer->endpoint == endPointAddr)
+        if (contexts[i].isTransferUsed && contexts[i].transfer->endpoint == endPointAddr)
         {
             libusb_cancel_transfer(contexts[i].transfer);
         }
@@ -370,7 +370,7 @@ int USBGeneric::GetUSBContextIndex()
     // Find not used context
     for (i = 0; i < USB_MAX_CONTEXTS; i++)
     {
-        if (!contexts[i].used)
+        if (!contexts[i].isTransferUsed)
         {
             contextFound = true;
             break;
@@ -383,7 +383,7 @@ int USBGeneric::GetUSBContextIndex()
         return -1;
     }
 
-    contexts[i].used = true;
+    contexts[i].isTransferUsed = true;
 
     return i;
 }
@@ -393,7 +393,7 @@ void USBGeneric::WaitForXfers(uint8_t endPointAddr)
 #ifdef __unix__
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
-        if (contexts[i].used && contexts[i].transfer->endpoint == endPointAddr)
+        if (contexts[i].isTransferUsed && contexts[i].transfer->endpoint == endPointAddr)
         {
             WaitForXfer(i, 250);
             FinishDataXfer(nullptr, 0, i);

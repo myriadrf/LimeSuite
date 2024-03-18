@@ -99,12 +99,15 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
 
-    virtual int StreamRx(uint8_t moduleIndex, complex32f_t* const* samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, complex16_t* const* samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamRx(uint8_t moduleIndex, complex12_t* const* samples, uint32_t count, StreamMeta* meta) override;
-    virtual int StreamTx(uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
-    virtual int StreamTx(uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, complex32f_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, complex16_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamRx(uint8_t moduleIndex, complex12_t* const* samples, uint32_t count, StreamMeta* meta) override;
+    virtual uint32_t StreamTx(
+        uint8_t moduleIndex, const complex32f_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual uint32_t StreamTx(
+        uint8_t moduleIndex, const complex16_t* const* samples, uint32_t count, const StreamMeta* meta) override;
+    virtual uint32_t StreamTx(
+        uint8_t moduleIndex, const complex12_t* const* samples, uint32_t count, const StreamMeta* meta) override;
     virtual void StreamStatus(uint8_t moduleIndex, SDRDevice::StreamStats* rx, SDRDevice::StreamStats* tx) override;
 
     virtual void SetDataLogCallback(DataCallbackType callback) override;
@@ -115,7 +118,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual OpStatus UploadMemory(
         eMemoryDevice device, uint8_t moduleIndex, const char* data, size_t length, UploadMemoryCallback callback) override;
 
+    /// @copydoc FPGA::ReadRegister()
     virtual int ReadFPGARegister(uint32_t address);
+    /// @copydoc FPGA::WriteRegister()
     virtual OpStatus WriteFPGARegister(uint32_t address, uint32_t value);
 
   protected:

@@ -21,15 +21,23 @@ namespace lime {
 static SDRDevice::CustomParameter cp_vctcxo_dac = { "VCTCXO DAC (volatile)", 0, 0, 65535, false };
 static double X8ReferenceClock = 30.72e6;
 
-// Do not perform any unnecessary configuring to device in constructor, so you
-// could read back it's state for debugging purposes
+/// @brief Constructs the LimeSDR_MMX8 object.
+///
+/// @param spiLMS7002M The communications ports to the LMS7002M chips.
+/// @param spiFPGA The communications ports to the device's FPGA chips.
+/// @param trxStreams The communications ports to send and receive sample data.
+/// @param control The serial port communication of the device.
+/// @param adfComms The communications port to the device's ADF4002 chip.
 LimeSDR_MMX8::LimeSDR_MMX8(std::vector<std::shared_ptr<IComms>>& spiLMS7002M,
     std::vector<std::shared_ptr<IComms>>& spiFPGA,
     std::vector<std::shared_ptr<LitePCIe>> trxStreams,
     std::shared_ptr<ISerialPort> control,
-    ISPI* adfComms)
+    std::shared_ptr<ISPI> adfComms)
     : mTRXStreamPorts(trxStreams)
 {
+    /// Do not perform any unnecessary configuring to device in constructor, so you
+    /// could read back it's state for debugging purposes
+
     mMainFPGAcomms = spiFPGA[8];
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_MMX8);
@@ -632,32 +640,35 @@ void LimeSDR_MMX8::StreamStop(const std::vector<uint8_t> moduleIndexes)
         mSubDevices[moduleIndex]->StreamStop(0);
 }
 
-int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
+uint32_t LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex32f_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
 }
 
-int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex16_t* const* dest, uint32_t count, StreamMeta* meta)
+uint32_t LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex16_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
 }
 
-int LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex12_t* const* dest, uint32_t count, StreamMeta* meta)
+uint32_t LimeSDR_MMX8::StreamRx(uint8_t moduleIndex, lime::complex12_t* const* dest, uint32_t count, StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamRx(0, dest, count, meta);
 }
 
-int LimeSDR_MMX8::StreamTx(uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
+uint32_t LimeSDR_MMX8::StreamTx(
+    uint8_t moduleIndex, const lime::complex32f_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamTx(0, samples, count, meta);
 }
 
-int LimeSDR_MMX8::StreamTx(uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
+uint32_t LimeSDR_MMX8::StreamTx(
+    uint8_t moduleIndex, const lime::complex16_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamTx(0, samples, count, meta);
 }
 
-int LimeSDR_MMX8::StreamTx(uint8_t moduleIndex, const lime::complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
+uint32_t LimeSDR_MMX8::StreamTx(
+    uint8_t moduleIndex, const lime::complex12_t* const* samples, uint32_t count, const StreamMeta* meta)
 {
     return mSubDevices[moduleIndex]->StreamTx(0, samples, count, meta);
 }

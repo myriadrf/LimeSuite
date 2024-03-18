@@ -31,7 +31,7 @@ class USBTransferContext
     virtual ~USBTransferContext();
     virtual bool Reset();
 
-    bool used;
+    bool isTransferUsed; ///< A flag to mark if this transfer is currently being used.
 
 #ifdef __unix__
     libusb_transfer* transfer;

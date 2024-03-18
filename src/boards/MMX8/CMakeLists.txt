@@ -5,8 +5,11 @@
 set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boards/MMX8)
 
 set(MM_X8_SOURCES
-    ${THIS_SOURCE_DIR}/MM_X8Entry.cpp
+    ${THIS_SOURCE_DIR}/LMS64C_ADF_Over_PCIe_MMX8.cpp
+    ${THIS_SOURCE_DIR}/LMS64C_FPGA_Over_PCIe_MMX8.cpp
+    ${THIS_SOURCE_DIR}/LMS64C_LMS7002M_Over_PCIe_MMX8.cpp
     ${THIS_SOURCE_DIR}/MM_X8.cpp
+    ${THIS_SOURCE_DIR}/MM_X8Entry.cpp
 )
 
 ########################################################################

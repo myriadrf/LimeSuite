@@ -178,7 +178,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
     }
 
     // skip some packets at the start in case of leftover data garbage
-    int64_t ignoreSamplesAtStart = 0;
+    uint64_t ignoreSamplesAtStart = 0;
 
     //Initialize stream
     bool streamHadIssues = false;
@@ -207,7 +207,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
 
     bool show = false;
     int fired = 0;
-    int64_t lastRxTS = 0;
+    uint64_t lastRxTS = 0;
 
     int badSignal = 0;
     while (runForever.load())
@@ -218,7 +218,7 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
         SDRDevice::StreamMeta rxMeta;
         rxMeta.timestamp = 0;
         auto tt1 = std::chrono::high_resolution_clock::now();
-        int samplesRead = dev.StreamRx(testStreamIndex, dest, samplesInPkt * txPacketCount, &rxMeta);
+        uint32_t samplesRead = dev.StreamRx(testStreamIndex, dest, samplesInPkt * txPacketCount, &rxMeta);
         auto tt2 = std::chrono::high_resolution_clock::now();
         int duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2 - tt1).count();
         if (show)
@@ -251,13 +251,13 @@ bool FullStreamTxRx(SDRDevice& dev, bool MIMO)
             ++fired;
             int64_t rxNow = rxMeta.timestamp + samplesInPkt;
             txMeta.timestamp = rxNow + txDeltaTS;
-            txMeta.useTimestamp = true;
-            txMeta.flush = false; // not really matters because of continuous trasmitting
+            txMeta.waitForTimestamp = true;
+            txMeta.flushPartialPacket = false; // not really matters because of continuous trasmitting
 
             auto tt1 = std::chrono::high_resolution_clock::now();
-            int samplesSent = dev.StreamTx(testStreamIndex, src, samplesInPkt * txPacketCount, &txMeta);
+            uint32_t samplesSent = dev.StreamTx(testStreamIndex, src, samplesInPkt * txPacketCount, &txMeta);
             bsent += txPacketCount;
-            //int samplesSent2 = dev.StreamTx(0, (const void **)src, samplesInPkt*txPacketCount/4, &txMeta);
+            //uint32_t samplesSent2 = dev.StreamTx(0, (const void **)src, samplesInPkt*txPacketCount/4, &txMeta);
             auto tt2 = std::chrono::high_resolution_clock::now();
             int duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2 - tt1).count();
             if (show)
@@ -366,7 +366,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     }
 
     // skip some packets at the start in case of leftover data garbage
-    int64_t ignoreSamplesAtStart = 0; //samplesInPkt*1024;
+    uint64_t ignoreSamplesAtStart = 0; //samplesInPkt*1024;
     //printf("Skipping %i rx samples at the beginning", ignoreSamplesAtStart);
 
     //Initialize stream
@@ -392,7 +392,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
     {
         //Receive samples
         SDRDevice::StreamMeta rxMeta;
-        int samplesRead = dev.StreamRx(chipIndex, dest, samplesInPkt * txPacketCount, &rxMeta);
+        uint32_t samplesRead = dev.StreamRx(chipIndex, dest, samplesInPkt * txPacketCount, &rxMeta);
         if (samplesRead < 0)
         {
             printf("Failed to StreamRx\n");
@@ -409,9 +409,9 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
         if (!txPending)
         {
             txMeta.timestamp = rxNow + txDeltaTS;
-            txMeta.useTimestamp = true;
-            txMeta.flush = true;
-            int samplesSent = dev.StreamTx(chipIndex, src, samplesInPkt, &txMeta);
+            txMeta.waitForTimestamp = true;
+            txMeta.flushPartialPacket = true;
+            uint32_t samplesSent = dev.StreamTx(chipIndex, src, samplesInPkt, &txMeta);
             if (samplesSent <= 0)
             {
                 if (samplesSent < 0)
@@ -440,7 +440,7 @@ bool TxTiming(SDRDevice& dev, bool MIMO, float tsDelay_ms)
         }
         else // wait and check for tx packet reception
         {
-            for (int j = 0; j < samplesRead; ++j)
+            for (uint32_t j = 0; j < samplesRead; ++j)
             {
                 float i = dest[0][j].real();
                 float q = dest[0][j].imag();

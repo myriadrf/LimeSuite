@@ -159,7 +159,7 @@ static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
 */
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
 */
-uint32_t LMS7002M::GetRSSI(RSSI_measurements* measurements)
+uint32_t LMS7002M::GetRSSI()
 {
     //delay to make sure RSSI gets enough samples to refresh before reading it
     this_thread::sleep_for(chrono::microseconds(50));
@@ -169,9 +169,6 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements* measurements)
     return rssi;
 }
 
-/** @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
-@return 0-success, other-failure
-*/
 OpStatus LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz)
@@ -267,9 +264,6 @@ OpStatus LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     return OpStatus::SUCCESS;
 }
 
-/** @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
-    @return 0-success, other-failure
-*/
 OpStatus LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz)
@@ -390,11 +384,6 @@ OpStatus LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     return OpStatus::SUCCESS;
 }
 
-/** @brief Loads given DC_REG values into registers
-    @param dir TxTSP or RxTSP selection
-    @param I DC_REG I value
-    @param Q DC_REG Q value
-*/
 OpStatus LMS7002M::LoadDC_REG_IQ(TRXDir dir, int16_t I, int16_t Q)
 {
     if (dir == TRXDir::Tx)
