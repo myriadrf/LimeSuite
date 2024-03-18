@@ -424,7 +424,8 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
     if (name == "BB")
     {
         const TRXDir dir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
-        return sdrDevice->GetNCOFrequency(0, dir, channel, 0);
+        double phaseOffset = 0.0;
+        return sdrDevice->GetNCOFrequency(0, dir, channel, 0, phaseOffset);
     }
 
     throw std::runtime_error("SoapyLMS7::getFrequency(" + name + ") unknown name");

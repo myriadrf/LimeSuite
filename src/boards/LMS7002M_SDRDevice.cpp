@@ -175,8 +175,9 @@ OpStatus LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8
     auto channelAFrequency = GetFrequency(moduleIndex, trx, chA);
     auto channelBFrequency = GetFrequency(moduleIndex, trx, chB);
 
-    auto channelANCOFrequency = GetNCOFrequency(moduleIndex, trx, chA, 0);
-    auto channelBNCOFrequency = GetNCOFrequency(moduleIndex, trx, chB, 0);
+    double phaseOffset = 0.0;
+    auto channelANCOFrequency = GetNCOFrequency(moduleIndex, trx, chA, 0, phaseOffset);
+    auto channelBNCOFrequency = GetNCOFrequency(moduleIndex, trx, chB, 0, phaseOffset);
 
     auto channelANCOOffset = channelAFrequency - channelANCOFrequency;
     auto channelBNCOOffset = channelBFrequency - channelBNCOFrequency;
@@ -261,10 +262,11 @@ OpStatus LMS7002M_SDRDevice::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8
 
 double LMS7002M_SDRDevice::GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
-    return GetFrequency(moduleIndex, trx, channel) - GetNCOFrequency(moduleIndex, trx, channel, 0);
+    double phaseOffset = 0.0;
+    return GetFrequency(moduleIndex, trx, channel) - GetNCOFrequency(moduleIndex, trx, channel, 0, phaseOffset);
 }
 
-double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index)
+double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double& phaseOffset)
 {
     lime::LMS7002M* lms = mLMSChips.at(moduleIndex);
 
@@ -276,6 +278,10 @@ double LMS7002M_SDRDevice::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint
     {
         down = !down;
     }
+
+    uint16_t value = lms->SPI_read(trx == TRXDir::Tx ? 0x0241 : 0x0441);
+    phaseOffset = 360.0 * value / 65536.0;
+
     return down ? -freq : freq;
 }
 

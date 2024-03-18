@@ -1637,16 +1637,17 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t* device, bool dir_tx, 
     }
 
     auto direction = dir_tx ? lime::TRXDir::Tx : lime::TRXDir::Rx;
+    double phaseOffset = 0.0;
+
     for (int i = 0; i < LMS_NCO_VAL_COUNT; ++i)
     {
         // TODO: check status
-        freq[i] = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, chan, i);
+        freq[i] = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, chan, i, phaseOffset);
     }
 
     if (pho != nullptr)
     {
-        uint16_t value = apiDevice->device->ReadRegister(apiDevice->moduleIndex, dir_tx ? 0x0241 : 0x0441);
-        *pho = 360.0 * value / 65536.0;
+        *pho = phaseOffset;
     }
 
     return 0;
@@ -1706,7 +1707,8 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t* device, bool dir_tx, size
 
     if (fcw != nullptr)
     {
-        *fcw = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, ch, 0);
+        double phaseOffset = 0.0;
+        *fcw = apiDevice->device->GetNCOFrequency(apiDevice->moduleIndex, direction, ch, 0, phaseOffset);
     }
 
     return 0;

@@ -171,14 +171,14 @@ OpStatus LimeSDR_MMX8::SetFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t cha
     return mSubDevices[moduleIndex]->SetFrequency(0, trx, channel, frequency);
 }
 
-double LimeSDR_MMX8::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index)
+double LimeSDR_MMX8::GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double& phaseOffset)
 {
     if (moduleIndex >= 8)
     {
         moduleIndex = 0;
     }
 
-    return mSubDevices[moduleIndex]->GetNCOFrequency(0, trx, channel, index);
+    return mSubDevices[moduleIndex]->GetNCOFrequency(0, trx, channel, index, phaseOffset);
 }
 
 OpStatus LimeSDR_MMX8::SetNCOFrequency(
