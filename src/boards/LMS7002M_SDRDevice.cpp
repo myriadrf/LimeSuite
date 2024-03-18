@@ -379,11 +379,11 @@ uint8_t LMS7002M_SDRDevice::GetAntenna(uint8_t moduleIndex, TRXDir trx, uint8_t 
 
     if (trx == TRXDir::Tx)
     {
-        return static_cast<std::size_t>(lms->GetBandTRF());
+        return lms->GetBandTRF();
     }
     else
     {
-        return static_cast<std::size_t>(lms->GetPathRFE());
+        return static_cast<uint8_t>(lms->GetPathRFE());
     }
 }
 
