@@ -54,3 +54,15 @@ table.align-center {
 table {
    caption-side: bottom;
 }
+
+/* Text wrapping in tables */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+  white-space: normal;
+}
+
+/* Fix huge margin at the bottom of a cell if a list is used inside a table */
+.wy-table-responsive table td ul,
+.wy-table-responsive table th ul {
+  margin-bottom: 0;
+}

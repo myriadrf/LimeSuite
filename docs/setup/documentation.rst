@@ -1,13 +1,13 @@
 Documentation generation guide
 ==============================
 
-This page describes how to generate the LimeSuiteGUI2 documentation
+This page describes how to generate the Lime Suite NG documentation
 (the very thing you're reading right now) on Linux.
 
 Prerequisites
 -------------
 
-Components needed to generate the LimeSuiteGUI2 documentation:
+Components needed to generate the Lime Suite NG documentation:
 
 - `GCC`_
 - `CMake`_
@@ -23,17 +23,17 @@ To set up the environment, run these commands:
 
 .. code-block:: bash
 
-    python3.8 -m venv venv # Create the virtual environment folder
+    python3.8 -m venv venv # Create the virtual environment directory
     source venv/bin/activate # Activate the virtual environment
     pip install -r requirements.txt # Install all the required dependencies for the generation
 
 .. note::
-    One should run these commands in the `docs` folder.
+    One should run these commands in the ``docs`` directory.
 
 Generation
 ----------
 
-In the `docs` folder, located in the root folder of the repository, while in the venv, run these commands:
+In the ``docs`` directory, located in the root directory of the repository, while in the venv, run these commands:
 
 .. code-block:: bash
 
@@ -43,25 +43,40 @@ In the `docs` folder, located in the root folder of the repository, while in the
     python add_undoc_members.py # Add a flag to add all undocumented members into the page
     make html # Generate the documentation itself
 
-.. important:: 
+.. important::
     These commands or the script must be run in the venv, otherwise it will fail.
 
-For ease of convenience, there is also a `generate_docs.sh` script located in the `docs` folder.
+For ease of convenience, there is also a ``generate_docs.sh`` script located in the ``docs`` directory.
 
-After a successful generation the resulting documentation pages will be located in 
-`docs/_build/html` folder.
+After a successful generation the resulting documentation pages will be located in
+``docs/_build/html`` directory.
+
+Link checking
+-------------
+
+To check whether all URLs in the documentation are valid, there exists a ``make`` target to automatically check the links:
+
+.. code-block:: bash
+
+    make checklinks
+
+.. note::
+    Run this in the ``docs`` directory while in the venv.
+
+This will check whether all the URLs in the documentation are still valid and open a working webpage.
+Any broken links will be shown in red and also listed in the ``_build/linkcheck/output.txt`` file.
 
 Docker
 ------
 
 There also exists a Docker file to generate the documentation.
-To generate this documentation using Docker, in the root folder of the repository run:
+To generate this documentation using Docker, in the root directory of the repository run:
 
 .. code-block:: bash
 
     docker build -o <output_location> -f GenerateDocumentation.Dockerfile .
 
-This will run the whole documentation generation script and place the generated HTML in the specified folder.
+This will run the whole documentation generation script and place the generated HTML in the specified directory.
 
 More information
 ----------------
