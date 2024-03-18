@@ -33,6 +33,9 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     virtual OpStatus SetNCOFrequency(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) override;
 
+    virtual int GetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual OpStatus SetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, bool downconv) override;
+
     virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
@@ -124,6 +127,8 @@ class LIME_API LMS7002M_SDRDevice : public SDRDevice
     OpStatus LMS7002ChannelConfigure(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex);
     OpStatus LMS7002ChannelCalibration(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex);
     OpStatus LMS7002TestSignalConfigure(LMS7002M* chip, const SDRDevice::ChannelConfig& config, uint8_t channelIndex);
+
+    static constexpr uint8_t NCOValueCount = 16;
 
     DataCallbackType mCallback_logData;
     LogCallbackType mCallback_logMessage;

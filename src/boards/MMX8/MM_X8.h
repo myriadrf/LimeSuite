@@ -46,6 +46,9 @@ class LimeSDR_MMX8 : public SDRDevice
     virtual OpStatus SetNCOFrequency(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) override;
 
+    virtual int GetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
+    virtual OpStatus SetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, bool downconv) override;
+
     virtual double GetNCOOffset(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;
 
     virtual double GetSampleRate(uint8_t moduleIndex, TRXDir trx, uint8_t channel) override;

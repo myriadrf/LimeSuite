@@ -323,6 +323,54 @@ OpStatus LMS7002M_SDRDevice::SetNCOFrequency(
     return OpStatus::SUCCESS;
 }
 
+int LMS7002M_SDRDevice::GetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
+{
+    auto& cmixParameter = trx == TRXDir::Tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP;
+    auto& selParameter = trx == TRXDir::Tx ? LMS7_SEL_TX : LMS7_SEL_RX;
+
+    if (GetParameter(moduleIndex, channel, cmixParameter.address, cmixParameter.msb, cmixParameter.lsb) != 0)
+    {
+        return ReportError(-1, "NCO is disabled");
+    }
+
+    return GetParameter(moduleIndex, channel, selParameter.address, selParameter.msb, selParameter.lsb);
+}
+
+OpStatus LMS7002M_SDRDevice::SetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, bool downconv)
+{
+    auto& cmixBypassParameter = trx == TRXDir::Tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP;
+    auto& cmixGainParameter = trx == TRXDir::Tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP;
+    auto& selectionParameter = trx == TRXDir::Tx ? LMS7_SEL_TX : LMS7_SEL_RX;
+    auto& cmixSelectionParameter = trx == TRXDir::Tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP;
+
+    if (OpStatus status = SetParameter(
+            moduleIndex, channel, cmixBypassParameter.address, cmixBypassParameter.msb, cmixBypassParameter.lsb, index < 0 ? 1 : 0);
+        status != OpStatus::SUCCESS)
+        return status;
+    if (OpStatus status = SetParameter(
+            moduleIndex, channel, cmixGainParameter.address, cmixGainParameter.msb, cmixGainParameter.lsb, index < 0 ? 0 : 1);
+        status != OpStatus::SUCCESS)
+        return status;
+
+    if (index >= NCOValueCount)
+    {
+        lime::error("Invalid NCO index value.");
+        return OpStatus::OUT_OF_RANGE;
+    }
+
+    if (OpStatus status =
+            SetParameter(moduleIndex, channel, selectionParameter.address, selectionParameter.msb, selectionParameter.lsb, index);
+        status != OpStatus::SUCCESS)
+        return status;
+
+    if (OpStatus status = SetParameter(
+            moduleIndex, channel, cmixSelectionParameter.address, cmixSelectionParameter.msb, cmixSelectionParameter.lsb, downconv);
+        status != OpStatus::SUCCESS)
+        return status;
+
+    return OpStatus::SUCCESS;
+}
+
 double LMS7002M_SDRDevice::GetLowPassFilter(uint8_t moduleIndex, TRXDir trx, uint8_t channel)
 {
     return lowPassFilterCache[trx][channel]; // Default initializes to 0
