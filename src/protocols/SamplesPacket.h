@@ -14,7 +14,7 @@ template<uint8_t chCount> class SamplesPacket
 {
   public:
     /** The size of the structure that holds the sample packet information. */
-    static constexpr int headerSize = 3 * sizeof(uint8_t*) * chCount + 17;
+    static constexpr int headerSize = sizeof(SamplesPacket<chCount>);
 
     /**
       @brief Constructs the sample packet class.
