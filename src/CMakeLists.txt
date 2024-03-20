@@ -126,7 +126,12 @@ if (ENABLE_LIBRARY)
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES VERSION ${LIME_SUITE_LIBVER})
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES DEFINE_SYMBOL "LIME_DLL_EXPORTS")
     target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${LIME_SUITE_INCLUDES})
-    target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_include_directories(${MAIN_LIBRARY_NAME} INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external>
+        $<INSTALL_INTERFACE:include>
+    )
 
     if(BUILD_SHARED_LIBS)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")
@@ -137,7 +142,7 @@ if (ENABLE_LIBRARY)
         append_coverage_compiler_flags_to_target(${MAIN_LIBRARY_NAME})
     endif()
 
-    install(TARGETS ${MAIN_LIBRARY_NAME}
+    install(TARGETS ${MAIN_LIBRARY_NAME} EXPORT LimeSuite2
         LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file

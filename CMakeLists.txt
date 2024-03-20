@@ -270,8 +270,11 @@ if (ENABLE_HEADERS AND ENABLE_LIBRARY)
         ${PROJECT_BINARY_DIR}/LimeSuite2ConfigVersion.cmake
     @ONLY)
 
+    install(EXPORT LimeSuite2 FILE
+        LimeSuite2Config.cmake
+        DESTINATION lib${LIB_SUFFIX}/cmake/${PROJECT_NAME})
+
     install(FILES
-        ${PROJECT_SOURCE_DIR}/cmake/Modules/LimeSuite2Config.cmake
         ${PROJECT_BINARY_DIR}/LimeSuite2ConfigVersion.cmake
         DESTINATION lib${LIB_SUFFIX}/cmake/${PROJECT_NAME})
 endif (ENABLE_HEADERS AND ENABLE_LIBRARY)

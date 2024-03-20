@@ -1,6 +1,6 @@
 if(WIN32)
     set(FTDI_FOUND TRUE)
-    set(FTDI_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/FTD3XXLibrary)
+    set(FTDI_INCLUDE_DIRS external/FTD3XXLibrary)
 
     #library directory based on x64 vs x86
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -53,6 +53,6 @@ set(CONNECTION_FT601_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/USBTransferContext_FT601.cpp
 )
 
-target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${FTDI_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
+target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${FTDI_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
 target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${CONNECTION_FT601_SOURCES})
 target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${FTDI_LIBRARIES})

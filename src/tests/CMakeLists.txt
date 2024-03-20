@@ -16,26 +16,26 @@ set(LIME_TEST_SUITE_SOURCES
 )
 
 if (ENABLE_LIMESDR_X3)
-    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}
         boards/LimeSDR_X3/SlaveSelectShimTest.cpp
     )
 endif()
 
 if (ENABLE_LITE_PCIE)
-    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}
         comms/PCIe/PCIE_CSR_PipeTest.cpp
     )
 endif()
 
 if (ENABLE_LIMESDR_USB)
-    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}
         boards/LimeSDR/LimeSDRTest.cpp
         boards/LimeSDR/USB_CSR_Pipe_SDRTest.cpp
     )
 endif()
 
 if (ENABLE_LIMESDR_MINI)
-    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}     
+    set(LIME_TEST_SUITE_SOURCES ${LIME_TEST_SUITE_SOURCES}
         boards/LimeSDR_Mini/LimeSDR_MiniTest.cpp
         boards/LimeSDR_Mini/USB_CSR_Pipe_MiniTest.cpp
     )
@@ -43,7 +43,7 @@ endif()
 
 add_executable(${LIME_TEST_SUITE_NAME} ${LIME_TEST_SUITE_SOURCES})
 
-target_include_directories(${LIME_TEST_SUITE_NAME} PUBLIC ${LIME_SUITE_INCLUDES} tests)
+target_include_directories(${LIME_TEST_SUITE_NAME} PRIVATE ${LIME_SUITE_INCLUDES} tests)
 target_link_libraries(
     ${LIME_TEST_SUITE_NAME}
     PUBLIC

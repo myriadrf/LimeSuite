@@ -1,7 +1,7 @@
 ########################################################################
 ## Support for USB STREAM connection
 ########################################################################
-set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/comms/USB)
+set(THIS_SOURCE_DIR comms/USB)
 
 include(${THIS_SOURCE_DIR}/FT601/CMakeLists.txt)
 include(${THIS_SOURCE_DIR}/FX3/CMakeLists.txt)
@@ -23,5 +23,5 @@ set(COMMS_USB_SOURCES
 ########################################################################
 ## Add to library
 ########################################################################
-target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC ${THIS_SOURCE_DIR})
+target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${THIS_SOURCE_DIR})
 target_sources(${MAIN_LIBRARY_NAME} PRIVATE ${COMMS_USB_SOURCES})
