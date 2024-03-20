@@ -1,6 +1,6 @@
 if(WIN32)
     set(FTDI_FOUND TRUE)
-    set(FTDI_INCLUDE_DIRS external/FTD3XXLibrary)
+    set(FTDI_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/FTD3XXLibrary)
 
     #library directory based on x64 vs x86
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)

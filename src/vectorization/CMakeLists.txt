@@ -5,7 +5,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 add_library(samplesConversion STATIC samplesConversion.cpp)
-target_include_directories(samplesConversion PRIVATE ${LIME_SUITE_INCLUDES})
+target_include_directories(samplesConversion PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<INSTALL_INTERFACE:include>
+)
 
 add_executable(samplesConversionPerfTest main.cpp)
 target_link_libraries(samplesConversionPerfTest samplesConversion)
