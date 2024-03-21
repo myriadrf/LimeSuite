@@ -1,8 +1,8 @@
 #ifndef LIME_USB_CSR_Pipe_SDR_H
 #define LIME_USB_CSR_Pipe_SDR_H
 
-#include "USB_CSR_Pipe.h"
-#include "FX3/FX3.h"
+#include "comms/USB/USB_CSR_Pipe.h"
+#include "comms/USB/FX3/FX3.h"
 
 #include <cstdint>
 

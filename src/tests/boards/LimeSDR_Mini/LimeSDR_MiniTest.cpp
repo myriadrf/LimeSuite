@@ -3,10 +3,10 @@
 
 #include "tests/comms/USB/FT601/FT601Mock.h"
 #include "tests/comms/USB/USB_CSR_PipeMock.h"
-#include "LimeSDR_Mini.h"
-#include "LMS64C_FPGA_Over_USB.h"
-#include "LMS64C_LMS7002M_Over_USB.h"
-#include "USB_CSR_Pipe_Mini.h"
+#include "boards/LimeSDR_Mini/LimeSDR_Mini.h"
+#include "comms/USB/LMS64C_FPGA_Over_USB.h"
+#include "comms/USB/LMS64C_LMS7002M_Over_USB.h"
+#include "boards/LimeSDR_Mini/USB_CSR_Pipe_Mini.h"
 
 using namespace lime;
 using namespace lime::testing;

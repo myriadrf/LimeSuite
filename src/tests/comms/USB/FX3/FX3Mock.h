@@ -3,7 +3,7 @@
 
 #include <gmock/gmock.h>
 
-#include "FX3/FX3.h"
+#include "comms/USB/FX3/FX3.h"
 
 namespace lime::testing {
 

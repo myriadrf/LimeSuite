@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "tests/comms/USB/FX3/FX3Mock.h"
-#include "USB_CSR_Pipe_SDR.h"
+#include "boards/LimeSDR/USB_CSR_Pipe_SDR.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;

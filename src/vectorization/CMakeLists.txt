@@ -4,14 +4,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     #add_compile_options(-O3 -march=native -fopt-info-vec-all)
 endif()
 
-add_library(samplesConversion STATIC samplesConversion.cpp)
-target_include_directories(samplesConversion PUBLIC 
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-    $<INSTALL_INTERFACE:include>
-)
+target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${THIS_SOURCE_DIR})
+target_sources(${MAIN_LIBRARY_NAME} PRIVATE samplesConversion.cpp)
 
 add_executable(samplesConversionPerfTest main.cpp)
-target_link_libraries(samplesConversionPerfTest samplesConversion)
-
-install(TARGETS samplesConversion EXPORT samplesConversion)
-install(EXPORT samplesConversion DESTINATION lib)
+target_link_libraries(samplesConversionPerfTest ${MAIN_LIBRARY_NAME})

@@ -1,8 +1,8 @@
 #ifndef LIME_USB_CSR_PIPE_MINI_H
 #define LIME_USB_CSR_PIPE_MINI_H
 
-#include "FT601/FT601.h"
-#include "USB_CSR_Pipe.h"
+#include "comms/USB/FT601/FT601.h"
+#include "comms/USB/USB_CSR_Pipe.h"
 
 namespace lime {
 

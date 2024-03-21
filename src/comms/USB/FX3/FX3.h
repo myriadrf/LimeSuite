@@ -1,5 +1,5 @@
 #pragma once
-#include "USBGeneric.h"
+#include "comms/USB/USBGeneric.h"
 
 #include <vector>
 #include <set>

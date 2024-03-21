@@ -2,9 +2,9 @@
 #include <gtest/gtest.h>
 
 #include "tests/comms/USB/FX3/FX3Mock.h"
-#include "LimeSDR.h"
-#include "LMS64C_LMS7002M_Over_USB.h"
-#include "LMS64C_FPGA_Over_USB.h"
+#include "boards/LimeSDR/LimeSDR.h"
+#include "comms/USB/LMS64C_LMS7002M_Over_USB.h"
+#include "comms/USB/LMS64C_FPGA_Over_USB.h"
 #include "tests/comms/USB/USB_CSR_PipeMock.h"
 
 using namespace lime;

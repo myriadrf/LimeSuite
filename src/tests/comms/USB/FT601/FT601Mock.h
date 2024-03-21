@@ -3,7 +3,7 @@
 
 #include <gmock/gmock.h>
 
-#include "FT601/FT601.h"
+#include "comms/USB/FT601/FT601.h"
 
 namespace lime::testing {
 

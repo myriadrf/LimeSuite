@@ -114,13 +114,11 @@ endif()
 include(FeatureSummary)
 include(CMakeDependentOption)
 
-add_subdirectory(vectorization)
-
 option(ENABLE_LIBRARY "Enable build library" ON)
 add_feature_info(LIBRARY ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(${MAIN_LIBRARY_NAME} ${LIME_SUITE_SOURCES})
-    target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIME_SUITE_LIBRARIES} samplesConversion)
+    target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${LIME_SUITE_LIBRARIES})
     set_property(TARGET ${MAIN_LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
     set_target_properties(${MAIN_LIBRARY_NAME} PROPERTIES VERSION ${LIME_SUITE_LIBVER})
@@ -132,6 +130,8 @@ if (ENABLE_LIBRARY)
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external>
         $<INSTALL_INTERFACE:include>
     )
+
+    add_subdirectory(vectorization)
 
     if(BUILD_SHARED_LIBS)
         target_compile_definitions(${MAIN_LIBRARY_NAME} PUBLIC "LIME_DLL")

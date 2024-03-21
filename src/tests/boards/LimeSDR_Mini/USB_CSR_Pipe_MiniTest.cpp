@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "tests/comms/USB/FT601/FT601Mock.h"
-#include "USB_CSR_Pipe_Mini.h"
+#include "boards/LimeSDR_Mini/USB_CSR_Pipe_Mini.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;
