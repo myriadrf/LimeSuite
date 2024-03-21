@@ -1,4 +1,9 @@
 if(WIN32)
+    # TODO: find better solution
+    set(FX3_POTENTIAL_PATH ${PROJECT_SOURCE_DIR}/${FX3_SDK_RELATIVE_PATH})
+    if(EXISTS "${FX3_POTENTIAL_PATH}")
+        set(FX3_SDK_PATH ${FX3_POTENTIAL_PATH})
+    endif()
     find_package(CyAPI)
     set_package_properties(CyAPI PROPERTIES
         TYPE RECOMMENDED
@@ -14,7 +19,11 @@ if(WIN32)
         message(WARNING "CYAPI SDK not found. Omitting Cypress FX3 USB support")
     endif()
     target_link_libraries(${MAIN_LIBRARY_NAME} PUBLIC ${FX3_LIBRARIES})
-    target_include_directories(${MAIN_LIBRARY_NAME} PRIVATE ${FX3_INCLUDE_DIRS})
+
+    target_include_directories(${MAIN_LIBRARY_NAME} PUBLIC
+        $<BUILD_INTERFACE:${FX3_INCLUDE_DIRS}>
+        $<INSTALL_INTERFACE:include>
+    )
 elseif(UNIX)
     find_package(libusb-1.0)
     set_package_properties(libusb-1.0 PROPERTIES

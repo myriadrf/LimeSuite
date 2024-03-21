@@ -42,7 +42,7 @@ jobs:
 
       - name: Configure CMake (windows)
         if: matrix.os == 'windows-latest'
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK -DBUILD_SHARED_LIBS=OFF
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DFX3_SDK_RELATIVE_PATH=deps/FX3SDK -DBUILD_SHARED_LIBS=OFF
 
       - name: Configure CMake (linux)
         if: matrix.os != 'windows-latest'
