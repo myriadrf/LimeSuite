@@ -506,10 +506,10 @@ int main(int argc, char** argv)
         if (syncPPS || rxSamplesInPacket || rxPacketsInBatch || txSamplesInPacket || txPacketsInBatch)
         {
             stream.extraConfig.waitPPS = syncPPS;
-            stream.extraConfig.rxSamplesInPacket = rxSamplesInPacket;
-            stream.extraConfig.txSamplesInPacket = txSamplesInPacket;
-            stream.extraConfig.rxPacketsInBatch = rxPacketsInBatch;
-            stream.extraConfig.txMaxPacketsInBatch = txPacketsInBatch;
+            stream.extraConfig.rx.samplesInPacket = rxSamplesInPacket;
+            stream.extraConfig.tx.samplesInPacket = txSamplesInPacket;
+            stream.extraConfig.rx.packetsInBatch = rxPacketsInBatch;
+            stream.extraConfig.tx.packetsInBatch = txPacketsInBatch;
         }
 
         useComposite = chipIndexes.size() > 1;
@@ -600,7 +600,7 @@ int main(int argc, char** argv)
 
     SDRDevice::StreamMeta rxMeta;
     SDRDevice::StreamMeta txMeta;
-    txMeta.useTimestamp = true;
+    txMeta.waitForTimestamp = true;
     txMeta.timestamp = sampleRate / 100; // send tx samples 10ms after start
 
 #ifdef USE_GNU_PLOT
@@ -638,8 +638,8 @@ int main(int argc, char** argv)
                 const complex16_t* txSamples[16];
                 for (int i = 0; i < 16; ++i)
                     txSamples[i] = &txData[txSent];
-                int samplesSent = useComposite ? composite->StreamTx(txSamples, toSend, &txMeta)
-                                               : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
+                uint32_t samplesSent = useComposite ? composite->StreamTx(txSamples, toSend, &txMeta)
+                                                    : device->StreamTx(chipIndex, txSamples, toSend, &txMeta);
                 if (samplesSent > 0)
                 {
                     txSent += samplesSent;
@@ -651,16 +651,16 @@ int main(int argc, char** argv)
         complex16_t* rxSamples[16];
         for (int i = 0; i < 16; ++i)
             rxSamples[i] = rxData[i].data();
-        int samplesRead = useComposite ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
-                                       : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
-        if (samplesRead <= 0)
+        uint32_t samplesRead = useComposite ? composite->StreamRx(rxSamples, fftSize, &rxMeta)
+                                            : device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        if (samplesRead == 0)
             continue;
 
         if (tx && repeater)
         {
             txMeta.timestamp = rxMeta.timestamp + samplesRead + repeaterDelay;
-            txMeta.useTimestamp = true;
-            txMeta.flush = true;
+            txMeta.waitForTimestamp = true;
+            txMeta.flushPartialPacket = true;
             if (useComposite)
                 composite->StreamTx(rxSamples, samplesRead, &txMeta);
             else
@@ -685,8 +685,8 @@ int main(int argc, char** argv)
             {
                 for (unsigned i = 0; i < fftSize; ++i)
                 {
-                    m_fftCalcIn[i].r = rxSamples[0][i].i / 32768.0;
-                    m_fftCalcIn[i].i = rxSamples[0][i].q / 32768.0;
+                    m_fftCalcIn[i].r = rxSamples[0][i].real() / 32768.0;
+                    m_fftCalcIn[i].i = rxSamples[0][i].imag() / 32768.0;
                 }
                 kiss_fft(
                     m_fftCalcPlan, reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcIn), reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcOut));

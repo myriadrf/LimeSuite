@@ -12,10 +12,14 @@ namespace lime {
 class USB_CSR_Pipe_SDR : public USB_CSR_Pipe
 {
   public:
+    /**
+      @brief Constructs a new USB_CSR_Pipe_SDR object
+      @param port The FX3 communications port to use.
+     */
     explicit USB_CSR_Pipe_SDR(FX3& port);
 
-    virtual int Write(const uint8_t* data, size_t length, int timeout_ms) override;
-    virtual int Read(uint8_t* data, size_t length, int timeout_ms) override;
+    virtual int Write(const uint8_t* data, std::size_t length, int timeout_ms) override;
+    virtual int Read(uint8_t* data, std::size_t length, int timeout_ms) override;
 
   protected:
     FX3& port;

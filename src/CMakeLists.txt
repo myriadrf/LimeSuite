@@ -51,6 +51,7 @@ set(LIME_SUITE_SOURCES
     Si5351C/Si5351C.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     FPGA_common/FPGA_common.cpp
+    FPGA_common/WriteRegistersBatch.cpp
     windowFunction.cpp
     threadHelper/threadHelper.cpp
     CDCM6208/CDCM6208_Dev.cpp

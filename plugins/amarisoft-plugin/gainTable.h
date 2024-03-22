@@ -2,15 +2,12 @@
 
 #include <array>
 
-// clang-format off
-
 struct RxGainRow {
     int lna;
     int pga;
 };
 
-
-static std::array<RxGainRow, 51> rxGainTable{{
+static std::array<RxGainRow, 51> rxGainTable{ {
     { 1, 12 },
     { 1, 13 },
     { 2, 12 },
@@ -61,15 +58,15 @@ static std::array<RxGainRow, 51> rxGainTable{{
     { 15, 28 },
     { 15, 29 },
     { 15, 30 },
-    { 15, 31 }
-}};
+    { 15, 31 },
+} };
 
 struct TxGainRow {
     int main;
     int lin;
 };
 
-static std::array<TxGainRow, 51> txGainTable{{
+static std::array<TxGainRow, 51> txGainTable{ {
     { 30, 30 },
     { 30, 30 },
     { 29, 29 },
@@ -120,7 +117,5 @@ static std::array<TxGainRow, 51> txGainTable{{
     { 3, 3 },
     { 2, 2 },
     { 1, 1 },
-    { 0, 0 }
-}};
-
-// clang-format on
+    { 0, 0 },
+} };

@@ -471,7 +471,9 @@ void MCU_BD::Wait_CLK_Cycles(int delay)
 }
 
 /** @brief Upload program code from memory into MCU
-    @return 0:success, -1:failed
+ *  @param m_iMode1 The high bit of the mode
+ *  @param m_iMode0 The low bit of the mode
+ *  @return 0:success, -1:failed
 */
 int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 {
@@ -923,7 +925,9 @@ int MCU_BD::RunInstr_MCU(unsigned short* pPCVAL)
     return retval;
 }
 
-/** @brief Returns information about programming or reading data progress
+/** 
+ * @brief Returns information about programming or reading data progress
+ * @returns The structure containing information about the progress info.
 */
 MCU_BD::ProgressInfo MCU_BD::GetProgressInfo() const
 {
@@ -958,6 +962,7 @@ std::string MCU_BD::GetProgramFilename() const
 }
 
 /** @brief Starts algorithm in MCU
+ * @param id The ID of the procedure to execute
 */
 void MCU_BD::RunProcedure(uint8_t id)
 {
@@ -974,7 +979,8 @@ void MCU_BD::RunProcedure(uint8_t id)
 }
 
 /** @brief Waits for MCU to finish executing program
-@return 0 success, 255 idle, 244 running, else algorithm status
+ *  @param timeout_ms The timeout to wait for (in ms)
+ *  @return 0 success, 255 idle, 244 running, else algorithm status
 */
 int MCU_BD::WaitForMCU(uint32_t timeout_ms)
 {

@@ -125,28 +125,28 @@ int main(int argc, char** argv)
     auto t2 = t1;
 
     int totalSamplesReceived = 0;
-    int totalSamplesSent = 0;
+    uint32_t totalSamplesSent = 0;
     float maxSignalAmplitude = 0;
 
     SDRDevice::StreamMeta rxMeta;
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
     {
-        int samplesRead = device->StreamRx(chipIndex, rxSamples, samplesInBuffer, &rxMeta);
+        uint32_t samplesRead = device->StreamRx(chipIndex, rxSamples, samplesInBuffer, &rxMeta);
         totalSamplesReceived += samplesRead;
 
         // process samples
-        for (int n = 0; n < samplesRead; ++n)
+        for (uint32_t n = 0; n < samplesRead; ++n)
         {
-            float amplitude = pow(rxSamples[0][n].i, 2) + pow(rxSamples[0][n].q, 2);
+            float amplitude = pow(rxSamples[0][n].real(), 2) + pow(rxSamples[0][n].imag(), 2);
             if (amplitude > maxSignalAmplitude)
                 maxSignalAmplitude = amplitude;
         }
 
         SDRDevice::StreamMeta txMeta;
         txMeta.timestamp = rxMeta.timestamp + samplesInBuffer * 64;
-        txMeta.useTimestamp = true;
-        txMeta.flush = false;
-        int samplesSent = device->StreamTx(chipIndex, rxSamples, samplesInBuffer, &txMeta);
+        txMeta.waitForTimestamp = true;
+        txMeta.flushPartialPacket = false;
+        uint32_t samplesSent = device->StreamTx(chipIndex, rxSamples, samplesInBuffer, &txMeta);
         if (samplesSent < 0)
         {
             printf("Failure to send\n");
@@ -168,7 +168,7 @@ int main(int argc, char** argv)
             for (std::size_t c = 0; c < stream.channels.at(TRXDir::Rx).size(); ++c)
             {
                 for (uint32_t n = 0; n < samplesInBuffer; ++n)
-                    gp.writef("%f %f\n", rxSamples[c][n].i, rxSamples[c][n].q);
+                    gp.writef("%f %f\n", rxSamples[c][n].real(), rxSamples[c][n].imag());
                 gp.write("e\n");
                 gp.flush();
             }

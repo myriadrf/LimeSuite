@@ -1,0 +1,47 @@
+name: Documentation
+
+on:
+  push:
+    branches: [master, litepcie-update]
+    paths:
+      - 'docs/**'
+      - 'src/examples/**/dualRXTX.cpp'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/examples/**/dualRXTX.cpp'
+
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -qq doxygen
+
+      - name: Set up Python venv
+        run: |
+          cd ${{github.workspace}}/docs
+          python3.8 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Generate documentation
+        run: |
+          cd ${{github.workspace}}/docs
+          source venv/bin/activate
+          ./generate_docs.sh
+
+      - name: Test hyperlinks
+        run: |
+          cd ${{github.workspace}}/docs
+          source venv/bin/activate
+          make checklinks

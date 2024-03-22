@@ -170,14 +170,14 @@ int FT601::BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr)
     if (ftStatus != FT_IO_PENDING)
     {
         lime::error("ERROR BEGIN DATA TRANSFER %d", ftStatus);
-        context->used = false;
+        context->isTransferUsed = false;
         return -1;
     }
 
     return index;
 }
 
-bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
+bool FT601::WaitForXfer(int contextHandle, int32_t timeout_ms)
 {
     if (contextHandle < 0)
     {
@@ -186,7 +186,7 @@ bool FT601::WaitForXfer(int contextHandle, uint32_t timeout_ms)
 
     USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[contextHandle];
 
-    if (!context->used)
+    if (!context->isTransferUsed)
     {
         return true; //there is nothing to wait for (signal wait finished)
     }
@@ -209,7 +209,7 @@ int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
     }
 
     USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[contextHandle];
-    if (!context->used)
+    if (!context->isTransferUsed)
     {
         return 0;
     }
@@ -229,7 +229,7 @@ int FT601::FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle)
     }
 
     FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
-    context->used = false;
+    context->isTransferUsed = false;
     return length;
 }
 
@@ -241,10 +241,10 @@ void FT601::AbortEndpointXfers(uint8_t endPointAddr)
     {
         USBTransferContext_FT601* context = &dynamic_cast<USBTransferContext_FT601*>(contexts)[i];
 
-        if (context->used && context->endPointAddr == endPointAddr)
+        if (context->isTransferUsed && context->endPointAddr == endPointAddr)
         {
             FT_ReleaseOverlapped(mFTHandle, context->inOvLap);
-            context->used = false;
+            context->isTransferUsed = false;
         }
     }
 
@@ -289,7 +289,7 @@ int FT601::GetUSBContextIndex()
     // Find not used context
     for (i = 0; i < USB_MAX_CONTEXTS; i++)
     {
-        if (!FT601contexts[i].used)
+        if (!FT601contexts[i].isTransferUsed)
         {
             contextFound = true;
             break;
@@ -302,7 +302,7 @@ int FT601::GetUSBContextIndex()
         return -1;
     }
 
-    FT601contexts[i].used = true;
+    FT601contexts[i].isTransferUsed = true;
 
     return i;
 }

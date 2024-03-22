@@ -14,6 +14,10 @@ namespace lime {
 class FT601 : public USBGeneric
 {
   public:
+    /**
+      @brief Constructs the class for communicating with the FT601 controller.
+      @param usbContext The USB context to use for the communication.
+     */
     FT601(void* usbContext = nullptr);
     virtual ~FT601();
 
@@ -35,12 +39,15 @@ class FT601 : public USBGeneric
 
 #ifndef __unix__
     virtual int BeginDataXfer(uint8_t* buffer, uint32_t length, uint8_t endPointAddr) override;
-    virtual bool WaitForXfer(int contextHandle, uint32_t timeout_ms) override;
+    virtual bool WaitForXfer(int contextHandle, int32_t timeout_ms) override;
     virtual int FinishDataXfer(uint8_t* buffer, uint32_t length, int contextHandle) override;
     virtual void AbortEndpointXfers(uint8_t endPointAddr) override;
 #endif
-    virtual int GetUSBContextIndex() override;
 
+    /**
+      @brief Resets the stream buffers of the device.
+      @return Status of the operation (0 - success; -1 - failure).
+     */
     int ResetStreamBuffers();
 
   protected:
@@ -53,6 +60,8 @@ class FT601 : public USBGeneric
     int FT_FlushPipe(unsigned char ep);
     uint32_t mUsbCounter;
 #endif
+
+    virtual int GetUSBContextIndex() override;
 };
 
 } // namespace lime

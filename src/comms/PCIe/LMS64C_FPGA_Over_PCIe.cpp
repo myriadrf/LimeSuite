@@ -1,35 +1,7 @@
-#include "PCIeCommon.h"
+
+#include "LMS64C_FPGA_Over_PCIe.h"
 
 using namespace lime;
-
-PCIE_CSR_Pipe::PCIE_CSR_Pipe(std::shared_ptr<LitePCIe> port)
-    : port(port)
-{
-}
-
-int PCIE_CSR_Pipe::Write(const uint8_t* data, size_t length, int timeout_ms)
-{
-    return port->WriteControl(data, length, timeout_ms);
-}
-int PCIE_CSR_Pipe::Read(uint8_t* data, size_t length, int timeout_ms)
-{
-    return port->ReadControl(data, length, timeout_ms);
-}
-
-LMS64C_LMS7002M_Over_PCIe::LMS64C_LMS7002M_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
-    : pipe(dataPort)
-{
-}
-
-OpStatus LMS64C_LMS7002M_Over_PCIe::SPI(const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
-{
-    return SPI(0, MOSI, MISO, count);
-}
-
-OpStatus LMS64C_LMS7002M_Over_PCIe::SPI(uint32_t spiBusAddress, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)
-{
-    return LMS64CProtocol::LMS7002M_SPI(pipe, spiBusAddress, MOSI, MISO, count);
-}
 
 LMS64C_FPGA_Over_PCIe::LMS64C_FPGA_Over_PCIe(std::shared_ptr<LitePCIe> dataPort)
     : pipe(dataPort)

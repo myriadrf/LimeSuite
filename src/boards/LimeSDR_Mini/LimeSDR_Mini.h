@@ -35,7 +35,6 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
     virtual double GetTemperature(uint8_t moduleIndex) override;
 
     virtual OpStatus Synchronize(bool toChip) override;
-    virtual void EnableCache(bool enable) override;
 
     virtual OpStatus SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count) override;
 
@@ -43,8 +42,6 @@ class LimeSDR_Mini : public LMS7002M_SDRDevice
 
     virtual void StreamStart(uint8_t moduleIndex) override;
     virtual void StreamStop(uint8_t moduleIndex) override;
-
-    virtual void* GetInternalChip(uint32_t index) override;
 
     virtual OpStatus GPIODirRead(uint8_t* buffer, const size_t bufLength) override;
     virtual OpStatus GPIORead(uint8_t* buffer, const size_t bufLength) override;

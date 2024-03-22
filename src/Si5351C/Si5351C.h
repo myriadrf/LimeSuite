@@ -56,7 +56,10 @@ struct Si5351_PLL {
 
 class II2C;
 
-/** @brief Class for controlling the Si5351C I2C-programmable any-frequency CMOS clock generator + VCXO */
+/** @brief Class for controlling the Si5351C I2C-programmable any-frequency CMOS clock generator + VCXO
+ * 
+ * More information: https://www.skyworksinc.com/en/Products/Timing/CMOS-Clock-Generators/Si5351C-GM1
+ */
 class LIME_API Si5351C
 {
   public:
@@ -93,7 +96,7 @@ class LIME_API Si5351C
 
     Si5351C(II2C& i2c_comms);
     ~Si5351C();
-    bool LoadRegValuesFromFile(std::string FName);
+    void LoadRegValuesFromFile(std::string FName);
 
     void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
     void SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled = true, bool inverted = false);

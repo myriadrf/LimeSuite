@@ -21,25 +21,34 @@ class TRXLooper
     TRXLooper(FPGA* f, LMS7002M* chip, int id);
     virtual ~TRXLooper();
 
-    uint64_t GetHardwareTimestamp(void);
+    uint64_t GetHardwareTimestamp() const;
     OpStatus SetHardwareTimestamp(const uint64_t now);
-    virtual OpStatus Setup(const lime::SDRDevice::StreamConfig& config);
+    virtual OpStatus Setup(const lime::SDRDevice::StreamConfig& cfg);
     virtual void Start();
     virtual void Stop();
 
-    virtual bool IsStreamRunning();
+    /// @brief Gets whether the stream is currently running or not.
+    /// @return The current status of the stream (true if running).
+    constexpr bool IsStreamRunning() const { return mStreamEnabled; }
 
-    inline const lime::SDRDevice::StreamConfig& GetConfig() const { return mConfig; }
+    /// @brief Gets the current configuration of the stream.
+    /// @return The current configuration of the stream.
+    constexpr const lime::SDRDevice::StreamConfig& GetConfig() const { return mConfig; }
 
-    virtual int StreamRx(lime::complex32f_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
-    virtual int StreamRx(lime::complex16_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
-    virtual int StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
-    virtual int StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamRx(lime::complex32f_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamRx(lime::complex16_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamRx(lime::complex12_t* const* samples, uint32_t count, SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamTx(const lime::complex32f_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamTx(const lime::complex16_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
+    virtual uint32_t StreamTx(const lime::complex12_t* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 
+    /// @brief Sets the callback to use for message logging.
+    /// @param callback The new callback to use.
     void SetMessageLogCallback(SDRDevice::LogCallbackType callback) { mCallback_logMessage = callback; }
 
-    SDRDevice::StreamStats GetStats(TRXDir tx);
+    SDRDevice::StreamStats GetStats(TRXDir tx) const;
 
+    /// @brief The type of a sample packet.
     typedef SamplesPacket<2> SamplesPacketType;
 
   protected:
@@ -54,11 +63,6 @@ class TRXLooper
     uint64_t mTimestampOffset;
     lime::SDRDevice::StreamConfig mConfig;
 
-    // void AlignRxTSP();
-    // void AlignRxRF(bool restoreValues);
-    // void AlignQuadrature(bool restoreValues);
-    // void RstRxIQGen();
-    // double GetPhaseOffset(int bin);
     FPGA* fpga;
     LMS7002M* lms;
     int chipId;
@@ -120,6 +124,10 @@ class TRXLooper
 
     Stream mRx;
     Stream mTx;
+
+  private:
+    template<class T> uint32_t StreamRxTemplate(T* const* dest, uint32_t count, SDRDevice::StreamMeta* meta);
+    template<class T> uint32_t StreamTxTemplate(const T* const* samples, uint32_t count, const SDRDevice::StreamMeta* meta);
 };
 
 } // namespace lime

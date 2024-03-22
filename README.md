@@ -4,7 +4,7 @@ Lime Suite is a collection of software supporting several hardware platforms
 based on the LMS7002M transceiver RFIC, such as LimeSDR family. It contains the
 following components:
 * **LimeSuite library** that provides C-style API;
-* **LimeSuiteGUI** application for accessing low-level chip and board settings, displaying FFT, updating firmware and more;
+* **Lime Suite NG** application for accessing low-level chip and board settings, displaying FFT, updating firmware and more;
 * **SoapyLMS** plugin for LimeSDR support in SoapySDR;
 * **LimeUtil** command line tool for listing LimeSDR devices and updating firmware;
 * **LimeQuickTest** application to run some basic tests;

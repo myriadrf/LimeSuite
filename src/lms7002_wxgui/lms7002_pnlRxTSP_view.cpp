@@ -1847,7 +1847,8 @@ void lms7002_pnlRXTSP_view::OnbtnSetLPFClick(wxCommandEvent& event)
 {
     double bw;
     txtLPFBW->GetValue().ToDouble(&bw);
-    if (lmsControl->SetGFIRFilter(TRXDir::Rx, mChannel, true, bw * 1e6) != OpStatus::SUCCESS)
+    if (lmsControl->SetGFIRFilter(TRXDir::Rx, mChannel == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB, true, bw * 1e6) !=
+        OpStatus::SUCCESS)
         wxMessageBox(_("GFIR configuration failed"), _("Error"));
 
     UpdateGUI(); // API changes nco selection
@@ -1890,7 +1891,7 @@ void lms7002_pnlRXTSP_view::UpdateGUI()
     if (lmsControl == nullptr)
         return;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum, mChannel);
-    double freq = lmsControl->GetClockFreq(LMS7002M::ClockID::CLK_RXTSP, mChannel);
+    double freq = lmsControl->GetClockFreq(LMS7002M::ClockID::CLK_RXTSP);
     lblRefClk->SetLabel(wxString::Format(_("%3.3f"), freq / 1e6));
 
     int16_t iqcorr_value;

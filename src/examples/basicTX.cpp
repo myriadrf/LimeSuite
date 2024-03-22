@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
 
     // Use first available device
-    SDRDevice* device = DeviceRegistry::makeDevice(handles.at(0));
+    SDRDevice* device = DeviceRegistry::makeDevice(handles.at(1));
     if (!device)
     {
         std::cout << "Failed to connect to device" << std::endl;
@@ -114,8 +114,8 @@ int main(int argc, char** argv)
             float ampl = 0.8;
             for (int k = 0; k < samplesInPkt; ++k)
             {
-                txPattern[i][j * samplesInPkt + k].q = src[k & 3] * ampl;
-                txPattern[i][j * samplesInPkt + k].i = src[(k + 1) & 3] * ampl;
+                txPattern[i][j * samplesInPkt + k].imag(src[k & 3] * ampl);
+                txPattern[i][j * samplesInPkt + k].real(src[(k + 1) & 3] * ampl);
             }
         }
     }
@@ -128,15 +128,15 @@ int main(int argc, char** argv)
 
     SDRDevice::StreamMeta txMeta;
     txMeta.timestamp = 0;
-    txMeta.useTimestamp = true;
-    txMeta.flush = true;
+    txMeta.waitForTimestamp = true;
+    txMeta.flushPartialPacket = true;
 
-    int totalSamplesSent = 0;
+    uint32_t totalSamplesSent = 0;
 
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram) //run for 10 seconds
     {
-        int samplesToSend = samplesInPkt * txPacketCount;
-        int samplesSent = device->StreamTx(chipIndex, src, samplesToSend, &txMeta);
+        uint32_t samplesToSend = samplesInPkt * txPacketCount;
+        uint32_t samplesSent = device->StreamTx(chipIndex, src, samplesToSend, &txMeta);
         if (samplesSent < 0)
         {
             printf("Failure to send\n");

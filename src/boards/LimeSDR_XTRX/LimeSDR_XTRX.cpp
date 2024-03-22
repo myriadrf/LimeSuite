@@ -103,8 +103,13 @@ OpStatus LimeSDR_XTRX::LMS1_UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-// Do not perform any unnecessary configuring to device in constructor, so you
-// could read back it's state for debugging purposes
+/// @brief Constructs a new LimeSDR_XTRX object
+///
+/// @param spiRFsoc The communications port to the LMS7002M chip.
+/// @param spiFPGA The communications port to the device's FPGA.
+/// @param sampleStream The communications port to send and receive sample data.
+/// @param control The serial port communication of the device.
+/// @param refClk The reference clock of the device.
 LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc,
     std::shared_ptr<IComms> spiFPGA,
     std::shared_ptr<LitePCIe> sampleStream,
@@ -117,6 +122,8 @@ LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc,
     , mSerialPort(control)
     , mConfigInProgress(false)
 {
+    /// Do not perform any unnecessary configuring to device in constructor, so you
+    /// could read back it's state for debugging purposes.
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
     desc.name = GetDeviceName(LMS_DEV_LIMESDR_XTRX);
 
@@ -176,7 +183,7 @@ LimeSDR_XTRX::LimeSDR_XTRX(std::shared_ptr<IComms> spiRFsoc,
     for (auto iter : mLMSChips)
     {
         iter->SetReferenceClk_SX(TRXDir::Rx, refClk);
-        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, refClk, 0);
+        iter->SetClockFreq(LMS7002M::ClockID::CLK_REFERENCE, refClk);
     }
 
     const int chipCount = mLMSChips.size();
@@ -338,14 +345,14 @@ double LimeSDR_XTRX::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel & 1);
+    return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 OpStatus LimeSDR_XTRX::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    return chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
+    return chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 OpStatus LimeSDR_XTRX::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)

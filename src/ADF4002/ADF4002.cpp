@@ -8,8 +8,9 @@
 
 #include <cmath>
 #include <vector>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
+#include <memory>
 
 using namespace lime;
 
@@ -22,7 +23,7 @@ ADF4002::~ADF4002()
 {
 }
 
-void ADF4002::Initialize(ISPI* comms, double refClkHz)
+void ADF4002::Initialize(std::shared_ptr<ISPI> comms, double refClkHz)
 {
     mComms = comms;
     txtFref = refClkHz / 1e6;
@@ -324,7 +325,8 @@ void ADF4002::CalculateRN()
     lblFvco = dFvco;
 }
 
-/** @brief Writes configuration to chip
+/** @brief Gets the configuration from chip
+ * @param data The data to read from the chip.
 */
 void ADF4002::GetConfig(unsigned char data[12])
 {

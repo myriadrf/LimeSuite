@@ -132,16 +132,16 @@ int main(int argc, char** argv)
     SDRDevice::StreamMeta rxMeta;
     while (std::chrono::high_resolution_clock::now() - startTime < std::chrono::seconds(10) && !stopProgram)
     {
-        int samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
-        if (samplesRead <= 0)
+        uint32_t samplesRead = device->StreamRx(chipIndex, rxSamples, fftSize, &rxMeta);
+        if (samplesRead == 0)
             continue;
 
         // process samples
         totalSamplesReceived += samplesRead;
         for (unsigned i = 0; i < fftSize; ++i)
         {
-            m_fftCalcIn[i].r = rxSamples[0][i].i;
-            m_fftCalcIn[i].i = rxSamples[0][i].q;
+            m_fftCalcIn[i].r = rxSamples[0][i].real();
+            m_fftCalcIn[i].i = rxSamples[0][i].imag();
         }
         kiss_fft(m_fftCalcPlan, reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcIn), reinterpret_cast<kiss_fft_cpx*>(&m_fftCalcOut));
         for (unsigned int i = 1; i < fftSize; ++i)
@@ -167,8 +167,8 @@ int main(int argc, char** argv)
                 (frequencyLO + peakFrequency) / 1e6);
 #ifdef USE_GNU_PLOT
             gp.write("plot '-' with points\n");
-            for (int j = 0; j < samplesRead; ++j)
-                gp.writef("%f %f\n", rxSamples[0][j].i, rxSamples[0][j].q);
+            for (uint32_t j = 0; j < samplesRead; ++j)
+                gp.writef("%f %f\n", rxSamples[0][j].real(), rxSamples[0][j].imag());
             gp.write("e\n");
             gp.flush();
 #endif

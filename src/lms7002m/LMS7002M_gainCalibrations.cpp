@@ -15,8 +15,8 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
     SPI_write(0x0020, value);
 
     //RxTSP
-    SetDefaults(RxTSP);
-    SetDefaults(RxNCO);
+    SetDefaults(MemorySection::RxTSP);
+    SetDefaults(MemorySection::RxNCO);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 1);
@@ -31,7 +31,7 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
     Modify_SPI_Reg_bits(0x010D, 4, 1, 0xF);
 
     //RBB
-    SetDefaults(RBB);
+    SetDefaults(MemorySection::RBB);
     Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
     Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 3);
     Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 12);
@@ -42,7 +42,7 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
 
     //AFE
     const int isel_dac_afe = Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
-    SetDefaults(AFE);
+    SetDefaults(MemorySection::AFE);
     Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
     if (ch == 2)
     {
@@ -52,7 +52,7 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
 
     //BIAS
     const int rp_calib_bias = Get_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS));
-    SetDefaults(BIAS);
+    SetDefaults(MemorySection::BIAS);
     Modify_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS), rp_calib_bias);
 
     //LDO
@@ -62,7 +62,7 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
     //use configured xbuf settings
 
     //CGEN
-    SetDefaults(CGEN);
+    SetDefaults(MemorySection::CGEN);
     status = SetFrequencyCGEN(61.44e6);
     if (status != OpStatus::SUCCESS)
         return status;
@@ -77,8 +77,8 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
     const int isinc = Get_SPI_Reg_bits(LMS7param(ISINC_BYP_TXTSP));
     const int txcmixGainLSB = Get_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP));
     const int txcmixGainMSB = Get_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3));
-    SetDefaults(TxTSP);
-    SetDefaults(TxNCO);
+    SetDefaults(MemorySection::TxTSP);
+    SetDefaults(MemorySection::TxNCO);
     Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), txcmixGainLSB);
     Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), txcmixGainMSB);
     Modify_SPI_Reg_bits(LMS7param(ISINC_BYP_TXTSP), isinc);
@@ -97,7 +97,7 @@ OpStatus LMS7002M::CalibrateTxGainSetup()
     return OpStatus::SUCCESS;
 }
 
-OpStatus LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float* actualGain_dBFS)
+OpStatus LMS7002M::CalibrateTxGain()
 {
     if (!controlPort)
     {

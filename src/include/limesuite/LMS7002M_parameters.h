@@ -19,12 +19,12 @@ extern "C" {
 /** @brief Structure defining a LMS7002M parameter. */
 struct LMS7Parameter
 {
-    uint16_t address;
-    uint8_t msb;
-    uint8_t lsb;
-    uint16_t defaultValue;
-    const char* name;
-    const char* tooltip;
+    uint16_t address; ///< The address of the parameter
+    uint8_t msb; ///< The index of the most significant bit of the parameter.
+    uint8_t lsb; ///< The index of the least significant bit of the paramerer.
+    uint16_t defaultValue; ///< The default value of the parameter.
+    const char* name; ///< The name of the parameter.
+    const char* tooltip; ///< The tooltip of the parameter.
 };
 
 static const struct LMS7Parameter LMS7_LRST_TX_B = { 0x0020, 15, 15, 1, "LRST_TX_B", "Resets all the logic registers to the default state for Tx MIMO channel B" };

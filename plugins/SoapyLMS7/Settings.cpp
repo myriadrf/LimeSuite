@@ -236,7 +236,7 @@ std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t ch
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto complex = sdrDevice->GetDCOffset(0, lmsDir, channel);
-    return { complex.i, complex.q };
+    return { complex.real(), complex.imag() };
 }
 
 bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) const
@@ -257,7 +257,7 @@ std::complex<double> SoapyLMS7::getIQBalance(const int direction, const size_t c
     const auto lmsDir = (direction == SOAPY_SDR_TX) ? TRXDir::Tx : TRXDir::Rx;
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto complex = sdrDevice->GetIQBalance(0, lmsDir, channel);
-    return { complex.i, complex.q };
+    return { complex.real(), complex.imag() };
 }
 
 /*******************************************************************

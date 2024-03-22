@@ -96,6 +96,11 @@ static inline void ValidateChannel(uint8_t channel)
         throw std::logic_error("invalid channel index");
 }
 
+/// @brief Constructs a new LimeSDR object
+/// @param spiLMS The communications port to the LMS7002M chip.
+/// @param spiFPGA The communications port to the device's FPGA.
+/// @param streamPort The communications port to send and receive sample data.
+/// @param commsPort The communications port for direct communications with the device.
 LimeSDR::LimeSDR(std::shared_ptr<IComms> spiLMS,
     std::shared_ptr<IComms> spiFPGA,
     std::shared_ptr<USBGeneric> streamPort,
@@ -462,19 +467,12 @@ uint8_t LimeSDR::GetPath(SDRDevice::Dir dir, uint8_t channel) const
 
 double LimeSDR::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
-    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel);
+    return mLMSChips[0]->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 OpStatus LimeSDR::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
-    return mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel);
-}
-
-void LimeSDR::EnableCache(bool enable)
-{
-    mLMSChips[0]->EnableValuesCache(enable);
-    if (mFPGA)
-        mFPGA->EnableValuesCache(enable);
+    return mLMSChips[0]->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 OpStatus LimeSDR::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)

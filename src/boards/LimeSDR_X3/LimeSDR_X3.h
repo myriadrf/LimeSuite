@@ -16,6 +16,7 @@ class Equalizer;
 class SlaveSelectShim;
 class ISerialPort;
 
+/** @brief Class for managing the LimeSDR X3 device. */
 class LimeSDR_X3 : public LMS7002M_SDRDevice
 {
   public:
@@ -85,7 +86,6 @@ class LimeSDR_X3 : public LMS7002M_SDRDevice
 
     std::array<std::shared_ptr<SlaveSelectShim>, 3> mLMS7002Mcomms;
     std::shared_ptr<IComms> mfpgaPort;
-    std::shared_ptr<ISerialPort> mSerialPort;
     std::mutex mCommsMutex;
     bool mConfigInProgress;
 };

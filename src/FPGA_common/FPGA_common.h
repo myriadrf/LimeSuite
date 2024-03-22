@@ -4,9 +4,10 @@
 @brief Common functions used to work with FPGA
 */
 
-#ifndef FPGA_COMMON_H
-#define FPGA_COMMON_H
-#include <stdint.h>
+#ifndef LIME_FPGA_H
+#define LIME_FPGA_H
+
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <vector>
@@ -53,9 +54,10 @@ class FPGA
     virtual OpStatus SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int chipIndex = 0);
     double DetectRefClk(double fx3Clk = 100e6);
 
-    static int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
+    static int FPGAPacketPayload2Samples(
+        const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t* const* samples);
     static int FPGAPacketPayload2SamplesFloat(
-        const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t** samples);
+        const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex32f_t* const* samples);
     static int Samples2FPGAPacketPayload(
         const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
     static int Samples2FPGAPacketPayloadFloat(
@@ -65,8 +67,8 @@ class FPGA
     virtual OpStatus ReadRegisters(const uint32_t* addrs, uint32_t* data, unsigned cnt);
     OpStatus WriteRegister(uint32_t addr, uint32_t val);
     int ReadRegister(uint32_t addr);
-    int WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
-    int ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);
+    OpStatus WriteLMS7002MSPI(const uint32_t* addr, uint32_t length);
+    OpStatus ReadLMS7002MSPI(const uint32_t* addr, uint32_t* values, uint32_t length);
 
     /** @brief Structure containing the gateware information of the FPGA */
     struct GatewareInfo {
@@ -94,4 +96,4 @@ class FPGA
 };
 
 } // namespace lime
-#endif // FPGA_COMMON_H
+#endif // LIME_FPGA_H

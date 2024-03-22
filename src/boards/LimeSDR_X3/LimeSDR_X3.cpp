@@ -154,8 +154,12 @@ OpStatus LimeSDR_X3::LMS1_UpdateFPGAInterface(void* userData)
     return UpdateFPGAInterfaceFrequency(*soc, *pthis->mFPGA, chipIndex);
 }
 
-// Do not perform any unnecessary configuring to device in constructor, so you
-// could read back it's state for debugging purposes
+/// @brief Constructs a new LimeSDR_X3 object
+///
+/// @param spiLMS7002M The communications port to the LMS7002M chips.
+/// @param spiFPGA The communications port to the device's FPGA.
+/// @param trxStreams The communications ports to send and receive sample data.
+/// @param control The serial port of the device for retrieving device firmware information.
 LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     std::shared_ptr<IComms> spiFPGA,
     std::vector<std::shared_ptr<LitePCIe>> trxStreams,
@@ -163,13 +167,14 @@ LimeSDR_X3::LimeSDR_X3(std::shared_ptr<IComms> spiLMS7002M,
     : LMS7002M_SDRDevice()
     , mTRXStreamPorts(trxStreams)
     , mfpgaPort(spiFPGA)
-    , mSerialPort(control)
     , mConfigInProgress(false)
 {
+    /// Do not perform any unnecessary configuring to device in constructor, so you
+    /// could read back it's state for debugging purposes
     SDRDevice::Descriptor& desc = mDeviceDescriptor;
 
     LMS64CProtocol::FirmwareInfo fw;
-    LMS64CProtocol::GetFirmwareInfo(*mSerialPort, fw);
+    LMS64CProtocol::GetFirmwareInfo(*control, fw);
     LMS64CProtocol::FirmwareToDescriptor(fw, desc);
 
     desc.spiSlaveIds = {
@@ -658,7 +663,10 @@ void LimeSDR_X3::ConfigureDirection(TRXDir dir, LMS7002M* chip, const SDRConfig&
 
     if (socIndex == 0)
     {
-        if (trx.enabled && chip->SetGFIRFilter(dir, ch, trx.gfir.enabled, trx.gfir.bandwidth) != OpStatus::SUCCESS)
+        if (trx.enabled && chip->SetGFIRFilter(dir,
+                               ch == 0 ? LMS7002M::Channel::ChA : LMS7002M::Channel::ChB,
+                               trx.gfir.enabled,
+                               trx.gfir.bandwidth) != OpStatus::SUCCESS)
         {
             throw std::logic_error(strFormat("%s ch%i GFIR config failed", dirName, ch));
         }
@@ -833,14 +841,14 @@ double LimeSDR_X3::GetClockFreq(uint8_t clk_id, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), channel & 1);
+    return chip->GetClockFreq(static_cast<LMS7002M::ClockID>(clk_id));
 }
 
 OpStatus LimeSDR_X3::SetClockFreq(uint8_t clk_id, double freq, uint8_t channel)
 {
     ValidateChannel(channel);
     LMS7002M* chip = mLMSChips[channel / 2];
-    return chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq, channel & 1);
+    return chip->SetClockFreq(static_cast<LMS7002M::ClockID>(clk_id), freq);
 }
 
 OpStatus LimeSDR_X3::SPI(uint32_t chipSelect, const uint32_t* MOSI, uint32_t* MISO, uint32_t count)

@@ -749,10 +749,10 @@ OpStatus ConfigureStreaming(LimePluginContext* context, const LimeRuntimeParamet
         stream.channels[TRXDir::Tx].resize(params->rf_ports[p].tx_channel_count);
         stream.linkFormat = SDRDevice::StreamConfig::DataFormat::I16;
         stream.format = context->samplesFormat;
-        stream.extraConfig.rxSamplesInPacket = 256;
-        stream.extraConfig.rxPacketsInBatch = 4;
-        stream.extraConfig.txMaxPacketsInBatch = 8;
-        stream.extraConfig.txSamplesInPacket = 256;
+        stream.extraConfig.rx.samplesInPacket = 256;
+        stream.extraConfig.rx.packetsInBatch = 4;
+        stream.extraConfig.tx.packetsInBatch = 8;
+        stream.extraConfig.tx.samplesInPacket = 256;
 
         // Initialize streams and map channels
         for (size_t ch = 0; ch < stream.channels[TRXDir::Rx].size(); ++ch)
@@ -895,8 +895,8 @@ int LimePlugin_Write_complex16(
 template<class T>
 static int LimePlugin_Read(LimePluginContext* context, T** samples, int count, int port, SDRDevice::StreamMeta& meta)
 {
-    meta.useTimestamp = false;
-    meta.flush = false;
+    meta.waitForTimestamp = false;
+    meta.flushPartialPacket = false;
     int samplesGot = context->ports[port].composite->StreamRx(samples, count, &meta);
 
     if (samplesGot == 0)
