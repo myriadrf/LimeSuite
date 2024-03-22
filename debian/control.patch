@@ -1,0 +1,26 @@
+diff --git a/debian/control b/debian/control
+index 6d0f6351..16c04bad 100644
+--- a/debian/control
++++ b/debian/control
+@@ -7,6 +7,7 @@ Build-Depends:
+     cmake (>= 3.14),
+     libusb-1.0-0-dev,
+     libwxgtk3.0-dev | libwxgtk3.0-gtk3-dev | libwxgtk3.2-dev,
++    gnuradio-dev,
+ Standards-Version: 4.1.1
+ Homepage: https://myriadrf.org/projects/lime-suite/
+ Vcs-Git: https://github.com/myriadrf/LimeSuite.git
+@@ -89,3 +90,13 @@ Depends:
+     ${misc:Depends}
+ Description: Lime Suite - SoapySDR bindings
+  Lime Suite application software.
++
++Package: gr-limesdr
++Architecture: any
++Pre-Depends: ${misc:Pre-Depends}
++Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends},
++         gnuradio,
++         liblimesuite-dev (= ${binary:Version})
++Description:GNU-Radio blocks used to interface with various LimeSDR boards.
++ Implementation of GNU-Radio out of tree modules which allow to interface with
++ LimeSDR-USB, LimeSDR-Mini,LimeNET-Micro and LimeSDR-QPCIe boards.

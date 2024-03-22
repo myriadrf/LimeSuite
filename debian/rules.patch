@@ -1,0 +1,14 @@
+diff --git a/debian/rules b/debian/rules
+index 13ea715f..8b114b71 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -33,7 +33,8 @@ override_dh_auto_configure: $(GENERATED_INSTALL_FILES)
+ 		-DCMAKE_AUTOSET_INSTALL_RPATH=FALSE \
+ 		-DUDEV_RULES_INSTALL_PATH=/lib/udev/rules.d \
+ 		-DLIB_SUFFIX="/$(DEB_HOST_MULTIARCH)" \
+-		-DLIME_SUITE_EXTVER="$(DEB_VERSION_EXTRA)"
++		-DLIME_SUITE_EXTVER="$(DEB_VERSION_EXTRA)" \
++		-DENABLE_GNURADIO=ON
+ 
+ override_dh_installchangelogs:
+ 	dh_installchangelogs Changelog.txt

@@ -7,8 +7,10 @@ COPY install_dependencies.sh install_dependencies.sh
 
 RUN apt update && \
     apt-get install -y --no-install-recommends \
-        dpkg-dev \
         debhelper \
+        dh-python \
+        dpkg-dev \
+        gnuradio-dev \
     && \
     ./install_dependencies.sh -y && \
     rm -rf /var/lib/apt/lists/*
@@ -23,6 +25,9 @@ COPY CMakeLists.txt CMakeLists.txt
 COPY README.md README.md
 COPY src/ src/
 
+RUN patch debian/control < debian/control.patch
+RUN patch debian/rules < debian/rules.patch
+RUN cp src/Logger.h src/include/limesuite/Logger.h
 RUN dpkg-buildpackage --build=binary --no-sign
 
 FROM scratch AS export-stage

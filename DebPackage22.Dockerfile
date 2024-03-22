@@ -8,8 +8,9 @@ COPY install_dependencies.sh install_dependencies.sh
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
     apt-get install -y --no-install-recommends \
-        dpkg-dev \
         debhelper \
+        dh-python \
+        dpkg-dev \
     && \
     ./install_dependencies.sh -y && \
     rm -rf /var/lib/apt/lists/*
