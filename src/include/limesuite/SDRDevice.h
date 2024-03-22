@@ -411,6 +411,7 @@ class LIME_API SDRDevice
     /// @param trx The direction to read from.
     /// @param channel The channel to read from.
     /// @param index The index of the NCO to read from.
+    /// @param phaseOffset [out] The phase offset of the NCO (in degrees)
     /// @return The current frequency of the NCO (in Hz)
     virtual double GetNCOFrequency(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double& phaseOffset) = 0;
 
@@ -425,7 +426,20 @@ class LIME_API SDRDevice
     virtual OpStatus SetNCOFrequency(
         uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, double frequency, double phaseOffset = -1.0) = 0;
 
+    /// @brief Gets the current index of the NCO.
+    /// @param moduleIndex The device index to read from.
+    /// @param trx The direction to read from.
+    /// @param channel The channel to read from.
+    /// @return The current index of the NCO [0-15]
     virtual int GetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel) = 0;
+
+    /// @brief Sets the index of the NCO.
+    /// @param moduleIndex The device index to configure.
+    /// @param trx The direction to configure.
+    /// @param channel The channel to configure.
+    /// @param index The index of the NCO to use.
+    /// @param downconv The spectrum control of the CMIX (true = downconvert, false = upconvert)
+    /// @return The status of the operation.
     virtual OpStatus SetNCOIndex(uint8_t moduleIndex, TRXDir trx, uint8_t channel, uint8_t index, bool downconv) = 0;
 
     /// @brief Gets the current offset of the NCO compared to the main frequency.
