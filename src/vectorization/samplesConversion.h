@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "limesuite/complex.h"
-#include "limesuite/config.h"
 
 namespace lime {
 
