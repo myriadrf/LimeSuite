@@ -3,7 +3,7 @@
 
 #include <deque>
 #include <utility> //pair
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 class wxChoice;
 class wxButton;

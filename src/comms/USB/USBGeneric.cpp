@@ -1,5 +1,5 @@
 #include "USBGeneric.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 #include <cassert>
 

@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include "math.h"
 
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "LitePCIe.h"
 #include "FPGA_common.h"
 #include "TRXLooper_PCIE.h"

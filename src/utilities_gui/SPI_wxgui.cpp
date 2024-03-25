@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "limesuite/SDRDevice.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 using namespace std::literals::string_literals;

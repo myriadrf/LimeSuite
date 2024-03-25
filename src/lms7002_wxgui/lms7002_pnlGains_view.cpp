@@ -3,7 +3,7 @@
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "limesuite/SDRDevice.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;

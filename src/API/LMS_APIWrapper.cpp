@@ -6,7 +6,7 @@
 #include "limesuite/GainTypes.h"
 #include "limesuite/SDRDevice.h"
 #include "limesuite/VersionInfo.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "MemoryPool.h"
 
 #include <algorithm>

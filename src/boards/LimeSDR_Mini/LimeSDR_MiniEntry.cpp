@@ -4,7 +4,7 @@
 #include "limesuite/DeviceRegistry.h"
 #include "limesuite/DeviceHandle.h"
 #include "protocols/LMS64CProtocol.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "USB_CSR_Pipe_Mini.h"
 #include "LMS64C_LMS7002M_Over_USB.h"
 #include "LMS64C_FPGA_Over_USB.h"

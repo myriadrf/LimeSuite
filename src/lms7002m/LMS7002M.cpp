@@ -32,7 +32,7 @@
 #include "limesuite/commonTypes.h"
 #include "limesuite/IComms.h"
 #include "LMS7002M_RegistersMap.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "mcu_programs.h"
 #include "MCU_BD.h"
 

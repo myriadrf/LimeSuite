@@ -6,7 +6,7 @@
     #include <windows.h>
     #undef ERROR
 #endif
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 

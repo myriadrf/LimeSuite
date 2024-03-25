@@ -2,7 +2,7 @@
 #include "LMS7002M_RegistersMap.h"
 #include <thread>
 #include <chrono>
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace std;
 

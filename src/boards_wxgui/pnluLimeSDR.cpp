@@ -8,7 +8,7 @@
 #include <wx/msgdlg.h>
 #include "lms7suiteEvents.h"
 #include "pnlGPIO.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace std;
 

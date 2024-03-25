@@ -4,7 +4,7 @@
 #include "lms7002_gui_utilities.h"
 #include "wx/msgdlg.h"
 #include "lms7suiteEvents.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;

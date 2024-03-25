@@ -16,10 +16,6 @@ if (ENABLE_HEADERS)
         FILES ${LIME_SUITE_PUBLIC_HEADERS}
         DESTINATION include/limesuite
     )
-    install(
-        FILES Logger.h
-        DESTINATION include/limesuite
-    )
 
 endif()
 
@@ -32,7 +28,7 @@ set(LIME_SUITE_SOURCES
     boards/DeviceRegistry.cpp
     boards/DeviceHandle.cpp
     boards/LMS7002M_SDRDevice.cpp
-    Logger.cpp
+    include/limesuite/Logger.cpp
     ADF4002/ADF4002.cpp
     lms7002m/MCU_BD.cpp
     lms7002m/MCU_File.cpp

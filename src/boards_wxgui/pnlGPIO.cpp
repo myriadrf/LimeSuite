@@ -1,5 +1,5 @@
 #include "pnlGPIO.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "LMSBoards.h"
 
 #include <wx/sizer.h>

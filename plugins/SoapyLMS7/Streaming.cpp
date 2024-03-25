@@ -14,7 +14,7 @@
 #include <ratio>
 #include <thread>
 
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 

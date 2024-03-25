@@ -5,7 +5,7 @@
 */
 
 #include "SystemResources.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 #include <cstdlib> //getenv, system
 #include <filesystem>

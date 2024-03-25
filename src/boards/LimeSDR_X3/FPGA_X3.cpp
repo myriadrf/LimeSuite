@@ -1,5 +1,5 @@
 #include "FPGA_X3.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include <ciso646>
 #include <vector>
 #include <map>

@@ -1,7 +1,7 @@
 #ifndef __LMS7SuiteAppFrame__
 #define __LMS7SuiteAppFrame__
 
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>

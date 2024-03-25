@@ -4,7 +4,7 @@
     @brief Implementation of LMS64C protocol.
 */
 
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "LMS64CProtocol.h"
 #include <chrono>
 #include <cassert>

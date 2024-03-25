@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 

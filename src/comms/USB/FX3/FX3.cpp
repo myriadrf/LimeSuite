@@ -1,6 +1,6 @@
 #include "FX3.h"
 #include "USBTransferContext_FX3.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 using namespace std::literals::string_literals;

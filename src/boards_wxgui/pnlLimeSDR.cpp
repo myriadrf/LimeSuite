@@ -1,6 +1,6 @@
 #include "pnlLimeSDR.h"
 #include "lms7suiteEvents.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "pnlGPIO.h"
 
 #include <wx/sizer.h>

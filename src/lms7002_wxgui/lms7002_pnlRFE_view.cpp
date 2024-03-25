@@ -10,7 +10,7 @@
 #include <tuple>
 #include "wx/spinctrl.h"
 #include "limesuite/SDRDevice.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace std;
 using namespace lime;

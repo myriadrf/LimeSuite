@@ -25,7 +25,7 @@
 #include <thread>
 #include <vector>
 
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace std::literals::string_literals;
 

@@ -1,5 +1,5 @@
 #include "CDCM6208_panelgui.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 CDCM6208_panelgui::CDCM6208_panelgui(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : ISOCPanel(parent, id, pos, size, style)

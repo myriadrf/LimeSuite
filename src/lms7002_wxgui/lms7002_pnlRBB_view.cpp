@@ -5,7 +5,7 @@
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
 #include "lms7suiteAppFrame.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 using namespace std::literals::string_literals;

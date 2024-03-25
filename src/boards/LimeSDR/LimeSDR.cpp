@@ -5,7 +5,7 @@
 #include "limesuite/LMS7002M.h"
 #include "Si5351C/Si5351C.h"
 #include "LMS64CProtocol.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "FPGA_common.h"
 #include "TRXLooper_USB.h"
 #include "limesuite/LMS7002M_parameters.h"

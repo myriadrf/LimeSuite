@@ -4,7 +4,7 @@
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include "lms7suiteAppFrame.h"
 #include "limesuite/LMS7002M.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;

@@ -27,7 +27,6 @@ COPY src/ src/
 
 RUN patch debian/control < debian/control.patch
 RUN patch debian/rules < debian/rules.patch
-RUN cp src/Logger.h src/include/limesuite/Logger.h
 RUN dpkg-buildpackage --build=binary --no-sign
 
 FROM scratch AS export-stage

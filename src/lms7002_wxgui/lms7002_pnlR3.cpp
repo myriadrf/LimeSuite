@@ -8,7 +8,7 @@
 #include <thread>
 #include "mcu_programs.h"
 #include "limesuite/LMS7002M.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 
 #include <vector>
 

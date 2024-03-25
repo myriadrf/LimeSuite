@@ -5,7 +5,7 @@
 */
 
 #include "Si5351C.h"
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include <math.h>
 #include <iomanip>
 #include <fstream>

@@ -4,7 +4,7 @@
 #include "mcu_programs.h"
 #include <chrono>
 #include <thread>
-#include "Logger.h"
+#include "limesuite/Logger.h"
 #include "LMSBoards.h"
 
 #ifndef NDEBUG
