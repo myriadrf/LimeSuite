@@ -1,5 +1,11 @@
 #pragma once
 
+#if __cplusplus < 201402L
+    #define CPP14constexpr
+#else
+    #define CPP14constexpr constexpr
+#endif
+
 namespace lime {
 
 /// @brief The direction of the transmission
@@ -41,13 +47,13 @@ template<class T> class DeltaVariable
       @brief Sets the value of the delta variable.
       @param val The value to set the delta variable to.
      */
-    constexpr void set(T val) { mValue = val; }
+    CPP14constexpr void set(T val) { mValue = val; }
 
     /**
       @brief Adds the given value to the delta variable
       @param val The value to add to the delta variable.
      */
-    constexpr void add(T val) { mValue += val; }
+    CPP14constexpr void add(T val) { mValue += val; }
 
     /**
       @brief Gets the difference between the value at last reset and current value.
@@ -62,7 +68,7 @@ template<class T> class DeltaVariable
     constexpr T value() const { return mValue; }
 
     /** @brief Resets the delta variable to start measuring from its current value. */
-    constexpr void checkpoint() { mLastValue = mValue; }
+    CPP14constexpr void checkpoint() { mLastValue = mValue; }
 
   private:
     T mValue;

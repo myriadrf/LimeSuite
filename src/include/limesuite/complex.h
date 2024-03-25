@@ -3,7 +3,12 @@
 
 #include <cstdint>
 #include <type_traits>
-#include <complex>
+
+#if __cplusplus < 201402L
+    #define CPP14constexpr
+#else
+    #define CPP14constexpr constexpr
+#endif
 
 namespace lime {
 
@@ -25,7 +30,7 @@ struct complex12packed_t {
     }
 
     /// @copydoc POD_complex_t::real()
-    constexpr int16_t real() const
+    CPP14constexpr int16_t real() const
     {
         int16_t value = data[0];
         value |= (data[1] << 8);
@@ -36,14 +41,14 @@ struct complex12packed_t {
     }
 
     /// @copydoc POD_complex_t::real(T)
-    constexpr void real(int16_t value)
+    CPP14constexpr void real(int16_t value)
     {
         data[0] = value;
         data[1] = (data[1] & 0xF0) | ((value >> 8) & 0x0F);
     }
 
     /// @copydoc POD_complex_t::imag()
-    constexpr int16_t imag() const
+    CPP14constexpr int16_t imag() const
     {
         int16_t value = data[1];
         value |= (data[2] << 8);
@@ -52,14 +57,14 @@ struct complex12packed_t {
     }
 
     /// @copydoc POD_complex_t::imag(T)
-    constexpr void imag(int16_t value)
+    CPP14constexpr void imag(int16_t value)
     {
         data[1] = (value << 4) | (data[1] & 0x0F);
         data[2] = value >> 4;
     }
 
     /// @copydoc POD_complex_t::Set()
-    constexpr void Set(int16_t ival, int16_t qval)
+    CPP14constexpr void Set(int16_t ival, int16_t qval)
     {
         data[0] = ival;
         data[1] = (qval << 4) | ((ival >> 8) & 0x0F);
@@ -69,7 +74,7 @@ struct complex12packed_t {
   private:
     uint8_t data[3];
 };
-static_assert(std::is_trivially_copyable<complex12packed_t>::value == true);
+static_assert(std::is_trivially_copyable<complex12packed_t>::value == true, "complex12packed_t is not trivially copyable");
 
 /// @brief Complex number structure for plain data types (int, float...)
 /// @tparam T The type of the number to hold.
@@ -94,7 +99,7 @@ template<class T> struct POD_complex_t {
 
     /// @brief Sets the I (real) value of the complex number.
     /// @param value The value to set the complex number's I component to.
-    constexpr void real(T value) { i = value; }
+    CPP14constexpr void real(T value) { i = value; }
 
     /// @brief Gets the Q (imaginary) value of the complex number.
     /// @return The Q value of the complex number.
@@ -102,12 +107,12 @@ template<class T> struct POD_complex_t {
 
     /// @brief Sets the Q (imaginary) value of the complex number.
     /// @param value The value to set the complex number's Q component to.
-    constexpr void imag(T value) { q = value; }
+    CPP14constexpr void imag(T value) { q = value; }
 
     /// @brief Sets both values of the complex number.
     /// @param ival The I (real) component of the complex number.
     /// @param qval The Q (imaginary) component of the complex number.
-    constexpr void Set(T ival, T qval)
+    CPP14constexpr void Set(T ival, T qval)
     {
         i = ival;
         q = qval;
@@ -119,7 +124,7 @@ template<class T> struct POD_complex_t {
 
 /** @brief Structure to hold a 16 bit integer complex number. */
 using complex16_t = POD_complex_t<int16_t>;
-static_assert(std::is_trivially_copyable<complex16_t>::value == true);
+static_assert(std::is_trivially_copyable<complex16_t>::value == true, "complex16_t is not trivially copyable");
 
 /** @brief Structure to hold a 12 bit integer complex number.
     Stored as 16 bit, but the actual used values range should be of 12bits
@@ -137,15 +142,15 @@ class complex12_t : public complex16_t
     constexpr complex12_t(int16_t real, int16_t imag)
         : complex16_t(real, imag){};
 };
-static_assert(std::is_trivially_copyable<complex12_t>::value == true);
+static_assert(std::is_trivially_copyable<complex12_t>::value == true, "complex12_t is not trivially copyable");
 
 /** @brief Structure to hold a 32 bit float complex number. */
 using complex32f_t = POD_complex_t<float>;
-static_assert(std::is_trivially_copyable<complex32f_t>::value == true);
+static_assert(std::is_trivially_copyable<complex32f_t>::value == true, "complex32f_t is not trivially copyable");
 
 /** @brief Structure to hold a 64 bit float complex number. */
 using complex64f_t = POD_complex_t<double>;
-static_assert(std::is_trivially_copyable<complex64f_t>::value == true);
+static_assert(std::is_trivially_copyable<complex64f_t>::value == true, "complex64f_t is not trivially copyable");
 
 } // namespace lime
 
