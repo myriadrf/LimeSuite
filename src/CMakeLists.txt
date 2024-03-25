@@ -10,13 +10,11 @@ include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_HEADERS "Enable install headers" ON "TRUE" OFF)
 add_feature_info(HEADERS ENABLE_HEADERS "The lime suite headers")
-message("Headers: ${LIME_SUITE_PUBLIC_HEADERS}")
 if (ENABLE_HEADERS)
     install(
         FILES ${LIME_SUITE_PUBLIC_HEADERS}
         DESTINATION include/limesuite
     )
-
 endif()
 
 ########################################################################
