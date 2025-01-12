@@ -37,12 +37,24 @@ int LimeSDRTest_Mini::RFTest()
             return false;
         if (device->GetLMS()->SetFrequencySX(lime::LMS7002M::Rx, freq)!=0)
             return false;
-	extern int limeversion;
-	RFTestData testinfo;
-	if	(limeversion == 1)
-		testinfo = {freq, freq+tx_offset, -14, tx_offset, 0};
-	else
-        	testinfo = {freq, freq+tx_offset, -20, tx_offset, 0};
+    extern int limeversion;
+    lms_dev_info_t* info = device->GetInfo();
+    RFTestData testinfo;
+    if (limeversion == 1) // v1.*
+        testinfo = {freq, freq+tx_offset, -14, tx_offset, 0};
+    else
+    {
+        int hw_version = std::stoi(info->hardwareVersion);
+        switch(hw_version)
+        {
+        case 5: // V2.2
+            testinfo = {freq, freq+tx_offset, -30, tx_offset, 0};
+            break;
+        default: // V2.4
+            testinfo = {freq, freq+tx_offset, -20, tx_offset, 0};
+            break;
+        }
+    }
         device->SetPath(false, 0, rxPath);
         device->SetPath(true, 0, rxPath==1? 1 : 2);
         if (device->GetConnection()->WriteRegister(0x17, rxPath==1? 0x2200:0x1100) != 0)
