@@ -27,7 +27,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -qq libusb-1.0-0-dev libwxbase3.0-dev libwxgtk3.0-gtk3-dev liboctave-dev
+        sudo apt-get install -qq libusb-1.0-0-dev libwxgtk3.2-dev liboctave-dev
       
     - name: Install osx dependencies
       if: matrix.os == 'macos-latest'
