@@ -18,16 +18,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
             matrix:
-                os: [ubuntu-latest, macos-latest, windows-latest]
+                os: [ubuntu-22.04, macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v2
     
     - name: Install linux dependencies
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-22.04'
       run: |
         sudo apt-get update
-        sudo apt-get install -qq libusb-1.0-0-dev libwxgtk3.2-dev liboctave-dev
+        sudo apt-get install -qq libusb-1.0-0-dev libwxbase3.0-dev libwxgtk3.0-gtk3-dev liboctave-dev
       
     - name: Install osx dependencies
       if: matrix.os == 'macos-latest'
