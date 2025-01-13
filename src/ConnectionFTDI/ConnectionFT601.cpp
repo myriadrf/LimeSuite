@@ -749,7 +749,7 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
 
     FPGAinfo fpgainfo = GetFPGAInfo();
 
-    if (fpgainfo.hwVersion < 3)
+    if (fpgainfo.boardID == LMS_DEV_LIMESDRMINI && fpgainfo.hwVersion <= 3)
     {
         // LimeSDR-Mini v1.X
         if (fpgainfo.gatewareVersion != 0)
