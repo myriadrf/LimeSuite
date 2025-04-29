@@ -155,8 +155,8 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     config.bufferLength = 0; //auto
 
     std::vector<size_t> chans = {};
-    if(args.count("subdev")) {
-        const std::string subdev_str = args.at("subdev");
+    if(_deviceArgs.count("subdev")) {
+        const std::string subdev_str = _deviceArgs.at("subdev");
 
         size_t num;
         std::stringstream ss(subdev_str);
