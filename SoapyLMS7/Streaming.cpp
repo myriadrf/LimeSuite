@@ -143,8 +143,24 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     config.performanceLatency = 0.5;
     config.bufferLength = 0; //auto
 
+    std::vector<size_t> chans = {};
+    if(args.count("subdev")) {
+        const std::string subdev_str = args.at("subdev");
+
+        size_t num;
+        std::stringstream ss(subdev_str);
+        while(ss >> num) {
+            chans.push_back(num);
+            SoapySDR::logf(SOAPY_SDR_INFO, "Using channel: %zu", num);
+        }
+    }
+
+    // if(chans.empty()) chans.push_back(0);
+
     //default to channel 0, if none were specified
-    const std::vector<size_t> &channelIDs = channels.empty() ? std::vector<size_t>{0} : channels;
+    // const std::vector<size_t> &channelIDs = channels.empty() ? std::vector<size_t>{0} : channels;
+
+    const std::vector<size_t> &channelIDs = chans;
     for(size_t i=0; i<channelIDs.size(); ++i)
     {
         config.channelID = channelIDs[i];
