@@ -106,6 +106,17 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
         argInfos.push_back(info);
     }
 
+    // channel selection
+    {
+      SoapySDR::ArgInfo info;
+      info.value = "0";
+      info.key = "subdev";
+      info.name = "Channel";
+      info.description = "Which channel to use. Defaults to 0.";
+      info.type = SoapySDR::ArgInfo::INT;
+      argInfos.push_back(info);
+    }
+
     //align phase of Rx channels
     {
         SoapySDR::ArgInfo info;
@@ -155,7 +166,10 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         }
     }
 
-    // if(chans.empty()) chans.push_back(0);
+    if (chans.empty()) {
+      SoapySDR::logf(SOAPY_SDR_INFO, "Defaulting to channel 0");
+      chans.push_back(0);
+    }
 
     //default to channel 0, if none were specified
     // const std::vector<size_t> &channelIDs = channels.empty() ? std::vector<size_t>{0} : channels;
