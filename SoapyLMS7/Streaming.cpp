@@ -110,9 +110,9 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
     {
       SoapySDR::ArgInfo info;
       info.value = "0";
-      info.key = "subdev";
+      info.key = "channel";
       info.name = "Channel";
-      info.description = "Which channel to use. Defaults to 0.";
+      info.description = "List of channels to use, separated by spaces. Defaults to 0.";
       info.type = SoapySDR::ArgInfo::INT;
       argInfos.push_back(info);
     }
@@ -156,20 +156,36 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
 
     std::vector<size_t> chans = {};
 
-    /* Try to use the channels passed in the `subdev` device argument */
-    if (_deviceArgs.count("subdev")) {
-        const std::string subdev_str = _deviceArgs.at("subdev");
+    /* Try to use the channels passed in the `channel` device argument */
+    if (_deviceArgs.count("channel")) {
+        const std::string channelstr = _deviceArgs.at("channel");
 
         size_t num;
-        std::stringstream ss(subdev_str);
+        std::stringstream ss(channelstr);
+
         while (ss >> num) {
             chans.push_back(num);
-            SoapySDR::logf(SOAPY_SDR_INFO, "Using channel: %zu", num);
         }
-    } else {
-        /* If `subdev` was not present, try to use channels passed as an
-         * argument to this function, or default to using channel 0. */
-        chans = channels.empty() ? std::vector<size_t>{0} : channels;
+
+        if (chans.empty()) {
+            SoapySDR::logf(SOAPY_SDR_ERROR, "Couldn't parse 'channels' string '%s': it should be a list of integers separated by spaces.", channelstr.c_str());
+        }
+    }
+
+    if (chans.empty()) {
+        /* If `channel` was not present, or was not a valid string, try to use channels
+         * passed as an argument to this function, or default to using channel 0. */
+        if (channels.empty()) {
+            /* No channels specified, default to 0. */
+            chans = std::vector<size_t>{0};
+        } else {
+            /* Use the channels from the function argument. */
+            chans = channels;
+        }
+    }
+
+    for (auto &ch : chans) {
+        SoapySDR::logf(SOAPY_SDR_INFO, "Using channel %zu", ch);
     }
 
     const std::vector<size_t> &channelIDs = chans;
