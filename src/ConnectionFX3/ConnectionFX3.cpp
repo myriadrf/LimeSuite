@@ -202,9 +202,13 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
     if (fd < 0)
         return ReportError(EINVAL, "Missing Android USB parameters");
 
-    libusb_set_option(ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
-    int result;
-    result = libusb_init(&ctx);
+    struct libusb_init_option options[] = {
+            {
+                    .option = LIBUSB_OPTION_NO_DEVICE_DISCOVERY,
+                    .value = { .ival = 1 } // 1 enables the "No Discovery" mode
+            }
+    };
+    int result = libusb_init_context(&ctx, options, 1);
     if(result < 0){
         return ReportError(ENODEV, "libusb_init failed");
     }
