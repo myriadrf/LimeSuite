@@ -1,0 +1,10 @@
+{
+  "name": "myriadrf-project-limesuite",
+  "compatibility_date": "2025-06-30",
+  "assets": {
+    "directory": "./docs/_build/html",
+    "not_found_handling": "404-page",
+  },
+  "observability": { "enabled": true },
+  "workers_dev": false,
+}

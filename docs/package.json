@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "init": "python3 -m venv venv && . ./venv/bin/activate && pip install -r requirements.txt",
+    "build": ". venv/bin/activate && make html",
+    "watch": "nodemon --watch './**/*.rst' --ext rst --exec 'npm run build'",
+    "serve": "browser-sync start --server _build/html --port 8000 --files '_build/html/**/*.html'",
+    "dev": "npm run build && npm-run-all --parallel serve watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "browser-sync": "^3.0.2",
+    "nodemon": "^3.0.3",
+    "npm-run-all": "^4.1.5"
+  }
+}

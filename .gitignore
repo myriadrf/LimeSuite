@@ -8,3 +8,14 @@ mcu_program/*.plg
 mcu_program/*.uvopt
 mcu_program/*.uvproj
 docs/LMS_API_Documentation/*
+
+# Python & Node.js
+venv/
+__pycache__
+node_modules/
+package-lock.json
+.wrangler
+
+# Sphinx
+_build
+
