@@ -19,7 +19,8 @@ highlight_language = 'console'
 # Intersphinx mapping
 # To minimise build time only include projects that are referenced.
 intersphinx_internal = [
-#    'suiteng',
+    'quickstart',
+    'suiteng',
 ]
 
 intersphinx_external = [
