@@ -257,7 +257,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
     }
     if (txtDACValue)
     {
-        uint16_t val;
+        uint16_t val = 0;
         LMS_VCTCXORead(lmsControl, &val);
         txtDACValue->SetValue(wxString::Format("%d", val));
     }

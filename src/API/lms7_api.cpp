@@ -207,7 +207,13 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
         lime::DeviceInfo dinfo = port->GetDeviceInfo();
         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
         {
-            unsigned char packet[64] = { 0x8C, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1 };//packet: Flash write 2 btes, addr 16
+            unsigned char packet[64] = { 0x8C, 0, 56, 0, 0, 0, 0, 0
+                , 0x02 // mode
+                , 0, 0, 0, 0 // chunk index
+                , 2 // size
+                , 0, 0xFE, 0x00, 0x00 // FLASH address
+                , 0, 1 // target
+                 }; // Flash write 2 bytes
             packet[32] = val & 0xFF;              //values start at offset=32
             packet[33] = val >> 8;
 
@@ -238,7 +244,13 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
         lime::DeviceInfo dinfo = port->GetDeviceInfo();
         if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
         {
-            unsigned char packet[64] = { 0x8D, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1 }; //packet: eeprom read 2 bytes, addr 16
+            unsigned char packet[64] = { 0x8D, 0, 56, 0, 0, 0, 0, 0
+                , 0x02 // mode
+                , 0, 0, 0, 0 // chunk index
+                , 2 // size
+                , 0, 0xFE, 0x00, 0x00 // FLASH address
+                , 0, 1 // target
+                 }; // Flash read 2 bytes
             if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
                 return -1;
             *val = packet[32] | (packet[33] << 8); //values start at offset=32
