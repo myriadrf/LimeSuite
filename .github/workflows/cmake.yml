@@ -12,6 +12,7 @@ env:
   CMAKE_BUILD_PARALLEL_LEVEL: 2
   SOAPY_SDR_BRANCH: master
   INSTALL_PREFIX: ${{github.workspace}}/deps
+  ARTIFACT_PREFIX: ${{github.workspace}}/artifact/LimeSuite
   
 jobs:
   build:
@@ -67,3 +68,13 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Install
+      run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{env.ARTIFACT_PREFIX}}
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: limesuite-${{ matrix.platform }}
+        path: ${{env.ARTIFACT_PREFIX}}
+        if-no-files-found: error
