@@ -28,7 +28,7 @@ jobs:
             platform: windows
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Install linux dependencies
       if: matrix.platform == 'linux'
