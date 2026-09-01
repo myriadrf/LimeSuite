@@ -72,6 +72,24 @@ jobs:
     - name: Install
       run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{env.ARTIFACT_PREFIX}}
 
+    - name: Bundle Windows runtime DLLs
+      if: matrix.platform == 'windows'
+      shell: pwsh
+      run: |
+        $artifactBin = Join-Path $env:ARTIFACT_PREFIX "bin"
+        New-Item -ItemType Directory -Force -Path $artifactBin | Out-Null
+
+        $runtimeDlls = @()
+        $runtimeDlls += Get-ChildItem -Path (Join-Path $env:INSTALL_PREFIX "bin") -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue
+        $runtimeDlls += Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "deps/wxWidgets/lib") -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue
+        $runtimeDlls += Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "deps/FX3SDK") -Filter "*.dll" -Recurse -ErrorAction SilentlyContinue
+
+        $runtimeDlls |
+          Sort-Object -Property FullName -Unique |
+          ForEach-Object { Copy-Item -Path $_.FullName -Destination $artifactBin -Force }
+
+        Get-ChildItem -Path $artifactBin -Filter "*.dll" | Sort-Object Name | Select-Object Name, Length
+
     - name: Upload build artifact
       uses: actions/upload-artifact@v7
       with:
