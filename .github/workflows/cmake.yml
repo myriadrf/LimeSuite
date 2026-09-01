@@ -64,7 +64,7 @@ jobs:
       
     - name: Configure CMake (linux)
       if: matrix.platform == 'linux'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DENABLE_OCTAVE=OFF -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
