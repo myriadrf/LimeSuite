@@ -1,13 +1,13 @@
 name: CMake
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
   CMAKE_BUILD_PARALLEL_LEVEL: 2
   SOAPY_SDR_BRANCH: master
@@ -16,26 +16,28 @@ env:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: windows-latest
+            platform: windows
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     
     - name: Install linux dependencies
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.platform == 'linux'
       run: |
         sudo apt-get update
         sudo apt-get install -qq libusb-1.0-0-dev libwxbase3.0-dev libwxgtk3.0-gtk3-dev liboctave-dev
-      
-    - name: Install osx dependencies
-      if: matrix.os == 'macos-latest'
-      run: brew install libusb wxmac
-      
+
     - name: Download windows dependencies
-      if: matrix.os == 'windows-latest'
+      if: matrix.platform == 'windows'
       run: |
         mkdir ${{github.workspace}}/deps
         curl -o ${{github.workspace}}/deps/FX3SDK.zip -L https://downloads.myriadrf.org/project/limesuite/appveyor/FX3SDK.zip
@@ -56,11 +58,11 @@ jobs:
         cmake --build . --target install
         
     - name: Configure CMake (windows)
-      if: matrix.os == 'windows-latest'
+      if: matrix.platform == 'windows'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DwxWidgets_ROOT_DIR=${{github.workspace}}/deps/wxWidgets -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK
       
     - name: Configure CMake (linux)
-      if: matrix.os != 'windows-latest'
+      if: matrix.platform == 'linux'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}}
 
     - name: Build
