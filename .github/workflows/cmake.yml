@@ -47,6 +47,8 @@ jobs:
         7z x ${{github.workspace}}/deps/wxWidgets-headers.7z -o${{github.workspace}}/deps/wxWidgets
         curl -o ${{github.workspace}}/deps/wxWidgets.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxMSW-3.1.5_vc14x_x64_Dev.7z
         7z x ${{github.workspace}}/deps/wxWidgets.7z -o${{github.workspace}}/deps/wxWidgets
+        curl -o ${{github.workspace}}/deps/wxWidgets-ReleaseDLL.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxMSW-3.1.5_vc14x_x64_ReleaseDLL.7z
+        7z x ${{github.workspace}}/deps/wxWidgets-ReleaseDLL.7z -o${{github.workspace}}/deps/wxWidgets
       
     - name: install SoapySDR from source
       run: |
