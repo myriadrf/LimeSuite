@@ -73,7 +73,7 @@ jobs:
       run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{env.ARTIFACT_PREFIX}}
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: limesuite-${{ matrix.platform }}
         path: ${{env.ARTIFACT_PREFIX}}
