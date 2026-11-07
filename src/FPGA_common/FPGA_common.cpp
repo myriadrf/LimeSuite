@@ -254,7 +254,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
     WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
 
-    uint16_t reg23val = ReadRegister(0x0003);
+    uint16_t reg23val = ReadRegister(0x0023);
 
     reg23val &= ~(0x1F << 3); //clear PLL index
     reg23val &= ~PLLCFG_START; //clear PLLCFG_START
